@@ -1,0 +1,25 @@
+cff-version: 1.2.0
+title: "uwlight: inherent optical properties of Jerlov water types, with provenance"
+message: >-
+  If you use this software, please cite it. Please also cite the underlying
+  data sources, which are listed with their DOIs in DATA.md.
+type: software
+authors:
+  - family-names: Ishibashi
+    given-names: T.
+    orcid: "https://orcid.org/0000-0003-1711-9908"
+version: 0.0.1
+license: Apache-2.0
+repository-code: "https://github.com/TODO_USERNAME/uwlight"
+abstract: >-
+  Absorption and scattering coefficients for the Jerlov optical water types,
+  taken from the primary literature with the provenance of every value
+  recorded. Values that a published table got wrong are flagged rather than
+  silently repaired, and quantities the data do not determine are refused
+  rather than guessed.
+keywords:
+  - ocean optics
+  - Jerlov water types
+  - inherent optical properties
+  - underwater imaging
+  - underwater visibility

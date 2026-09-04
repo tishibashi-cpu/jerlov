@@ -1,0 +1,91 @@
+water_type,wavelength_nm,Kd_downwelling_per_m,status,note
+I,350,0.0510,pure_seawater,type I の行は純海水の Kw そのもの (Jerlov の値が Kw を下回るため置換)
+I,375,0.0302,pure_seawater,type I の行は純海水の Kw そのもの (Jerlov の値が Kw を下回るため置換)
+I,400,0.0217,pure_seawater,type I の行は純海水の Kw そのもの (Jerlov の値が Kw を下回るため置換)
+I,425,0.0185,pure_seawater,type I の行は純海水の Kw そのもの (Jerlov の値が Kw を下回るため置換)
+I,450,0.0176,pure_seawater,type I の行は純海水の Kw そのもの (Jerlov の値が Kw を下回るため置換)
+I,475,0.0184,pure_seawater,type I の行は純海水の Kw そのもの (Jerlov の値が Kw を下回るため置換)
+I,500,0.0280,pure_seawater,type I の行は純海水の Kw そのもの (Jerlov の値が Kw を下回るため置換)
+I,525,0.0504,pure_seawater,type I の行は純海水の Kw そのもの (Jerlov の値が Kw を下回るため置換)
+I,550,0.0640,pure_seawater,type I の行は純海水の Kw そのもの (Jerlov の値が Kw を下回るため置換)
+I,575,0.0931,pure_seawater,type I の行は純海水の Kw そのもの (Jerlov の値が Kw を下回るため置換)
+I,600,0.2408,pure_seawater,type I の行は純海水の Kw そのもの (Jerlov の値が Kw を下回るため置換)
+I,625,0.3174,pure_seawater,type I の行は純海水の Kw そのもの (Jerlov の値が Kw を下回るため置換)
+I,650,0.3559,pure_seawater,type I の行は純海水の Kw そのもの (Jerlov の値が Kw を下回るため置換)
+I,675,0.4372,pure_seawater,type I の行は純海水の Kw そのもの (Jerlov の値が Kw を下回るため置換)
+I,700,0.6513,pure_seawater,type I の行は純海水の Kw そのもの (Jerlov の値が Kw を下回るため置換)
+IA,350,0.0632,model,Austin & Petzold の式(6)により K(475) から算出
+IA,375,0.0412,model,Austin & Petzold の式(6)により K(475) から算出
+IA,400,0.0316,model,Austin & Petzold の式(6)により K(475) から算出
+IA,425,0.0280,model,Austin & Petzold の式(6)により K(475) から算出
+IA,450,0.0257,model,Austin & Petzold の式(6)により K(475) から算出
+IA,475,0.0250,jerlov_original,475 nm は Jerlov (1976) Table XXVII の値と同一
+IA,500,0.0332,model,Austin & Petzold の式(6)により K(475) から算出
+IA,525,0.0545,model,Austin & Petzold の式(6)により K(475) から算出
+IA,550,0.0674,model,Austin & Petzold の式(6)により K(475) から算出
+IA,575,0.0960,model,Austin & Petzold の式(6)により K(475) から算出
+IA,600,0.2437,model,Austin & Petzold の式(6)により K(475) から算出
+IA,625,0.3206,model,Austin & Petzold の式(6)により K(475) から算出
+IA,650,0.3601,model,Austin & Petzold の式(6)により K(475) から算出
+IA,675,0.4410,model,Austin & Petzold の式(6)により K(475) から算出
+IA,700,0.6530,model,Austin & Petzold の式(6)により K(475) から算出
+IB,350,0.0782,model,Austin & Petzold の式(6)により K(475) から算出
+IB,375,0.0546,model,Austin & Petzold の式(6)により K(475) から算出
+IB,400,0.0438,model,Austin & Petzold の式(6)により K(475) から算出
+IB,425,0.0395,model,Austin & Petzold の式(6)により K(475) から算出
+IB,450,0.0355,model,Austin & Petzold の式(6)により K(475) から算出
+IB,475,0.0330,jerlov_original,475 nm は Jerlov (1976) Table XXVII の値と同一
+IB,500,0.0396,model,Austin & Petzold の式(6)により K(475) から算出
+IB,525,0.0596,model,Austin & Petzold の式(6)により K(475) から算出
+IB,550,0.0715,model,Austin & Petzold の式(6)により K(475) から算出
+IB,575,0.0995,model,Austin & Petzold の式(6)により K(475) から算出
+IB,600,0.2471,model,Austin & Petzold の式(6)により K(475) から算出
+IB,625,0.3245,model,Austin & Petzold の式(6)により K(475) から算出
+IB,650,0.3652,model,Austin & Petzold の式(6)により K(475) から算出
+IB,675,0.4457,model,Austin & Petzold の式(6)により K(475) から算出
+IB,700,0.6550,model,Austin & Petzold の式(6)により K(475) から算出
+II,350,0.1325,model,Austin & Petzold の式(6)により K(475) から算出
+II,375,0.1031,model,Austin & Petzold の式(6)により K(475) から算出
+II,400,0.0878,model,Austin & Petzold の式(6)により K(475) から算出
+II,425,0.0814,model,Austin & Petzold の式(6)により K(475) から算出
+II,450,0.0714,model,Austin & Petzold の式(6)により K(475) から算出
+II,475,0.0620,jerlov_original,475 nm は Jerlov (1976) Table XXVII の値と同一
+II,500,0.0627,model,Austin & Petzold の式(6)により K(475) から算出
+II,525,0.0779,model,Austin & Petzold の式(6)により K(475) から算出
+II,550,0.0863,model,Austin & Petzold の式(6)により K(475) から算出
+II,575,0.1122,model,Austin & Petzold の式(6)により K(475) から算出
+II,600,0.2595,model,Austin & Petzold の式(6)により K(475) から算出
+II,625,0.3389,model,Austin & Petzold の式(6)により K(475) から算出
+II,650,0.3837,model,Austin & Petzold の式(6)により K(475) から算出
+II,675,0.4626,model,Austin & Petzold の式(6)により K(475) から算出
+II,700,0.6623,model,Austin & Petzold の式(6)により K(475) から算出
+III,350,0.2335,model,Austin & Petzold の式(6)により K(475) から算出
+III,375,0.1935,model,Austin & Petzold の式(6)により K(475) から算出
+III,400,0.1697,model,Austin & Petzold の式(6)により K(475) から算出
+III,425,0.1594,model,Austin & Petzold の式(6)により K(475) から算出
+III,450,0.1381,model,Austin & Petzold の式(6)により K(475) から算出
+III,475,0.1160,jerlov_original,475 nm は Jerlov (1976) Table XXVII の値と同一
+III,500,0.1056,model,Austin & Petzold の式(6)により K(475) から算出
+III,525,0.1120,model,Austin & Petzold の式(6)により K(475) から算出
+III,550,0.1139,model,Austin & Petzold の式(6)により K(475) から算出
+III,575,0.1359,model,Austin & Petzold の式(6)により K(475) から算出
+III,600,0.2826,model,Austin & Petzold の式(6)により K(475) から算出
+III,625,0.3655,model,Austin & Petzold の式(6)により K(475) から算出
+III,650,0.4181,model,Austin & Petzold の式(6)により K(475) から算出
+III,675,0.4942,model,Austin & Petzold の式(6)により K(475) から算出
+III,700,0.6760,model,Austin & Petzold の式(6)により K(475) から算出
+1C,350,0.3345,model,Austin & Petzold の式(6)により K(475) から算出
+1C,375,0.2839,model,Austin & Petzold の式(6)により K(475) から算出
+1C,400,0.2516,model,Austin & Petzold の式(6)により K(475) から算出
+1C,425,0.2374,model,Austin & Petzold の式(6)により K(475) から算出
+1C,450,0.2048,model,Austin & Petzold の式(6)により K(475) から算出
+1C,475,0.1700,jerlov_original,475 nm は Jerlov (1976) Table XXVII の値と同一
+1C,500,0.1486,model,Austin & Petzold の式(6)により K(475) から算出
+1C,525,0.1461,model,Austin & Petzold の式(6)により K(475) から算出
+1C,550,0.1415,model,Austin & Petzold の式(6)により K(475) から算出
+1C,575,0.1596,model,Austin & Petzold の式(6)により K(475) から算出
+1C,600,0.3057,model,Austin & Petzold の式(6)により K(475) から算出
+1C,625,0.3922,model,Austin & Petzold の式(6)により K(475) から算出
+1C,650,0.4525,model,Austin & Petzold の式(6)により K(475) から算出
+1C,675,0.5257,model,Austin & Petzold の式(6)により K(475) から算出
+1C,700,0.6896,model,Austin & Petzold の式(6)により K(475) から算出
