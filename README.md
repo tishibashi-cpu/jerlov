@@ -66,6 +66,42 @@ reconstructed at 650 nm. ...
 
 `uwlight.SOURCES` holds the full citation, DOI and caveats for each.
 
+## Looking at something through water
+
+For a horizontal path, the observed radiance splits into the target's light
+that survived and the light the water added along the way:
+
+```python
+import numpy as np, uwlight
+
+wl   = np.arange(450., 651., 50.)
+iops = uwlight.water("III")
+kd   = uwlight.water("III", source="austin1986")
+
+scene = uwlight.Scene.at_depth(iops, 10.0, np.ones_like(wl), wl, kd=kd)
+b_inf = uwlight.veiling_radiance_estimate(
+    iops, scene.downwelling, wl, backscatter_ratio=0.015
+)
+
+obs = scene.observe(np.full_like(wl, 0.8), distance_m=5.0,
+                    veiling_radiance=b_inf)
+obs.direct, obs.veiling, obs.radiance
+obs.veiling_fraction        # how much of what you see is just water
+obs.contrast(background)    # against another target down the same path
+```
+
+`veiling_radiance` has no default. B_inf depends on the backscattering
+coefficient and the phase function, and neither follows from the water type.
+`veiling_radiance_estimate` gives the usual single-scattering approximation
+for callers with nothing better, but it has to be asked for.
+
+Deliberate limits, all recorded in `DECISIONS.md`:
+
+- **Horizontal paths only.** Observer and target at the same depth.
+- **No forward-scatter blur.** This is the radiance of one point, not the
+  sharpness of an image.
+- **Lambertian targets.**
+
 ## Other entry points
 
 ```python

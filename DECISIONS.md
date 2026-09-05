@@ -161,18 +161,52 @@ Out:
 - Machine-learning image restoration.
 - Deriving new coefficients from primary observations.
 
-## 13. Planned
+## 13. The path model, and what was left out of it
+
+`Scene.observe` implements the single-scattering form for a horizontal path:
+
+```
+L(r) = L_target * exp(-c*r) + B_inf * (1 - exp(-c*r))
+```
+
+The direct term is exact given c. `Scene.transmittance` exposes `exp(-c*r)`
+on its own, because that is the part with no approximation in it.
+
+**B_inf is a required argument.** The usual estimate is
+`bb * Ed / (2 pi c)`, but the `2 pi` assumes the backscattered light is spread
+uniformly over the backward hemisphere, which real phase functions are not.
+Since bb is already undetermined (section 4), a default here would be a guess
+resting on a guess. `veiling_radiance_estimate` provides the formula for
+callers with nothing better, but they have to reach for it.
+
+**Horizontal paths only.** Observer and target at the same depth, so one
+downwelling spectrum suffices. A slanted path needs integration along a
+changing depth, and the extra machinery would not buy accuracy the rest of
+the model can support. The main uses — a diver looking sideways, an ROV
+looking at a structure — are horizontal.
+
+**No forward-scatter blur.** Convolving a point spread function needs the
+full phase function. With bb undetermined, the whole phase function certainly
+is. The line is drawn at "the radiance of this point", not "the sharpness of
+this image".
+
+**Depth is recorded, not used.** With a horizontal path the depth enters only
+through the downwelling irradiance. `Scene.at_depth` applies
+`Ed(z) = Ed(0) exp(-Kd z)` and requires Kd to be supplied, because the default
+IOP source does not carry it.
+
+## 14. Planned
 
 Recorded so the shape of the API can be judged against where it is going.
 
-- **`Scene` and `observe()`**: direct transmission and veiling light,
-  returned separately so a caller can see which dominates. This is where
-  `backscatter_ratio` becomes required.
 - **Colour**: spectrum to CIE XYZ and sRGB, to an arbitrary camera spectral
   response, and to an arbitrary set of photoreceptor absorbances.
 - **Akkaynak-Treibitz coefficients**: beta_D, beta_B and B_inf for a stated
   distance range. The range must be an argument, not hidden, because those
   coefficients are not constants.
+- **Depth profiles**: Williamson & Hollins (2023) give the Jerlov type at each
+  10 m layer down to 200 m, so that a scene at 40 m in nominally type I water
+  uses the type that actually applies there.
 
 Validation is deliberately staged. The package can claim that it implements
 published coefficients correctly, and the tests demonstrate that. It cannot

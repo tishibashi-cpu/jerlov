@@ -4,6 +4,7 @@ Every coefficient carries its source, and values that a published table got
 wrong are flagged rather than quietly repaired.
 """
 
+from .scene import Observation, Scene, veiling_radiance_estimate
 from .sources import SOURCES, Source, get_source
 from .water import (
     MissingQuantityError,
@@ -16,6 +17,9 @@ from .water import (
 
 __all__ = [
     "SOURCES",
+    "Scene",
+    "Observation",
+    "veiling_radiance_estimate",
     "Source",
     "get_source",
     "Water",
