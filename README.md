@@ -2,6 +2,8 @@
 
 Inherent optical properties of Jerlov water types, with provenance.
 
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.22321312.svg)](https://doi.org/10.5281/zenodo.22321312)
+
 https://github.com/tishibashi-cpu/uwlight
 
 *Working name; not yet released.*
@@ -160,3 +162,14 @@ alternatives that were rejected and why.
 
 Apache-2.0. The Williamson & Hollins data are Crown copyright, Dstl, under
 the Open Government Licence v3.0; see `NOTICE`.
+
+## Citation
+
+Cite the concept DOI, which always resolves to the latest version:
+
+> Ishibashi, T. uwlight: inherent optical properties of Jerlov water types,
+> with provenance. Zenodo. https://doi.org/10.5281/zenodo.22321312
+
+Please also cite the sources the coefficients came from; they are listed with
+their DOIs at the top of `DATA.md`. The package is a carrier for other
+people's measurements, and this work does not replace citing them.
