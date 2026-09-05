@@ -1,0 +1,30 @@
+{
+  "title": "uwlight: inherent optical properties of Jerlov water types, with provenance",
+  "description": "<p>Absorption and scattering coefficients for the Jerlov optical water types, taken from the primary literature with the provenance of every value recorded.</p><p>Values that a published table got wrong are flagged rather than silently repaired, and quantities the data do not determine are refused rather than guessed. Eleven defects in the source literature are documented, six of them confirmed, including duplicated rows in Solonenko &amp; Mobley (2015) Table 7 and a transcription error in the small-particle scattering coefficient that propagated into their published coefficients.</p><p>Every shipped table can be regenerated from its primary source by the scripts in <code>tools/</code>, and each generation step checks the result against the equations of the paper it came from.</p><p>The package computes the direct and veiling components along a horizontal underwater path, and converts spectra to CIE XYZ, sRGB, or the response of an arbitrary camera or set of photoreceptors.</p>",
+  "upload_type": "software",
+  "license": "Apache-2.0",
+  "access_right": "open",
+  "creators": [
+    {
+      "name": "Ishibashi, T.",
+      "orcid": "0000-0003-1711-9908"
+    }
+  ],
+  "keywords": [
+    "ocean optics",
+    "Jerlov water types",
+    "inherent optical properties",
+    "underwater imaging",
+    "underwater visibility",
+    "absorption coefficient",
+    "scattering coefficient",
+    "colorimetry"
+  ],
+  "related_identifiers": [
+    {"identifier": "10.1364/AO.470464", "relation": "isDerivedFrom", "resource_type": "publication-article", "scheme": "doi"},
+    {"identifier": "10.1364/AO.54.005392", "relation": "isDerivedFrom", "resource_type": "publication-article", "scheme": "doi"},
+    {"identifier": "10.1117/12.7973845", "relation": "isDerivedFrom", "resource_type": "publication-article", "scheme": "doi"},
+    {"identifier": "10.1364/OE.15.007152", "relation": "isDerivedFrom", "resource_type": "publication-article", "scheme": "doi"},
+    {"identifier": "10.6084/m9.figshare.20290782", "relation": "isDerivedFrom", "resource_type": "dataset", "scheme": "doi"}
+  ]
+}
