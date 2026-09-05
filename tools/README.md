@@ -7,12 +7,12 @@ be explained before either is changed.
 
 ```
 pip install numpy openpyxl
-python tools/build_austin1986.py
-python tools/build_jerlov1976_and_solonenko2015.py
-python tools/build_williamson2022_iop.py
-python tools/build_williamson2022_measured.py
+for f in tools/build_*.py; do python "$f" || break; done
 git diff --stat uwlight/data/     # must be empty
 ```
+
+Two of the scripts need no input and will run immediately;
+the others stop with a message naming the file to fetch and its DOI.
 
 `openpyxl` is needed only here, never at run time.
 
@@ -20,5 +20,6 @@ Each script prints the checks it performs. They are not decoration: the
 duplicated rows in Solonenko & Mobley Table 7 were found by exactly these
 comparisons.
 
-`smart2007_b_from_c.csv` has no script; it is a ten-row transcription of
-Table 1 of Smart (2007) and is checked in `tests/test_api.py`.
+Every table has a script. Those whose values are transcribed from a paper
+rather than read from a dataset keep the numbers as literals and check them
+against the paper's own equations before writing anything.

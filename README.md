@@ -79,11 +79,14 @@ uwlight.b_from_c(c=0.5, wavelength_nm=555, bw=0.0019, cw=0.0659)
 uwlight.Water.from_measurements(wavelengths, a=..., b=...)
 ```
 
-## Data provenance
+## Provenance and design
 
 `DATA.md` records, for every shipped table, where it came from, what was
 verified, and what is known to be wrong with it. Eleven defects in the source
 literature are documented there, six of them confirmed.
+
+`DECISIONS.md` records why the package is shaped the way it is, including the
+alternatives that were rejected and why.
 
 ## Licence
 
