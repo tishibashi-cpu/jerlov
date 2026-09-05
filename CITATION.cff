@@ -1,5 +1,5 @@
 cff-version: 1.2.0
-title: "uwlight: inherent optical properties of Jerlov water types, with provenance"
+title: "jerlov: inherent optical properties of the Jerlov optical water types, with provenance"
 message: >-
   If you use this software, please cite it. Please also cite the underlying
   data sources, which are listed with their DOIs in DATA.md.
@@ -11,7 +11,7 @@ authors:
 version: 0.1.0
 doi: "10.5281/zenodo.22321312"
 license: Apache-2.0
-repository-code: "https://github.com/tishibashi-cpu/uwlight"
+repository-code: "https://github.com/tishibashi-cpu/jerlov"
 abstract: >-
   Absorption and scattering coefficients for the Jerlov optical water types,
   taken from the primary literature with the provenance of every value

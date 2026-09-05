@@ -11,7 +11,7 @@ rather than editing the old one.
 
 ## 1. The source is part of the API
 
-`uwlight.water("III")` alone would be a lie. The same Jerlov type has
+`jerlov.water("III")` alone would be a lie. The same Jerlov type has
 different coefficients in different papers, and at 510 nm the scattering
 coefficients of Solonenko & Mobley and of Williamson & Hollins differ by a
 factor of 2.6. A function that returns one number for "Jerlov III" hides a
@@ -134,7 +134,7 @@ push, so a break is noticed even when nobody has touched the code.
 
 ## 11. Tables live in the package; the scripts that made them do not
 
-`uwlight/data/` is the single copy of every CSV. `tools/` holds the scripts
+`jerlov/data/` is the single copy of every CSV. `tools/` holds the scripts
 that produce them from the primary sources, and `sources/` holds the inputs
 and is not tracked.
 

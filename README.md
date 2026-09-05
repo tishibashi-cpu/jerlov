@@ -1,10 +1,11 @@
-# uwlight
+# jerlov
 
-Inherent optical properties of Jerlov water types, with provenance.
+Inherent optical properties of the Jerlov optical water types, with
+provenance.
 
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.22321312.svg)](https://doi.org/10.5281/zenodo.22321312)
 
-https://github.com/tishibashi-cpu/uwlight
+https://github.com/tishibashi-cpu/jerlov
 
 *Working name; not yet released.*
 
@@ -13,9 +14,9 @@ table got wrong are flagged rather than quietly repaired, and quantities that
 the data do not determine are refused rather than guessed.
 
 ```python
-import uwlight
+import jerlov
 
-w = uwlight.water("III")          # Williamson & Hollins (2022) by default
+w = jerlov.water("III")          # Williamson & Hollins (2022) by default
 w.a(550), w.b(550), w.c(550)
 ```
 
@@ -49,7 +50,7 @@ no different from a sound one. `ProvenanceWarning` is the only thing that
 tells them apart.
 
 ```python
->>> w = uwlight.water("5C", source="solonenko2015")
+>>> w = jerlov.water("5C", source="solonenko2015")
 >>> w.b(650)
 ProvenanceWarning: b for Jerlov 5C rests on flagged values:
 reconstructed at 650 nm. ...
@@ -66,7 +67,7 @@ reconstructed at 650 nm. ...
 | `jerlov1976` | Kd only | I-9C | 300-715 nm |
 | `austin1986` | Kd only, replacement values | I-1C | 350-700 nm |
 
-`uwlight.SOURCES` holds the full citation, DOI and caveats for each.
+`jerlov.SOURCES` holds the full citation, DOI and caveats for each.
 
 ## Looking at something through water
 
@@ -74,14 +75,14 @@ For a horizontal path, the observed radiance splits into the target's light
 that survived and the light the water added along the way:
 
 ```python
-import numpy as np, uwlight
+import numpy as np, jerlov
 
 wl   = np.arange(450., 651., 50.)
-iops = uwlight.water("III")
-kd   = uwlight.water("III", source="austin1986")
+iops = jerlov.water("III")
+kd   = jerlov.water("III", source="austin1986")
 
-scene = uwlight.Scene.at_depth(iops, 10.0, np.ones_like(wl), wl, kd=kd)
-b_inf = uwlight.veiling_radiance_estimate(
+scene = jerlov.Scene.at_depth(iops, 10.0, np.ones_like(wl), wl, kd=kd)
+b_inf = jerlov.veiling_radiance_estimate(
     iops, scene.downwelling, wl, backscatter_ratio=0.015
 )
 
@@ -108,10 +109,10 @@ Deliberate limits, all recorded in `DECISIONS.md`:
 
 ```python
 white = scene.downwelling / np.pi          # a perfect diffuser at that depth
-rgb   = uwlight.spectrum_to_srgb(obs.radiance, wl, white=white)
+rgb   = jerlov.spectrum_to_srgb(obs.radiance, wl, white=white)
 
-uwlight.spectrum_to_xyz(spectrum, wl)      # unnormalised CIE XYZ
-uwlight.integrate_response(spectrum, wl, sensitivity, sensitivity_wl)
+jerlov.spectrum_to_xyz(spectrum, wl)      # unnormalised CIE XYZ
+jerlov.integrate_response(spectrum, wl, sensitivity, sensitivity_wl)
 ```
 
 `white` has no default. A radiance spectrum has no colour until something is
@@ -140,13 +141,13 @@ Two silent errors are checked rather than assumed:
 
 ```python
 # Reconstruct a Kd spectrum from one measured value (Austin & Petzold 1986).
-uwlight.kd_spectrum(kd=0.06, wavelength_nm=490, at=[440, 550, 650])
+jerlov.kd_spectrum(kd=0.06, wavelength_nm=490, at=[440, 550, 650])
 
 # Estimate b from a transmissometer's c (Smart 2007).
-uwlight.b_from_c(c=0.5, wavelength_nm=555, bw=0.0019, cw=0.0659)
+jerlov.b_from_c(c=0.5, wavelength_nm=555, bw=0.0019, cw=0.0659)
 
 # Use your own measurements; they take exactly the same path.
-uwlight.Water.from_measurements(wavelengths, a=..., b=...)
+jerlov.Water.from_measurements(wavelengths, a=..., b=...)
 ```
 
 ## Provenance and design
@@ -167,7 +168,7 @@ the Open Government Licence v3.0; see `NOTICE`.
 
 Cite the concept DOI, which always resolves to the latest version:
 
-> Ishibashi, T. uwlight: inherent optical properties of Jerlov water types,
+> Ishibashi, T. jerlov: inherent optical properties of Jerlov water types,
 > with provenance. Zenodo. https://doi.org/10.5281/zenodo.22321312
 
 Please also cite the sources the coefficients came from; they are listed with

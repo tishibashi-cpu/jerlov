@@ -48,7 +48,7 @@ class Water:
     name:
         Jerlov water type, when the object came from one.
     source:
-        The :class:`~uwlight.sources.Source` the coefficients came from.
+        The :class:`~jerlov.sources.Source` the coefficients came from.
     flags:
         Per-wavelength status strings, parallel to ``wavelengths``.
     """

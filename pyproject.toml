@@ -3,8 +3,8 @@ requires = ["setuptools>=61"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "uwlight"
-version = "0.0.1.dev0"
+name = "jerlov"
+version = "0.1.0"
 description = "Inherent optical properties of Jerlov water types, with provenance"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -26,7 +26,7 @@ test = ["pytest"]
 build = ["openpyxl", "colour-science"]
 
 [tool.setuptools.packages.find]
-include = ["uwlight*"]
+include = ["jerlov*"]
 
 [tool.setuptools.package-data]
-"uwlight.data" = ["*.csv"]
+"jerlov.data" = ["*.csv"]

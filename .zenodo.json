@@ -1,5 +1,5 @@
 {
-  "title": "uwlight: inherent optical properties of Jerlov water types, with provenance",
+  "title": "jerlov: inherent optical properties of the Jerlov optical water types, with provenance",
   "description": "<p>Absorption and scattering coefficients for the Jerlov optical water types, taken from the primary literature with the provenance of every value recorded.</p><p>Values that a published table got wrong are flagged rather than silently repaired, and quantities the data do not determine are refused rather than guessed. Eleven defects in the source literature are documented, six of them confirmed, including duplicated rows in Solonenko &amp; Mobley (2015) Table 7 and a transcription error in the small-particle scattering coefficient that propagated into their published coefficients.</p><p>Every shipped table can be regenerated from its primary source by the scripts in <code>tools/</code>, and each generation step checks the result against the equations of the paper it came from.</p><p>The package computes the direct and veiling components along a horizontal underwater path, and converts spectra to CIE XYZ, sRGB, or the response of an arbitrary camera or set of photoreceptors.</p>",
   "upload_type": "software",
   "license": "Apache-2.0",

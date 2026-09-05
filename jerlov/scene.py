@@ -104,7 +104,7 @@ class Scene:
     Parameters
     ----------
     water:
-        The :class:`~uwlight.water.Water` between them. Must carry both a
+        The :class:`~jerlov.water.Water` between them. Must carry both a
         and b, since the beam attenuation c = a + b drives everything.
     downwelling:
         Downwelling irradiance at that depth, on ``wavelengths``. Any unit;
@@ -145,8 +145,8 @@ class Scene:
         depth. Jerlov's own classification is defined over the upper 10 m, so
         this is reasonable there and increasingly rough below it.
 
-        ``kd`` is either a :class:`~uwlight.water.Water` carrying Kd, such as
-        ``uwlight.water("III", source="austin1986")``, or an array on
+        ``kd`` is either a :class:`~jerlov.water.Water` carrying Kd, such as
+        ``jerlov.water("III", source="austin1986")``, or an array on
         ``wavelengths``. The default IOP source has no Kd of its own, so it
         must come from somewhere explicit.
         """
@@ -200,7 +200,7 @@ class Scene:
                 "veiling_radiance (B_inf) has no default: it depends on the "
                 "backscattering coefficient and the phase function, neither "
                 "of which follows from the Jerlov water type. Measure it, or "
-                "call uwlight.veiling_radiance_estimate() deliberately. "
+                "call jerlov.veiling_radiance_estimate() deliberately. "
                 "See DATA.md section 10."
             )
         b_inf = np.asarray(veiling_radiance, dtype=float)

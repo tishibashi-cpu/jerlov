@@ -20,7 +20,7 @@ QUESTIONABLE = frozenset({"suspect", "missing", "extrapolated",
 
 
 def _read(name: str) -> list[dict[str, str]]:
-    path = resources.files("uwlight.data").joinpath(name)
+    path = resources.files("jerlov.data").joinpath(name)
     with path.open("r", encoding="utf-8", newline="") as handle:
         return list(csv.DictReader(handle))
 

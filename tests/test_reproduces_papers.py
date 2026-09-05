@@ -11,9 +11,9 @@ import warnings
 import numpy as np
 import pytest
 
-import uwlight
-from uwlight import _data
-from uwlight.sources import HALTRIN1999, SOLONENKO2015_SCATTERING
+import jerlov
+from jerlov import _data
+from jerlov.sources import HALTRIN1999, SOLONENKO2015_SCATTERING
 
 WL17 = [300, 310, 350, 375, 400, 425, 450, 475, 500,
         525, 550, 575, 600, 625, 650, 675, 700]

@@ -382,6 +382,6 @@ measurement of the light at any place or time: the real spectrum depends on
 solar elevation, atmosphere and the state of the surface. Do not treat it as
 an in-water downwelling spectrum.
 
-The sRGB matrix is not shipped. It is derived in `uwlight/colour.py` from the
+The sRGB matrix is not shipped. It is derived in `jerlov/colour.py` from the
 primaries and white point of IEC 61966-2-1, and `tests/test_colour.py` checks
 the derivation against the published rounded matrix.

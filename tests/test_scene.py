@@ -7,15 +7,15 @@ import warnings
 import numpy as np
 import pytest
 
-import uwlight
-from uwlight import MissingQuantityError, ProvenanceWarning, Scene
+import jerlov
+from jerlov import MissingQuantityError, ProvenanceWarning, Scene
 
 
 WL = np.arange(450.0, 651.0, 25.0)
 
 
 def scene(water_type="III", source="williamson2022", downwelling=None):
-    w = uwlight.water(water_type, source=source)
+    w = jerlov.water(water_type, source=source)
     ed = np.ones_like(WL) if downwelling is None else downwelling
     return Scene(w, ed, WL, depth_m=8.0)
 
@@ -110,19 +110,19 @@ def test_observe_requires_the_keyword():
 
 
 def test_estimate_requires_a_backscatter_ratio():
-    w = uwlight.water("III")
+    w = jerlov.water("III")
     with pytest.raises(TypeError):
-        uwlight.veiling_radiance_estimate(w, np.ones_like(WL), WL)
+        jerlov.veiling_radiance_estimate(w, np.ones_like(WL), WL)
     with pytest.raises(MissingQuantityError):
-        uwlight.veiling_radiance_estimate(
+        jerlov.veiling_radiance_estimate(
             w, np.ones_like(WL), WL, backscatter_ratio=None
         )
 
 
 def test_estimate_is_usable_when_asked_for_deliberately():
-    w = uwlight.water("III")
+    w = jerlov.water("III")
     ed = np.ones_like(WL)
-    b_inf = uwlight.veiling_radiance_estimate(
+    b_inf = jerlov.veiling_radiance_estimate(
         w, ed, WL, backscatter_ratio=0.02
     )
     assert np.all(b_inf > 0)
@@ -132,7 +132,7 @@ def test_estimate_is_usable_when_asked_for_deliberately():
 
 
 def test_water_without_scattering_is_refused():
-    w = uwlight.water("III", source="jerlov1976")  # Kd only
+    w = jerlov.water("III", source="jerlov1976")  # Kd only
     with pytest.raises(MissingQuantityError, match="both a and b"):
         Scene(w, np.ones_like(WL), WL)
 
@@ -157,11 +157,11 @@ def test_shapes_must_agree():
 
 def test_negative_downwelling_is_refused():
     with pytest.raises(ValueError, match="cannot be negative"):
-        Scene(uwlight.water("III"), -np.ones_like(WL), WL)
+        Scene(jerlov.water("III"), -np.ones_like(WL), WL)
 
 
 def test_scene_refuses_wavelengths_outside_the_data():
-    w = uwlight.water("III")  # 300-800 nm
+    w = jerlov.water("III")  # 300-800 nm
     with pytest.raises(ValueError, match="does not extrapolate"):
         Scene(w, np.ones(2), np.array([250.0, 900.0]))
 
@@ -170,8 +170,8 @@ def test_scene_refuses_wavelengths_outside_the_data():
 
 
 def test_at_depth_attenuates_the_surface_spectrum():
-    iops = uwlight.water("III")
-    kd_water = uwlight.water("III", source="austin1986")
+    iops = jerlov.water("III")
+    kd_water = jerlov.water("III", source="austin1986")
     surface = np.ones_like(WL)
     s = Scene.at_depth(iops, 10.0, surface, WL, kd=kd_water)
     expected = surface * np.exp(-kd_water.kd(WL) * 10.0)
@@ -181,7 +181,7 @@ def test_at_depth_attenuates_the_surface_spectrum():
 
 def test_at_depth_accepts_a_plain_array():
     s = Scene.at_depth(
-        uwlight.water("III"), 5.0, np.ones_like(WL), WL,
+        jerlov.water("III"), 5.0, np.ones_like(WL), WL,
         kd=np.full_like(WL, 0.1),
     )
     assert np.allclose(s.downwelling, np.exp(-0.5))
@@ -190,7 +190,7 @@ def test_at_depth_accepts_a_plain_array():
 def test_at_depth_refuses_negative_depth():
     with pytest.raises(ValueError, match="cannot be negative"):
         Scene.at_depth(
-            uwlight.water("III"), -1.0, np.ones_like(WL), WL,
+            jerlov.water("III"), -1.0, np.ones_like(WL), WL,
             kd=np.full_like(WL, 0.1),
         )
 
@@ -198,7 +198,7 @@ def test_at_depth_refuses_negative_depth():
 def test_zero_depth_leaves_the_surface_spectrum_alone():
     surface = np.linspace(1.0, 2.0, WL.size)
     s = Scene.at_depth(
-        uwlight.water("III"), 0.0, surface, WL, kd=np.full_like(WL, 0.1)
+        jerlov.water("III"), 0.0, surface, WL, kd=np.full_like(WL, 0.1)
     )
     assert np.allclose(s.downwelling, surface)
 
@@ -207,7 +207,7 @@ def test_zero_depth_leaves_the_surface_spectrum_alone():
 
 
 def test_flagged_water_still_warns_through_the_scene():
-    w = uwlight.water("5C", source="solonenko2015")
+    w = jerlov.water("5C", source="solonenko2015")
     with pytest.warns(ProvenanceWarning):
         Scene(w, np.ones_like(WL), WL)
 

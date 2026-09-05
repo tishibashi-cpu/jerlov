@@ -7,8 +7,8 @@ import warnings
 import numpy as np
 import pytest
 
-import uwlight
-from uwlight.colour import (
+import jerlov
+from jerlov.colour import (
     SRGB_PRIMARIES,
     SRGB_WHITEPOINT_XY,
     XYZ_TO_LINEAR_SRGB,
@@ -198,12 +198,12 @@ def test_mismatched_shapes_are_refused():
 def test_water_reddens_nothing_and_blues_everything():
     """A grey target seen through water must lose its red first."""
     wl = np.arange(412.0, 701.0, 4.0)   # inside the measured band
-    iops = uwlight.water("III")
-    kd = uwlight.water("III", source="austin1986")
+    iops = jerlov.water("III")
+    kd = jerlov.water("III", source="austin1986")
     illumination = _on(wl)
 
-    scene = uwlight.Scene.at_depth(iops, 15.0, illumination, wl, kd=kd)
-    b_inf = uwlight.veiling_radiance_estimate(
+    scene = jerlov.Scene.at_depth(iops, 15.0, illumination, wl, kd=kd)
+    b_inf = jerlov.veiling_radiance_estimate(
         iops, scene.downwelling, wl, backscatter_ratio=0.015
     )
     obs = scene.observe(np.full_like(wl, 0.5), 3.0, veiling_radiance=b_inf)

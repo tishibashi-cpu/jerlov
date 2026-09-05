@@ -1,6 +1,6 @@
 # Rebuilding the coefficient tables
 
-These scripts are the record of how every value in `uwlight/data/` was
+These scripts are the record of how every value in `jerlov/data/` was
 obtained. Running them must reproduce the shipped CSVs byte for byte; if it
 does not, either the scripts or the CSVs have drifted and the difference must
 be explained before either is changed.
@@ -8,7 +8,7 @@ be explained before either is changed.
 ```
 pip install numpy openpyxl colour-science
 for f in tools/build_*.py; do python "$f" || break; done
-git diff --stat uwlight/data/     # must be empty
+git diff --stat jerlov/data/     # must be empty
 ```
 
 Two of the scripts need no input and will run immediately;

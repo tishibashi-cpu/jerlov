@@ -11,7 +11,7 @@ import sys
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 SOURCES_DIR = ROOT / "sources"
-DATA_DIR = ROOT / "uwlight" / "data"
+DATA_DIR = ROOT / "jerlov" / "data"
 
 FIGSHARE = (
     "figshare DOI 10.6084/m9.figshare.20290782, Version 3\n"
