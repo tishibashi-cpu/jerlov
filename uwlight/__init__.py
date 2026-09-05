@@ -4,6 +4,16 @@ Every coefficient carries its source, and values that a published table got
 wrong are flagged rather than quietly repaired.
 """
 
+from .colour import (
+    CoverageWarning,
+    GamutWarning,
+    cie_1931_cmf,
+    d65,
+    integrate_response,
+    spectrum_to_srgb,
+    spectrum_to_xyz,
+    xyz_to_srgb,
+)
 from .scene import Observation, Scene, veiling_radiance_estimate
 from .sources import SOURCES, Source, get_source
 from .water import (
@@ -20,6 +30,14 @@ __all__ = [
     "Scene",
     "Observation",
     "veiling_radiance_estimate",
+    "spectrum_to_xyz",
+    "spectrum_to_srgb",
+    "xyz_to_srgb",
+    "integrate_response",
+    "cie_1931_cmf",
+    "d65",
+    "GamutWarning",
+    "CoverageWarning",
     "Source",
     "get_source",
     "Water",

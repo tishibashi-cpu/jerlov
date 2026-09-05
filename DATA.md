@@ -20,6 +20,8 @@ could not are `missing`, and values that are used but doubtful are `suspect`.
 | `austin1986_kd.csv` | Replacement Kd for Jerlov's values. 15 wavelengths, 6 types | 90 |
 | `austin1986_model.csv` | Slope M and pure sea water Kw. 5 nm, 350-700 nm | 71 |
 | `smart2007_b_from_c.csv` | Measured (b-bw)/(c-cw). 412-715 nm, average and bounds | 30 |
+| `cie1931_2deg_cmf.csv` | CIE 1931 2-degree colour matching functions. 1 nm, 360-830 nm | 471 |
+| `cie_d65.csv` | CIE illuminant D65 relative spectral power. 5 nm, 300-780 nm | 97 |
 
 ## The `status` column
 
@@ -354,3 +356,32 @@ The same paper gives further relations, not shipped here:
   percent up to 590 nm, degrading to 31 percent at 670 nm. This agrees
   independently with the conclusion of Austin & Petzold (1990) noted in
   section 8.
+
+
+## 12. The CIE colorimetric data (note)
+
+`cie1931_2deg_cmf.csv` and `cie_d65.csv` are standard reference data. They
+were not measured or derived here, and they are not approximated: an analytic
+fit to the colour matching functions would be smaller but would put numbers
+in the package whose provenance is a curve fit rather than the standard.
+
+They were transcribed via `colour-science`, which is a convenient and widely
+used carrier of the CIE tabulations. `colour-science` is a build-time
+dependency of `tools/build_cie.py` only; the package itself does not use it.
+
+Three checks run before anything is written:
+
+- the sums of x-bar, y-bar and z-bar agree to within the rounding of the
+  published table
+- y-bar peaks at 555 nm, which is the definition of the photopic maximum
+- D65 is normalised to 100 at 560 nm
+
+**D65 is the sRGB reference white.** It is a daylight phase, so it is a
+reasonable stand-in for the solar spectrum above the surface, but it is not a
+measurement of the light at any place or time: the real spectrum depends on
+solar elevation, atmosphere and the state of the surface. Do not treat it as
+an in-water downwelling spectrum.
+
+The sRGB matrix is not shipped. It is derived in `uwlight/colour.py` from the
+primaries and white point of IEC 61966-2-1, and `tests/test_colour.py` checks
+the derivation against the published rounded matrix.

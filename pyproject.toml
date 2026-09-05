@@ -23,7 +23,7 @@ classifiers = [
 [project.optional-dependencies]
 plot = ["matplotlib"]
 test = ["pytest"]
-build = ["openpyxl"]
+build = ["openpyxl", "colour-science"]
 
 [tool.setuptools.packages.find]
 include = ["uwlight*"]

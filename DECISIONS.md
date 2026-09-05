@@ -195,12 +195,39 @@ through the downwelling irradiance. `Scene.at_depth` applies
 `Ed(z) = Ed(0) exp(-Kd z)` and requires Kd to be supplied, because the default
 IOP source does not carry it.
 
-## 14. Planned
+## 14. Colour needs a stated white, and coverage needs checking
+
+`spectrum_to_srgb` requires `white`. A radiance spectrum has no colour on its
+own, and underwater the reference that makes a grey card grey is the
+downwelling irradiance at that depth, not daylight. Choosing one silently
+would answer a question the caller did not ask.
+
+The adaptation divides XYZ by the white's XYZ and rescales onto the sRGB
+white point: a von Kries transform performed in XYZ rather than cone space.
+It is cruder than CAT02 for strongly coloured illumination, which underwater
+illumination certainly is. The docstring says so and calls the result "what a
+white-balanced camera would record" rather than a prediction of appearance.
+
+**Rejected:** normalising by luminance alone. It leaves a cast whenever the
+white is not D65, which underwater it never is. This was implemented first
+and was wrong; the tests now pin the behaviour for three different whites
+including a deliberately blue-green one.
+
+`CoverageWarning` exists because integrating a 450-650 nm spectrum against
+colour matching functions that run from 360 to 830 nm gives a plausible
+number that is simply wrong. The integral is reported over the overlap and
+the caller is told what fraction that was.
+
+The CIE 1931 observer and the D65 illuminant are shipped as data with the
+same provenance treatment as everything else (DATA.md section 12). They were
+transcribed rather than approximated: an analytic fit to the colour matching
+functions would have been smaller, but it would have put numbers in the
+package that came from nowhere in particular.
+
+## 15. Planned
 
 Recorded so the shape of the API can be judged against where it is going.
 
-- **Colour**: spectrum to CIE XYZ and sRGB, to an arbitrary camera spectral
-  response, and to an arbitrary set of photoreceptor absorbances.
 - **Akkaynak-Treibitz coefficients**: beta_D, beta_B and B_inf for a stated
   distance range. The range must be an argument, not hidden, because those
   coefficients are not constants.

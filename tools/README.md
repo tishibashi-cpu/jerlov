@@ -6,7 +6,7 @@ does not, either the scripts or the CSVs have drifted and the difference must
 be explained before either is changed.
 
 ```
-pip install numpy openpyxl
+pip install numpy openpyxl colour-science
 for f in tools/build_*.py; do python "$f" || break; done
 git diff --stat uwlight/data/     # must be empty
 ```
@@ -14,7 +14,9 @@ git diff --stat uwlight/data/     # must be empty
 Two of the scripts need no input and will run immediately;
 the others stop with a message naming the file to fetch and its DOI.
 
-`openpyxl` is needed only here, never at run time.
+`openpyxl` and `colour-science` are needed only here, never at run time.
+`build_cie.py` uses `colour-science` as a carrier for the CIE tabulations;
+see DATA.md section 12.
 
 Each script prints the checks it performs. They are not decoration: the
 duplicated rows in Solonenko & Mobley Table 7 were found by exactly these

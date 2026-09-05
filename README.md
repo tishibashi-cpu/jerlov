@@ -102,6 +102,38 @@ Deliberate limits, all recorded in `DECISIONS.md`:
   sharpness of an image.
 - **Lambertian targets.**
 
+## What colour is that
+
+```python
+white = scene.downwelling / np.pi          # a perfect diffuser at that depth
+rgb   = uwlight.spectrum_to_srgb(obs.radiance, wl, white=white)
+
+uwlight.spectrum_to_xyz(spectrum, wl)      # unnormalised CIE XYZ
+uwlight.integrate_response(spectrum, wl, sensitivity, sensitivity_wl)
+```
+
+`white` has no default. A radiance spectrum has no colour until something is
+called white, and underwater the useful reference is usually the downwelling
+irradiance at that depth rather than daylight. Both are legitimate and they
+answer different questions:
+
+| white | question answered |
+|---|---|
+| downwelling at depth | what a diver's adapted eye, or a camera white-balanced *there*, sees |
+| daylight at the surface | what a camera set at the surface records |
+
+`integrate_response` takes any spectral sensitivity: three camera channels,
+or a set of photoreceptor absorbances.
+
+Two silent errors are checked rather than assumed:
+
+- **Coverage.** A spectrum spanning 450-650 nm integrated against colour
+  matching functions spanning 360-830 nm quietly drops the ends. Every
+  integration reports how much of the observer it actually covered and warns
+  when it is not essentially all of it.
+- **Gamut.** Underwater colours often fall outside sRGB. Clipping changes
+  them, so `GamutWarning` says so.
+
 ## Other entry points
 
 ```python
