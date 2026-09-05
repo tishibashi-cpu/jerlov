@@ -2,6 +2,8 @@
 
 Inherent optical properties of Jerlov water types, with provenance.
 
+https://github.com/tishibashi-cpu/uwlight
+
 *Working name; not yet released.*
 
 Every coefficient carries the source it came from. Values that a published

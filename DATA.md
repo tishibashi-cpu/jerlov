@@ -1,292 +1,356 @@
-# Jerlov 水質タイプの光学係数 — 検証済みCSV
+# Data provenance
 
-パッケージ `Phase 0` 用のデータファイル。各セルに出どころと状態を持たせてある。
+What every shipped table is, where it came from, what was verified, and what
+is known to be wrong with it.
 
-## ファイル
+Eleven defects in the source literature are recorded below. Six are confirmed,
+three could not be resolved because the material was not obtainable, and two
+are notes rather than defects. None of them is repaired silently: values that
+could be recovered carry `status = reconstructed` and say how, values that
+could not are `missing`, and values that are used but doubtful are `suspect`.
 
-| ファイル | 中身 | 行数 |
+## Files
+
+| File | Contents | Rows |
 |---|---|---|
-| `jerlov1976_kd.csv` | 下向き放射照度の減衰係数 Kd。1 nm 刻み、300-715 nm、10型 | 4160 |
-| `solonenko2015_iop.csv` | Kd0, Kd, KdH, a, b。17波長、10型 | 850 |
-| `austin1986_kd.csv` | Jerlov の K の置換値。15波長、6型 | 90 |
-| `austin1986_model.csv` | 傾き M(λ) と純海水 Kw(λ)。5 nm 刻み、350-700 nm | 71 |
-| `williamson2022_iop.csv` | a と b。**1 nm 刻み**、300-800 nm、6型 | 6012 |
-| `williamson2022_measured.csv` | 生の実測点 a, b。標準偏差と測定数つき | 152 |
-| `smart2007_b_from_c.csv` | (b-bw)/(c-cw) の実測比。412-715 nm、平均と上下限 | 30 |
+| `jerlov1976_kd.csv` | Downwelling diffuse attenuation Kd. 1 nm, 300-715 nm, 10 types | 4160 |
+| `williamson2022_iop.csv` | a and b. **1 nm**, 300-800 nm, 6 types | 6012 |
+| `solonenko2015_iop.csv` | Kd0, Kd, KdH, a, b. 17 wavelengths, 10 types | 850 |
+| `williamson2022_measured.csv` | Measured a, b points with standard deviation and count | 152 |
+| `austin1986_kd.csv` | Replacement Kd for Jerlov's values. 15 wavelengths, 6 types | 90 |
+| `austin1986_model.csv` | Slope M and pure sea water Kw. 5 nm, 350-700 nm | 71 |
+| `smart2007_b_from_c.csv` | Measured (b-bw)/(c-cw). 412-715 nm, average and bounds | 30 |
 
-## `status` 列の意味
+## The `status` column
 
-| 値 | 意味 | どう扱うか |
+| Value | Meaning | How to treat it |
 |---|---|---|
-| `ok` | 論文の値をそのまま採用 | そのまま使える |
-| `extrapolated` | 論文自身が外挿と明示 (括弧付き) | 使えるが精度は低い |
-| `reconstructed` | 論文の値が誤り。式から復元した | 使える。`value_source` に復元方法 |
-| `missing` | 論文の値が誤りで復元できない | `value_per_m` は空。補間して使うか、その波長を避ける |
-| `suspect` | 値は採用しているが、内部矛盾が見つかっている | 使う前に `note` を読むこと |
+| `ok` | The published value, used as printed | Usable |
+| `extrapolated` | The paper itself says it was extrapolated | Usable, but less accurate |
+| `reconstructed` | The published value is wrong; recovered from an equation | Usable; `value_source` says how |
+| `missing` | The published value is wrong and could not be recovered | Empty. Interpolate yourself or avoid that wavelength |
+| `suspect` | Used as published, but an internal inconsistency was found | Read the `note` before relying on it |
+| `model_extrapolation` | Outside the range of the underlying measurements | Usable, but not measured |
 
-## 出典
+## Sources
 
-- **Jerlov 1976**: Dstl の `ip_jerlov.csv` (figshare DOI `10.6084/m9.figshare.20290782`, Version 3)。
-  `jkibele/OpticalRS` が Jerlov (1976) Table XXVII から独立に転記した値と照合し、一致を確認した。
-  ただし Williamson & Hollins (2022) の Fig.1 はこのデータの出典を Jerlov (1964) としており、
-  Williamson & Hollins (2023) は同じ図を Jerlov (1976) としている。版の特定は未解決。
-  © Crown copyright (2022), Dstl. Open Government Licence v3.0.
+- **Jerlov 1976.** From `ip_jerlov.csv` in the Dstl dataset, figshare DOI
+  `10.6084/m9.figshare.20290782`, Version 3. Checked against an independent
+  transcription of Jerlov (1976) Table XXVII in `jkibele/OpticalRS` and found
+  to agree. The provenance of the file is not entirely clear: Williamson &
+  Hollins (2022) attribute the same figure to Jerlov (1964), while Williamson
+  & Hollins (2023) attribute it to Jerlov (1976). (c) Crown copyright (2022),
+  Dstl. Open Government Licence v3.0.
 
-- **Solonenko & Mobley 2015**: Appl. Opt. 54, 5392-5401. DOI `10.1364/AO.54.005392`。Table 3-8 より。
+- **Austin & Petzold 1986.** Opt. Eng. 25(3), 471-479, DOI
+  `10.1117/12.7973845`. Tables VI and IV. The type I row is pure sea water Kw;
+  only the 475 nm column is Jerlov's own value. The rest was computed with the
+  paper's Eq. (6), which reproduces the printed table to within 0.39 percent.
+  M at 350, 355 and 360 nm is extrapolated, as the paper states. Austin &
+  Petzold (1990), Proc. SPIE 1302, 79-93, tested the model against 83 new
+  stations from 24.4 to 77.7 degrees north and recommended no change, but
+  reports poor agreement beyond 590 nm: a coefficient of variation of 31
+  percent at 670 nm.
 
-- **Austin & Petzold 1986**: Optical Engineering 25(3), 471-479. DOI `10.1117/12.7973845`。
-  Table VI (置換値) と Table IV (M, Kw) より。type I の行は純海水 Kw。
-  475 nm は Jerlov (1976) と同一。他は同論文の式(6)による算出値で、式(6)での再現を確認済み
-  (最大ズレ 0.39%)。M(350), M(355), M(360) は論文自身が外挿値と明記している。
-  Austin & Petzold (1990) Proc. SPIE 1302, 79-93 が、北緯24.4-77.7度の83測点の新データで
-  このモデルを検証し、変更不要と結論している。ただし590 nm より長波長側では
-  蛍光とラマン散乱の影響で一致が悪く、670 nm では変動係数が31%に達する。
+- **Solonenko & Mobley 2015.** Appl. Opt. 54, 5392-5401, DOI
+  `10.1364/AO.54.005392`. Tables 3 to 8.
 
-- **Williamson & Hollins 2022 の差し替え値**: 上記 figshare の
-  `20221121-Dstl_MIOP_analysis_v3.xlsx`、シート `Sol_Mob data`。
-  同シート3行目に "Highlighting denotes values updated from those published in the original
-  reference" とある。論文本文には記載がない。
+- **Williamson & Hollins 2022.** Appl. Opt. 61, 9951-9961, DOI
+  `10.1364/AO.470464`. From the accompanying spreadsheet rather than the
+  printed table; see section 9.
 
-## 既知の問題
+- **Smart 2007.** Opt. Express 15(12), 7152-7164, DOI
+  `10.1364/OE.15.007152`. Table 1. Open access.
 
-### 1. Table 7 の行複写 (確定)
+- **Haltrin 1999.** Appl. Opt. 38, 6826-6832. Origin of the scattering model
+  used by both Solonenko & Mobley and Williamson & Hollins; see section 6.
 
-Jerlov 3C の 675, 700 nm が 300, 310 nm の行と全項目一致する。
-Jerlov 5C の 600-700 nm の5行が 300-400 nm の5行と一致する。
+---
 
-根拠: (a) 行の完全一致、(b) 675 nm に沿岸型300/310 nm 用の外挿を示す括弧が付いている、
-(c) 同論文の式(8)と表3の Bs, Bl で計算すると、健全な波長は0.8%以内で再現するのに
-壊れた行だけ60-75%ずれる、(d) Williamson & Hollins (2022) が同じ箇所を差し替えている。
+## 1. Duplicated rows in Table 7 (confirmed)
 
-`b` は式(8)で復元した。5C については W&H の差し替え値と小数第3位まで一致する。
-3C については W&H は線形外挿を使っており、式(8)の値と1-3%違う。既定は式(8)。
-`a`, `Kd`, `KdH` は復元不能。
+In Solonenko & Mobley (2015) Table 7, the rows for Jerlov 3C at 675 and 700 nm
+are identical in every column to the rows at 300 and 310 nm. For Jerlov 5C,
+the five rows from 600 to 700 nm are identical to those from 300 to 400 nm.
 
-### 2. 参照値 Kd0 の食い違い (確認できなかった)
+Four independent lines of evidence:
 
-`solonenko2015_iop.csv` の Kd0 は `jerlov1976_kd.csv` と最大34%違う。
-Solonenko & Mobley は参照値の出典を Jerlov & Koczy (1951) と Jerlov (1968) と書いており、
-Jerlov (1976) ではない。
+1. The rows match exactly, in all five columns.
+2. At 675 nm the value carries the parentheses that the paper uses to mark
+   the coastal 300 and 310 nm extrapolations.
+3. Computing b from the paper's own Eq. (8) with the Bs and Bl of its Table 3
+   reproduces the sound wavelengths to within 0.8 percent, but is 60 to 75
+   percent away at the duplicated rows.
+4. Williamson & Hollins (2022) substituted values at exactly these cells; see
+   the sources section below.
 
-**版の違いによるものか、誤りかを判定できなかった。** 次の2点を入手できなかったため。
+`b` was reconstructed from Eq. (8). For 5C this agrees with the Williamson &
+Hollins substitution to three decimal places. For 3C they used linear
+extrapolation instead, which differs from Eq. (8) by 1 to 3 percent; Eq. (8)
+is used here because it follows from the paper's own scattering model, and
+their value is carried in the `williamson2022_value_per_m` column for
+comparison. `a`, `Kd` and `KdH` could not be recovered.
 
-- Jerlov, N. G. (1968) *Optical Oceanography*, Elsevier Oceanography Series Vol. 5,
-  pp. 118-120. ISBN 978-0-444-40320-9。**DOI は存在しない** (1968年の書籍のため)。
-  検索で見つかる 10.4319/lo.1968.13.4.0731 と 10.1126/science.163.3862.64.a は
-  いずれも本書の**書評**であり、本書そのものではない
-- Jerlov, N. G. and Koczy, F. (1951), *Reports of the Swedish Deep-Sea Expedition
-  1947-1948*, Vol. 3, pp. 30-71
+**Williamson & Hollins found this too, and did not publish it.** The
+spreadsheet `20221121-Dstl_MIOP_analysis_v3.xlsx` in their figshare dataset
+has a sheet `Sol_Mob data` whose third row reads "Highlighting denotes values
+updated from those published in the original reference". The highlighted cells
+are exactly the ones listed above. Nothing in either of their papers mentions
+it.
 
-なお Jerlov (1976) *Marine Optics* は Jerlov (1968) の第2版である。
-独立した2冊ではない。
+## 2. The Kd0 reference column disagrees (not resolved)
 
-**実用上の対処:** 2つのファイルの Kd0 / Kd を混ぜて使わないこと。
-本パッケージの既定の出典は Williamson & Hollins であり、Kd0 は参照値として保持しているだけで
-計算の入力には使わない。したがってこの未解決事項は計算結果に影響しない。
+The Kd0 column of `solonenko2015_iop.csv` differs from `jerlov1976_kd.csv` by
+up to 34 percent. Solonenko & Mobley cite Jerlov & Koczy (1951) and Jerlov
+(1968) for it, not Jerlov (1976).
 
-### 3. Jerlov の K が純海水を下回る (確定。1986年に文献化済み)
+**Whether this is an edition difference or an error could not be
+determined**, because neither of the following could be obtained:
 
-**この問題は Austin & Petzold (1986) が既に指摘していた。** 同論文 第7節:
+- Jerlov, N. G. (1968), *Optical Oceanography*, Elsevier Oceanography Series
+  Vol. 5, pp. 118-120. ISBN 978-0-444-40320-9. **No DOI exists**; the DOIs
+  `10.4319/lo.1968.13.4.0731` and `10.1126/science.163.3862.64.a` are reviews
+  of the book, not the book.
+- Jerlov, N. G. and Koczy, F. (1951), *Reports of the Swedish Deep-Sea
+  Expedition 1947-1948*, Vol. 3, pp. 30-71.
 
-> Jerlov が与えた外洋 type I の減衰値の一部が、我々が示す Kw の値より小さい。実際、いくつかの
-> 波長では、Jerlov の K の値が Morel and Prieur が公表した吸収だけの値よりも小さい。
-> したがって我々は、Jerlov が公表した K(λ) の値を Table VI の値で置き換えることを推奨する。
+Note that Jerlov (1976) *Marine Optics* is the second edition of Jerlov
+(1968); they are not independent works.
 
-`jerlov1976_kd.csv` の type I を Austin & Petzold の Kw と照合すると、
-**15波長中9点で Kw を下回る**。475 nm で -2.2%、525 nm で -14.7%、700 nm で -14.0%。
-最も澄んだ外洋水の減衰が純水より小さいことになり、物理的に成立しない。
+**Practical effect: none.** Do not mix Kd0 and Kd across the two files. This
+package's default source is Williamson & Hollins, and Kd0 is carried as a
+reference column, never used as a computational input.
 
-置換値は `austin1986_kd.csv` に収録した。
+## 3. Jerlov's Kd falls below pure sea water (confirmed, documented in 1986)
 
-**ただし S&M の Kd0(600 nm) はこれとは別の問題である。**
-Jerlov の値が Kw を 2.4% 下回るのに対し、S&M の値は 32.3% 下回る。
-I, IA, IB, II の4型で同様。Jerlov の既知問題では説明がつかない。原因は未解決。
+Austin & Petzold (1986), section 7:
 
-### 4. 表3の Jerlov I と IA の Bs, Bl (確定)
+> We also call attention to the fact that some of the attenuation values for
+> type I oceanic water as given by Jerlov are less than the values we suggest
+> for Kw. In fact, at some wavelengths the values given by Jerlov for K are
+> less than the values of absorption alone published by Morel and Prieur. We
+> recommend, therefore, that the values of K as published by Jerlov be
+> replaced by those in Table VI.
 
-表3の Bs, Bl を式(8)に入れても、同論文の b 列を再現しない。
-IB から 9C は0.8%以内で再現するので、この2型だけの問題。
+Checking `jerlov1976_kd.csv` type I against the Austin & Petzold Kw confirms
+this at **9 of 15 wavelengths**: 2.2 percent below at 475 nm, 14.7 percent at
+525 nm, 14.0 percent at 700 nm. The clearest ocean water would attenuate less
+than pure water, which is not possible.
 
-b 列に最小二乗でフィットすると原因が特定できる (小粒子係数は S&M の 1.513 を使用)。
+The replacement values are in `austin1986_kd.csv`.
 
-| 型 | フィット値 | 表3の値 | 判定 |
+**The Solonenko & Mobley Kd0 at 600 nm is a separate problem.** Jerlov's value
+is 2.4 percent below Kw there; theirs is 32.3 percent below, for types I, IA,
+IB and II alike. The known defect in Jerlov's data does not account for it.
+Not resolved.
+
+## 4. Table 3 parameters for the clearest types (confirmed)
+
+Putting the Bs and Bl of Solonenko & Mobley Table 3 into their Eq. (8) does
+not reproduce their b column for types I and IA, although it does for IB
+through 9C. Least squares fitting the b column locates the problem (using
+their own coefficient 1.513):
+
+| Type | Fitted | Table 3 | Verdict |
 |---|---|---|---|
-| IA | Bs=0.00199, Bl=0.00102 | Bs=0.002, Bl=0.005 | **Bl が5倍違う。Bs は一致** |
-| I  | Bs=0.00021, Bl=0.00016 | Bs=8e-5, Bl=2e-4 | Bs が2.6倍違う。ただし値が微小 |
+| IA | Bs=0.00199, Bl=0.00102 | Bs=0.002, Bl=0.005 | **Bl is five times too large; Bs agrees** |
+| I | Bs=0.00021, Bl=0.00016 | Bs=8e-5, Bl=2e-4 | Bs is 2.6 times off, but the values are tiny |
 
-フィットは0.2-0.4%以内で b 列を再現する。**b 列が正しく、表3のエントリが誤りである。**
-論文は Jerlov I について純水の散乱係数をコスト関数に組み込む特別扱いをしたと書いているが、
-IA については何も書いていない。
+The fits reproduce the b column to within 0.2 to 0.4 percent, so **the b
+column is right and the Table 3 entries are wrong.** The paper describes
+special handling for type I, but says nothing about IA.
 
-### 5. Table 6 の列複写の疑い (確認できなかった)
+## 5. Possible duplicated column in Table 6 (not resolved)
 
-Jerlov 1C の Kd0 が 525-700 nm の8点で Jerlov III と完全一致する。
-`jerlov1976_kd.csv` では両者は525 nmで12%違う。
-判定には §2 と同じ資料が必要で、入手できなかった。`status = suspect` のまま残す。
+The Kd0 of Jerlov 1C is identical to that of Jerlov III at all eight
+wavelengths from 525 to 700 nm. In `jerlov1976_kd.csv` the two differ by 12
+percent at 525 nm. Resolving this needs the same material as section 2, which
+could not be obtained. Left as `suspect`.
 
-### 6. 散乱の小粒子係数 (確定)
+## 6. The small-particle scattering coefficient (confirmed)
 
-原典は Haltrin (1999) Appl. Opt. 38, 6826-6832, 式(5)-(7)。
+The model originates in Haltrin (1999), Eqs. (5)-(7):
 
 ```
-bw(λ) = 0.005826 (m^-1)  (400/λ)^4.322     式(5)
-bs(λ) = 1.151302 (m^2/g) (400/λ)^1.7       式(6)
-bl(λ) = 0.341074 (m^2/g) (400/λ)^0.3       式(7)
+bw(l) = 0.005826 (1/m)   * (400/l)**4.322
+bs(l) = 1.151302 (m^2/g) * (400/l)**1.7
+bl(l) = 0.341074 (m^2/g) * (400/l)**0.3
 ```
 
-**正しい小粒子係数は 1.151302。** Williamson & Hollins の 1.1513 は原典どおり。
-Solonenko & Mobley の 1.513 は転記の際に "1" が1つ落ちたもの。
+**The correct small-particle coefficient is 1.151302.** Williamson & Hollins
+use 1.1513, which matches. Solonenko & Mobley print 1.513; a digit appears to
+have been dropped.
 
-**S&M は誤った値で実際に計算している。** 公表された b 列を再現できるのは 1.513 のみで、
-Haltrin の 1.151302 では IB-9C で14-25%ずれる。
-つまり S&M の a, b の表は、小粒子散乱係数が原典より31%大きい状態で導出されている。
+**They also computed with it.** Only 1.513 reproduces their published b
+column; Haltrin's 1.151302 is 14 to 25 percent away for types IB through 9C.
+Their a and b tables were therefore derived with a small-particle scattering
+coefficient 31 percent larger than the original.
 
-このため、目的によって使う係数が変わる。
+Which constant to use depends on the purpose:
 
-| 目的 | 使う係数 |
+| Purpose | Coefficient |
 |---|---|
-| S&M の公表値を再現する | 1.513 (S&M 内部の値) |
-| Haltrin の散乱モデルを正しく使う | 1.151302 |
+| Reproduce the Solonenko & Mobley tables | 1.513 (their own value) |
+| Use the Haltrin scattering model correctly | 1.151302 |
 
-**この2つを混ぜてはいけない。** 本CSVの復元値 (§1) は前者、すなわち 1.513 を使っている。
-S&M の表の欠損を埋めるのが目的だからである。
+**The two must not be mixed.** The reconstruction in section 1 uses the
+former, because its purpose is to fill gaps in their table.
 
-なお Hollins & Williamson (2023) は、S&M が小粒子優勢、自分たちが大粒子優勢という
-正反対の結論になったと報告している (同論文 Table 6, Fig.15)。
-係数の誤りとの因果関係は未検証。
+Hollins & Williamson (2023) report that Solonenko & Mobley concluded small
+particles dominate while they themselves found large particles dominate
+(their Table 6, Fig. 15). Whether the coefficient error contributes has not
+been checked.
 
-### 7. 記号の衝突 (注意)
+## 7. A collision of symbols (note)
 
-Haltrin (1999) の原記法では、
+In Haltrin (1999):
 
-- `Cs`, `Cl` = 小粒子・大粒子の**濃度** (g/m^3)
-- `Bs`, `Bl` = 小粒子・大粒子の**後方散乱確率** (定数 0.039 と 6.4e-4)
+- `Cs`, `Cl` are the small- and large-particle **concentrations** (g/m3)
+- `Bs`, `Bl` are the **backscattering probabilities**, constants 0.039 and
+  6.4e-4
 
-Solonenko & Mobley と Williamson & Hollins は、**濃度のほうを `Bs`, `Bl` と改名している**。
-Haltrin 自身が別の量に使っている記号なので、3本を並べて読むときに混同しやすい。
+Solonenko & Mobley and Williamson & Hollins both **rename the concentrations
+to Bs, Bl**, colliding with symbols Haltrin uses for something else. Reading
+the three papers side by side is easy to get wrong. This package follows
+Haltrin.
 
+## 8. Range of the Austin & Petzold model (note)
 
-### 9. Williamson & Hollins (2022) のデータについて
-
-`williamson2022_iop.csv` は論文の Table 7 ではなく、figshare のスプレッドシート
-`20221121-Dstl_MIOP_analysis_v3.xlsx` のシート `a,b JIB-5C` から抽出した。
-**論文の表は10 nm刻みだが、スプレッドシートは1 nm刻みで入っている。**
-
-検証を2つ通した。
-
-- 論文 Table 7 の72点と照合し、**全点0.5%以内で一致**
-- 同論文の式(7)-(11) に Table 6 の Bs, Bl と小粒子係数 1.1513 を入れて b を計算し、
-  **最大5.3%以内で一致** (最悪は Jerlov III の -5.3%。2023年の論文が III の Bl を
-  0.90 から 0.91 に更新しているので、その差と思われる)
-
-**実測点は412-715 nm にしかない。** それ以外の波長はモデルによる内挿・外挿なので、
-`status` を `model_extrapolation` にしてある。300-411 nm と 716-800 nm が該当する。
-
-`williamson2022_measured.csv` は生の実測点。Hollins & Williamson (2023) は、
-フィットしたスペクトルにはモデルのバイアスが入るため、**目的によっては生の点を
-使うほうがよい**と明言している (同論文 2.A節)。検証用にはこちらを使うこと。
-
-論文が最終平均に採用したのは「寄与した測定が5点以上」のものだけである。
-このフィルタを再現したところ、**a と b で53点ずつ、計106点となり論文と一致した。**
-除外された46点も `status = excluded_sparse` として残してある。
-Jerlov IA と 7C は全点が除外されている (測定キャンペーンが各1件のみ)。
-
-### 8. Austin & Petzold モデルの使いどころ
-
-`austin1986_model.csv` があれば、1波長の K の実測値から全スペクトルを再構成できる。
+Given `austin1986_model.csv`, a whole Kd spectrum can be reconstructed from a
+single measured value:
 
 ```
-K(λ2) = [M(λ2)/M(λ1)] · [K(λ1) - Kw(λ1)] + Kw(λ2)
+K(l2) = [M(l2)/M(l1)] * [K(l1) - Kw(l1)] + Kw(l2)
 ```
 
-適用範囲は論文が明示している。**K(490) < 0.16 1/m。** それより濁ると線形性が崩れる。
-また 590 nm より長波長では、Austin & Petzold (1990) が
-測定値との差が大きくなることを報告している。
+The paper states the limit: **K(490) < 0.16 1/m.** Linearity fails in more
+turbid water. Beyond 590 nm, Austin & Petzold (1990) report growing
+disagreement with measurement.
 
+## 9. About the Williamson & Hollins data (note)
 
-### 10. 後方散乱係数 bb は本データから導出できない (確定)
+`williamson2022_iop.csv` comes from the sheet `a,b JIB-5C` of
+`20221121-Dstl_MIOP_analysis_v3.xlsx` in the figshare dataset, not from the
+printed Table 7. **The paper prints 10 nm spacing; the spreadsheet holds 1
+nm.**
 
-**veiling light の計算には bb が要るが、収録したどの出典にも bb は無い。**
+Two checks were made:
 
-Haltrin (1999) 式(3) は、b と同じ2成分モデルから bb を与える。
+- 72 points against the printed Table 7: **all within 0.5 percent**
+- b recomputed from Eqs. (7)-(11) with the Bs, Bl of Table 6 and the
+  coefficient 1.1513: **within 5.3 percent**. The worst is Jerlov III at -5.3
+  percent, probably because the 2023 paper updates its Bl from 0.90 to 0.91.
+
+**Measured points exist only from 412 to 715 nm.** Everything outside that is
+model interpolation or extrapolation and is marked `model_extrapolation`;
+300-411 nm and 716-800 nm are affected.
+
+`williamson2022_measured.csv` holds the raw measured points. Hollins &
+Williamson (2023) state that the fitting process behind the smooth spectra
+would bias some analyses and that the individual points are preferable
+(section 2.A). Use these for validation.
+
+The paper kept only averages built from five or more measurements.
+Reproducing that filter gives **53 points each for a and b, 106 in total,
+matching the paper.** The 46 excluded points are kept with
+`status = excluded_sparse`. Jerlov IA and 7C are excluded throughout: one
+measurement campaign each.
+
+## 10. The backscattering coefficient cannot be derived from this data (confirmed)
+
+**Veiling light needs bb, and none of these sources contains it.**
+
+Haltrin (1999) Eq. (3) gives bb from the same two-component model:
 
 ```
-bb(λ) = 0.5·bw(λ) + Bs·bs⁰(λ)·Cs + Bl·bl⁰(λ)·Cl
-        Bs = 0.039 (小粒子の後方散乱確率), Bl = 6.4e-4 (大粒子)
+bb(l) = 0.5*bw(l) + Bs*bs(l)*Cs + Bl*bl(l)*Cl
+        Bs = 0.039 (small particles), Bl = 6.4e-4 (large)
 ```
 
-しかしこの式に Cs, Cl を入れると、出典によって答えが大きく食い違う。
+Feeding it the particle concentrations of the two sources gives answers that
+diverge:
 
-| Jerlov | W&H の Cs,Cl から | S&M の Cs,Cl から | 比 |
+| Type | From Williamson & Hollins | From Solonenko & Mobley | Ratio |
 |---|---|---|---|
-| IB | 0.0087 | 0.0325 | 3.7倍 |
-| II | 0.0080 | 0.0410 | 5.1倍 |
-| III | 0.0033 | 0.0398 | 12.2倍 |
-| 1C | 0.0036 | 0.0413 | 11.5倍 |
-| 3C | 0.0018 | 0.0398 | 22.3倍 |
-| 5C | 0.0013 | 0.0394 | 31.2倍 |
+| IB | 0.0087 | 0.0325 | 3.7x |
+| II | 0.0080 | 0.0410 | 5.1x |
+| III | 0.0033 | 0.0398 | 12.2x |
+| 1C | 0.0036 | 0.0413 | 11.5x |
+| 3C | 0.0018 | 0.0398 | 22.3x |
+| 5C | 0.0013 | 0.0394 | 31.2x |
 
-(550 nm での bb/b。実測の目安は外洋 0.005-0.01、沿岸 0.015-0.03)
+(bb/b at 550 nm. Reported ranges are roughly 0.005-0.01 for open ocean and
+0.015-0.03 for coastal water.)
 
-**どちらも目安の範囲から外れる。** W&H 由来は低すぎ、S&M 由来は高すぎる。
+**Neither is inside the plausible range.** The first is too low, the second
+too high.
 
-原因は明確である。Cs と Cl の配分は b を再現するためのフィッティング変数であり、
-実際の粒径分布ではない。W&H 自身が Table 6 の注記で
-"these parameters should be treated as fitting parameters, rather than the physical
-properties they represent" と明記している。
-b は散乱の総量なので配分が違っても再現できるが、bb は位相関数の別のモーメントなので
-配分が直接効く。したがって発散する。
+The reason is clear. The split between Cs and Cl is a fitting device, not a
+particle size distribution; Williamson & Hollins say so themselves in the note
+to their Table 6: "these parameters should be treated as fitting parameters,
+rather than the physical properties they represent". Total scattering can be
+reproduced with the wrong split, but backscattering is a different moment of
+the phase function and depends on it directly.
 
-**結論: bb は Jerlov 水質タイプによって決まらない。**
-パッケージでは bb を利用者が明示的に指定する入力として扱い、
-既定値を黙って使わないこと。
+**Conclusion: bb is not determined by the Jerlov classification.** This
+package requires the caller to supply it and has no default.
 
-#### bb の文献状況 (3層に分かれる)
+### The state of the bb literature
 
-**層1: bb 一般の文献 — 豊富にある。** 体積散乱関数の実測 (Petzold 1972)、位相関数の
-パラメータ化、粒子後方散乱率 bbp/bp の統計。数十年の蓄積がある。
-ただしこれらは「一般の海水」についてであり、Jerlov 水質タイプに紐づいていない。
+**Layer 1: bb in general. Plentiful.** Measured volume scattering functions
+(Petzold 1972), phase function parameterisations, statistics of the
+particulate backscattering ratio. Decades of work, but none of it tied to the
+Jerlov types.
 
-**層2: Jerlov タイプごとの bb — 探した範囲では存在しない。** これが実際の欠落である。
-近いものとして Neuner et al. (2020) Proc. SPIE 11506, 1150608, DOI 10.1117/12.2567076 が
-ビーム減衰 c を入力に機械学習で Jerlov タイプを分類しているが、要旨を読む限り
-主眼は分類であり、タイプごとの bb を導出したものではない。**要旨のみ確認、本文は未入手。**
+**Layer 2: bb per Jerlov type. Not found.** This is the actual gap. The
+closest is Neuner et al. (2020), Proc. SPIE 11506, 1150608, DOI
+`10.1117/12.2567076`, which classifies Jerlov types from beam attenuation by
+machine learning; from the abstract this is classification rather than
+derivation of bb per type. **Abstract only; the full text was not obtained.**
 
-**層3: 導出に必要なデータは存在する。** Smart (2007) が WOOD の内訳を示している。
+**Layer 3: the data to close it exists.** Smart (2007) gives the inventory of
+the World-wide Ocean Optics Database:
 
-> 242,000 を超える K プロファイル、約18,000 の c、10,000 の a、1,000 の b、
-> **1,200 の bb** プロファイル
+> more than 242,000 K profiles but only about 18,000 c profiles, 10,000 a
+> profiles, 1,000 b profiles, and **1,200 bb profiles**
 
-**bb のプロファイル数は b より多い。** Williamson & Hollins が b で6水質タイプの結果を
-出せた以上、同じキャンペーン照合の手法を bb に適用すれば結果が出る見込みがある。
-彼らの解析コードは figshare で公開されている。
-**これは未着手の研究課題であり、本パッケージの範囲外である。**
+**There are more bb profiles than b profiles.** Since Williamson & Hollins
+obtained results for six water types from the b data, the same campaign
+matching applied to bb should yield something, and their analysis code is
+public. **This is an open piece of research and out of scope for this
+package.**
 
-### 11. c から b への変換 (Smart 2007)
+## 11. Estimating b from c (note)
 
-`smart2007_b_from_c.csv`。透過率計は c を測るため、c → b の変換は実用上よく要る。
+`smart2007_b_from_c.csv`. A transmissometer measures c, so this conversion
+comes up often.
 
 ```
-b = (c - cw) × [表の比] + bw
+b = (c - cw) * ratio + bw
 ```
 
-出典: J. H. Smart, "Empirical algorithms for ocean optics parameters",
-Opt. Express 15(12), 7152-7164 (2007). DOI 10.1364/OE.15.007152. Table 1 より。
-オープンアクセス。
+Least squares fits for six datasets: the US continental shelf (CMO),
+Chesapeake Bay (COPE), the Sea of Japan and the Yellow Sea. **Accurate to
+about 10 percent.**
 
-米国大陸棚 (CMO)、チェサピーク湾 (COPE)、日本海、黄海の6データセットの
-最小二乗フィット。**誤差は概ね10%以内。**
+Three cautions:
 
-適用上の注意が3つある。
+- **Use the upper bound for turbid water (c at 488 nm above 1.0 1/m) and the
+  lower bound for clear water.**
+- **Ratios are lower than tabulated in CDOM-rich water**, such as near a river
+  mouth, particularly below 488 nm.
+- c itself carries perhaps 10 percent error from forward-scattered light
+  reaching the detector.
 
-- **濁った水 (c488 > 1.0 1/m) では上限値、澄んだ水では下限値のほうが近い**
-- **CDOM が多い水 (河口付近など) では表の値より低くなる。** 特に488 nm より短波長側
-- c 自体の測定に前方散乱由来の10%程度の誤差が入りうる
+The same paper gives further relations, not shipped here:
 
-同論文はほかに次の関係も示している (本パッケージには未収録)。
-
-- `a = μ̄ · K`、μ̄ ≈ 0.8。誤差約20%。外洋の平均コサインの範囲は 0.6-1.0
-- Shannon 改訂版: 535 nm で `c = 1.74 K` (K < 0.06 1/m のとき)。K からの c 推定の誤差は
-  サルガッソ海25%、米国大陸棚40%、日本海18%、黄海15%
-- Austin & Petzold の波長変換の精度は 590 nm 以下で約8%、670 nm で31%に劣化する
-  (§8 に記載した Austin & Petzold (1990) の結論と独立に一致)
+- `a = mu * K` with mu about 0.8, to within 20 percent. The oceanic range of
+  the average cosine is 0.6 to 1.0.
+- Shannon revised: `c = 1.74 K` at 535 nm for K < 0.06 1/m. Estimating c from
+  K has a median error of 25 percent in the Sargasso Sea, 40 percent on the
+  US continental shelf, 18 percent in the Sea of Japan and 15 percent in the
+  Yellow Sea.
+- The accuracy of the Austin & Petzold wavelength conversion is about 8
+  percent up to 590 nm, degrading to 31 percent at 670 nm. This agrees
+  independently with the conclusion of Austin & Petzold (1990) noted in
+  section 8.

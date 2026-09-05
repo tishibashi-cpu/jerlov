@@ -1,31 +1,31 @@
 wavelength_nm,statistic,b_minus_bw_over_c_minus_cw,note
-412,average,0.716,6データセットの最小二乗フィットの平均。誤差は概ね10%以内
-412,min,0.598,澄んだ水ではこちらが近い
-412,max,0.84,濁った水 (c488 > 1.0 1/m) ではこちらが近い
-440,average,0.759,6データセットの最小二乗フィットの平均。誤差は概ね10%以内
-440,min,0.648,澄んだ水ではこちらが近い
-440,max,0.872,濁った水 (c488 > 1.0 1/m) ではこちらが近い
-488,average,0.84,6データセットの最小二乗フィットの平均。誤差は概ね10%以内
-488,min,0.75,澄んだ水ではこちらが近い
-488,max,0.914,濁った水 (c488 > 1.0 1/m) ではこちらが近い
-510,average,0.861,6データセットの最小二乗フィットの平均。誤差は概ね10%以内
-510,min,0.78,澄んだ水ではこちらが近い
-510,max,0.927,濁った水 (c488 > 1.0 1/m) ではこちらが近い
-532,average,0.893,6データセットの最小二乗フィットの平均。誤差は概ね10%以内
-532,min,0.798,澄んだ水ではこちらが近い
-532,max,0.937,濁った水 (c488 > 1.0 1/m) ではこちらが近い
-555,average,0.904,6データセットの最小二乗フィットの平均。誤差は概ね10%以内
-555,min,0.822,澄んだ水ではこちらが近い
-555,max,0.949,濁った水 (c488 > 1.0 1/m) ではこちらが近い
-630,average,0.89,6データセットの最小二乗フィットの平均。誤差は概ね10%以内
-630,min,0.828,澄んだ水ではこちらが近い
-630,max,0.959,濁った水 (c488 > 1.0 1/m) ではこちらが近い
-650,average,0.921,6データセットの最小二乗フィットの平均。誤差は概ね10%以内
-650,min,0.83,澄んだ水ではこちらが近い
-650,max,0.978,濁った水 (c488 > 1.0 1/m) ではこちらが近い
-676,average,0.92,6データセットの最小二乗フィットの平均。誤差は概ね10%以内
-676,min,0.833,澄んだ水ではこちらが近い
-676,max,0.984,濁った水 (c488 > 1.0 1/m) ではこちらが近い
-715,average,0.945,6データセットの最小二乗フィットの平均。誤差は概ね10%以内
-715,min,0.837,澄んだ水ではこちらが近い
-715,max,0.999,濁った水 (c488 > 1.0 1/m) ではこちらが近い
+412,average,0.716,"mean of the least squares fits for six datasets; accurate to about 10 percent. Ratios are lower than this in CDOM-rich water, particularly below 488 nm"
+412,min,0.598,closer for clear water
+412,max,0.84,closer for turbid water (c at 488 nm above 1.0 1/m)
+440,average,0.759,"mean of the least squares fits for six datasets; accurate to about 10 percent. Ratios are lower than this in CDOM-rich water, particularly below 488 nm"
+440,min,0.648,closer for clear water
+440,max,0.872,closer for turbid water (c at 488 nm above 1.0 1/m)
+488,average,0.84,"mean of the least squares fits for six datasets; accurate to about 10 percent. Ratios are lower than this in CDOM-rich water, particularly below 488 nm"
+488,min,0.75,closer for clear water
+488,max,0.914,closer for turbid water (c at 488 nm above 1.0 1/m)
+510,average,0.861,"mean of the least squares fits for six datasets; accurate to about 10 percent. Ratios are lower than this in CDOM-rich water, particularly below 488 nm"
+510,min,0.78,closer for clear water
+510,max,0.927,closer for turbid water (c at 488 nm above 1.0 1/m)
+532,average,0.893,"mean of the least squares fits for six datasets; accurate to about 10 percent. Ratios are lower than this in CDOM-rich water, particularly below 488 nm"
+532,min,0.798,closer for clear water
+532,max,0.937,closer for turbid water (c at 488 nm above 1.0 1/m)
+555,average,0.904,"mean of the least squares fits for six datasets; accurate to about 10 percent. Ratios are lower than this in CDOM-rich water, particularly below 488 nm"
+555,min,0.822,closer for clear water
+555,max,0.949,closer for turbid water (c at 488 nm above 1.0 1/m)
+630,average,0.89,"mean of the least squares fits for six datasets; accurate to about 10 percent. Ratios are lower than this in CDOM-rich water, particularly below 488 nm"
+630,min,0.828,closer for clear water
+630,max,0.959,closer for turbid water (c at 488 nm above 1.0 1/m)
+650,average,0.921,"mean of the least squares fits for six datasets; accurate to about 10 percent. Ratios are lower than this in CDOM-rich water, particularly below 488 nm"
+650,min,0.83,closer for clear water
+650,max,0.978,closer for turbid water (c at 488 nm above 1.0 1/m)
+676,average,0.92,"mean of the least squares fits for six datasets; accurate to about 10 percent. Ratios are lower than this in CDOM-rich water, particularly below 488 nm"
+676,min,0.833,closer for clear water
+676,max,0.984,closer for turbid water (c at 488 nm above 1.0 1/m)
+715,average,0.945,"mean of the least squares fits for six datasets; accurate to about 10 percent. Ratios are lower than this in CDOM-rich water, particularly below 488 nm"
+715,min,0.837,closer for clear water
+715,max,0.999,closer for turbid water (c at 488 nm above 1.0 1/m)

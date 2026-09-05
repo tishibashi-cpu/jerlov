@@ -1,21 +1,21 @@
 # -*- coding: utf-8 -*-
-"""Rebuild the packaged CSV tables from the primary sources.
+"""Build the Jerlov (1976) and Solonenko & Mobley (2015) tables.
 
-Run from the repository root. See tools/README.md for the inputs each script
-needs and where to obtain them; they are not redistributed here.
+The Jerlov Kd spectra are taken from the Dstl dataset. The Solonenko & Mobley
+coefficients are transcribed literals below, checked against that paper's own
+equations before anything is written; the duplicated rows in its Table 7 were
+found by exactly these checks.
 """
 
-import pathlib
+import sys, pathlib
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
+from _common import DATA_DIR, require, report
 
-ROOT = pathlib.Path(__file__).resolve().parent.parent
-SOURCES_DIR = ROOT / "sources"
-DATA_DIR = ROOT / "uwlight" / "data"
 
-"""Jerlov(1976) と Solonenko & Mobley(2015) の係数表を CSV にする。"""
 import csv, numpy as np
 
 WL = [300,310,350,375,400,425,450,475,500,525,550,575,600,625,650,675,700]
-N = None  # 論文の値が誤りで採用しない箇所
+N = None  # a published value that is wrong and is not used
 
 # --- Solonenko & Mobley (2015) Table 4-8 : Kd0, Kd, KdH, a, b -----------------
 SM = {
@@ -115,9 +115,9 @@ T3 = {"I":(0.010,2e-4,8e-5,0.93,2.34,0.018), "IA":(0.027,0.005,0.002,0.44,1.69,0
       "7C":(8.4,0.067,2.64,0.0005,2.25,0.017), "9C":(9.1,0.016,3.54,0.0005,4.32,0.015)}
 OCEANIC = {"I","IA","IB","II","III"}
 CORRUPT = {"3C":[675,700], "5C":[600,625,650,675,700]}
-EXTRAP  = {"1C","3C","5C","7C","9C"}   # 300, 310 nm が外挿 (論文の括弧)
+EXTRAP  = {"1C","3C","5C","7C","9C"}   # 300 and 310 nm extrapolated (parenthesised in the paper)
 
-# Williamson & Hollins (2022) が figshare のスプレッドシートで差し替えた値
+# Values Williamson & Hollins (2022) substituted in their figshare spreadsheet.
 WH = {("a","3C",675):0.477, ("a","3C",700):0.592,
       ("b","3C",675):0.745, ("b","3C",700):0.690,
       ("a","5C",600):0.259, ("a","5C",625):0.327, ("a","5C",650):0.367,
@@ -126,18 +126,18 @@ WH = {("a","3C",675):0.477, ("a","3C",700):0.592,
       ("b","5C",675):0.940, ("b","5C",700):0.883}
 
 def b_eq8(lam, Bs, Bl):
-    """S&M 式(8): b = bw + Bs*bs + Bl*bl  (小粒子の係数は S&M の 1.513)"""
+    """Solonenko & Mobley Eq. (8). Uses their own 1.513, not Haltrin's 1.151302."""
     lam = np.asarray(lam, float)
     return (5.83e-3*(400/lam)**4.322 + Bs*1.513*(400/lam)**1.7 + Bl*0.3411*(400/lam)**0.3)
 
 def kd_eq3(a, b, eta, mu):
-    """S&M 式(3)"""
+    """Solonenko & Mobley Eq. (3)."""
     return (a/mu)*np.sqrt(1 + (b/a)*((0.451+2.584*eta)*mu - (0.205+0.521*eta)))
 
 # --- Jerlov 1976 (Dstl ip_jerlov.csv, 1 nm) -----------------------------------
 COL = {"I":"a_I","IA":"b_IA","IB":"c_IB","II":"d_II","III":"e_III",
        "1C":"f_1C","3C":"g_3C","5C":"h_5C","7C":"i_7C","9C":"j_9C"}
-src = [r for r in csv.DictReader(open(SOURCES_DIR / "20290782/ip_jerlov.csv"))
+src = [r for r in csv.DictReader(open(require("20290782/ip_jerlov.csv")))
        if r["Wavelength"].strip()]
 JWL = [int(r["Wavelength"]) for r in src]
 def jerlov(t, w):
@@ -145,8 +145,8 @@ def jerlov(t, w):
     s = src[JWL.index(w)][COL[t]]
     return float(s) if s and s.strip() else None
 
-# =============================== 自己検証 =====================================
-print("=== 検証1: 式(3) が Kd 列を再現するか (転記ミス検出) ===")
+# ------------------------------- self-checks --------------------------------
+print("check 1: does Eq. (3) reproduce the Kd column? (catches transcription errors)")
 worst = []
 for t, rows in SM.items():
     eta = T3[t][3]; mu = 0.98 if t in OCEANIC else 0.85
@@ -155,29 +155,54 @@ for t, rows in SM.items():
         if a is None: continue
         e = 100*(kd_eq3(a, b, eta, mu) - kd)/kd
         if abs(e) > 8: worst.append((t, w, round(e,1)))
-print("  ズレ>8%:", worst if worst else "なし")
+print("  error > 8%:", worst if worst else "none")
+if worst:
+    raise SystemExit(f"Eq. (3) does not reproduce the Kd column: {worst}")
 
-print("=== 検証2: 式(8) が b 列を再現するか ===")
-bad = []
+# Types I and IA are known not to reproduce: their Table 3 entries are
+# inconsistent with their own b column. See DATA.md section 4.
+KNOWN_BAD_B = {"I", "IA"}
+print("check 2: does Eq. (8) reproduce the b column?")
+unexpected = []
 for t, rows in SM.items():
     Bl, Bs = T3[t][1], T3[t][2]
+    worst = 0.0
     for i, w in enumerate(WL):
         b = rows[i][4]
         if b is None: continue
         e = 100*(b_eq8(w, Bs, Bl) - b)/b
-        if abs(e) > 3: bad.append((t, w, round(e,1)))
-print("  ズレ>3%:", bad if bad else "なし")
+        worst = max(worst, abs(e))
+    tag = "known defect, DATA.md section 4" if t in KNOWN_BAD_B else ""
+    if t not in KNOWN_BAD_B and worst > 3:
+        unexpected.append((t, round(worst, 1)))
+        tag = "UNEXPECTED"
+    print(f"  {t:>4}: max {worst:5.1f}%  {tag}")
+if unexpected:
+    raise SystemExit(f"unexpected disagreement with Eq. (8): {unexpected}")
 
-print("=== 検証3: Kd0 が Jerlov 1976 と一致するか ===")
+# The Kd0 column is a reference spectrum from Jerlov (1951, 1968), not from
+# Jerlov (1976), so it is not expected to agree; the size of the disagreement
+# could not be explained because those editions were not obtainable. See
+# DATA.md sections 2, 3 and 5. This check therefore reports rather than fails,
+# but the count is fixed so that a change is noticed.
+EXPECTED_KD0_MISMATCHES = 30
+print("check 3: how far is the Kd0 column from Jerlov 1976?")
 mismatch = []
 for t, rows in SM.items():
     for i, w in enumerate(WL):
         kd0 = rows[i][0]; jv = jerlov(t, w)
         if kd0 is None or jv is None: continue
-        if w in (300, 310) and t in EXTRAP: continue   # 外挿なので比較しない
+        if w in (300, 310) and t in EXTRAP: continue   # extrapolated; not comparable
         e = 100*(kd0 - jv)/jv
         if abs(e) > 10: mismatch.append((t, w, kd0, jv, round(e,1)))
-for m in mismatch: print("  ", m)
+print(f"  {len(mismatch)} of the compared points differ by more than 10%")
+print("  expected: the two columns come from different editions of Jerlov")
+print("  see DATA.md sections 2, 3 and 5")
+if len(mismatch) != EXPECTED_KD0_MISMATCHES:
+    raise SystemExit(
+        f"expected {EXPECTED_KD0_MISMATCHES} mismatches, found {len(mismatch)}: "
+        f"{mismatch}"
+    )
 
 # ============================= CSV 1: Jerlov 1976 =============================
 with open(DATA_DIR / "jerlov1976_kd.csv", "w", newline="") as f:
@@ -187,12 +212,12 @@ with open(DATA_DIR / "jerlov1976_kd.csv", "w", newline="") as f:
         for w in JWL:
             v = jerlov(t, w)
             if v is None:
-                wr.writerow([t, w, "", "missing", "Jerlov 1976 にこの波長の値がない"])
+                wr.writerow([t, w, "", "missing", "Jerlov 1976 has no value at this wavelength"])
             else:
                 wr.writerow([t, w, f"{v:.6g}", "ok", ""])
 
 # ============================= CSV 2: S&M 2015 ================================
-CORRUPT_NOTE = "論文の値は行複写により誤り"
+CORRUPT_NOTE = "the published value is wrong: the row was duplicated from another wavelength"
 rows_out = []
 for t, rows in SM.items():
     Bl, Bs = T3[t][1], T3[t][2]
@@ -207,32 +232,36 @@ for t, rows in SM.items():
                 if q == "b":
                     val = round(float(b_eq8(w, Bs, Bl)), 4); status = "reconstructed"
                     src_of = "solonenko2015_eq8"
-                    note = (CORRUPT_NOTE + "。同論文の式(8)と表3のBs,Blで復元。"
-                            "S&M自身の小粒子係数1.513を使用 (Haltrin原典の1.151302ではない。README §6)。"
-                            "W&Hの線形外挿値を参考列に併記")
+                    note = (CORRUPT_NOTE + ". Reconstructed from Eq. (8) with the Bs, Bl of "
+                            "Table 3, using the paper's own small-particle coefficient 1.513 "
+                            "(not Haltrin's 1.151302; see DATA.md section 6). The linear "
+                            "extrapolation of Williamson & Hollins is given for comparison")
                 else:
                     val = ""; status = "missing"; src_of = ""
-                    note = CORRUPT_NOTE + "。復元不能" + ("。W&H は内挿で穴埋めしている" if wh else "")
+                    note = CORRUPT_NOTE + ". Not recoverable" + (". Williamson & Hollins filled the gap by interpolation" if wh else "")
                 rows_out.append([t, w, q, val, "1/m", status, "", wh, src_of, note]); continue
 
             if q == "Kd0" and w in (300,310) and t in EXTRAP:
                 status = "extrapolated"
-                note = "Jerlov のデータを長波長側から外挿した値 (論文で括弧付き)"
+                note = "extrapolated from Jerlov's data at longer wavelengths; parenthesised in the paper"
             elif q == "Kd0" and w == 600 and t in {"I","IA","IB","II"}:
                 status = "suspect"
-                note = ("同じ表の a=%.3f を下回る。Kd は a を上回るはずで物理的に不整合。"
-                        "同表の Kd(モデル値)=%.3f とも %+.0f%% 違う" % (vals[3], vals[1], 100*(pub-vals[1])/vals[1]))
+                note = ("below a=%.3f in the same table, which is not physically possible: "
+                        "Kd must exceed a. Also differs by %+.0f%% from the modelled Kd=%.3f "
+                        "in the same table" % (vals[3], 100*(pub-vals[1])/vals[1], vals[1]))
             elif q == "Kd0" and t == "1C" and w >= 525:
                 status = "suspect"
-                note = "525-700 nm の8点が同じ表の Jerlov III と完全一致。列の複写の可能性"
+                note = "identical to Jerlov III in the same table at all eight wavelengths from 525 to 700 nm; possibly a duplicated column"
             elif q == "b" and t == "IA":
                 status = "suspect"
-                note = ("表3のIAの Bl=0.005 が同論文のb列と矛盾する。b列にフィットすると Bl≈0.001 "
-                        "(Bs=0.002は一致)。b列側が正しいと考えられる")
+                note = ("Table 3 gives Bl=0.005 for IA, which is inconsistent with the b "
+                        "column of the same paper: fitting the b column gives Bl of about 0.001 "
+                        "(Bs=0.002 does agree). The b column appears to be the correct one")
             elif q == "b" and t == "I":
                 status = "suspect"
-                note = ("表3のIの Bs=8e-5 が同論文のb列と矛盾する "
-                        "(b列へのフィットは Bs≈2.1e-4)。ただし値自体が微小")
+                note = ("Table 3 gives Bs=8e-5 for I, which is inconsistent with the b column "
+                        "of the same paper (fitting it gives Bs of about 2.1e-4). The values "
+                        "themselves are very small")
             rows_out.append([t, w, q, val, "1/m", status, val, "", src_of, note])
 
 import io
@@ -243,4 +272,5 @@ with open(DATA_DIR / "solonenko2015_iop.csv","w",newline="",encoding="utf-8") as
     wr.writerows(rows_out)
 
 from collections import Counter
-print("solonenko2015_iop.csv:", len(rows_out), "行  status:", dict(Counter(r[5] for r in rows_out)))
+print("  status counts:", dict(Counter(r[5] for r in rows_out)))
+report("solonenko2015_iop.csv", len(rows_out))

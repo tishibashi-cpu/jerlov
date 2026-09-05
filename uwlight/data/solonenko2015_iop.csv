@@ -3,172 +3,172 @@ I,300,Kd0,0.173,1/m,ok,0.173,,solonenko2015,
 I,300,Kd,0.186,1/m,ok,0.186,,solonenko2015,
 I,300,KdH,0.2,1/m,ok,0.2,,solonenko2015,
 I,300,a,0.163,1/m,ok,0.163,,solonenko2015,
-I,300,b,0.0208,1/m,suspect,0.0208,,solonenko2015,表3のIの Bs=8e-5 が同論文のb列と矛盾する (b列へのフィットは Bs≈2.1e-4)。ただし値自体が微小
+I,300,b,0.0208,1/m,suspect,0.0208,,solonenko2015,"Table 3 gives Bs=8e-5 for I, which is inconsistent with the b column of the same paper (fitting it gives Bs of about 2.1e-4). The values themselves are very small"
 I,310,Kd0,0.151,1/m,ok,0.151,,solonenko2015,
 I,310,Kd,0.154,1/m,ok,0.154,,solonenko2015,
 I,310,KdH,0.167,1/m,ok,0.167,,solonenko2015,
 I,310,a,0.134,1/m,ok,0.134,,solonenko2015,
-I,310,b,0.0181,1/m,suspect,0.0181,,solonenko2015,表3のIの Bs=8e-5 が同論文のb列と矛盾する (b列へのフィットは Bs≈2.1e-4)。ただし値自体が微小
+I,310,b,0.0181,1/m,suspect,0.0181,,solonenko2015,"Table 3 gives Bs=8e-5 for I, which is inconsistent with the b column of the same paper (fitting it gives Bs of about 2.1e-4). The values themselves are very small"
 I,350,Kd0,0.0619,1/m,ok,0.0619,,solonenko2015,
 I,350,Kd,0.059,1/m,ok,0.059,,solonenko2015,
 I,350,KdH,0.063,1/m,ok,0.063,,solonenko2015,
 I,350,a,0.048,1/m,ok,0.048,,solonenko2015,
-I,350,b,0.0108,1/m,suspect,0.0108,,solonenko2015,表3のIの Bs=8e-5 が同論文のb列と矛盾する (b列へのフィットは Bs≈2.1e-4)。ただし値自体が微小
+I,350,b,0.0108,1/m,suspect,0.0108,,solonenko2015,"Table 3 gives Bs=8e-5 for I, which is inconsistent with the b column of the same paper (fitting it gives Bs of about 2.1e-4). The values themselves are very small"
 I,375,Kd0,0.0377,1/m,ok,0.0377,,solonenko2015,
 I,375,Kd,0.038,1/m,ok,0.038,,solonenko2015,
 I,375,KdH,0.04,1/m,ok,0.04,,solonenko2015,
 I,375,a,0.03,1/m,ok,0.03,,solonenko2015,
-I,375,b,0.00811,1/m,suspect,0.00811,,solonenko2015,表3のIの Bs=8e-5 が同論文のb列と矛盾する (b列へのフィットは Bs≈2.1e-4)。ただし値自体が微小
+I,375,b,0.00811,1/m,suspect,0.00811,,solonenko2015,"Table 3 gives Bs=8e-5 for I, which is inconsistent with the b column of the same paper (fitting it gives Bs of about 2.1e-4). The values themselves are very small"
 I,400,Kd0,0.0284,1/m,ok,0.0284,,solonenko2015,
 I,400,Kd,0.028,1/m,ok,0.028,,solonenko2015,
 I,400,KdH,0.029,1/m,ok,0.029,,solonenko2015,
 I,400,a,0.022,1/m,ok,0.022,,solonenko2015,
-I,400,b,0.0062,1/m,suspect,0.0062,,solonenko2015,表3のIの Bs=8e-5 が同論文のb列と矛盾する (b列へのフィットは Bs≈2.1e-4)。ただし値自体が微小
+I,400,b,0.0062,1/m,suspect,0.0062,,solonenko2015,"Table 3 gives Bs=8e-5 for I, which is inconsistent with the b column of the same paper (fitting it gives Bs of about 2.1e-4). The values themselves are very small"
 I,425,Kd0,0.0222,1/m,ok,0.0222,,solonenko2015,
 I,425,Kd,0.022,1/m,ok,0.022,,solonenko2015,
 I,425,KdH,0.023,1/m,ok,0.023,,solonenko2015,
 I,425,a,0.017,1/m,ok,0.017,,solonenko2015,
-I,425,b,0.00482,1/m,suspect,0.00482,,solonenko2015,表3のIの Bs=8e-5 が同論文のb列と矛盾する (b列へのフィットは Bs≈2.1e-4)。ただし値自体が微小
+I,425,b,0.00482,1/m,suspect,0.00482,,solonenko2015,"Table 3 gives Bs=8e-5 for I, which is inconsistent with the b column of the same paper (fitting it gives Bs of about 2.1e-4). The values themselves are very small"
 I,450,Kd0,0.0192,1/m,ok,0.0192,,solonenko2015,
 I,450,Kd,0.022,1/m,ok,0.022,,solonenko2015,
 I,450,KdH,0.023,1/m,ok,0.023,,solonenko2015,
 I,450,a,0.018,1/m,ok,0.018,,solonenko2015,
-I,450,b,0.00381,1/m,suspect,0.00381,,solonenko2015,表3のIの Bs=8e-5 が同論文のb列と矛盾する (b列へのフィットは Bs≈2.1e-4)。ただし値自体が微小
+I,450,b,0.00381,1/m,suspect,0.00381,,solonenko2015,"Table 3 gives Bs=8e-5 for I, which is inconsistent with the b column of the same paper (fitting it gives Bs of about 2.1e-4). The values themselves are very small"
 I,475,Kd0,0.0182,1/m,ok,0.0182,,solonenko2015,
 I,475,Kd,0.021,1/m,ok,0.021,,solonenko2015,
 I,475,KdH,0.023,1/m,ok,0.023,,solonenko2015,
 I,475,a,0.019,1/m,ok,0.019,,solonenko2015,
-I,475,b,0.00306,1/m,suspect,0.00306,,solonenko2015,表3のIの Bs=8e-5 が同論文のb列と矛盾する (b列へのフィットは Bs≈2.1e-4)。ただし値自体が微小
+I,475,b,0.00306,1/m,suspect,0.00306,,solonenko2015,"Table 3 gives Bs=8e-5 for I, which is inconsistent with the b column of the same paper (fitting it gives Bs of about 2.1e-4). The values themselves are very small"
 I,500,Kd0,0.0284,1/m,ok,0.0284,,solonenko2015,
 I,500,Kd,0.029,1/m,ok,0.029,,solonenko2015,
 I,500,KdH,0.03,1/m,ok,0.03,,solonenko2015,
 I,500,a,0.026,1/m,ok,0.026,,solonenko2015,
-I,500,b,0.00249,1/m,suspect,0.00249,,solonenko2015,表3のIの Bs=8e-5 が同論文のb列と矛盾する (b列へのフィットは Bs≈2.1e-4)。ただし値自体が微小
+I,500,b,0.00249,1/m,suspect,0.00249,,solonenko2015,"Table 3 gives Bs=8e-5 for I, which is inconsistent with the b column of the same paper (fitting it gives Bs of about 2.1e-4). The values themselves are very small"
 I,525,Kd0,0.0398,1/m,ok,0.0398,,solonenko2015,
 I,525,Kd,0.049,1/m,ok,0.049,,solonenko2015,
 I,525,KdH,0.051,1/m,ok,0.051,,solonenko2015,
 I,525,a,0.046,1/m,ok,0.046,,solonenko2015,
-I,525,b,0.00205,1/m,suspect,0.00205,,solonenko2015,表3のIの Bs=8e-5 が同論文のb列と矛盾する (b列へのフィットは Bs≈2.1e-4)。ただし値自体が微小
+I,525,b,0.00205,1/m,suspect,0.00205,,solonenko2015,"Table 3 gives Bs=8e-5 for I, which is inconsistent with the b column of the same paper (fitting it gives Bs of about 2.1e-4). The values themselves are very small"
 I,550,Kd0,0.0598,1/m,ok,0.0598,,solonenko2015,
 I,550,Kd,0.065,1/m,ok,0.065,,solonenko2015,
 I,550,KdH,0.068,1/m,ok,0.068,,solonenko2015,
 I,550,a,0.062,1/m,ok,0.062,,solonenko2015,
-I,550,b,0.0017,1/m,suspect,0.0017,,solonenko2015,表3のIの Bs=8e-5 が同論文のb列と矛盾する (b列へのフィットは Bs≈2.1e-4)。ただし値自体が微小
+I,550,b,0.0017,1/m,suspect,0.0017,,solonenko2015,"Table 3 gives Bs=8e-5 for I, which is inconsistent with the b column of the same paper (fitting it gives Bs of about 2.1e-4). The values themselves are very small"
 I,575,Kd0,0.0834,1/m,ok,0.0834,,solonenko2015,
 I,575,Kd,0.085,1/m,ok,0.085,,solonenko2015,
 I,575,KdH,0.089,1/m,ok,0.089,,solonenko2015,
 I,575,a,0.082,1/m,ok,0.082,,solonenko2015,
-I,575,b,0.00143,1/m,suspect,0.00143,,solonenko2015,表3のIの Bs=8e-5 が同論文のb列と矛盾する (b列へのフィットは Bs≈2.1e-4)。ただし値自体が微小
-I,600,Kd0,0.163,1/m,suspect,0.163,,solonenko2015,同じ表の a=0.228 を下回る。Kd は a を上回るはずで物理的に不整合。同表の Kd(モデル値)=0.233 とも -30% 違う
+I,575,b,0.00143,1/m,suspect,0.00143,,solonenko2015,"Table 3 gives Bs=8e-5 for I, which is inconsistent with the b column of the same paper (fitting it gives Bs of about 2.1e-4). The values themselves are very small"
+I,600,Kd0,0.163,1/m,suspect,0.163,,solonenko2015,"below a=0.228 in the same table, which is not physically possible: Kd must exceed a. Also differs by -30% from the modelled Kd=0.233 in the same table"
 I,600,Kd,0.233,1/m,ok,0.233,,solonenko2015,
 I,600,KdH,0.242,1/m,ok,0.242,,solonenko2015,
 I,600,a,0.228,1/m,ok,0.228,,solonenko2015,
-I,600,b,0.00122,1/m,suspect,0.00122,,solonenko2015,表3のIの Bs=8e-5 が同論文のb列と矛盾する (b列へのフィットは Bs≈2.1e-4)。ただし値自体が微小
+I,600,b,0.00122,1/m,suspect,0.00122,,solonenko2015,"Table 3 gives Bs=8e-5 for I, which is inconsistent with the b column of the same paper (fitting it gives Bs of about 2.1e-4). The values themselves are very small"
 I,625,Kd0,0.301,1/m,ok,0.301,,solonenko2015,
 I,625,Kd,0.302,1/m,ok,0.302,,solonenko2015,
 I,625,KdH,0.312,1/m,ok,0.312,,solonenko2015,
 I,625,a,0.295,1/m,ok,0.295,,solonenko2015,
-I,625,b,0.00104,1/m,suspect,0.00104,,solonenko2015,表3のIの Bs=8e-5 が同論文のb列と矛盾する (b列へのフィットは Bs≈2.1e-4)。ただし値自体が微小
+I,625,b,0.00104,1/m,suspect,0.00104,,solonenko2015,"Table 3 gives Bs=8e-5 for I, which is inconsistent with the b column of the same paper (fitting it gives Bs of about 2.1e-4). The values themselves are very small"
 I,650,Kd0,0.357,1/m,ok,0.357,,solonenko2015,
 I,650,Kd,0.341,1/m,ok,0.341,,solonenko2015,
 I,650,KdH,0.359,1/m,ok,0.359,,solonenko2015,
 I,650,a,0.334,1/m,ok,0.334,,solonenko2015,
-I,650,b,0.000899,1/m,suspect,0.000899,,solonenko2015,表3のIの Bs=8e-5 が同論文のb列と矛盾する (b列へのフィットは Bs≈2.1e-4)。ただし値自体が微小
+I,650,b,0.000899,1/m,suspect,0.000899,,solonenko2015,"Table 3 gives Bs=8e-5 for I, which is inconsistent with the b column of the same paper (fitting it gives Bs of about 2.1e-4). The values themselves are very small"
 I,675,Kd0,0.416,1/m,ok,0.416,,solonenko2015,
 I,675,Kd,0.444,1/m,ok,0.444,,solonenko2015,
 I,675,KdH,0.471,1/m,ok,0.471,,solonenko2015,
 I,675,a,0.434,1/m,ok,0.434,,solonenko2015,
-I,675,b,0.000782,1/m,suspect,0.000782,,solonenko2015,表3のIの Bs=8e-5 が同論文のb列と矛盾する (b列へのフィットは Bs≈2.1e-4)。ただし値自体が微小
+I,675,b,0.000782,1/m,suspect,0.000782,,solonenko2015,"Table 3 gives Bs=8e-5 for I, which is inconsistent with the b column of the same paper (fitting it gives Bs of about 2.1e-4). The values themselves are very small"
 I,700,Kd0,0.528,1/m,ok,0.528,,solonenko2015,
 I,700,Kd,0.595,1/m,ok,0.595,,solonenko2015,
 I,700,KdH,0.653,1/m,ok,0.653,,solonenko2015,
 I,700,a,0.582,1/m,ok,0.582,,solonenko2015,
-I,700,b,0.000685,1/m,suspect,0.000685,,solonenko2015,表3のIの Bs=8e-5 が同論文のb列と矛盾する (b列へのフィットは Bs≈2.1e-4)。ただし値自体が微小
+I,700,b,0.000685,1/m,suspect,0.000685,,solonenko2015,"Table 3 gives Bs=8e-5 for I, which is inconsistent with the b column of the same paper (fitting it gives Bs of about 2.1e-4). The values themselves are very small"
 IA,300,Kd0,0.223,1/m,ok,0.223,,solonenko2015,
 IA,300,Kd,0.241,1/m,ok,0.241,,solonenko2015,
 IA,300,KdH,0.266,1/m,ok,0.266,,solonenko2015,
 IA,300,a,0.221,1/m,ok,0.221,,solonenko2015,
-IA,300,b,0.0255,1/m,suspect,0.0255,,solonenko2015,表3のIAの Bl=0.005 が同論文のb列と矛盾する。b列にフィットすると Bl≈0.001 (Bs=0.002は一致)。b列側が正しいと考えられる
+IA,300,b,0.0255,1/m,suspect,0.0255,,solonenko2015,"Table 3 gives Bl=0.005 for IA, which is inconsistent with the b column of the same paper: fitting the b column gives Bl of about 0.001 (Bs=0.002 does agree). The b column appears to be the correct one"
 IA,310,Kd0,0.186,1/m,ok,0.186,,solonenko2015,
 IA,310,Kd,0.199,1/m,ok,0.199,,solonenko2015,
 IA,310,KdH,0.218,1/m,ok,0.218,,solonenko2015,
 IA,310,a,0.181,1/m,ok,0.181,,solonenko2015,
-IA,310,b,0.0226,1/m,suspect,0.0226,,solonenko2015,表3のIAの Bl=0.005 が同論文のb列と矛盾する。b列にフィットすると Bl≈0.001 (Bs=0.002は一致)。b列側が正しいと考えられる
+IA,310,b,0.0226,1/m,suspect,0.0226,,solonenko2015,"Table 3 gives Bl=0.005 for IA, which is inconsistent with the b column of the same paper: fitting the b column gives Bl of about 0.001 (Bs=0.002 does agree). The b column appears to be the correct one"
 IA,350,Kd0,0.078,1/m,ok,0.078,,solonenko2015,
 IA,350,Kd,0.0776,1/m,ok,0.0776,,solonenko2015,
 IA,350,KdH,0.085,1/m,ok,0.085,,solonenko2015,
 IA,350,a,0.0673,1/m,ok,0.0673,,solonenko2015,
-IA,350,b,0.0145,1/m,suspect,0.0145,,solonenko2015,表3のIAの Bl=0.005 が同論文のb列と矛盾する。b列にフィットすると Bl≈0.001 (Bs=0.002は一致)。b列側が正しいと考えられる
+IA,350,b,0.0145,1/m,suspect,0.0145,,solonenko2015,"Table 3 gives Bl=0.005 for IA, which is inconsistent with the b column of the same paper: fitting the b column gives Bl of about 0.001 (Bs=0.002 does agree). The b column appears to be the correct one"
 IA,375,Kd0,0.05,1/m,ok,0.05,,solonenko2015,
 IA,375,Kd,0.049,1/m,ok,0.049,,solonenko2015,
 IA,375,KdH,0.053,1/m,ok,0.053,,solonenko2015,
 IA,375,a,0.0413,1/m,ok,0.0413,,solonenko2015,
-IA,375,b,0.0114,1/m,suspect,0.0114,,solonenko2015,表3のIAの Bl=0.005 が同論文のb列と矛盾する。b列にフィットすると Bl≈0.001 (Bs=0.002は一致)。b列側が正しいと考えられる
+IA,375,b,0.0114,1/m,suspect,0.0114,,solonenko2015,"Table 3 gives Bl=0.005 for IA, which is inconsistent with the b column of the same paper: fitting the b column gives Bl of about 0.001 (Bs=0.002 does agree). The b column appears to be the correct one"
 IA,400,Kd0,0.0377,1/m,ok,0.0377,,solonenko2015,
 IA,400,Kd,0.0356,1/m,ok,0.0356,,solonenko2015,
 IA,400,KdH,0.038,1/m,ok,0.038,,solonenko2015,
 IA,400,a,0.0295,1/m,ok,0.0295,,solonenko2015,
-IA,400,b,0.0092,1/m,suspect,0.0092,,solonenko2015,表3のIAの Bl=0.005 が同論文のb列と矛盾する。b列にフィットすると Bl≈0.001 (Bs=0.002は一致)。b列側が正しいと考えられる
+IA,400,b,0.0092,1/m,suspect,0.0092,,solonenko2015,"Table 3 gives Bl=0.005 for IA, which is inconsistent with the b column of the same paper: fitting the b column gives Bl of about 0.001 (Bs=0.002 does agree). The b column appears to be the correct one"
 IA,425,Kd0,0.0294,1/m,ok,0.0294,,solonenko2015,
 IA,425,Kd,0.0274,1/m,ok,0.0274,,solonenko2015,
 IA,425,KdH,0.029,1/m,ok,0.029,,solonenko2015,
 IA,425,a,0.0225,1/m,ok,0.0225,,solonenko2015,
-IA,425,b,0.00755,1/m,suspect,0.00755,,solonenko2015,表3のIAの Bl=0.005 が同論文のb列と矛盾する。b列にフィットすると Bl≈0.001 (Bs=0.002は一致)。b列側が正しいと考えられる
+IA,425,b,0.00755,1/m,suspect,0.00755,,solonenko2015,"Table 3 gives Bl=0.005 for IA, which is inconsistent with the b column of the same paper: fitting the b column gives Bl of about 0.001 (Bs=0.002 does agree). The b column appears to be the correct one"
 IA,450,Kd0,0.0263,1/m,ok,0.0263,,solonenko2015,
 IA,450,Kd,0.0264,1/m,ok,0.0264,,solonenko2015,
 IA,450,KdH,0.027,1/m,ok,0.027,,solonenko2015,
 IA,450,a,0.0221,1/m,ok,0.0221,,solonenko2015,
-IA,450,b,0.00631,1/m,suspect,0.00631,,solonenko2015,表3のIAの Bl=0.005 が同論文のb列と矛盾する。b列にフィットすると Bl≈0.001 (Bs=0.002は一致)。b列側が正しいと考えられる
+IA,450,b,0.00631,1/m,suspect,0.00631,,solonenko2015,"Table 3 gives Bl=0.005 for IA, which is inconsistent with the b column of the same paper: fitting the b column gives Bl of about 0.001 (Bs=0.002 does agree). The b column appears to be the correct one"
 IA,475,Kd0,0.0253,1/m,ok,0.0253,,solonenko2015,
 IA,475,Kd,0.0253,1/m,ok,0.0253,,solonenko2015,
 IA,475,KdH,0.026,1/m,ok,0.026,,solonenko2015,
 IA,475,a,0.0216,1/m,ok,0.0216,,solonenko2015,
-IA,475,b,0.00536,1/m,suspect,0.00536,,solonenko2015,表3のIAの Bl=0.005 が同論文のb列と矛盾する。b列にフィットすると Bl≈0.001 (Bs=0.002は一致)。b列側が正しいと考えられる
+IA,475,b,0.00536,1/m,suspect,0.00536,,solonenko2015,"Table 3 gives Bl=0.005 for IA, which is inconsistent with the b column of the same paper: fitting the b column gives Bl of about 0.001 (Bs=0.002 does agree). The b column appears to be the correct one"
 IA,500,Kd0,0.0346,1/m,ok,0.0346,,solonenko2015,
 IA,500,Kd,0.0316,1/m,ok,0.0316,,solonenko2015,
 IA,500,KdH,0.033,1/m,ok,0.033,,solonenko2015,
 IA,500,a,0.0282,1/m,ok,0.0282,,solonenko2015,
-IA,500,b,0.00461,1/m,suspect,0.00461,,solonenko2015,表3のIAの Bl=0.005 が同論文のb列と矛盾する。b列にフィットすると Bl≈0.001 (Bs=0.002は一致)。b列側が正しいと考えられる
+IA,500,b,0.00461,1/m,suspect,0.00461,,solonenko2015,"Table 3 gives Bl=0.005 for IA, which is inconsistent with the b column of the same paper: fitting the b column gives Bl of about 0.001 (Bs=0.002 does agree). The b column appears to be the correct one"
 IA,525,Kd0,0.046,1/m,ok,0.046,,solonenko2015,
 IA,525,Kd,0.0503,1/m,ok,0.0503,,solonenko2015,
 IA,525,KdH,0.052,1/m,ok,0.052,,solonenko2015,
 IA,525,a,0.0468,1/m,ok,0.0468,,solonenko2015,
-IA,525,b,0.00402,1/m,suspect,0.00402,,solonenko2015,表3のIAの Bl=0.005 が同論文のb列と矛盾する。b列にフィットすると Bl≈0.001 (Bs=0.002は一致)。b列側が正しいと考えられる
+IA,525,b,0.00402,1/m,suspect,0.00402,,solonenko2015,"Table 3 gives Bl=0.005 for IA, which is inconsistent with the b column of the same paper: fitting the b column gives Bl of about 0.001 (Bs=0.002 does agree). The b column appears to be the correct one"
 IA,550,Kd0,0.0661,1/m,ok,0.0661,,solonenko2015,
 IA,550,Kd,0.0658,1/m,ok,0.0658,,solonenko2015,
 IA,550,KdH,0.068,1/m,ok,0.068,,solonenko2015,
 IA,550,a,0.0622,1/m,ok,0.0622,,solonenko2015,
-IA,550,b,0.00354,1/m,suspect,0.00354,,solonenko2015,表3のIAの Bl=0.005 が同論文のb列と矛盾する。b列にフィットすると Bl≈0.001 (Bs=0.002は一致)。b列側が正しいと考えられる
+IA,550,b,0.00354,1/m,suspect,0.00354,,solonenko2015,"Table 3 gives Bl=0.005 for IA, which is inconsistent with the b column of the same paper: fitting the b column gives Bl of about 0.001 (Bs=0.002 does agree). The b column appears to be the correct one"
 IA,575,Kd0,0.0943,1/m,ok,0.0943,,solonenko2015,
 IA,575,Kd,0.0858,1/m,ok,0.0858,,solonenko2015,
 IA,575,KdH,0.089,1/m,ok,0.089,,solonenko2015,
 IA,575,a,0.0821,1/m,ok,0.0821,,solonenko2015,
-IA,575,b,0.00315,1/m,suspect,0.00315,,solonenko2015,表3のIAの Bl=0.005 が同論文のb列と矛盾する。b列にフィットすると Bl≈0.001 (Bs=0.002は一致)。b列側が正しいと考えられる
-IA,600,Kd0,0.174,1/m,suspect,0.174,,solonenko2015,同じ表の a=0.228 を下回る。Kd は a を上回るはずで物理的に不整合。同表の Kd(モデル値)=0.234 とも -26% 違う
+IA,575,b,0.00315,1/m,suspect,0.00315,,solonenko2015,"Table 3 gives Bl=0.005 for IA, which is inconsistent with the b column of the same paper: fitting the b column gives Bl of about 0.001 (Bs=0.002 does agree). The b column appears to be the correct one"
+IA,600,Kd0,0.174,1/m,suspect,0.174,,solonenko2015,"below a=0.228 in the same table, which is not physically possible: Kd must exceed a. Also differs by -26% from the modelled Kd=0.234 in the same table"
 IA,600,Kd,0.234,1/m,ok,0.234,,solonenko2015,
 IA,600,KdH,0.242,1/m,ok,0.242,,solonenko2015,
 IA,600,a,0.228,1/m,ok,0.228,,solonenko2015,
-IA,600,b,0.00283,1/m,suspect,0.00283,,solonenko2015,表3のIAの Bl=0.005 が同論文のb列と矛盾する。b列にフィットすると Bl≈0.001 (Bs=0.002は一致)。b列側が正しいと考えられる
+IA,600,b,0.00283,1/m,suspect,0.00283,,solonenko2015,"Table 3 gives Bl=0.005 for IA, which is inconsistent with the b column of the same paper: fitting the b column gives Bl of about 0.001 (Bs=0.002 does agree). The b column appears to be the correct one"
 IA,625,Kd0,0.308,1/m,ok,0.308,,solonenko2015,
 IA,625,Kd,0.303,1/m,ok,0.303,,solonenko2015,
 IA,625,KdH,0.312,1/m,ok,0.312,,solonenko2015,
 IA,625,a,0.295,1/m,ok,0.295,,solonenko2015,
-IA,625,b,0.00256,1/m,suspect,0.00256,,solonenko2015,表3のIAの Bl=0.005 が同論文のb列と矛盾する。b列にフィットすると Bl≈0.001 (Bs=0.002は一致)。b列側が正しいと考えられる
+IA,625,b,0.00256,1/m,suspect,0.00256,,solonenko2015,"Table 3 gives Bl=0.005 for IA, which is inconsistent with the b column of the same paper: fitting the b column gives Bl of about 0.001 (Bs=0.002 does agree). The b column appears to be the correct one"
 IA,650,Kd0,0.364,1/m,ok,0.364,,solonenko2015,
 IA,650,Kd,0.342,1/m,ok,0.342,,solonenko2015,
 IA,650,KdH,0.359,1/m,ok,0.359,,solonenko2015,
 IA,650,a,0.334,1/m,ok,0.334,,solonenko2015,
-IA,650,b,0.00234,1/m,suspect,0.00234,,solonenko2015,表3のIAの Bl=0.005 が同論文のb列と矛盾する。b列にフィットすると Bl≈0.001 (Bs=0.002は一致)。b列側が正しいと考えられる
+IA,650,b,0.00234,1/m,suspect,0.00234,,solonenko2015,"Table 3 gives Bl=0.005 for IA, which is inconsistent with the b column of the same paper: fitting the b column gives Bl of about 0.001 (Bs=0.002 does agree). The b column appears to be the correct one"
 IA,675,Kd0,0.423,1/m,ok,0.423,,solonenko2015,
 IA,675,Kd,0.445,1/m,ok,0.445,,solonenko2015,
 IA,675,KdH,0.471,1/m,ok,0.471,,solonenko2015,
 IA,675,a,0.435,1/m,ok,0.435,,solonenko2015,
-IA,675,b,0.00214,1/m,suspect,0.00214,,solonenko2015,表3のIAの Bl=0.005 が同論文のb列と矛盾する。b列にフィットすると Bl≈0.001 (Bs=0.002は一致)。b列側が正しいと考えられる
+IA,675,b,0.00214,1/m,suspect,0.00214,,solonenko2015,"Table 3 gives Bl=0.005 for IA, which is inconsistent with the b column of the same paper: fitting the b column gives Bl of about 0.001 (Bs=0.002 does agree). The b column appears to be the correct one"
 IA,700,Kd0,0.536,1/m,ok,0.536,,solonenko2015,
 IA,700,Kd,0.595,1/m,ok,0.595,,solonenko2015,
 IA,700,KdH,0.653,1/m,ok,0.653,,solonenko2015,
 IA,700,a,0.582,1/m,ok,0.582,,solonenko2015,
-IA,700,b,0.00198,1/m,suspect,0.00198,,solonenko2015,表3のIAの Bl=0.005 が同論文のb列と矛盾する。b列にフィットすると Bl≈0.001 (Bs=0.002は一致)。b列側が正しいと考えられる
+IA,700,b,0.00198,1/m,suspect,0.00198,,solonenko2015,"Table 3 gives Bl=0.005 for IA, which is inconsistent with the b column of the same paper: fitting the b column gives Bl of about 0.001 (Bs=0.002 does agree). The b column appears to be the correct one"
 IB,300,Kd0,0.288,1/m,ok,0.288,,solonenko2015,
 IB,300,Kd,0.301,1/m,ok,0.301,,solonenko2015,
 IB,300,KdH,0.333,1/m,ok,0.333,,solonenko2015,
@@ -229,7 +229,7 @@ IB,575,Kd,0.0926,1/m,ok,0.0926,,solonenko2015,
 IB,575,KdH,0.093,1/m,ok,0.093,,solonenko2015,
 IB,575,a,0.0822,1/m,ok,0.0822,,solonenko2015,
 IB,575,b,0.0511,1/m,ok,0.0511,,solonenko2015,
-IB,600,Kd0,0.186,1/m,suspect,0.186,,solonenko2015,同じ表の a=0.228 を下回る。Kd は a を上回るはずで物理的に不整合。同表の Kd(モデル値)=0.241 とも -23% 違う
+IB,600,Kd0,0.186,1/m,suspect,0.186,,solonenko2015,"below a=0.228 in the same table, which is not physically possible: Kd must exceed a. Also differs by -23% from the modelled Kd=0.241 in the same table"
 IB,600,Kd,0.241,1/m,ok,0.241,,solonenko2015,
 IB,600,KdH,0.248,1/m,ok,0.248,,solonenko2015,
 IB,600,a,0.2278,1/m,ok,0.2278,,solonenko2015,
@@ -314,7 +314,7 @@ II,575,Kd,0.12,1/m,ok,0.12,,solonenko2015,
 II,575,KdH,0.107,1/m,ok,0.107,,solonenko2015,
 II,575,a,0.0821,1/m,ok,0.0821,,solonenko2015,
 II,575,b,0.332,1/m,ok,0.332,,solonenko2015,
-II,600,Kd0,0.223,1/m,suspect,0.223,,solonenko2015,同じ表の a=0.228 を下回る。Kd は a を上回るはずで物理的に不整合。同表の Kd(モデル値)=0.270 とも -17% 違う
+II,600,Kd0,0.223,1/m,suspect,0.223,,solonenko2015,"below a=0.228 in the same table, which is not physically possible: Kd must exceed a. Also differs by -17% from the modelled Kd=0.270 in the same table"
 II,600,Kd,0.27,1/m,ok,0.27,,solonenko2015,
 II,600,KdH,0.261,1/m,ok,0.261,,solonenko2015,
 II,600,a,0.228,1/m,ok,0.228,,solonenko2015,
@@ -424,12 +424,12 @@ III,700,Kd,0.672,1/m,ok,0.672,,solonenko2015,
 III,700,KdH,0.742,1/m,ok,0.742,,solonenko2015,
 III,700,a,0.583,1/m,ok,0.583,,solonenko2015,
 III,700,b,0.65,1/m,ok,0.65,,solonenko2015,
-1C,300,Kd0,3.244,1/m,extrapolated,3.244,,solonenko2015,Jerlov のデータを長波長側から外挿した値 (論文で括弧付き)
+1C,300,Kd0,3.244,1/m,extrapolated,3.244,,solonenko2015,extrapolated from Jerlov's data at longer wavelengths; parenthesised in the paper
 1C,300,Kd,3.294,1/m,ok,3.294,,solonenko2015,
 1C,300,KdH,2.984,1/m,ok,2.984,,solonenko2015,
 1C,300,a,2.686,1/m,ok,2.686,,solonenko2015,
 1C,300,b,1.037,1/m,ok,1.037,,solonenko2015,
-1C,310,Kd0,2.577,1/m,extrapolated,2.577,,solonenko2015,Jerlov のデータを長波長側から外挿した値 (論文で括弧付き)
+1C,310,Kd0,2.577,1/m,extrapolated,2.577,,solonenko2015,extrapolated from Jerlov's data at longer wavelengths; parenthesised in the paper
 1C,310,Kd,2.576,1/m,ok,2.576,,solonenko2015,
 1C,310,KdH,2.373,1/m,ok,2.373,,solonenko2015,
 1C,310,a,2.083,1/m,ok,2.083,,solonenko2015,
@@ -469,52 +469,52 @@ III,700,b,0.65,1/m,ok,0.65,,solonenko2015,
 1C,500,KdH,0.103,1/m,ok,0.103,,solonenko2015,
 1C,500,a,0.064,1/m,ok,0.064,,solonenko2015,
 1C,500,b,0.429,1/m,ok,0.429,,solonenko2015,
-1C,525,Kd0,0.122,1/m,suspect,0.122,,solonenko2015,525-700 nm の8点が同じ表の Jerlov III と完全一致。列の複写の可能性
+1C,525,Kd0,0.122,1/m,suspect,0.122,,solonenko2015,identical to Jerlov III in the same table at all eight wavelengths from 525 to 700 nm; possibly a duplicated column
 1C,525,Kd,0.121,1/m,ok,0.121,,solonenko2015,
 1C,525,KdH,0.105,1/m,ok,0.105,,solonenko2015,
 1C,525,a,0.068,1/m,ok,0.068,,solonenko2015,
 1C,525,b,0.395,1/m,ok,0.395,,solonenko2015,
-1C,550,Kd0,0.145,1/m,suspect,0.145,,solonenko2015,525-700 nm の8点が同じ表の Jerlov III と完全一致。列の複写の可能性
+1C,550,Kd0,0.145,1/m,suspect,0.145,,solonenko2015,identical to Jerlov III in the same table at all eight wavelengths from 525 to 700 nm; possibly a duplicated column
 1C,550,Kd,0.129,1/m,ok,0.129,,solonenko2015,
 1C,550,KdH,0.112,1/m,ok,0.112,,solonenko2015,
 1C,550,a,0.076,1/m,ok,0.076,,solonenko2015,
 1C,550,b,0.365,1/m,ok,0.365,,solonenko2015,
-1C,575,Kd0,0.192,1/m,suspect,0.192,,solonenko2015,525-700 nm の8点が同じ表の Jerlov III と完全一致。列の複写の可能性
+1C,575,Kd0,0.192,1/m,suspect,0.192,,solonenko2015,identical to Jerlov III in the same table at all eight wavelengths from 525 to 700 nm; possibly a duplicated column
 1C,575,Kd,0.146,1/m,ok,0.146,,solonenko2015,
 1C,575,KdH,0.128,1/m,ok,0.128,,solonenko2015,
 1C,575,a,0.092,1/m,ok,0.092,,solonenko2015,
 1C,575,b,0.338,1/m,ok,0.338,,solonenko2015,
-1C,600,Kd0,0.288,1/m,suspect,0.288,,solonenko2015,525-700 nm の8点が同じ表の Jerlov III と完全一致。列の複写の可能性
+1C,600,Kd0,0.288,1/m,suspect,0.288,,solonenko2015,identical to Jerlov III in the same table at all eight wavelengths from 525 to 700 nm; possibly a duplicated column
 1C,600,Kd,0.317,1/m,ok,0.317,,solonenko2015,
 1C,600,KdH,0.288,1/m,ok,0.288,,solonenko2015,
 1C,600,a,0.236,1/m,ok,0.236,,solonenko2015,
 1C,600,b,0.314,1/m,ok,0.314,,solonenko2015,
-1C,625,Kd0,0.386,1/m,suspect,0.386,,solonenko2015,525-700 nm の8点が同じ表の Jerlov III と完全一致。列の複写の可能性
+1C,625,Kd0,0.386,1/m,suspect,0.386,,solonenko2015,identical to Jerlov III in the same table at all eight wavelengths from 525 to 700 nm; possibly a duplicated column
 1C,625,Kd,0.395,1/m,ok,0.395,,solonenko2015,
 1C,625,KdH,0.36,1/m,ok,0.36,,solonenko2015,
 1C,625,a,0.304,1/m,ok,0.304,,solonenko2015,
 1C,625,b,0.293,1/m,ok,0.293,,solonenko2015,
-1C,650,Kd0,0.431,1/m,suspect,0.431,,solonenko2015,525-700 nm の8点が同じ表の Jerlov III と完全一致。列の複写の可能性
+1C,650,Kd0,0.431,1/m,suspect,0.431,,solonenko2015,identical to Jerlov III in the same table at all eight wavelengths from 525 to 700 nm; possibly a duplicated column
 1C,650,Kd,0.439,1/m,ok,0.439,,solonenko2015,
 1C,650,KdH,0.401,1/m,ok,0.401,,solonenko2015,
 1C,650,a,0.344,1/m,ok,0.344,,solonenko2015,
 1C,650,b,0.274,1/m,ok,0.274,,solonenko2015,
-1C,675,Kd0,0.494,1/m,suspect,0.494,,solonenko2015,525-700 nm の8点が同じ表の Jerlov III と完全一致。列の複写の可能性
+1C,675,Kd0,0.494,1/m,suspect,0.494,,solonenko2015,identical to Jerlov III in the same table at all eight wavelengths from 525 to 700 nm; possibly a duplicated column
 1C,675,Kd,0.568,1/m,ok,0.568,,solonenko2015,
 1C,675,KdH,0.517,1/m,ok,0.517,,solonenko2015,
 1C,675,a,0.455,1/m,ok,0.455,,solonenko2015,
 1C,675,b,0.257,1/m,ok,0.257,,solonenko2015,
-1C,700,Kd0,0.616,1/m,suspect,0.616,,solonenko2015,525-700 nm の8点が同じ表の Jerlov III と完全一致。列の複写の可能性
+1C,700,Kd0,0.616,1/m,suspect,0.616,,solonenko2015,identical to Jerlov III in the same table at all eight wavelengths from 525 to 700 nm; possibly a duplicated column
 1C,700,Kd,0.721,1/m,ok,0.721,,solonenko2015,
 1C,700,KdH,0.688,1/m,ok,0.688,,solonenko2015,
 1C,700,a,0.586,1/m,ok,0.586,,solonenko2015,
 1C,700,b,0.242,1/m,ok,0.242,,solonenko2015,
-3C,300,Kd0,5.705,1/m,extrapolated,5.705,,solonenko2015,Jerlov のデータを長波長側から外挿した値 (論文で括弧付き)
+3C,300,Kd0,5.705,1/m,extrapolated,5.705,,solonenko2015,extrapolated from Jerlov's data at longer wavelengths; parenthesised in the paper
 3C,300,Kd,5.934,1/m,ok,5.934,,solonenko2015,
 3C,300,KdH,5.449,1/m,ok,5.449,,solonenko2015,
 3C,300,a,4.733,1/m,ok,4.733,,solonenko2015,
 3C,300,b,3.0,1/m,ok,3.0,,solonenko2015,
-3C,310,Kd0,4.507,1/m,extrapolated,4.507,,solonenko2015,Jerlov のデータを長波長側から外挿した値 (論文で括弧付き)
+3C,310,Kd0,4.507,1/m,extrapolated,4.507,,solonenko2015,extrapolated from Jerlov's data at longer wavelengths; parenthesised in the paper
 3C,310,Kd,4.659,1/m,ok,4.659,,solonenko2015,
 3C,310,KdH,4.353,1/m,ok,4.353,,solonenko2015,
 3C,310,a,3.668,1/m,ok,3.668,,solonenko2015,
@@ -584,22 +584,22 @@ III,700,b,0.65,1/m,ok,0.65,,solonenko2015,
 3C,650,KdH,0.469,1/m,ok,0.469,,solonenko2015,
 3C,650,a,0.346,1/m,ok,0.346,,solonenko2015,
 3C,650,b,0.8,1/m,ok,0.8,,solonenko2015,
-3C,675,Kd0,,1/m,missing,,,,論文の値は行複写により誤り。復元不能
-3C,675,Kd,,1/m,missing,,,,論文の値は行複写により誤り。復元不能
-3C,675,KdH,,1/m,missing,,,,論文の値は行複写により誤り。復元不能
-3C,675,a,,1/m,missing,,0.477,,論文の値は行複写により誤り。復元不能。W&H は内挿で穴埋めしている
-3C,675,b,0.7542,1/m,reconstructed,,0.745,solonenko2015_eq8,"論文の値は行複写により誤り。同論文の式(8)と表3のBs,Blで復元。S&M自身の小粒子係数1.513を使用 (Haltrin原典の1.151302ではない。README §6)。W&Hの線形外挿値を参考列に併記"
-3C,700,Kd0,,1/m,missing,,,,論文の値は行複写により誤り。復元不能
-3C,700,Kd,,1/m,missing,,,,論文の値は行複写により誤り。復元不能
-3C,700,KdH,,1/m,missing,,,,論文の値は行複写により誤り。復元不能
-3C,700,a,,1/m,missing,,0.592,,論文の値は行複写により誤り。復元不能。W&H は内挿で穴埋めしている
-3C,700,b,0.709,1/m,reconstructed,,0.69,solonenko2015_eq8,"論文の値は行複写により誤り。同論文の式(8)と表3のBs,Blで復元。S&M自身の小粒子係数1.513を使用 (Haltrin原典の1.151302ではない。README §6)。W&Hの線形外挿値を参考列に併記"
-5C,300,Kd0,6.42,1/m,extrapolated,6.42,,solonenko2015,Jerlov のデータを長波長側から外挿した値 (論文で括弧付き)
+3C,675,Kd0,,1/m,missing,,,,the published value is wrong: the row was duplicated from another wavelength. Not recoverable
+3C,675,Kd,,1/m,missing,,,,the published value is wrong: the row was duplicated from another wavelength. Not recoverable
+3C,675,KdH,,1/m,missing,,,,the published value is wrong: the row was duplicated from another wavelength. Not recoverable
+3C,675,a,,1/m,missing,,0.477,,the published value is wrong: the row was duplicated from another wavelength. Not recoverable. Williamson & Hollins filled the gap by interpolation
+3C,675,b,0.7542,1/m,reconstructed,,0.745,solonenko2015_eq8,"the published value is wrong: the row was duplicated from another wavelength. Reconstructed from Eq. (8) with the Bs, Bl of Table 3, using the paper's own small-particle coefficient 1.513 (not Haltrin's 1.151302; see DATA.md section 6). The linear extrapolation of Williamson & Hollins is given for comparison"
+3C,700,Kd0,,1/m,missing,,,,the published value is wrong: the row was duplicated from another wavelength. Not recoverable
+3C,700,Kd,,1/m,missing,,,,the published value is wrong: the row was duplicated from another wavelength. Not recoverable
+3C,700,KdH,,1/m,missing,,,,the published value is wrong: the row was duplicated from another wavelength. Not recoverable
+3C,700,a,,1/m,missing,,0.592,,the published value is wrong: the row was duplicated from another wavelength. Not recoverable. Williamson & Hollins filled the gap by interpolation
+3C,700,b,0.709,1/m,reconstructed,,0.69,solonenko2015_eq8,"the published value is wrong: the row was duplicated from another wavelength. Reconstructed from Eq. (8) with the Bs, Bl of Table 3, using the paper's own small-particle coefficient 1.513 (not Haltrin's 1.151302; see DATA.md section 6). The linear extrapolation of Williamson & Hollins is given for comparison"
+5C,300,Kd0,6.42,1/m,extrapolated,6.42,,solonenko2015,extrapolated from Jerlov's data at longer wavelengths; parenthesised in the paper
 5C,300,Kd,6.75,1/m,ok,6.75,,solonenko2015,
 5C,300,KdH,6.232,1/m,ok,6.232,,solonenko2015,
 5C,300,a,5.36,1/m,ok,5.36,,solonenko2015,
 5C,300,b,3.73,1/m,ok,3.73,,solonenko2015,
-5C,310,Kd0,5.33,1/m,extrapolated,5.33,,solonenko2015,Jerlov のデータを長波長側から外挿した値 (論文で括弧付き)
+5C,310,Kd0,5.33,1/m,extrapolated,5.33,,solonenko2015,extrapolated from Jerlov's data at longer wavelengths; parenthesised in the paper
 5C,310,Kd,5.53,1/m,ok,5.53,,solonenko2015,
 5C,310,KdH,5.176,1/m,ok,5.176,,solonenko2015,
 5C,310,a,4.34,1/m,ok,4.34,,solonenko2015,
@@ -654,37 +654,37 @@ III,700,b,0.65,1/m,ok,0.65,,solonenko2015,
 5C,575,KdH,0.234,1/m,ok,0.234,,solonenko2015,
 5C,575,a,0.119,1/m,ok,0.119,,solonenko2015,
 5C,575,b,1.23,1/m,ok,1.23,,solonenko2015,
-5C,600,Kd0,,1/m,missing,,,,論文の値は行複写により誤り。復元不能
-5C,600,Kd,,1/m,missing,,,,論文の値は行複写により誤り。復元不能
-5C,600,KdH,,1/m,missing,,,,論文の値は行複写により誤り。復元不能
-5C,600,a,,1/m,missing,,0.259,,論文の値は行複写により誤り。復元不能。W&H は内挿で穴埋めしている
-5C,600,b,1.1468,1/m,reconstructed,,1.147,solonenko2015_eq8,"論文の値は行複写により誤り。同論文の式(8)と表3のBs,Blで復元。S&M自身の小粒子係数1.513を使用 (Haltrin原典の1.151302ではない。README §6)。W&Hの線形外挿値を参考列に併記"
-5C,625,Kd0,,1/m,missing,,,,論文の値は行複写により誤り。復元不能
-5C,625,Kd,,1/m,missing,,,,論文の値は行複写により誤り。復元不能
-5C,625,KdH,,1/m,missing,,,,論文の値は行複写により誤り。復元不能
-5C,625,a,,1/m,missing,,0.327,,論文の値は行複写により誤り。復元不能。W&H は内挿で穴埋めしている
-5C,625,b,1.0702,1/m,reconstructed,,1.07,solonenko2015_eq8,"論文の値は行複写により誤り。同論文の式(8)と表3のBs,Blで復元。S&M自身の小粒子係数1.513を使用 (Haltrin原典の1.151302ではない。README §6)。W&Hの線形外挿値を参考列に併記"
-5C,650,Kd0,,1/m,missing,,,,論文の値は行複写により誤り。復元不能
-5C,650,Kd,,1/m,missing,,,,論文の値は行複写により誤り。復元不能
-5C,650,KdH,,1/m,missing,,,,論文の値は行複写により誤り。復元不能
-5C,650,a,,1/m,missing,,0.367,,論文の値は行複写により誤り。復元不能。W&H は内挿で穴埋めしている
-5C,650,b,1.0014,1/m,reconstructed,,1.002,solonenko2015_eq8,"論文の値は行複写により誤り。同論文の式(8)と表3のBs,Blで復元。S&M自身の小粒子係数1.513を使用 (Haltrin原典の1.151302ではない。README §6)。W&Hの線形外挿値を参考列に併記"
-5C,675,Kd0,,1/m,missing,,,,論文の値は行複写により誤り。復元不能
-5C,675,Kd,,1/m,missing,,,,論文の値は行複写により誤り。復元不能
-5C,675,KdH,,1/m,missing,,,,論文の値は行複写により誤り。復元不能
-5C,675,a,,1/m,missing,,0.499,,論文の値は行複写により誤り。復元不能。W&H は内挿で穴埋めしている
-5C,675,b,0.9395,1/m,reconstructed,,0.94,solonenko2015_eq8,"論文の値は行複写により誤り。同論文の式(8)と表3のBs,Blで復元。S&M自身の小粒子係数1.513を使用 (Haltrin原典の1.151302ではない。README §6)。W&Hの線形外挿値を参考列に併記"
-5C,700,Kd0,,1/m,missing,,,,論文の値は行複写により誤り。復元不能
-5C,700,Kd,,1/m,missing,,,,論文の値は行複写により誤り。復元不能
-5C,700,KdH,,1/m,missing,,,,論文の値は行複写により誤り。復元不能
-5C,700,a,,1/m,missing,,0.598,,論文の値は行複写により誤り。復元不能。W&H は内挿で穴埋めしている
-5C,700,b,0.8834,1/m,reconstructed,,0.883,solonenko2015_eq8,"論文の値は行複写により誤り。同論文の式(8)と表3のBs,Blで復元。S&M自身の小粒子係数1.513を使用 (Haltrin原典の1.151302ではない。README §6)。W&Hの線形外挿値を参考列に併記"
-7C,300,Kd0,6.92,1/m,extrapolated,6.92,,solonenko2015,Jerlov のデータを長波長側から外挿した値 (論文で括弧付き)
+5C,600,Kd0,,1/m,missing,,,,the published value is wrong: the row was duplicated from another wavelength. Not recoverable
+5C,600,Kd,,1/m,missing,,,,the published value is wrong: the row was duplicated from another wavelength. Not recoverable
+5C,600,KdH,,1/m,missing,,,,the published value is wrong: the row was duplicated from another wavelength. Not recoverable
+5C,600,a,,1/m,missing,,0.259,,the published value is wrong: the row was duplicated from another wavelength. Not recoverable. Williamson & Hollins filled the gap by interpolation
+5C,600,b,1.1468,1/m,reconstructed,,1.147,solonenko2015_eq8,"the published value is wrong: the row was duplicated from another wavelength. Reconstructed from Eq. (8) with the Bs, Bl of Table 3, using the paper's own small-particle coefficient 1.513 (not Haltrin's 1.151302; see DATA.md section 6). The linear extrapolation of Williamson & Hollins is given for comparison"
+5C,625,Kd0,,1/m,missing,,,,the published value is wrong: the row was duplicated from another wavelength. Not recoverable
+5C,625,Kd,,1/m,missing,,,,the published value is wrong: the row was duplicated from another wavelength. Not recoverable
+5C,625,KdH,,1/m,missing,,,,the published value is wrong: the row was duplicated from another wavelength. Not recoverable
+5C,625,a,,1/m,missing,,0.327,,the published value is wrong: the row was duplicated from another wavelength. Not recoverable. Williamson & Hollins filled the gap by interpolation
+5C,625,b,1.0702,1/m,reconstructed,,1.07,solonenko2015_eq8,"the published value is wrong: the row was duplicated from another wavelength. Reconstructed from Eq. (8) with the Bs, Bl of Table 3, using the paper's own small-particle coefficient 1.513 (not Haltrin's 1.151302; see DATA.md section 6). The linear extrapolation of Williamson & Hollins is given for comparison"
+5C,650,Kd0,,1/m,missing,,,,the published value is wrong: the row was duplicated from another wavelength. Not recoverable
+5C,650,Kd,,1/m,missing,,,,the published value is wrong: the row was duplicated from another wavelength. Not recoverable
+5C,650,KdH,,1/m,missing,,,,the published value is wrong: the row was duplicated from another wavelength. Not recoverable
+5C,650,a,,1/m,missing,,0.367,,the published value is wrong: the row was duplicated from another wavelength. Not recoverable. Williamson & Hollins filled the gap by interpolation
+5C,650,b,1.0014,1/m,reconstructed,,1.002,solonenko2015_eq8,"the published value is wrong: the row was duplicated from another wavelength. Reconstructed from Eq. (8) with the Bs, Bl of Table 3, using the paper's own small-particle coefficient 1.513 (not Haltrin's 1.151302; see DATA.md section 6). The linear extrapolation of Williamson & Hollins is given for comparison"
+5C,675,Kd0,,1/m,missing,,,,the published value is wrong: the row was duplicated from another wavelength. Not recoverable
+5C,675,Kd,,1/m,missing,,,,the published value is wrong: the row was duplicated from another wavelength. Not recoverable
+5C,675,KdH,,1/m,missing,,,,the published value is wrong: the row was duplicated from another wavelength. Not recoverable
+5C,675,a,,1/m,missing,,0.499,,the published value is wrong: the row was duplicated from another wavelength. Not recoverable. Williamson & Hollins filled the gap by interpolation
+5C,675,b,0.9395,1/m,reconstructed,,0.94,solonenko2015_eq8,"the published value is wrong: the row was duplicated from another wavelength. Reconstructed from Eq. (8) with the Bs, Bl of Table 3, using the paper's own small-particle coefficient 1.513 (not Haltrin's 1.151302; see DATA.md section 6). The linear extrapolation of Williamson & Hollins is given for comparison"
+5C,700,Kd0,,1/m,missing,,,,the published value is wrong: the row was duplicated from another wavelength. Not recoverable
+5C,700,Kd,,1/m,missing,,,,the published value is wrong: the row was duplicated from another wavelength. Not recoverable
+5C,700,KdH,,1/m,missing,,,,the published value is wrong: the row was duplicated from another wavelength. Not recoverable
+5C,700,a,,1/m,missing,,0.598,,the published value is wrong: the row was duplicated from another wavelength. Not recoverable. Williamson & Hollins filled the gap by interpolation
+5C,700,b,0.8834,1/m,reconstructed,,0.883,solonenko2015_eq8,"the published value is wrong: the row was duplicated from another wavelength. Reconstructed from Eq. (8) with the Bs, Bl of Table 3, using the paper's own small-particle coefficient 1.513 (not Haltrin's 1.151302; see DATA.md section 6). The linear extrapolation of Williamson & Hollins is given for comparison"
+7C,300,Kd0,6.92,1/m,extrapolated,6.92,,solonenko2015,extrapolated from Jerlov's data at longer wavelengths; parenthesised in the paper
 7C,300,Kd,6.67,1/m,ok,6.67,,solonenko2015,
 7C,300,KdH,6.303,1/m,ok,6.303,,solonenko2015,
 7C,300,a,5.11,1/m,ok,5.11,,solonenko2015,
 7C,300,b,6.56,1/m,ok,6.56,,solonenko2015,
-7C,310,Kd0,5.91,1/m,extrapolated,5.91,,solonenko2015,Jerlov のデータを長波長側から外挿した値 (論文で括弧付き)
+7C,310,Kd0,5.91,1/m,extrapolated,5.91,,solonenko2015,extrapolated from Jerlov's data at longer wavelengths; parenthesised in the paper
 7C,310,Kd,5.8,1/m,ok,5.8,,solonenko2015,
 7C,310,KdH,5.471,1/m,ok,5.471,,solonenko2015,
 7C,310,a,4.4,1/m,ok,4.4,,solonenko2015,
@@ -764,12 +764,12 @@ III,700,b,0.65,1/m,ok,0.65,,solonenko2015,
 7C,700,KdH,0.85,1/m,ok,0.85,,solonenko2015,
 7C,700,a,0.621,1/m,ok,0.621,,solonenko2015,
 7C,700,b,1.56,1/m,ok,1.56,,solonenko2015,
-9C,300,Kd0,8.11,1/m,extrapolated,8.11,,solonenko2015,Jerlov のデータを長波長側から外挿した値 (論文で括弧付き)
+9C,300,Kd0,8.11,1/m,extrapolated,8.11,,solonenko2015,extrapolated from Jerlov's data at longer wavelengths; parenthesised in the paper
 9C,300,Kd,7.44,1/m,ok,7.44,,solonenko2015,
 9C,300,KdH,7.066,1/m,ok,7.066,,solonenko2015,
 9C,300,a,5.466,1/m,ok,5.466,,solonenko2015,
 9C,300,b,8.76,1/m,ok,8.76,,solonenko2015,
-9C,310,Kd0,7.01,1/m,extrapolated,7.01,,solonenko2015,Jerlov のデータを長波長側から外挿した値 (論文で括弧付き)
+9C,310,Kd0,7.01,1/m,extrapolated,7.01,,solonenko2015,extrapolated from Jerlov's data at longer wavelengths; parenthesised in the paper
 9C,310,Kd,6.72,1/m,ok,6.72,,solonenko2015,
 9C,310,KdH,6.416,1/m,ok,6.416,,solonenko2015,
 9C,310,a,4.9,1/m,ok,4.9,,solonenko2015,

@@ -1,26 +1,28 @@
 # -*- coding: utf-8 -*-
-"""Rebuild the packaged CSV tables from the primary sources.
+"""Transcribe Austin & Petzold (1986) Tables IV and VI.
 
-Run from the repository root. See tools/README.md for the inputs each script
-needs and where to obtain them; they are not redistributed here.
+Table VI replaces Jerlov's published Kd values, which fall below the
+attenuation of pure sea water at several wavelengths. Table IV gives the
+slope M and the pure sea water Kw that drive the authors' model.
+
+No input file is needed: the values are literals below, checked against the
+paper's own Eq. (6) before anything is written.
 """
 
-import pathlib
-
-ROOT = pathlib.Path(__file__).resolve().parent.parent
-SOURCES_DIR = ROOT / "sources"
-DATA_DIR = ROOT / "uwlight" / "data"
+import sys, pathlib
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
+from _common import DATA_DIR, report
 
 import csv
 WL=[350,375,400,425,450,475,500,525,550,575,600,625,650,675,700]
-# Austin & Petzold (1986) Table VI: Jerlov 水型の K(λ) 置換値
+# Table VI: replacement K(lambda) for the Jerlov water types.
 T6={"I":  [0.0510,0.0302,0.0217,0.0185,0.0176,0.0184,0.0280,0.0504,0.0640,0.0931,0.2408,0.3174,0.3559,0.4372,0.6513],
     "IA": [0.0632,0.0412,0.0316,0.0280,0.0257,0.0250,0.0332,0.0545,0.0674,0.0960,0.2437,0.3206,0.3601,0.4410,0.6530],
     "IB": [0.0782,0.0546,0.0438,0.0395,0.0355,0.0330,0.0396,0.0596,0.0715,0.0995,0.2471,0.3245,0.3652,0.4457,0.6550],
     "II": [0.1325,0.1031,0.0878,0.0814,0.0714,0.0620,0.0627,0.0779,0.0863,0.1122,0.2595,0.3389,0.3837,0.4626,0.6623],
     "III":[0.2335,0.1935,0.1697,0.1594,0.1381,0.1160,0.1056,0.1120,0.1139,0.1359,0.2826,0.3655,0.4181,0.4942,0.6760],
     "1C": [0.3345,0.2839,0.2516,0.2374,0.2048,0.1700,0.1486,0.1461,0.1415,0.1596,0.3057,0.3922,0.4525,0.5257,0.6896]}
-# Table IV: M(λ) と Kw(λ)  5 nm 刻み
+# Table IV: slope M(lambda) and pure sea water Kw(lambda), every 5 nm.
 T4=[(350,2.1442,0.0510),(355,2.0968,0.0453),(360,2.0504,0.0405),(365,2.0051,0.0365),
 (370,1.9610,0.0331),(375,1.9183,0.0302),(380,1.8772,0.0278),(385,1.8379,0.0258),
 (390,1.8009,0.0242),(395,1.7671,0.0228),(400,1.7383,0.0217),(405,1.7463,0.0208),
@@ -41,9 +43,9 @@ T4=[(350,2.1442,0.0510),(355,2.0968,0.0453),(360,2.0504,0.0405),(365,2.0051,0.03
 (690,0.4901,0.5116),(695,0.3984,0.5671),(700,0.2891,0.6514)]
 M={w:m for w,m,_ in T4}; KW={w:k for w,_,k in T4}
 
-# 検証: 式(6) が Table VI を再現するか (475 nm の Jerlov 値を基準)
-print("=== 検証: 式(6) K(λ)=[M(λ)/M(475)]·[K(475)-Kw(475)]+Kw(λ) が Table VI を再現するか ===")
-print(f"{'型':>4} {'K(475)':>8} {'最大ズレ[%]':>12}")
+# Check: Eq. (6), anchored at Jerlov's K(475), must reproduce Table VI.
+print("check: K(l) = [M(l)/M(475)] * [K(475) - Kw(475)] + Kw(l) vs Table VI")
+print(f"{'type':>5} {'K(475)':>9} {'max error %':>13}")
 for t,vals in T6.items():
     k475=vals[WL.index(475)]
     e=[100*((M[w]/M[475])*(k475-KW[475])+KW[w]-vals[i])/vals[i] for i,w in enumerate(WL)]
@@ -54,17 +56,17 @@ with open(DATA_DIR / "austin1986_kd.csv","w",newline="",encoding="utf-8") as f:
     for t,vals in T6.items():
         for i,w in enumerate(WL):
             if t=="I":
-                st,nt="pure_seawater","type I の行は純海水の Kw そのもの (Jerlov の値が Kw を下回るため置換)"
+                st,nt="pure_seawater","the type I row is pure sea water Kw; Jerlov's own values fall below it"
             elif w==475:
-                st,nt="jerlov_original","475 nm は Jerlov (1976) Table XXVII の値と同一"
+                st,nt="jerlov_original","475 nm is identical to Jerlov (1976) Table XXVII"
             else:
-                st,nt="model","Austin & Petzold の式(6)により K(475) から算出"
+                st,nt="model","computed from K(475) by Austin & Petzold Eq. (6)"
             wr.writerow([t,w,f"{vals[i]:.4f}",st,nt])
 
 with open(DATA_DIR / "austin1986_model.csv","w",newline="",encoding="utf-8") as f:
     wr=csv.writer(f); wr.writerow(["wavelength_nm","M_slope","Kw_pure_seawater_per_m","status","note"])
     for w,m,k in T4:
         st="extrapolated" if w in (350,355,360) else "ok"
-        nt="論文が「外挿値なので注意して使うこと」と明記" if st=="extrapolated" else ""
+        nt="the paper states this M was extrapolated and should be used with caution" if st=="extrapolated" else ""
         wr.writerow([w,f"{m:.4f}",f"{k:.4f}",st,nt])
-print("\n生成: austin1986_kd.csv (90行), austin1986_model.csv (71行)")
+report("austin1986_kd.csv", 90); report("austin1986_model.csv", 71)

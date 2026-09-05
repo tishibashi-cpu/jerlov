@@ -1,7 +1,7 @@
 wavelength_nm,M_slope,Kw_pure_seawater_per_m,status,note
-350,2.1442,0.0510,extrapolated,論文が「外挿値なので注意して使うこと」と明記
-355,2.0968,0.0453,extrapolated,論文が「外挿値なので注意して使うこと」と明記
-360,2.0504,0.0405,extrapolated,論文が「外挿値なので注意して使うこと」と明記
+350,2.1442,0.0510,extrapolated,the paper states this M was extrapolated and should be used with caution
+355,2.0968,0.0453,extrapolated,the paper states this M was extrapolated and should be used with caution
+360,2.0504,0.0405,extrapolated,the paper states this M was extrapolated and should be used with caution
 365,2.0051,0.0365,ok,
 370,1.9610,0.0331,ok,
 375,1.9183,0.0302,ok,

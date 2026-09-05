@@ -45,7 +45,7 @@ water_type,wavelength_nm,quantity,value_per_m,unit,std_dev_per_m,n_campaigns,sta
 5C,510,a,0.189303,1/m,0.0514822,7,included,
 5C,532,a,0.17033,1/m,0.0432042,6,included,
 5C,555,a,0.156698,1/m,0.0331153,7,included,
-5C,630,a,0.542889,1/m,0.251118,3,excluded_sparse,寄与した測定が5点未満のため論文の最終平均から除外された
+5C,630,a,0.542889,1/m,0.251118,3,excluded_sparse,fewer than five measurements contributed; excluded from the published averages
 5C,650,a,0.395237,1/m,0.0301525,7,included,
 5C,676,a,0.533655,1/m,0.0635616,7,included,
 5C,715,a,1.004,1/m,2.02698e-16,6,included,
@@ -55,62 +55,62 @@ water_type,wavelength_nm,quantity,value_per_m,unit,std_dev_per_m,n_campaigns,sta
 5C,510,b,1.26845,1/m,0.247247,7,included,
 5C,532,b,1.09496,1/m,0.487467,6,included,
 5C,555,b,1.26652,1/m,0.238555,7,included,
-5C,630,b,1.09875,1/m,0.0227964,3,excluded_sparse,寄与した測定が5点未満のため論文の最終平均から除外された
+5C,630,b,1.09875,1/m,0.0227964,3,excluded_sparse,fewer than five measurements contributed; excluded from the published averages
 5C,650,b,1.23676,1/m,0.521398,8,included,
 5C,676,b,1.07046,1/m,0.433398,7,included,
 5C,715,b,1.21951,1/m,0.256532,7,included,
-7C,412,a,0.82006,1/m,,1,excluded_sparse,寄与した測定が5点未満のため論文の最終平均から除外された
-7C,440,a,0.645713,1/m,,1,excluded_sparse,寄与した測定が5点未満のため論文の最終平均から除外された
-7C,488,a,0.409927,1/m,,1,excluded_sparse,寄与した測定が5点未満のため論文の最終平均から除外された
-7C,510,a,0.354547,1/m,,1,excluded_sparse,寄与した測定が5点未満のため論文の最終平均から除外された
-7C,532,a,0.31138,1/m,,1,excluded_sparse,寄与した測定が5点未満のため論文の最終平均から除外された
-7C,555,a,0.272953,1/m,,1,excluded_sparse,寄与した測定が5点未満のため論文の最終平均から除外された
-7C,650,a,0.414713,1/m,,1,excluded_sparse,寄与した測定が5点未満のため論文の最終平均から除外された
-7C,676,a,0.517527,1/m,,1,excluded_sparse,寄与した測定が5点未満のため論文の最終平均から除外された
-7C,715,a,1.004,1/m,,1,excluded_sparse,寄与した測定が5点未満のため論文の最終平均から除外された
-7C,412,b,3.39927,1/m,,1,excluded_sparse,寄与した測定が5点未満のため論文の最終平均から除外された
-7C,440,b,3.40091,1/m,,1,excluded_sparse,寄与した測定が5点未満のため論文の最終平均から除外された
-7C,488,b,3.47143,1/m,,1,excluded_sparse,寄与した測定が5点未満のため論文の最終平均から除外された
-7C,510,b,3.4889,1/m,,1,excluded_sparse,寄与した測定が5点未満のため論文の最終平均から除外された
-7C,532,b,3.49736,1/m,,1,excluded_sparse,寄与した測定が5点未満のため論文の最終平均から除外された
-7C,555,b,3.49723,1/m,,1,excluded_sparse,寄与した測定が5点未満のため論文の最終平均から除外された
-7C,650,b,3.4516,1/m,,1,excluded_sparse,寄与した測定が5点未満のため論文の最終平均から除外された
-7C,676,b,3.42633,1/m,,1,excluded_sparse,寄与した測定が5点未満のため論文の最終平均から除外された
-7C,715,b,3.44019,1/m,,1,excluded_sparse,寄与した測定が5点未満のため論文の最終平均から除外された
-IA,412,a,0.0123,1/m,,1,excluded_sparse,寄与した測定が5点未満のため論文の最終平均から除外された
-IA,440,a,0.0234,1/m,,1,excluded_sparse,寄与した測定が5点未満のため論文の最終平均から除外された
-IA,488,a,0.0133,1/m,,1,excluded_sparse,寄与した測定が5点未満のため論文の最終平均から除外された
-IA,510,a,0.0419,1/m,,1,excluded_sparse,寄与した測定が5点未満のため論文の最終平均から除外された
-IA,555,a,0.0656,1/m,,1,excluded_sparse,寄与した測定が5点未満のため論文の最終平均から除外された
-IA,630,a,0.2985,1/m,,1,excluded_sparse,寄与した測定が5点未満のため論文の最終平均から除外された
-IA,650,a,0.3449,1/m,,1,excluded_sparse,寄与した測定が5点未満のため論文の最終平均から除外された
-IA,676,a,0.4582,1/m,,1,excluded_sparse,寄与した測定が5点未満のため論文の最終平均から除外された
-IA,412,b,0.1175,1/m,,1,excluded_sparse,寄与した測定が5点未満のため論文の最終平均から除外された
-IA,440,b,0.1057,1/m,,1,excluded_sparse,寄与した測定が5点未満のため論文の最終平均から除外された
-IA,488,b,0.1109,1/m,,1,excluded_sparse,寄与した測定が5点未満のため論文の最終平均から除外された
-IA,510,b,0.0955,1/m,,1,excluded_sparse,寄与した測定が5点未満のため論文の最終平均から除外された
-IA,555,b,0.0882,1/m,,1,excluded_sparse,寄与した測定が5点未満のため論文の最終平均から除外された
-IA,630,b,0.0709,1/m,,1,excluded_sparse,寄与した測定が5点未満のため論文の最終平均から除外された
-IA,650,b,0.0745,1/m,,1,excluded_sparse,寄与した測定が5点未満のため論文の最終平均から除外された
-IA,676,b,0.074,1/m,,1,excluded_sparse,寄与した測定が5点未満のため論文の最終平均から除外された
+7C,412,a,0.82006,1/m,,1,excluded_sparse,fewer than five measurements contributed; excluded from the published averages
+7C,440,a,0.645713,1/m,,1,excluded_sparse,fewer than five measurements contributed; excluded from the published averages
+7C,488,a,0.409927,1/m,,1,excluded_sparse,fewer than five measurements contributed; excluded from the published averages
+7C,510,a,0.354547,1/m,,1,excluded_sparse,fewer than five measurements contributed; excluded from the published averages
+7C,532,a,0.31138,1/m,,1,excluded_sparse,fewer than five measurements contributed; excluded from the published averages
+7C,555,a,0.272953,1/m,,1,excluded_sparse,fewer than five measurements contributed; excluded from the published averages
+7C,650,a,0.414713,1/m,,1,excluded_sparse,fewer than five measurements contributed; excluded from the published averages
+7C,676,a,0.517527,1/m,,1,excluded_sparse,fewer than five measurements contributed; excluded from the published averages
+7C,715,a,1.004,1/m,,1,excluded_sparse,fewer than five measurements contributed; excluded from the published averages
+7C,412,b,3.39927,1/m,,1,excluded_sparse,fewer than five measurements contributed; excluded from the published averages
+7C,440,b,3.40091,1/m,,1,excluded_sparse,fewer than five measurements contributed; excluded from the published averages
+7C,488,b,3.47143,1/m,,1,excluded_sparse,fewer than five measurements contributed; excluded from the published averages
+7C,510,b,3.4889,1/m,,1,excluded_sparse,fewer than five measurements contributed; excluded from the published averages
+7C,532,b,3.49736,1/m,,1,excluded_sparse,fewer than five measurements contributed; excluded from the published averages
+7C,555,b,3.49723,1/m,,1,excluded_sparse,fewer than five measurements contributed; excluded from the published averages
+7C,650,b,3.4516,1/m,,1,excluded_sparse,fewer than five measurements contributed; excluded from the published averages
+7C,676,b,3.42633,1/m,,1,excluded_sparse,fewer than five measurements contributed; excluded from the published averages
+7C,715,b,3.44019,1/m,,1,excluded_sparse,fewer than five measurements contributed; excluded from the published averages
+IA,412,a,0.0123,1/m,,1,excluded_sparse,fewer than five measurements contributed; excluded from the published averages
+IA,440,a,0.0234,1/m,,1,excluded_sparse,fewer than five measurements contributed; excluded from the published averages
+IA,488,a,0.0133,1/m,,1,excluded_sparse,fewer than five measurements contributed; excluded from the published averages
+IA,510,a,0.0419,1/m,,1,excluded_sparse,fewer than five measurements contributed; excluded from the published averages
+IA,555,a,0.0656,1/m,,1,excluded_sparse,fewer than five measurements contributed; excluded from the published averages
+IA,630,a,0.2985,1/m,,1,excluded_sparse,fewer than five measurements contributed; excluded from the published averages
+IA,650,a,0.3449,1/m,,1,excluded_sparse,fewer than five measurements contributed; excluded from the published averages
+IA,676,a,0.4582,1/m,,1,excluded_sparse,fewer than five measurements contributed; excluded from the published averages
+IA,412,b,0.1175,1/m,,1,excluded_sparse,fewer than five measurements contributed; excluded from the published averages
+IA,440,b,0.1057,1/m,,1,excluded_sparse,fewer than five measurements contributed; excluded from the published averages
+IA,488,b,0.1109,1/m,,1,excluded_sparse,fewer than five measurements contributed; excluded from the published averages
+IA,510,b,0.0955,1/m,,1,excluded_sparse,fewer than five measurements contributed; excluded from the published averages
+IA,555,b,0.0882,1/m,,1,excluded_sparse,fewer than five measurements contributed; excluded from the published averages
+IA,630,b,0.0709,1/m,,1,excluded_sparse,fewer than five measurements contributed; excluded from the published averages
+IA,650,b,0.0745,1/m,,1,excluded_sparse,fewer than five measurements contributed; excluded from the published averages
+IA,676,b,0.074,1/m,,1,excluded_sparse,fewer than five measurements contributed; excluded from the published averages
 IB,412,a,0.0433583,1/m,0.0191998,6,included,
 IB,440,a,0.0423083,1/m,0.0111622,6,included,
 IB,488,a,0.02815,1/m,0.00823342,6,included,
 IB,510,a,0.0493333,1/m,0.00523599,6,included,
-IB,532,a,0.06055,1/m,0.00305,2,excluded_sparse,寄与した測定が5点未満のため論文の最終平均から除外された
+IB,532,a,0.06055,1/m,0.00305,2,excluded_sparse,fewer than five measurements contributed; excluded from the published averages
 IB,555,a,0.0705,1/m,0.00373898,6,included,
-IB,630,a,0.299525,1/m,0.00107092,4,excluded_sparse,寄与した測定が5点未満のため論文の最終平均から除外された
-IB,650,a,0.346275,1/m,0.000954921,4,excluded_sparse,寄与した測定が5点未満のため論文の最終平均から除外された
-IB,676,a,0.462025,1/m,0.000749583,4,excluded_sparse,寄与した測定が5点未満のため論文の最終平均から除外された
+IB,630,a,0.299525,1/m,0.00107092,4,excluded_sparse,fewer than five measurements contributed; excluded from the published averages
+IB,650,a,0.346275,1/m,0.000954921,4,excluded_sparse,fewer than five measurements contributed; excluded from the published averages
+IB,676,a,0.462025,1/m,0.000749583,4,excluded_sparse,fewer than five measurements contributed; excluded from the published averages
 IB,412,b,0.14115,1/m,0.0472417,6,included,
 IB,440,b,0.134925,1/m,0.0388818,6,included,
 IB,488,b,0.137108,1/m,0.0401862,6,included,
 IB,510,b,0.1266,1/m,0.0351849,6,included,
-IB,532,b,0.086725,1/m,0.021925,2,excluded_sparse,寄与した測定が5点未満のため論文の最終平均から除外された
+IB,532,b,0.086725,1/m,0.021925,2,excluded_sparse,fewer than five measurements contributed; excluded from the published averages
 IB,555,b,0.119542,1/m,0.0390931,6,included,
-IB,630,b,0.1113,1/m,0.0152,2,excluded_sparse,寄与した測定が5点未満のため論文の最終平均から除外された
-IB,650,b,0.1183,1/m,0.0232885,4,excluded_sparse,寄与した測定が5点未満のため論文の最終平均から除外された
-IB,676,b,0.09855,1/m,0.0230835,4,excluded_sparse,寄与した測定が5点未満のため論文の最終平均から除外された
+IB,630,b,0.1113,1/m,0.0152,2,excluded_sparse,fewer than five measurements contributed; excluded from the published averages
+IB,650,b,0.1183,1/m,0.0232885,4,excluded_sparse,fewer than five measurements contributed; excluded from the published averages
+IB,676,b,0.09855,1/m,0.0230835,4,excluded_sparse,fewer than five measurements contributed; excluded from the published averages
 II,412,a,0.0711873,1/m,0.0227606,32,included,
 II,440,a,0.0657099,1/m,0.0182439,34,included,
 II,488,a,0.0465781,1/m,0.0185193,37,included,
@@ -120,7 +120,7 @@ II,555,a,0.0770291,1/m,0.00875123,34,included,
 II,630,a,0.300799,1/m,0.00290101,20,included,
 II,650,a,0.353451,1/m,0.0126726,32,included,
 II,676,a,0.464576,1/m,0.00428393,31,included,
-II,715,a,1.034,1/m,0.0212132,3,excluded_sparse,寄与した測定が5点未満のため論文の最終平均から除外された
+II,715,a,1.034,1/m,0.0212132,3,excluded_sparse,fewer than five measurements contributed; excluded from the published averages
 II,412,b,0.204843,1/m,0.0559738,34,included,
 II,440,b,0.195129,1/m,0.0538761,36,included,
 II,488,b,0.196966,1/m,0.051996,35,included,
@@ -130,7 +130,7 @@ II,555,b,0.183761,1/m,0.0529338,36,included,
 II,630,b,0.16612,1/m,0.0566807,8,included,
 II,650,b,0.163506,1/m,0.0499128,32,included,
 II,676,b,0.144997,1/m,0.0541752,32,included,
-II,715,b,0.136236,1/m,0.0383356,3,excluded_sparse,寄与した測定が5点未満のため論文の最終平均から除外された
+II,715,b,0.136236,1/m,0.0383356,3,excluded_sparse,fewer than five measurements contributed; excluded from the published averages
 III,412,a,0.127845,1/m,0.031278,77,included,
 III,440,a,0.113855,1/m,0.0288123,79,included,
 III,488,a,0.0818477,1/m,0.0229917,79,included,
