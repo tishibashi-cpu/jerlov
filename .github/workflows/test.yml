@@ -15,10 +15,21 @@ jobs:
       fail-fast: false
       matrix:
         python-version: ["3.10", "3.11", "3.12", "3.13"]
+        numpy: ["latest"]
+        include:
+          # pyproject.toml claims numpy>=1.22, so that claim must be tested.
+          # Assuming a recent numpy is how numpy.trapezoid, added in 2.0, got
+          # into a package that says it runs on 1.22.
+          - python-version: "3.10"
+            numpy: "oldest"
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
       - run: pip install -e ".[test]"
+      - name: Pin the oldest supported numpy
+        if: matrix.numpy == 'oldest'
+        run: pip install "numpy==1.22.*"
+      - run: python -c "import numpy; print('numpy', numpy.__version__)"
       - run: python -m pytest tests/ -v

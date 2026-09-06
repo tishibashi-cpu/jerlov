@@ -22,6 +22,10 @@ import numpy as np
 
 from . import _data
 
+# numpy.trapezoid is the name from NumPy 2.0; before that it was numpy.trapz.
+# The package claims to work from NumPy 1.22, so it must not assume either.
+_trapezoid = getattr(np, "trapezoid", None) or np.trapz
+
 #: sRGB primaries and white point, IEC 61966-2-1.
 SRGB_PRIMARIES = np.array([
     [0.6400, 0.3300],   # red
@@ -107,13 +111,13 @@ def _resample(values, source_wl, target_wl) -> np.ndarray:
 
 def _coverage(spectrum_wl, weight_wl, weight) -> float:
     """Fraction of the weight that the spectrum's range actually spans."""
-    total = np.trapezoid(weight, weight_wl)
+    total = _trapezoid(weight, weight_wl)
     if total == 0:
         return 1.0
     inside = (weight_wl >= spectrum_wl[0]) & (weight_wl <= spectrum_wl[-1])
     if not inside.any():
         return 0.0
-    return float(np.trapezoid(weight[inside], weight_wl[inside]) / total)
+    return float(_trapezoid(weight[inside], weight_wl[inside]) / total)
 
 
 def integrate_response(spectrum, wavelengths, response, response_wavelengths,
@@ -165,7 +169,7 @@ def integrate_response(spectrum, wavelengths, response, response_wavelengths,
          for k in range(response.shape[1])],
         axis=1,
     )
-    return np.trapezoid(spectrum[:, None] * resampled, wavelengths, axis=0)
+    return _trapezoid(spectrum[:, None] * resampled, wavelengths, axis=0)
 
 
 def spectrum_to_xyz(spectrum, wavelengths) -> np.ndarray:

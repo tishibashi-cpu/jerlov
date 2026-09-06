@@ -224,7 +224,33 @@ transcribed rather than approximated: an analytic fit to the colour matching
 functions would have been smaller, but it would have put numbers in the
 package that came from nowhere in particular.
 
-## 15. Planned
+## 15. A declared minimum must be tested, not asserted
+
+`pyproject.toml` says `numpy>=1.22`. Version 0.1.1 shipped using
+`numpy.trapezoid`, which was added in NumPy 2.0. The package therefore did not
+run on the versions it claimed to support, and the CI did not notice because
+every job installed the newest NumPy available.
+
+Two changes followed.
+
+`jerlov/colour.py` resolves the name once at import:
+
+```python
+_trapezoid = getattr(np, "trapezoid", None) or np.trapz
+```
+
+`np.trapz` is the pre-2.0 name and was removed in 2.0, so neither can be
+assumed.
+
+The test matrix now includes a job pinned to the oldest declared NumPy. A
+lower bound nobody tests is a guess, and this one was wrong for a whole
+release.
+
+**Rejected:** raising the floor to the version that happened to work. That
+would fix the symptom by narrowing the claim, and would leave the next
+lower-bound claim just as untested.
+
+## 16. Planned
 
 Recorded so the shape of the API can be judged against where it is going.
 
