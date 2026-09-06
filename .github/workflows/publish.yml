@@ -34,8 +34,8 @@ jobs:
           print(f"{wheel} contains {len(csvs)} CSV files:")
           for n in csvs:
               print("  ", n)
-          if len(csvs) != 9:
-              sys.exit(f"expected 9 data tables in the wheel, found {len(csvs)}")
+          if len(csvs) != 10:
+              sys.exit(f"expected 10 data tables in the wheel, found {len(csvs)}")
           EOF
 
       - name: The installed package must work from the wheel alone
