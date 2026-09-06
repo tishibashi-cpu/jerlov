@@ -23,6 +23,7 @@ from .water import (
     b_from_c,
     kd_spectrum,
     water,
+    water_type_at_depth,
 )
 
 __all__ = [
@@ -42,6 +43,7 @@ __all__ = [
     "get_source",
     "Water",
     "water",
+    "water_type_at_depth",
     "kd_spectrum",
     "b_from_c",
     "ProvenanceWarning",

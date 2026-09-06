@@ -22,6 +22,7 @@ could not are `missing`, and values that are used but doubtful are `suspect`.
 | `smart2007_b_from_c.csv` | Measured (b-bw)/(c-cw). 412-715 nm, average and bounds | 30 |
 | `cie1931_2deg_cmf.csv` | CIE 1931 2-degree colour matching functions. 1 nm, 360-830 nm | 471 |
 | `cie_d65.csv` | CIE illuminant D65 relative spectral power. 5 nm, 300-780 nm | 97 |
+| `williamson2023_depth.csv` | Typical Jerlov type per 10 m layer to 200 m | 200 |
 
 ## The `status` column
 
@@ -385,3 +386,54 @@ an in-water downwelling spectrum.
 The sRGB matrix is not shipped. It is derived in `jerlov/colour.py` from the
 primaries and white point of IEC 61966-2-1, and `tests/test_colour.py` checks
 the derivation against the published rounded matrix.
+
+
+## 13. The depth profiles, and a wrong DOI in the paper (confirmed)
+
+`williamson2023_depth.csv` gives, for each near-surface Jerlov type, the type
+that typically applies in each 10 m layer down to 200 m. Water that is
+Jerlov I at the surface is typically IA by 20 m and IB by 40 m; turbid coastal
+water clears with depth, 3C reaching II by 40 m.
+
+Source: Williamson, C. A. and Hollins, R. C. (2023), "Depth profiles of Jerlov
+water types", *Limnol. Oceanogr. Lett.* 8, 781-788, DOI `10.1002/lol2.10338`.
+Open access, CC-BY. Derived from `op_STEP_6_FINAL.csv` in the accompanying
+dataset rather than from the printed Table 2, which gives the same values.
+
+**The paper's Data Availability Statement gives the wrong DOI.**
+
+| Where in the paper | DOI | What it actually is |
+|---|---|---|
+| Data Availability Statement | `10.6084/m9.figshare.24128862` | **A different dataset: 1020 lake locations in the United States** |
+| Reference list | `10.6084/m9.figshare.21710252` | The depth profile data |
+
+This was found by downloading the first one. Anyone following the Data
+Availability Statement gets lake positions in Maine.
+
+### Reproducing the published table
+
+The published Table 2 takes, for each near-surface type and layer, the deeper
+type with the largest campaign count, subject to a minimum of ten campaigns.
+The paper states that in 3 of 119 cases it instead chose the second-highest,
+"as this count was close to the maximum and more consistent with the
+surrounding depth layers", but does not say which.
+
+Applying the stated rule and comparing against the printed table locates them:
+
+| Near-surface type | Layer | Largest count | Published |
+|---|---|---|---|
+| I | 90-100 m | II | **IB** |
+| I | 180-190 m | IA | **IB** |
+| IA | 190-200 m | IA | **IB** |
+
+Exactly three, exactly where the paper's asterisks are. `tools/` fixes this
+count, so a change in either the data or the rule will be noticed.
+
+Cells with fewer than ten campaigns are carried with `status = undeclared` and
+an empty type rather than being filled in. There are 80 of them. Jerlov 9C is
+undeclared below the top layer entirely, and the coastal types run out
+quickly: 3C reaches only 70 m.
+
+**These are typical profiles, not predictions for a place or a season.** The
+paper says so, and provides per-cell cruise and month counts for anyone who
+needs to judge how well supported a particular cell is.

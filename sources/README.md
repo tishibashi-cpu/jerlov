@@ -10,7 +10,8 @@ Obtain them as follows, then run the scripts in `tools/`.
 
 | Path | What | Where |
 |---|---|---|
-| `sources/20290782/` | Dstl dataset, **Version 3** | figshare DOI `10.6084/m9.figshare.20290782` (Crown copyright, Dstl; Open Government Licence v3.0) |
+| `sources/20290782/` | Dstl IOP dataset, **Version 3** | figshare DOI `10.6084/m9.figshare.20290782` (Crown copyright, Dstl; Open Government Licence v3.0) |
+| `sources/21710252/` | Dstl depth profile dataset | figshare DOI `10.6084/m9.figshare.21710252`. **Not the DOI in the paper's Data Availability Statement, which points to an unrelated dataset; see DATA.md section 13** |
 
 Only two files inside it are read: `ip_jerlov.csv` and
 `20221121-Dstl_MIOP_analysis_v3.xlsx`, plus `op_STEP_6_a.csv` and

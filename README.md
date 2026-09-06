@@ -149,6 +149,22 @@ Two silent errors are checked rather than assumed:
 - **Gamut.** Underwater colours often fall outside sRGB. Clipping changes
   them, so `GamutWarning` says so.
 
+## The type changes with depth
+
+The classification is defined on the top 10 m, but clarity does not stay put.
+Water that is Jerlov I at the surface is typically IB below 40 m; turbid
+coastal water clears as you go down.
+
+```python
+jerlov.water_type_at_depth("I", 60.0)     # 'IB'
+jerlov.water_type_at_depth("3C", 45.0)    # 'II'
+jerlov.water_type_at_depth("9C", 15.0)    # None: the paper declined to say
+```
+
+`None` means fewer than ten measurement campaigns supported a declaration, so
+nothing is asserted. This is a lookup, not a correction applied on your
+behalf.
+
 ## Other entry points
 
 ```python
@@ -165,8 +181,8 @@ jerlov.Water.from_measurements(wavelengths, a=..., b=...)
 ## Provenance and design
 
 `DATA.md` records, for every shipped table, where it came from, what was
-verified, and what is known to be wrong with it. Eleven defects in the source
-literature are documented there, six of them confirmed.
+verified, and what is known to be wrong with it. Twelve defects in the source
+literature are documented there, seven of them confirmed.
 
 `DECISIONS.md` records why the package is shaped the way it is, including the
 alternatives that were rejected and why.

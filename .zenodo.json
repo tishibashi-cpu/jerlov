@@ -25,6 +25,8 @@
     {"identifier": "10.1364/AO.54.005392", "relation": "isDerivedFrom", "resource_type": "publication-article", "scheme": "doi"},
     {"identifier": "10.1117/12.7973845", "relation": "isDerivedFrom", "resource_type": "publication-article", "scheme": "doi"},
     {"identifier": "10.1364/OE.15.007152", "relation": "isDerivedFrom", "resource_type": "publication-article", "scheme": "doi"},
-    {"identifier": "10.6084/m9.figshare.20290782", "relation": "isDerivedFrom", "resource_type": "dataset", "scheme": "doi"}
+    {"identifier": "10.6084/m9.figshare.20290782", "relation": "isDerivedFrom", "resource_type": "dataset", "scheme": "doi"},
+    {"identifier": "10.6084/m9.figshare.21710252", "relation": "isDerivedFrom", "resource_type": "dataset", "scheme": "doi"},
+    {"identifier": "10.1002/lol2.10338", "relation": "isDerivedFrom", "resource_type": "publication-article", "scheme": "doi"}
   ]
 }

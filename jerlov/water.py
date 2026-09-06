@@ -270,6 +270,48 @@ def water(water_type: str, source: str = "williamson2022") -> Water:
     )
 
 
+def water_type_at_depth(surface_water_type: str, depth_m: float) -> str | None:
+    """The Jerlov type that typically applies at ``depth_m``.
+
+    The classification is defined on the top 10 m, but clarity changes with
+    depth: water that is Jerlov I at the surface is typically IB below about
+    40 m, and turbid coastal water typically clears with depth. Williamson &
+    Hollins (2023) derived these profiles from more than 2500 measurement
+    campaigns.
+
+    Returns ``None`` where the paper declined to declare a type, which is
+    wherever fewer than ten campaigns supported one. Coastal types run out
+    quickly: 3C is declared only to 70 m, and 9C not at all below 10 m.
+
+    This is a lookup, not a correction applied on your behalf. To use it::
+
+        deeper = jerlov.water_type_at_depth("I", 60.0)      # "IB"
+        w = jerlov.water(deeper) if deeper else jerlov.water("I")
+
+    Notes
+    -----
+    The profile is what was *typical* across the campaigns, not what holds at
+    any particular place or season. The paper says so explicitly, and gives
+    per-cell cruise and month counts for anyone who needs to judge that.
+    """
+    if depth_m < 0:
+        raise ValueError("depth_m cannot be negative")
+    rows = _data._rows("williamson2023_depth.csv")
+    known = {r["surface_water_type"] for r in rows}
+    if surface_water_type not in known:
+        raise KeyError(
+            f"unknown water type {surface_water_type!r} "
+            f"(known: {', '.join(sorted(known))})"
+        )
+    for row in rows:
+        if row["surface_water_type"] != surface_water_type:
+            continue
+        if float(row["depth_min_m"]) <= depth_m < float(row["depth_max_m"]):
+            return row["water_type"] or None
+    # Beyond 200 m the paper makes no statement at all.
+    return None
+
+
 def kd_spectrum(kd, wavelength_nm: float, at) -> np.ndarray:
     """Reconstruct a Kd spectrum from a single measured value.
 

@@ -1,0 +1,201 @@
+surface_water_type,depth_min_m,depth_max_m,water_type,n_campaigns,status,note
+I,0,10,I,,identity,the near-surface layer defines the type
+I,10,20,I,118,ok,
+I,20,30,IA,95,ok,
+I,30,40,IA,108,ok,
+I,40,50,IB,91,ok,
+I,50,60,IB,96,ok,
+I,60,70,IB,101,ok,
+I,70,80,IB,78,ok,
+I,80,90,IB,69,ok,
+I,90,100,IB,58,second_highest,the paper chose this over II (67 campaigns) as being closer to the surrounding layers
+I,100,110,IB,64,ok,
+I,110,120,IB,59,ok,
+I,120,130,IB,80,ok,
+I,130,140,IB,78,ok,
+I,140,150,IB,67,ok,
+I,150,160,IB,55,ok,
+I,160,170,IB,35,ok,
+I,170,180,IB,26,ok,
+I,180,190,IB,15,second_highest,the paper chose this over IA (18 campaigns) as being closer to the surrounding layers
+I,190,200,IB,16,ok,
+IA,0,10,IA,,identity,the near-surface layer defines the type
+IA,10,20,IA,161,ok,
+IA,20,30,IA,147,ok,
+IA,30,40,IB,151,ok,
+IA,40,50,IB,171,ok,
+IA,50,60,IB,167,ok,
+IA,60,70,IB,150,ok,
+IA,70,80,IB,127,ok,
+IA,80,90,IB,116,ok,
+IA,90,100,IB,113,ok,
+IA,100,110,IB,113,ok,
+IA,110,120,IB,108,ok,
+IA,120,130,IB,122,ok,
+IA,130,140,IB,114,ok,
+IA,140,150,IB,105,ok,
+IA,150,160,IB,86,ok,
+IA,160,170,IB,68,ok,
+IA,170,180,IB,45,ok,
+IA,180,190,IB,35,ok,
+IA,190,200,IB,22,second_highest,the paper chose this over IA (23 campaigns) as being closer to the surrounding layers
+IB,0,10,IB,,identity,the near-surface layer defines the type
+IB,10,20,IB,311,ok,
+IB,20,30,IB,269,ok,
+IB,30,40,IB,249,ok,
+IB,40,50,IB,226,ok,
+IB,50,60,IB,199,ok,
+IB,60,70,IB,161,ok,
+IB,70,80,IB,152,ok,
+IB,80,90,IB,174,ok,
+IB,90,100,IB,197,ok,
+IB,100,110,IB,208,ok,
+IB,110,120,IB,205,ok,
+IB,120,130,IB,191,ok,
+IB,130,140,IB,168,ok,
+IB,140,150,IB,153,ok,
+IB,150,160,IB,120,ok,
+IB,160,170,IB,111,ok,
+IB,170,180,IB,82,ok,
+IB,180,190,IB,65,ok,
+IB,190,200,IB,37,ok,
+II,0,10,II,,identity,the near-surface layer defines the type
+II,10,20,II,416,ok,
+II,20,30,II,345,ok,
+II,30,40,II,291,ok,
+II,40,50,II,298,ok,
+II,50,60,II,319,ok,
+II,60,70,II,305,ok,
+II,70,80,II,235,ok,
+II,80,90,II,174,ok,
+II,90,100,II,131,ok,
+II,100,110,IB,100,ok,
+II,110,120,IB,99,ok,
+II,120,130,IB,92,ok,
+II,130,140,IB,86,ok,
+II,140,150,IB,80,ok,
+II,150,160,IB,66,ok,
+II,160,170,IB,64,ok,
+II,170,180,IB,47,ok,
+II,180,190,IB,21,ok,
+II,190,200,IB,11,ok,
+III,0,10,III,,identity,the near-surface layer defines the type
+III,10,20,III,320,ok,
+III,20,30,III,292,ok,
+III,30,40,III,219,ok,
+III,40,50,II,181,ok,
+III,50,60,II,217,ok,
+III,60,70,II,174,ok,
+III,70,80,II,124,ok,
+III,80,90,II,65,ok,
+III,90,100,II,49,ok,
+III,100,110,II,36,ok,
+III,110,120,II,27,ok,
+III,120,130,IB,21,ok,
+III,130,140,IB,20,ok,
+III,140,150,IB,15,ok,
+III,150,160,IB,12,ok,
+III,160,170,IB,13,ok,
+III,170,180,,,undeclared,fewer than 10 campaigns (9); the paper leaves this blank
+III,180,190,,,undeclared,fewer than 10 campaigns (5); the paper leaves this blank
+III,190,200,,,undeclared,fewer than 10 campaigns (2); the paper leaves this blank
+1C,0,10,1C,,identity,the near-surface layer defines the type
+1C,10,20,1C,174,ok,
+1C,20,30,III,104,ok,
+1C,30,40,III,99,ok,
+1C,40,50,II,82,ok,
+1C,50,60,II,91,ok,
+1C,60,70,II,69,ok,
+1C,70,80,II,45,ok,
+1C,80,90,II,20,ok,
+1C,90,100,IB,18,ok,
+1C,100,110,IB,13,ok,
+1C,110,120,,,undeclared,fewer than 10 campaigns (8); the paper leaves this blank
+1C,120,130,,,undeclared,fewer than 10 campaigns (6); the paper leaves this blank
+1C,130,140,,,undeclared,fewer than 10 campaigns (7); the paper leaves this blank
+1C,140,150,,,undeclared,fewer than 10 campaigns (5); the paper leaves this blank
+1C,150,160,,,undeclared,fewer than 10 campaigns (4); the paper leaves this blank
+1C,160,170,,,undeclared,fewer than 10 campaigns (3); the paper leaves this blank
+1C,170,180,,,undeclared,fewer than 10 campaigns (3); the paper leaves this blank
+1C,180,190,,,undeclared,fewer than 10 campaigns (2); the paper leaves this blank
+1C,190,200,,,undeclared,fewer than 10 campaigns (0); the paper leaves this blank
+3C,0,10,3C,,identity,the near-surface layer defines the type
+3C,10,20,3C,79,ok,
+3C,20,30,III,39,ok,
+3C,30,40,III,24,ok,
+3C,40,50,II,26,ok,
+3C,50,60,II,28,ok,
+3C,60,70,II,21,ok,
+3C,70,80,,,undeclared,fewer than 10 campaigns (7); the paper leaves this blank
+3C,80,90,,,undeclared,fewer than 10 campaigns (4); the paper leaves this blank
+3C,90,100,,,undeclared,fewer than 10 campaigns (2); the paper leaves this blank
+3C,100,110,,,undeclared,fewer than 10 campaigns (3); the paper leaves this blank
+3C,110,120,,,undeclared,fewer than 10 campaigns (1); the paper leaves this blank
+3C,120,130,,,undeclared,fewer than 10 campaigns (2); the paper leaves this blank
+3C,130,140,,,undeclared,fewer than 10 campaigns (1); the paper leaves this blank
+3C,140,150,,,undeclared,fewer than 10 campaigns (1); the paper leaves this blank
+3C,150,160,,,undeclared,fewer than 10 campaigns (1); the paper leaves this blank
+3C,160,170,,,undeclared,fewer than 10 campaigns (1); the paper leaves this blank
+3C,170,180,,,undeclared,fewer than 10 campaigns (0); the paper leaves this blank
+3C,180,190,,,undeclared,fewer than 10 campaigns (0); the paper leaves this blank
+3C,190,200,,,undeclared,fewer than 10 campaigns (0); the paper leaves this blank
+5C,0,10,5C,,identity,the near-surface layer defines the type
+5C,10,20,5C,18,ok,
+5C,20,30,,,undeclared,fewer than 10 campaigns (8); the paper leaves this blank
+5C,30,40,,,undeclared,fewer than 10 campaigns (4); the paper leaves this blank
+5C,40,50,,,undeclared,fewer than 10 campaigns (1); the paper leaves this blank
+5C,50,60,,,undeclared,fewer than 10 campaigns (1); the paper leaves this blank
+5C,60,70,,,undeclared,fewer than 10 campaigns (0); the paper leaves this blank
+5C,70,80,,,undeclared,fewer than 10 campaigns (1); the paper leaves this blank
+5C,80,90,,,undeclared,fewer than 10 campaigns (1); the paper leaves this blank
+5C,90,100,,,undeclared,fewer than 10 campaigns (1); the paper leaves this blank
+5C,100,110,,,undeclared,fewer than 10 campaigns (1); the paper leaves this blank
+5C,110,120,,,undeclared,fewer than 10 campaigns (1); the paper leaves this blank
+5C,120,130,,,undeclared,fewer than 10 campaigns (0); the paper leaves this blank
+5C,130,140,,,undeclared,fewer than 10 campaigns (0); the paper leaves this blank
+5C,140,150,,,undeclared,fewer than 10 campaigns (0); the paper leaves this blank
+5C,150,160,,,undeclared,fewer than 10 campaigns (0); the paper leaves this blank
+5C,160,170,,,undeclared,fewer than 10 campaigns (0); the paper leaves this blank
+5C,170,180,,,undeclared,fewer than 10 campaigns (0); the paper leaves this blank
+5C,180,190,,,undeclared,fewer than 10 campaigns (0); the paper leaves this blank
+5C,190,200,,,undeclared,fewer than 10 campaigns (0); the paper leaves this blank
+7C,0,10,7C,,identity,the near-surface layer defines the type
+7C,10,20,7C,11,ok,
+7C,20,30,,,undeclared,fewer than 10 campaigns (1); the paper leaves this blank
+7C,30,40,,,undeclared,fewer than 10 campaigns (1); the paper leaves this blank
+7C,40,50,,,undeclared,fewer than 10 campaigns (1); the paper leaves this blank
+7C,50,60,,,undeclared,fewer than 10 campaigns (1); the paper leaves this blank
+7C,60,70,,,undeclared,fewer than 10 campaigns (0); the paper leaves this blank
+7C,70,80,,,undeclared,fewer than 10 campaigns (0); the paper leaves this blank
+7C,80,90,,,undeclared,fewer than 10 campaigns (0); the paper leaves this blank
+7C,90,100,,,undeclared,fewer than 10 campaigns (0); the paper leaves this blank
+7C,100,110,,,undeclared,fewer than 10 campaigns (0); the paper leaves this blank
+7C,110,120,,,undeclared,fewer than 10 campaigns (0); the paper leaves this blank
+7C,120,130,,,undeclared,fewer than 10 campaigns (0); the paper leaves this blank
+7C,130,140,,,undeclared,fewer than 10 campaigns (0); the paper leaves this blank
+7C,140,150,,,undeclared,fewer than 10 campaigns (0); the paper leaves this blank
+7C,150,160,,,undeclared,fewer than 10 campaigns (0); the paper leaves this blank
+7C,160,170,,,undeclared,fewer than 10 campaigns (0); the paper leaves this blank
+7C,170,180,,,undeclared,fewer than 10 campaigns (0); the paper leaves this blank
+7C,180,190,,,undeclared,fewer than 10 campaigns (0); the paper leaves this blank
+7C,190,200,,,undeclared,fewer than 10 campaigns (0); the paper leaves this blank
+9C,0,10,9C,,identity,the near-surface layer defines the type
+9C,10,20,,,undeclared,fewer than 10 campaigns (1); the paper leaves this blank
+9C,20,30,,,undeclared,fewer than 10 campaigns (0); the paper leaves this blank
+9C,30,40,,,undeclared,fewer than 10 campaigns (0); the paper leaves this blank
+9C,40,50,,,undeclared,fewer than 10 campaigns (0); the paper leaves this blank
+9C,50,60,,,undeclared,fewer than 10 campaigns (0); the paper leaves this blank
+9C,60,70,,,undeclared,fewer than 10 campaigns (0); the paper leaves this blank
+9C,70,80,,,undeclared,fewer than 10 campaigns (0); the paper leaves this blank
+9C,80,90,,,undeclared,fewer than 10 campaigns (0); the paper leaves this blank
+9C,90,100,,,undeclared,fewer than 10 campaigns (0); the paper leaves this blank
+9C,100,110,,,undeclared,fewer than 10 campaigns (0); the paper leaves this blank
+9C,110,120,,,undeclared,fewer than 10 campaigns (0); the paper leaves this blank
+9C,120,130,,,undeclared,fewer than 10 campaigns (0); the paper leaves this blank
+9C,130,140,,,undeclared,fewer than 10 campaigns (0); the paper leaves this blank
+9C,140,150,,,undeclared,fewer than 10 campaigns (0); the paper leaves this blank
+9C,150,160,,,undeclared,fewer than 10 campaigns (0); the paper leaves this blank
+9C,160,170,,,undeclared,fewer than 10 campaigns (0); the paper leaves this blank
+9C,170,180,,,undeclared,fewer than 10 campaigns (0); the paper leaves this blank
+9C,180,190,,,undeclared,fewer than 10 campaigns (0); the paper leaves this blank
+9C,190,200,,,undeclared,fewer than 10 campaigns (0); the paper leaves this blank

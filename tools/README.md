@@ -15,6 +15,8 @@ Two of the scripts need no input and will run immediately;
 the others stop with a message naming the file to fetch and its DOI.
 
 `openpyxl` and `colour-science` are needed only here, never at run time.
+Two figshare datasets are needed, `20290782` and `21710252`; the scripts name
+them and their DOIs when they are missing.
 `build_cie.py` uses `colour-science` as a carrier for the CIE tabulations;
 see DATA.md section 12.
 
