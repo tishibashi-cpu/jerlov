@@ -7,11 +7,23 @@ provenance.
 
 https://github.com/tishibashi-cpu/jerlov
 
-*Working name; not yet released.*
+```
+pip install jerlov
+```
 
 Every coefficient carries the source it came from. Values that a published
 table got wrong are flagged rather than quietly repaired, and quantities that
 the data do not determine are refused rather than guessed.
+
+**What is claimed.** That the published coefficients are implemented
+correctly, and that every shipped table can be regenerated from its primary
+source. The tests demonstrate both, by reproducing each paper's tables from
+that paper's own equations.
+
+**What is not claimed.** That this predicts what a camera will record
+underwater. That would need measurements which, as far as we can tell, have
+not been made. `DATA.md` records what is uncertain and `DECISIONS.md` records
+where the model stops.
 
 ```python
 import jerlov
@@ -168,8 +180,9 @@ the Open Government Licence v3.0; see `NOTICE`.
 
 Cite the concept DOI, which always resolves to the latest version:
 
-> Ishibashi, T. jerlov: inherent optical properties of Jerlov water types,
-> with provenance. Zenodo. https://doi.org/10.5281/zenodo.22321312
+> Ishibashi, T. jerlov: inherent optical properties of the Jerlov optical
+> water types, with provenance. Zenodo.
+> https://doi.org/10.5281/zenodo.22321312
 
 Please also cite the sources the coefficients came from; they are listed with
 their DOIs at the top of `DATA.md`. The package is a carrier for other
