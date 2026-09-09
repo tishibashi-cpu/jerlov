@@ -145,3 +145,44 @@ def test_sources_are_described():
         assert source.water_types
         if key != "jerlov1976":
             assert source.doi
+
+
+# -- scalar in, scalar out -----------------------------------------------
+
+
+def test_a_scalar_wavelength_gives_a_scalar():
+    """numpy.interp behaves this way, and float(w.a(550)) must work."""
+    w = jerlov.water("III")
+    for value in (w.a(550), w.b(550), w.c(550),
+                  w.bb(550, backscatter_ratio=0.02)):
+        assert isinstance(value, float)
+        assert not isinstance(value, np.ndarray)
+    assert float(w.a(550)) == w.a(550)
+
+
+def test_an_array_of_wavelengths_gives_an_array():
+    w = jerlov.water("III")
+    out = w.a([450.0, 550.0])
+    assert isinstance(out, np.ndarray)
+    assert out.shape == (2,)
+    # A one-element list is still a sequence, so it stays an array.
+    assert jerlov.water("III").a([550.0]).shape == (1,)
+
+
+def test_the_other_entry_points_follow_the_same_rule():
+    assert isinstance(jerlov.kd_spectrum(0.06, 490, 550), float)
+    assert isinstance(jerlov.kd_spectrum(0.06, 490, [440.0, 550.0]), np.ndarray)
+    assert isinstance(
+        jerlov.b_from_c(0.5, 555, bw=0.0019, cw=0.0659), float
+    )
+    assert isinstance(
+        jerlov.b_from_c(0.5, [510.0, 555.0], bw=0.0019, cw=0.0659), np.ndarray
+    )
+
+
+def test_a_missing_value_is_nan_whether_scalar_or_array():
+    w = jerlov.water("3C", source="solonenko2015")
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", ProvenanceWarning)
+        assert np.isnan(w.a(675))
+        assert np.isnan(w.a([675.0])).all()

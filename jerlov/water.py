@@ -33,6 +33,17 @@ def _as_array(x) -> np.ndarray:
     return np.atleast_1d(np.asarray(x, dtype=float))
 
 
+def _like_input(result: np.ndarray, original) -> np.ndarray | float:
+    """Return a float for scalar input, an array otherwise.
+
+    This is what ``numpy.interp`` does. Returning a one-element array for a
+    scalar wavelength invites ``float(w.a(550))``, which numpy 2 refuses.
+    """
+    if np.ndim(original) == 0:
+        return float(result[0])
+    return result
+
+
 class Water:
     """Absorption and scattering coefficients as functions of wavelength.
 
@@ -126,7 +137,7 @@ class Water:
             neighbours = values[max(i - 1, 0):min(i + 1, values.size) + 1]
             if np.any(np.isnan(neighbours)):
                 out[k] = np.nan
-        return out
+        return _like_input(out, wl)
 
     def _warn_if_flagged(self, quantity: str, query: np.ndarray) -> None:
         statuses = self._flags.get(quantity)
@@ -148,23 +159,23 @@ class Water:
                 stacklevel=3,
             )
 
-    def a(self, wl) -> np.ndarray:
+    def a(self, wl):
         """Absorption coefficient in 1/m."""
         return self._interp("a", wl)
 
-    def b(self, wl) -> np.ndarray:
+    def b(self, wl):
         """Scattering coefficient in 1/m."""
         return self._interp("b", wl)
 
-    def c(self, wl) -> np.ndarray:
+    def c(self, wl):
         """Beam attenuation coefficient ``a + b`` in 1/m."""
         return self.a(wl) + self.b(wl)
 
-    def kd(self, wl) -> np.ndarray:
+    def kd(self, wl):
         """Downwelling diffuse attenuation coefficient in 1/m."""
         return self._interp("Kd", wl)
 
-    def bb(self, wl, *, backscatter_ratio: float | None = None) -> np.ndarray:
+    def bb(self, wl, *, backscatter_ratio: float | None = None):
         """Backscattering coefficient in 1/m.
 
         ``backscatter_ratio`` is bb/b and has no default. It is not determined
@@ -312,7 +323,7 @@ def water_type_at_depth(surface_water_type: str, depth_m: float) -> str | None:
     return None
 
 
-def kd_spectrum(kd, wavelength_nm: float, at) -> np.ndarray:
+def kd_spectrum(kd, wavelength_nm: float, at):
     """Reconstruct a Kd spectrum from a single measured value.
 
     Uses the model of Austin & Petzold (1986), Eq. (6)::
@@ -352,7 +363,8 @@ def kd_spectrum(kd, wavelength_nm: float, at) -> np.ndarray:
             ProvenanceWarning,
             stacklevel=2,
         )
-    return np.interp(query, wl, m) / m1 * (kd - kw1) + np.interp(query, wl, kw)
+    result = np.interp(query, wl, m) / m1 * (kd - kw1) + np.interp(query, wl, kw)
+    return _like_input(result, at)
 
 
 def b_from_c(c, wavelength_nm, *, bw, cw, bound: str = "average"):
@@ -376,4 +388,5 @@ def b_from_c(c, wavelength_nm, *, bw, cw, bound: str = "average"):
             f"wavelength outside the measured range ({wl[0]:g}-{wl[-1]:g} nm)"
         )
     ratio = np.interp(query, wl, ratios[bound])
-    return (np.asarray(c, dtype=float) - cw) * ratio + bw
+    result = (np.asarray(c, dtype=float) - cw) * ratio + bw
+    return _like_input(np.atleast_1d(result), wavelength_nm)

@@ -282,7 +282,55 @@ A test rebuilds the Akkaynak-Treibitz expression from the returned
 coefficients and requires it to match `Scene.observe` exactly, so the two
 routes cannot drift apart.
 
-## 17. Planned
+## 17. Examples are executable, and CI runs them
+
+`examples/` holds two scripts rather than notebooks. A notebook stores its
+outputs in the file, so the diff is noisy and the stored output can disagree
+with what the code now produces. Scripts can simply be run, and CI runs both
+on every push: an example that has stopped working is a failed build, not
+something a reader finds out.
+
+Writing the first one immediately exposed an API fault. `water("III").a(550)`
+returned `array([0.0878])`, so `float(...)` on it raised under NumPy 2. Scalar
+input now gives a float, matching `numpy.interp`, with the behaviour pinned by
+tests. Nothing else surfaced that; a reader following the README would have
+hit it on their first line.
+
+Each example prints the version and file it imported before doing anything.
+`python examples/foo.py` puts `examples/` on `sys.path` rather than the
+current directory, so an installed copy of the package wins over the working
+tree, and the failure that produces looks like a missing method rather than a
+stale install. Naming the file makes that impossible to miss twice.
+
+`synthetic_underwater_images.py` ends with the assumptions it made — the
+stated backscatter ratio, the approximate veiling geometry, the horizontal
+path, the invented reflectance spectra — rather than opening with them. A
+reader who has just watched a red patch turn black at 8 m is more likely to
+read that list than one who met it before seeing anything.
+
+## 18. The repository checks its own consistency
+
+`tests/test_packaging.py` asserts things about the repository rather than
+about the physics.
+
+The version is written in three files and has drifted twice, both times found
+by a person noticing a wrong number in output. That is not a method, so it is
+a test now. It also refuses a version that is not a plain `x.y.z`, since a
+`.dev` suffix is not something to release.
+
+Two further checks close the gap between the data and its documentation: every
+shipped CSV must be named in `DATA.md`, and every shipped CSV must be written
+by some script in `tools/`. A table nobody documented is a table with no
+provenance, which is the one thing this package exists not to have.
+
+A fourth asserts that the tests import `jerlov` from the working tree. That is
+the `sys.path` trap in section 17, and it produced a failure that looked like
+a missing method rather than a stale install.
+
+All four skip when `pyproject.toml` is absent, so running the suite against an
+installed wheel does not fail on files that are deliberately not shipped.
+
+## 19. Planned
 
 Recorded so the shape of the API can be judged against where it is going.
 

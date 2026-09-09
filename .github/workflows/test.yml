@@ -33,3 +33,11 @@ jobs:
         run: pip install "numpy==1.22.*"
       - run: python -c "import numpy; print('numpy', numpy.__version__)"
       - run: python -m pytest tests/ -v
+      - name: The examples must still run
+        # An example that has stopped working should be a failed build, not
+        # something a reader discovers.
+        run: |
+          for f in examples/*.py; do
+            echo "--- $f"
+            python "$f" > /dev/null
+          done
