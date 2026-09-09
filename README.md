@@ -207,6 +207,28 @@ jerlov.b_from_c(c=0.5, wavelength_nm=555, bw=0.0019, cw=0.0659)
 jerlov.Water.from_measurements(wavelengths, a=..., b=...)
 ```
 
+## Solar heating of the upper ocean
+
+Ocean circulation models absorb shortwave radiation as a sum of two
+exponentials, with parameters per Jerlov type from Paulson & Simpson (1977):
+
+```python
+jerlov.solar_fraction("IB", 10.0)        # 0.183 of the surface irradiance
+p = jerlov.shortwave_parameters("IB")    # R, zeta1_m, zeta2_m
+```
+
+Broadband, 300-2500 nm; nothing to do with the spectral quantities above. The
+parameters are usually copied from secondary sources, so `tools/` refits them
+from the table the paper fitted, Jerlov (1968) Table XXI, and reproduces R for
+every row.
+
+**They miss their own source by 46 percent at 1 m** for types II and III. Two
+exponentials cannot follow the near-surface decay. `DATA.md` section 14 has
+the numbers; anyone heating a thin surface layer should read it.
+
+Only the five oceanic types were fitted. Asking for a coastal type raises
+rather than substituting a neighbour.
+
 ## Examples
 
 ```
@@ -224,8 +246,9 @@ Both are run by CI, so an example that has stopped working is a failed build.
 ## Provenance and design
 
 `DATA.md` records, for every shipped table, where it came from, what was
-verified, and what is known to be wrong with it. Twelve defects in the source
-literature are documented there, seven of them confirmed.
+verified, and what is known to be wrong with it. Fifteen entries are
+documented there: seven confirmed defects in the source literature, three
+questions the first edition of Jerlov settled, and the rest notes.
 
 `DECISIONS.md` records why the package is shaped the way it is, including the
 alternatives that were rejected and why.

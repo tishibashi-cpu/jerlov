@@ -1,0 +1,10 @@
+key,water_type,R,zeta1_m,zeta2_m,fit_depth_m,status,note
+I,I,0.58,0.35,23.0,100,ok,the paper also gives a separate fit for the upper 50 m; see I_upper50
+I_upper50,I,0.68,1.2,28.0,50,ok,"fitted over the upper 50 m because ln I against z changes slope below it. Printed as 'Type 1' in the table, but the text makes clear it is type I"
+IA,IA,0.62,0.6,20.0,100,ok,
+IB,IB,0.67,1.0,17.0,100,ok,
+II,II,0.77,1.5,14.0,100,ok,
+III,III,0.78,1.4,7.9,100,ok,
+composite_observations,,0.62,1.5,20.0,,not_a_water_type,"the authors' own observations, runs 4, 5, 6, 9 and 10, North Pacific 35N 155W. Not a Jerlov type"
+run_1,,0.74,1.7,16.0,,not_a_water_type,"a single run with a 16 degree solar altitude and a cloudless sky, which attenuates faster near the surface. Not a Jerlov type"
+kraus_1972_very_clear,,0.4,5.0,40.0,,not_a_water_type,"Kraus (1972) p. 92, from Crater Lake. The paper notes R = 0.4 may be too small. Not a Jerlov type"

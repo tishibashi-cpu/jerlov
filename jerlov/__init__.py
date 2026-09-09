@@ -20,6 +20,11 @@ from .scene import (
     Scene,
     veiling_radiance_estimate,
 )
+from .shortwave import (
+    ShortwaveParameters,
+    shortwave_parameters,
+    solar_fraction,
+)
 from .sources import SOURCES, Source, get_source
 from .water import (
     MissingQuantityError,
@@ -50,10 +55,13 @@ __all__ = [
     "Water",
     "water",
     "water_type_at_depth",
+    "shortwave_parameters",
+    "solar_fraction",
+    "ShortwaveParameters",
     "kd_spectrum",
     "b_from_c",
     "ProvenanceWarning",
     "MissingQuantityError",
 ]
 
-__version__ = "0.1.4"
+__version__ = "0.2.0"

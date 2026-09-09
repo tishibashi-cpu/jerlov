@@ -3,9 +3,9 @@
 What every shipped table is, where it came from, what was verified, and what
 is known to be wrong with it.
 
-Eleven defects in the source literature are recorded below. Six are confirmed,
-three could not be resolved because the material was not obtainable, and two
-are notes rather than defects. None of them is repaired silently: values that
+Fifteen entries are recorded below. Seven are confirmed defects, three were
+open questions that the first edition of Jerlov settled, and the rest are
+notes rather than defects. None of them is repaired silently: values that
 could be recovered carry `status = reconstructed` and say how, values that
 could not are `missing`, and values that are used but doubtful are `suspect`.
 
@@ -23,6 +23,9 @@ could not are `missing`, and values that are used but doubtful are `suspect`.
 | `cie1931_2deg_cmf.csv` | CIE 1931 2-degree colour matching functions. 1 nm, 360-830 nm | 471 |
 | `cie_d65.csv` | CIE illuminant D65 relative spectral power. 5 nm, 300-780 nm | 97 |
 | `williamson2023_depth.csv` | Typical Jerlov type per 10 m layer to 200 m | 200 |
+| `jerlov1968_kd.csv` | Kd from the **first edition**. 16 wavelengths, 10 types | 160 |
+| `jerlov1968_total_irradiance.csv` | Percent of total irradiance 300-2500 nm by depth | 120 |
+| `paulson1977_shortwave.csv` | Two-exponential shortwave penetration parameters | 9 |
 
 ## The `status` column
 
@@ -101,28 +104,51 @@ updated from those published in the original reference". The highlighted cells
 are exactly the ones listed above. Nothing in either of their papers mentions
 it.
 
-## 2. The Kd0 reference column disagrees (not resolved)
+## 2. The Kd0 reference column is the first edition, not an error (resolved)
 
 The Kd0 column of `solonenko2015_iop.csv` differs from `jerlov1976_kd.csv` by
 up to 34 percent. Solonenko & Mobley cite Jerlov & Koczy (1951) and Jerlov
 (1968) for it, not Jerlov (1976).
 
-**Whether this is an edition difference or an error could not be
-determined**, because neither of the following could be obtained:
+**They were right and the discrepancy is an edition difference.** Jerlov
+(1968) Table XX was obtained and transcribed; it is shipped as
+`jerlov1968_kd.csv`. Converting its transmittances to Kd and comparing:
 
-- Jerlov, N. G. (1968), *Optical Oceanography*, Elsevier Oceanography Series
-  Vol. 5, pp. 118-120. ISBN 978-0-444-40320-9. **No DOI exists**; the DOIs
-  `10.4319/lo.1968.13.4.0731` and `10.1126/science.163.3862.64.a` are reviews
-  of the book, not the book. Not held by the University of Tsukuba library.
-- Jerlov, N. G. and Koczy, F. (1951), *Reports of the Swedish Deep-Sea
-  Expedition 1947-1948*, Vol. 3, pp. 30-71.
+| Type | against Jerlov 1968 | against Jerlov 1976 |
+|---|---|---|
+| I | **0.09 %** | 3.75 % |
+| IA | **0.10 %** | 4.11 % |
+| IB | **0.06 %** | 4.72 % |
+| II | **0.09 %** | 6.15 % |
+| III | **0.15 %** | 7.66 % |
+| 7C | **0.06 %** | 0.79 % |
+| 9C | **0.25 %** | 0.89 % |
 
-Note that Jerlov (1976) *Marine Optics* is the second edition of Jerlov
-(1968); they are not independent works.
+(mean absolute difference over the wavelengths both tables cover)
 
-**Practical effect: none.** Do not mix Kd0 and Kd across the two files. This
-package's default source is Williamson & Hollins, and Kd0 is carried as a
-reference column, never used as a computational input.
+The coastal types agree to **0.05-0.11 percent** once 310 and 350 nm are set
+aside, and those two are already carried as `extrapolated`: Solonenko & Mobley
+substituted their own values at the short-wavelength end rather than using
+Jerlov's.
+
+Agreement at the first decimal place of a percent is transcription accuracy.
+**There is no defect here. The earlier entry in this file was wrong, and said
+so on the strength of comparing a paper against an edition it did not cite.**
+
+Do not mix Kd0 and Kd across files: they are different editions of the same
+classification, not different measurements of the same water.
+
+Jerlov & Koczy (1951), *Reports of the Swedish Deep-Sea Expedition 1947-1948*
+Vol. 3, 30-71, was not obtained and is not needed: the 1968 table accounts for
+the column on its own.
+
+### A third edition exists
+
+Aas et al. (2013) cite **Jerlov, N. G. (1978), *The optical classification of
+sea water in the euphotic zone*, Rep. Dept. Phys. Oceanogr. 36, Univ.
+Copenhagen, 46 pp.** In it the coastal types are reduced from nine to three,
+1, 3 and 5. Not obtained. Anyone comparing a coastal-type table against this
+package should establish which of the three editions it came from first.
 
 ## 3. Jerlov's Kd falls below pure sea water (confirmed, documented in 1986)
 
@@ -142,10 +168,30 @@ than pure water, which is not possible.
 
 The replacement values are in `austin1986_kd.csv`.
 
-**The Solonenko & Mobley Kd0 at 600 nm is a separate problem.** Jerlov's value
-is 2.4 percent below Kw there; theirs is 32.3 percent below, for types I, IA,
-IB and II alike. The known defect in Jerlov's data does not account for it.
-Not resolved.
+**The Solonenko & Mobley Kd0 at 600 nm is the first edition too (resolved).**
+Jerlov revised it, and said so in the 1976 text:
+
+> Deviations from the previous classification (Jerlov, 1968) occur at 600 nm
+> where the new Kd values are higher for types I, IA, IB and II.
+
+Those are exactly the four types where the anomaly appears. For type I at
+600 nm, the 1968 table gives 85 percent per metre, so Kd = 0.1625, and
+Solonenko & Mobley print 0.163; the 1976 table gives 79 percent, so
+Kd = 0.2357, and the Dstl file gives 0.235.
+
+The same passage accounts for the type III differences at 425, 550 and 575 nm:
+
+> type III shows lower Kd values at 550 and 575 and somewhat higher values
+> around 425 nm which may be caused by chlorophyll absorption
+
+Jerlov also records that the 600 nm region is not settled:
+
+> it seems that the last word is not said about the behaviour of the
+> irradiance attenuation in the "slope" region of 600 nm
+
+**The point in the first paragraph of this section still stands.** Jerlov's
+values fall below pure sea water at 9 of 15 wavelengths in the 1968 edition,
+which is why Austin & Petzold replaced them.
 
 ## 4. Table 3 parameters for the clearest types (confirmed)
 
@@ -163,12 +209,25 @@ The fits reproduce the b column to within 0.2 to 0.4 percent, so **the b
 column is right and the Table 3 entries are wrong.** The paper describes
 special handling for type I, but says nothing about IA.
 
-## 5. Possible duplicated column in Table 6 (not resolved)
+## 5. Coastal 1C repeats oceanic III, in Jerlov's own tables (resolved)
 
 The Kd0 of Jerlov 1C is identical to that of Jerlov III at all eight
-wavelengths from 525 to 700 nm. In `jerlov1976_kd.csv` the two differ by 12
-percent at 525 nm. Resolving this needs the same material as section 2, which
-could not be obtained. Left as `suspect`.
+wavelengths from 525 to 700 nm. This was recorded here as a possible
+duplicated column in Solonenko & Mobley's table.
+
+**It is in the original.** Jerlov (1968) Table XX has the two rows identical
+at those eight wavelengths, and Jerlov (1976) Table XXVI still has them
+identical at seven, 550 to 700 nm, having separated 525.
+
+Surviving a revision, and being trimmed by one wavelength rather than
+removed, does not read like a copying mistake. Nor is it physically
+surprising: beyond about 550 nm the absorption of pure water dominates, so
+water types converge there whatever their particle load.
+
+**Solonenko & Mobley transcribed it faithfully.** The affected cells are
+carried as `ok` with a note, not as `suspect`. Whether Jerlov's own tables
+should show two types as exactly equal is a question for someone with the
+underlying observations, which are not in either edition.
 
 ## 6. The small-particle scattering coefficient (confirmed)
 
@@ -437,3 +496,79 @@ quickly: 3C reaches only 70 m.
 **These are typical profiles, not predictions for a place or a season.** The
 paper says so, and provides per-cell cruise and month counts for anyone who
 needs to judge how well supported a particular cell is.
+
+
+## 14. Shortwave penetration for ocean models (note)
+
+`paulson1977_shortwave.csv`. Ocean circulation models absorb solar radiation
+in the upper ocean as a sum of two exponentials:
+
+```
+I(z) / I(0) = R exp(-z/zeta1) + (1 - R) exp(-z/zeta2)
+```
+
+Source: Paulson, C. A. and Simpson, J. J. (1977), "Irradiance measurements in
+the upper ocean", *J. Phys. Oceanogr.* 7, 952-956, DOI
+`10.1175/1520-0485(1977)007<0952:IMITUO>2.0.CO;2`, Table 2.
+
+These parameters are used by ROMS, MITgcm, NEMO and CESM among others, and are
+usually copied from secondary sources rather than the paper.
+
+### The fit is repeated rather than trusted
+
+Paulson & Simpson fitted Jerlov (1968) Table XXI, which this package now
+ships. `tools/build_paulson1977.py` repeats their two-step procedure, their
+Eqs (2) and (3):
+
+| row | R refit | R printed | zeta1 refit | printed | zeta2 refit | printed |
+|---|---|---|---|---|---|---|
+| I | **0.58** | 0.58 | 0.36 | 0.35 | 23.2 | 23 |
+| I upper 50 m | 0.67 | 0.68 | 1.38 | 1.2 | 27.4 | 28 |
+| IA | **0.62** | 0.62 | 0.63 | 0.60 | 20.4 | 20 |
+| IB | **0.67** | 0.67 | 1.16 | 1.0 | 17.3 | 17 |
+| II | **0.77** | 0.77 | 1.80 | 1.5 | 14.4 | 14 |
+| III | **0.78** | 0.78 | 1.60 | 1.4 | 7.9 | 7.9 |
+
+**R reproduces for every row.** The two lengths land within 0.3 m and 0.6 m,
+which is as much as a table printed to two significant figures allows: the
+shallow fit has four points and the deep fit as few as three.
+
+### The published parameters miss their own source at 1 m
+
+Feeding the printed parameters back gives, against Jerlov Table XXI, an error
+of **46 percent at 1 m** for types II and III, falling below 25 percent from
+2 m down. Two exponentials cannot follow the sharp near-surface decay; the
+paper is explicit that the fit excludes the 10 m point for the same reason.
+
+Anyone heating a 1 m surface layer with these parameters should know this.
+`tests/test_shortwave.py` pins both numbers.
+
+### What it does not cover
+
+**Only the five oceanic types.** The paper fitted I, IA, IB, II and III.
+There are no coastal parameters, and `shortwave_parameters` raises rather than
+substituting a neighbouring type.
+
+**Type I has two rows.** The paper gives a separate fit over the upper 50 m,
+"because of a change in slope of ln I vs z below 50 m", available as
+`I_upper50`. Table 2 prints its label as "Type 1" with an Arabic numeral, one
+line below "Type I"; the text makes clear both are the oceanic type.
+
+**Three rows are not water types at all**: the authors' own composite
+observations, their Run 1, and a Kraus (1972) value from Crater Lake. They are
+shipped with `status = not_a_water_type` so a reader comparing against the
+paper does not think they are missing.
+
+## 15. The backscattering ratio is still being guessed (note)
+
+Jia et al. (2021), *Remote Sens.* 13, 4018, DOI `10.3390/rs13194018`, needed
+bb for the Jerlov types in order to compare that scheme against their own.
+They wrote:
+
+> However, the exact B values for the Jerlov water types were unknown ... we
+> assumed B = 0.001, 0.01, and 0.1 to represent the different scenarios as
+> much as possible.
+
+A peer-reviewed paper spanning three orders of magnitude, because there was
+nothing to look up. This is independent support for section 10 and for the
+decision that `Water.bb` has no default.

@@ -21,6 +21,13 @@ Only two files inside it are read: `ip_jerlov.csv` and
 the paper and are literals inside the script, checked against the paper's own
 Eq. (6) at run time.
 
+**Jerlov (1968)** *Optical Oceanography*, Elsevier Oceanography Series Vol. 5,
+Tables XX and XXI, has been obtained and transcribed into
+`jerlov1968_kd.csv` and `jerlov1968_total_irradiance.csv`. **No DOI exists**;
+the DOIs `10.4319/lo.1968.13.4.0731` and `10.1126/science.163.3862.64.a` are
+reviews of the book, not the book. Not held by the University of Tsukuba
+library.
+
 ## Read but not machine-processed
 
 These were read to establish provenance and are cited in `DATA.md`. They are
@@ -29,6 +36,9 @@ not needed to rebuild the tables.
 | Reference | DOI |
 |---|---|
 | Austin & Petzold (1986), Opt. Eng. 25(3), 471-479 | `10.1117/12.7973845` |
+| Paulson & Simpson (1977), J. Phys. Oceanogr. 7, 952-956 | `10.1175/1520-0485(1977)007<0952:IMITUO>2.0.CO;2` |
+| Aas et al. (2013), Oceanologia 55(2), 471-482 (open access) | `10.5697/oc.55-2.471` |
+| Jia et al. (2021), Remote Sens. 13, 4018 (open access) | `10.3390/rs13194018` |
 | Austin & Petzold (1990), Proc. SPIE 1302, 79-93 | `10.1117/12.943302` |
 | Haltrin (1999), Appl. Opt. 38, 6826-6832 | — |
 | Smart (2007), Opt. Express 15(12), 7152-7164 (open access) | `10.1364/OE.15.007152` |
@@ -42,11 +52,12 @@ not needed to rebuild the tables.
 Recorded so that the gap is not mistaken for a decision. See `DATA.md`
 sections 2 and 5.
 
-- Jerlov, N. G. (1968), *Optical Oceanography*, Elsevier Oceanography Series
-  Vol. 5, pp. 118-120. ISBN 978-0-444-40320-9. **No DOI exists.** The DOIs
-  `10.4319/lo.1968.13.4.0731` and `10.1126/science.163.3862.64.a` are reviews
-  of the book, not the book.
+- Jerlov, N. G. (1978), *The optical classification of sea water in the
+  euphotic zone*, Rep. Dept. Phys. Oceanogr. **36**, Univ. Copenhagen, 46 pp.
+  The third edition of the classification, in which the coastal types are
+  reduced to 1, 3 and 5. No DOI. Cited by Aas et al. (2013).
 - Jerlov, N. G. and Koczy, F. (1951), *Reports of the Swedish Deep-Sea
-  Expedition 1947-1948*, Vol. 3, pp. 30-71.
+  Expedition 1947-1948*, Vol. 3, pp. 30-71. No longer needed: the 1968 table
+  accounts for the Solonenko & Mobley reference column on its own.
 - Neuner et al. (2020), Proc. SPIE 11506, 1150608, DOI `10.1117/12.2567076`.
   Abstract only.

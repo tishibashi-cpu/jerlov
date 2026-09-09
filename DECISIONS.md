@@ -330,7 +330,37 @@ a missing method rather than a stale install.
 All four skip when `pyproject.toml` is absent, so running the suite against an
 installed wheel does not fail on files that are deliberately not shipped.
 
-## 19. Planned
+## 19. Shortwave penetration is in scope after all, reversing section 12
+
+Section 12 lists as out of scope: "Shortwave heating for ocean circulation
+models, where the Jerlov type is an integer index and no spectrum is
+involved." **That is reversed.** `jerlov/shortwave.py` provides the Paulson &
+Simpson (1977) parameters.
+
+The reasoning was that a broadband two-exponential fit has nothing in common
+with the spectral quantities in the rest of the package. That is still true,
+and it is not the criterion that matters. The criterion this package actually
+applies is whether a number's provenance can be established and checked, and
+obtaining Paulson & Simpson showed that it can: they fitted Jerlov (1968)
+Table XXI, and `tools/build_paulson1977.py` repeats the fit and reproduces R
+for all six rows.
+
+Two things settled it.
+
+It is the most widely used application of the Jerlov classification. ROMS,
+MITgcm, NEMO and CESM all carry these six numbers, generally copied from a
+secondary source. A checkable copy is worth having.
+
+Repeating the fit found something. The published parameters miss Jerlov's own
+table by 46 percent at 1 m for types II and III (DATA.md section 14). That is
+exactly the class of fact this package exists to surface, and it was not
+visible until the fit was repeated.
+
+The scope line in section 12 was drawn on a similarity of subject matter
+rather than on whether the work could be done properly. That was the wrong
+test.
+
+## 20. Planned
 
 Recorded so the shape of the API can be judged against where it is going.
 
