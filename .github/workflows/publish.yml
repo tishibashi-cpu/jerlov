@@ -22,20 +22,28 @@ jobs:
           python -m build
           python -m twine check dist/*
 
-      - name: The wheel must carry the data tables
+      - name: The wheel must carry every data table in the source tree
         # A wheel that installs but cannot find its own CSVs is the classic
-        # packaging failure. Fail here rather than after publishing.
+        # packaging failure. Counting the source tree rather than hard-coding
+        # a number means adding a table does not also mean editing this file;
+        # forgetting to do so stopped three releases.
         run: |
           python - <<'EOF'
-          import glob, sys, zipfile
+          import glob, pathlib, sys, zipfile
+          expected = {p.name for p in pathlib.Path("jerlov/data").glob("*.csv")}
           wheel = glob.glob("dist/*.whl")[0]
-          names = zipfile.ZipFile(wheel).namelist()
-          csvs = sorted(n for n in names if n.endswith(".csv"))
-          print(f"{wheel} contains {len(csvs)} CSV files:")
-          for n in csvs:
-              print("  ", n)
-          if len(csvs) != 13:
-              sys.exit(f"expected 13 data tables in the wheel, found {len(csvs)}")
+          found = {pathlib.PurePosixPath(n).name
+                   for n in zipfile.ZipFile(wheel).namelist()
+                   if n.endswith(".csv")}
+          print(f"{wheel}: {len(found)} of {len(expected)} tables")
+          for name in sorted(expected | found):
+              mark = "  " if name in expected & found else "!!"
+              print(f"  {mark} {name}")
+          if not expected:
+              sys.exit("no data tables found in the source tree at all")
+          if found != expected:
+              sys.exit(f"missing from the wheel: {sorted(expected - found)}; "
+                       f"unexpected in the wheel: {sorted(found - expected)}")
           EOF
 
       - name: The installed package must work from the wheel alone
