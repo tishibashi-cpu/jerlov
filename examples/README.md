@@ -11,6 +11,11 @@ python examples/synthetic_underwater_images.py
 They are run by CI on every push, so an example that has stopped working is a
 failed build rather than something a reader discovers.
 
+Each prints the version and path it loaded first. `python examples/foo.py`
+puts `examples/` on `sys.path`, not the current directory, so an installed
+copy of the package silently wins over the working tree. In a clone, run
+`pip install -e .` first.
+
 ## `sources_disagree.py`
 
 Why `jerlov.water()` makes you name a source.
