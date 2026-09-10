@@ -378,16 +378,34 @@ tabulated wavelength immediately beside a gap. Checking cell by cell against
 a printed page is a different kind of test from checking a package against
 itself, and it found something the other kind could not.
 
-## 21. Planned
+## 21. Experimental validation is out of scope
+
+The README says this package does not claim to predict what a camera will
+record underwater, and that closing that gap needs measurements which do not
+appear to exist. **Making them here is ruled out.** The tank, the turbidity
+control and the calibrated instruments are not available, and a validation
+done badly would be worse than none: it would put a number on the accuracy
+that nobody could defend.
+
+So the claim stays where it is. The package implements published coefficients
+correctly, the tests demonstrate that, and the limits are stated. Anyone with
+the facilities to check it against photographs is welcome to, and `examples/`
+gives them the starting point.
+
+**Rejected:** a partial validation, clear water only, with equipment to hand.
+It would produce a figure that reads as validation and is not one.
+
+## 22. Planned
 
 Recorded so the shape of the API can be judged against where it is going.
 
 - **Akkaynak-Treibitz coefficients**: beta_D, beta_B and B_inf for a stated
   distance range. The range must be an argument, not hidden, because those
   coefficients are not constants.
-- **Depth profiles**: Williamson & Hollins (2023) give the Jerlov type at each
-  10 m layer down to 200 m, so that a scene at 40 m in nominally type I water
-  uses the type that actually applies there.
+- **Petzold phase functions**: measured volume scattering functions, so that a
+  backscatter ratio can be chosen from a measurement rather than guessed. It
+  will not determine bb per Jerlov type — nothing available does — but it
+  replaces a guess with a stated provenance.
 
 Validation is deliberately staged. The package can claim that it implements
 published coefficients correctly, and the tests demonstrate that. It cannot
