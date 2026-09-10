@@ -246,8 +246,8 @@ Both are run by CI, so an example that has stopped working is a failed build.
 ## Provenance and design
 
 `DATA.md` records, for every shipped table, where it came from, what was
-verified, and what is known to be wrong with it. Fifteen entries are
-documented there: seven confirmed defects in the source literature, three
+verified, and what is known to be wrong with it. Seventeen entries are
+documented there: eight confirmed defects in the source literature, three
 questions the first edition of Jerlov settled, and the rest notes.
 
 `DECISIONS.md` records why the package is shaped the way it is, including the

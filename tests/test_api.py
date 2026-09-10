@@ -186,3 +186,30 @@ def test_a_missing_value_is_nan_whether_scalar_or_array():
         warnings.simplefilter("ignore", ProvenanceWarning)
         assert np.isnan(w.a(675))
         assert np.isnan(w.a([675.0])).all()
+
+
+# -- landing exactly on a sample -----------------------------------------
+
+
+def test_an_exact_hit_survives_a_missing_neighbour():
+    """A query on a sample is not interpolated, so a gap beside it is not its
+    problem. Found by checking the shipped 1976 file against the printed
+    table: Jerlov 7C has no data below 350 nm, and kd(350) was returning nan
+    although 350 nm itself is tabulated.
+    """
+    w = jerlov.water("7C", source="jerlov1976")
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", ProvenanceWarning)
+        assert w.kd(350.0) == pytest.approx(3.0)
+        assert np.isnan(w.kd(349.0))      # inside the gap, still nan
+        assert np.isnan(w.kd(348.0))
+
+
+def test_interpolating_across_a_gap_still_gives_nan():
+    """The guard this rests on must not have been loosened."""
+    w = jerlov.water("5C", source="solonenko2015")
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", ProvenanceWarning)
+        assert np.isnan(w.a(650))          # a published value that is wrong
+        assert np.isnan(w.a(660))          # and interpolation across it
+        assert np.isnan(w.a(675))

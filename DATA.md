@@ -3,7 +3,7 @@
 What every shipped table is, where it came from, what was verified, and what
 is known to be wrong with it.
 
-Fifteen entries are recorded below. Seven are confirmed defects, three were
+Seventeen entries are recorded below. Eight are confirmed defects, three were
 open questions that the first edition of Jerlov settled, and the rest are
 notes rather than defects. None of them is repaired silently: values that
 could be recovered carry `status = reconstructed` and say how, values that
@@ -572,3 +572,107 @@ They wrote:
 A peer-reviewed paper spanning three orders of magnitude, because there was
 nothing to look up. This is independent support for section 10 and for the
 decision that `Water.bb` has no default.
+
+
+## 16. A published table off by a factor of ten (confirmed)
+
+Woźniak, B. and Pelevin, V. N. (1991), "Optical and bio-optical
+classifications of natural waters", *Oceanologia* **31**, 25-55, reprints
+Jerlov's Kd spectra as its Table 1. Two things in it are wrong.
+
+**The unit is off by a factor of ten.** The header reads
+`Kd(λ) [10⁻³ m⁻¹]`. The values are Jerlov's, and Jerlov (1976) Table XXVII
+states `Kd · 10² m⁻¹`, so they are in units of 10⁻² m⁻¹.
+
+Type I at 475 nm is printed as 1.8 in both. Under Jerlov's header that is
+0.018 1/m, which agrees with Austin & Petzold's replacement value of 0.0184
+and with the transmittance of 98.2 percent per metre in the same edition.
+Under the Woźniak & Pelevin header it is 0.0018 1/m, **below the absorption
+of pure sea water**, which is not possible for any water.
+
+**Jerlov IB at 700 nm is printed as 59 where the original has 58.** A single
+digit; the other 157 cells are exact.
+
+Neither defect is in the values themselves. Anyone reading the numbers off the
+page and applying the stated unit gets a Kd ten times too small.
+
+### The values themselves check out
+
+This was the first chance to check `jerlov1976_kd.csv`, which comes to us
+through the Dstl dataset, against an independent transcription.
+
+| Source | Agreement with the shipped file |
+|---|---|
+| Jerlov (1976) Table XXVII, from the scan | 143 cells, **exactly** |
+| Woźniak & Pelevin (1991) Table 1 | 157 of 158 cells |
+| Paglierani et al. (2023) Table 10 | all cells, unit stated correctly |
+
+Three transcriptions, one of which has the unit wrong and one digit off. The
+shipped file agrees with the two that are right.
+
+**The comparison also found a bug in this package.** Jerlov 7C has no data
+below 350 nm, and `kd(350)` was returning `nan` although 350 nm is tabulated:
+the guard that stops interpolation bridging a gap was also being applied to
+queries that land exactly on a sample, which are not interpolated at all.
+Fixed, with both halves of the behaviour pinned in `tests/test_api.py`. It had
+gone unnoticed because nothing had previously been checked against a printed
+table cell by cell.
+
+### More editions than expected
+
+Woźniak & Pelevin cite the classification as Jerlov 1951, 1961, 1968, 1976,
+1977 and 1978, and say the final version is the 1978 one. Adding Jerlov (1964),
+where IA and IB were introduced, that is **seven editions**. Two of them are
+new here:
+
+- Jerlov, N. G. (1961), "Irradiance in the sea in relation to particle
+  distribution".
+- Jerlov, N. G. (1977), "Classification of sea water in terms of quanta
+  irradiance", *J. Cons. int. Explor. Mer*.
+
+Neither obtained. **Before comparing any Jerlov table against this package,
+establish which edition it came from.** Section 2 is what happens when that is
+not done.
+
+## 17. Three routes to a and b, disagreeing by a factor of five (confirmed)
+
+Sections 2 and 6 concern two published sets of coefficients for the same water
+types. There is a third, and the field knows.
+
+Abd El-Mottaleb et al. (2024), *Results in Engineering* **24**, 102941, DOI
+`10.1016/j.rineng.2024.102941`, assign a chlorophyll concentration to each
+Jerlov type (0.03, 0.1, 0.4, 1.25 and 3 mg/m³ for I through III) and run a
+bio-optical model. Their Table 2 gives the beam attenuation at 532 nm.
+Against the two sources this package ships:
+
+| Type | Chlorophyll model 2024 | Williamson & Hollins 2022 | Solonenko & Mobley 2015 | Spread |
+|---|---|---|---|---|
+| I | 0.0576 | — | 0.0524 | 1.1x |
+| IA | 0.0825 | — | 0.0550 | 1.5x |
+| IB | 0.1895 | 0.1772 | 0.1069 | **1.8x** |
+| II | 0.5297 | 0.2408 | 0.4301 | **2.2x** |
+| III | 1.8998 | 0.3712 | 1.0922 | **5.1x** |
+
+(c in 1/m. All three are peer reviewed.)
+
+**A factor of five at Jerlov III.** A communication range, a visibility
+estimate or a synthetic image built on one of these is not comparable with one
+built on another, and none of the three papers says which of the others it
+disagrees with.
+
+Paglierani et al. (2023), *Quantum Engineering* **2023**, 7185329, DOI
+`10.1155/2023.7185329`, a review of underwater quantum key distribution, says
+so plainly:
+
+> some works strictly adopt the values proposed by Mobley ... Other works,
+> conversely, though adopting the same water types, use slightly different
+> numeric values for those coefficients.
+
+"Slightly" understates it by the table above, but the observation is the
+reason `jerlov.water()` requires a source and `Water` carries the one it came
+from.
+
+The chlorophyll route is not shipped. It is a model with a free parameter
+assigned per water type, not a measurement or an inversion of one, and the
+assignment differs between papers that use it. It is recorded here so that a
+reader meeting those numbers can tell which family they belong to.

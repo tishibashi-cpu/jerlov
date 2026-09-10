@@ -360,7 +360,25 @@ The scope line in section 12 was drawn on a similarity of subject matter
 rather than on whether the work could be done properly. That was the wrong
 test.
 
-## 20. Planned
+## 20. Checking against a printed table is worth the transcription
+
+`tests/test_reproduces_papers.py` now carries Jerlov (1976) Table XXVII as a
+literal and compares all 158 cells against the shipped file. That file reaches
+us through the Dstl dataset, which is a second-hand route, and until the scan
+was obtained there was nothing to check it against.
+
+It came out exact. Two independent reprints of the same table were also
+compared: one is exact, and one has its unit off by a factor of ten and one
+digit wrong (DATA.md section 16).
+
+The comparison also found a bug here. The guard that stops interpolation
+bridging a gap was firing on queries that land exactly on a sample, which are
+not interpolated. It had survived 133 tests because none of them asked for a
+tabulated wavelength immediately beside a gap. Checking cell by cell against
+a printed page is a different kind of test from checking a package against
+itself, and it found something the other kind could not.
+
+## 21. Planned
 
 Recorded so the shape of the API can be judged against where it is going.
 

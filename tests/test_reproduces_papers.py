@@ -221,3 +221,75 @@ def test_jerlov_type_I_falls_below_pure_sea_water():
         if j < float(np.interp(nm, wl_m, kw)):
             below += 1
     assert below == 9, f"{below} of {len(checked)} wavelengths below Kw"
+
+
+# -- checked against independent transcriptions ---------------------------
+
+#: Jerlov (1976) Table XXVII, Kd x 100 in 1/m, as reprinted by Paglierani et
+#: al. (2023) Table 10 and by Wozniak & Pelevin (1991) Table 1. The two agree
+#: with each other and with the original scan except at IB 700 nm, where
+#: Wozniak & Pelevin print 59; see DATA.md section 16.
+JERLOV1976_TABLE_XXVII = {
+    "I": [15, 6.2, 3.8, 2.8, 2.2, 1.9, 1.8, 2.7, 4.3, 6.3, 8.9, 23.5, 30.5,
+          36, 42, 56],
+    "IA": [18, 7.8, 5.2, 3.8, 3.1, 2.6, 2.5, 3.2, 4.8, 6.7, 9.4, 24, 31, 37,
+           43, 57],
+    "IB": [22, 10, 6.6, 5.1, 4.2, 3.6, 3.3, 4.2, 5.4, 7.2, 9.9, 24.5, 31.5,
+           37.5, 43.5, 58],
+    "II": [37, 17.5, 12.2, 9.6, 8.1, 6.8, 6.2, 7.0, 7.6, 8.9, 11.5, 26, 33.5,
+           40, 46.5, 61],
+    "III": [65, 32, 22, 18.5, 16, 13.5, 11.6, 11.5, 11.6, 12.0, 14.8, 29.5,
+            37.5, 44.5, 52, 66],
+    "1C": [180, 120, 80, 51, 36, 25, 17, 14, 13, 12, 15, 30, 37, 45, 51, 65],
+    "3C": [240, 170, 110, 78, 54, 39, 29, 22, 20, 19, 21, 33, 40, 46, 56, 71],
+    "5C": [350, 230, 160, 110, 78, 56, 43, 36, 31, 30, 33, 40, 48, 54, 65, 80],
+    "7C": [None, 300, 210, 160, 120, 89, 71, 58, 49, 46, 46, 48, 54, 63, 78,
+           92],
+    "9C": [None, 390, 300, 240, 190, 160, 123, 99, 78, 63, 58, 60, 65, 76, 92,
+           110],
+}
+TABLE_XXVII_WAVELENGTHS = [310, 350, 375, 400, 425, 450, 475, 500, 525, 550,
+                           575, 600, 625, 650, 675, 700]
+
+
+def test_the_shipped_1976_file_matches_the_printed_table():
+    """The Dstl file reaches us second-hand; the printed table does not."""
+    w = {t: jerlov.water(t, source="jerlov1976")
+         for t in JERLOV1976_TABLE_XXVII}
+    checked = 0
+    for water_type, row in JERLOV1976_TABLE_XXVII.items():
+        for nm, printed in zip(TABLE_XXVII_WAVELENGTHS, row):
+            if printed is None:
+                continue
+            got = w[water_type].kd(float(nm))
+            assert got == pytest.approx(printed / 100.0, rel=0.005), (
+                f"{water_type} at {nm} nm: shipped {got}, printed "
+                f"{printed / 100.0}"
+            )
+            checked += 1
+    assert checked == 158
+
+
+def test_the_wozniak_pelevin_reprint_differs_at_exactly_one_cell():
+    """DATA.md section 16. A standing record of what that reprint got wrong."""
+    reprint = {k: list(v) for k, v in JERLOV1976_TABLE_XXVII.items()}
+    reprint["IB"][TABLE_XXVII_WAVELENGTHS.index(700)] = 59      # as printed
+    differing = [
+        (t, nm)
+        for t, row in reprint.items()
+        for nm, value in zip(TABLE_XXVII_WAVELENGTHS, row)
+        if value is not None
+        and value != JERLOV1976_TABLE_XXVII[t][
+            TABLE_XXVII_WAVELENGTHS.index(nm)]
+    ]
+    assert differing == [("IB", 700)]
+
+
+def test_the_stated_unit_of_that_reprint_is_impossible():
+    """Its header says 1e-3 m^-1, which puts Jerlov I below pure sea water."""
+    printed = JERLOV1976_TABLE_XXVII["I"][TABLE_XXVII_WAVELENGTHS.index(475)]
+    as_stated = printed * 1e-3
+    correct = printed * 1e-2
+    pure_water_absorption_at_475 = 0.011    # Austin & Petzold Kw, 1/m
+    assert as_stated < pure_water_absorption_at_475
+    assert correct > pure_water_absorption_at_475

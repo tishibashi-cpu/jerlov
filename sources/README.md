@@ -39,6 +39,9 @@ not needed to rebuild the tables.
 | Paulson & Simpson (1977), J. Phys. Oceanogr. 7, 952-956 | `10.1175/1520-0485(1977)007<0952:IMITUO>2.0.CO;2` |
 | Aas et al. (2013), Oceanologia 55(2), 471-482 (open access) | `10.5697/oc.55-2.471` |
 | Jia et al. (2021), Remote Sens. 13, 4018 (open access) | `10.3390/rs13194018` |
+| Woźniak & Pelevin (1991), Oceanologia 31, 25-55 | no DOI |
+| Paglierani et al. (2023), Quantum Engineering 2023, 7185329 (open access) | `10.1155/2023.7185329` |
+| Abd El-Mottaleb et al. (2024), Results in Engineering 24, 102941 (open access) | `10.1016/j.rineng.2024.102941` |
 | Austin & Petzold (1990), Proc. SPIE 1302, 79-93 | `10.1117/12.943302` |
 | Haltrin (1999), Appl. Opt. 38, 6826-6832 | — |
 | Smart (2007), Opt. Express 15(12), 7152-7164 (open access) | `10.1364/OE.15.007152` |
@@ -52,6 +55,10 @@ not needed to rebuild the tables.
 Recorded so that the gap is not mistaken for a decision. See `DATA.md`
 sections 2 and 5.
 
+- Jerlov, N. G. (1961), "Irradiance in the sea in relation to particle
+  distribution". Cited by Woźniak & Pelevin (1991).
+- Jerlov, N. G. (1977), "Classification of sea water in terms of quanta
+  irradiance", *J. Cons. int. Explor. Mer*. Cited by Woźniak & Pelevin (1991).
 - Jerlov, N. G. (1978), *The optical classification of sea water in the
   euphotic zone*, Rep. Dept. Phys. Oceanogr. **36**, Univ. Copenhagen, 46 pp.
   The third edition of the classification, in which the coastal types are

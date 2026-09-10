@@ -131,11 +131,18 @@ class Water:
         values = self._series[quantity]
         out = np.interp(query, self.wavelengths, values)
         # np.interp happily bridges a NaN-free path around a NaN, so check the
-        # bracketing samples explicitly.
+        # samples the answer actually rests on. A query that lands exactly on
+        # a sample rests on that sample alone: it is not interpolated, so a
+        # missing neighbour must not poison it.
         idx = np.searchsorted(self.wavelengths, query)
-        for k, i in enumerate(idx):
-            neighbours = values[max(i - 1, 0):min(i + 1, values.size) + 1]
-            if np.any(np.isnan(neighbours)):
+        for k, (i, w_query) in enumerate(zip(idx, query)):
+            exact = i < self.wavelengths.size and self.wavelengths[i] == w_query
+            if exact:
+                if np.isnan(values[i]):
+                    out[k] = np.nan
+                continue
+            left, right = max(i - 1, 0), min(i, values.size - 1)
+            if np.any(np.isnan(values[left:right + 1])):
                 out[k] = np.nan
         return _like_input(out, wl)
 
