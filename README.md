@@ -232,16 +232,17 @@ rather than substituting a neighbour.
 ## Examples
 
 ```
-python examples/sources_disagree.py
-python examples/synthetic_underwater_images.py
+python examples/sources_disagree.py            why the source is an argument
+python examples/from_one_measurement.py        from an instrument reading
+python examples/synthetic_underwater_images.py appearance at range and depth
+python examples/solar_heating.py               for ocean circulation models
+python examples/what_an_eye_sees.py            any spectral sensitivity
 ```
 
-The first shows why the source is an argument: at 510 nm the scattering
-coefficient of Jerlov III differs by a factor of 3.8 between the two published
-sets. The second synthesises how reflectance patches appear at range and
-depth, white-balanced two ways, and ends with a list of everything it assumed.
-
-Both are run by CI, so an example that has stopped working is a failed build.
+Five scripts, each aimed at a different reader; `examples/README.md` says
+which to start with. CI runs all of them on every push, so an example that has
+stopped working is a failed build. Every one ends with the assumptions it
+made.
 
 ## Provenance and design
 

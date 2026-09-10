@@ -284,7 +284,7 @@ routes cannot drift apart.
 
 ## 17. Examples are executable, and CI runs them
 
-`examples/` holds two scripts rather than notebooks. A notebook stores its
+`examples/` holds scripts rather than notebooks. A notebook stores its
 outputs in the file, so the diff is noisy and the stored output can disagree
 with what the code now produces. Scripts can simply be run, and CI runs both
 on every push: an example that has stopped working is a failed build, not
@@ -302,7 +302,21 @@ current directory, so an installed copy of the package wins over the working
 tree, and the failure that produces looks like a missing method rather than a
 stale install. Naming the file makes that impossible to miss twice.
 
-`synthetic_underwater_images.py` ends with the assumptions it made — the
+There are five, chosen so that each reaches a different reader rather than
+re-showing the same API: why the source is an argument, what to do with an
+instrument reading, synthetic imagery, shortwave heating for ocean models, and
+arbitrary spectral sensitivities. Before they were written, half the public
+API appeared in no example at all, including the whole of the shortwave
+module and every route for bringing your own measurements.
+
+**Two obvious examples were left out.** Restoring the colour of a photograph
+and predicting a visibility range are the two things a reader most wants, and
+both are things the README says this package does not claim to do. An example
+that appears to do them would contradict the disclaimer more loudly than the
+disclaimer states it. Examples here show what the API does, not how well it
+performs.
+
+Each ends with the assumptions it made — the
 stated backscatter ratio, the approximate veiling geometry, the horizontal
 path, the invented reflectance spectra — rather than opening with them. A
 reader who has just watched a red patch turn black at 8 m is more likely to

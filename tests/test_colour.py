@@ -73,7 +73,7 @@ def test_each_primary_lights_only_its_own_channel():
 def test_a_narrow_spectrum_warns():
     """450-650 nm looks like a full spectrum but is not."""
     wl = np.arange(450.0, 651.0, 1.0)
-    with pytest.warns(CoverageWarning, match="covers only"):
+    with pytest.warns(CoverageWarning, match="covered"):
         spectrum_to_xyz(np.ones_like(wl), wl)
 
 
@@ -88,8 +88,13 @@ def test_the_warning_states_what_was_missed():
     with pytest.warns(CoverageWarning) as caught:
         spectrum_to_xyz(np.ones_like(wl), wl)
     message = str(caught[0].message)
-    assert "500-600 nm" in message
-    assert "CIE 1931" in message
+    assert "500-600 nm" in message          # the span it actually had
+    assert "CIE 1931" in message            # what it was integrated against
+    assert "all channels:" in message       # not just the worst one
+    # z-bar peaks at 445 nm, so 500-600 nm barely touches it. Naming the
+    # channel matters: "4.1% covered" alone reads as if the whole observer
+    # were 4.1% covered, which would be wrong.
+    assert "channel 2 of 3" in message
 
 
 # -- white, the other one ------------------------------------------------

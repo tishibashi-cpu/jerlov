@@ -76,9 +76,23 @@ print(f"  backscatter ratio   {backscatter_ratio}  (bb/b, stated by us)")
 
 deeper = jerlov.water_type_at_depth(water_type, depth_m)
 print(f"\n  At {depth_m:g} m, Jerlov {water_type} water is typically {deeper} "
-      f"(Williamson & Hollins 2023).")
-print(f"  This script keeps using {water_type}; swapping to {deeper} is one "
-      f"line, and that\n  is the caller's decision to make.")
+      f"(Williamson & Hollins 2023),")
+if deeper == water_type:
+    changes_at = next(
+        (d for d in range(int(depth_m), 200, 10)
+         if jerlov.water_type_at_depth(water_type, float(d)) != water_type),
+        None,
+    )
+    if changes_at is not None:
+        becomes = jerlov.water_type_at_depth(water_type, float(changes_at))
+        print(f"  so this depth needs no change. It first becomes {becomes} "
+              f"at {changes_at} m,\n  and swapping the water there would be "
+              f"one line. That is the caller's\n  decision, not something "
+              f"this package applies for you.")
+else:
+    print(f"  not {water_type}. This script keeps using {water_type} anyway; "
+          f"swapping to {deeper}\n  is one line, and that is the caller's "
+          f"decision to make.")
 
 with warnings.catch_warnings():
     warnings.simplefilter("ignore", jerlov.ProvenanceWarning)

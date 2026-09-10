@@ -151,15 +151,18 @@ def integrate_response(spectrum, wavelengths, response, response_wavelengths,
     if wavelengths.size < 2:
         raise ValueError("at least two wavelengths are needed to integrate")
 
-    worst = min(
-        _coverage(wavelengths, response_wavelengths, response[:, k])
-        for k in range(response.shape[1])
-    )
+    covered = [_coverage(wavelengths, response_wavelengths, response[:, k])
+               for k in range(response.shape[1])]
+    worst = min(covered)
     if worst < 0.999:
+        which = (f"channel {covered.index(worst)} of {len(covered)}"
+                 if len(covered) > 1 else "it")
         warnings.warn(
-            f"the spectrum spans {wavelengths[0]:g}-{wavelengths[-1]:g} nm and "
-            f"covers only {worst:.1%} of the {name}; the integral is over the "
-            "overlap and is biased by what was left out",
+            f"the spectrum spans {wavelengths[0]:g}-{wavelengths[-1]:g} nm; "
+            f"of the {name}, {which} is only {worst:.1%} covered "
+            f"(all channels: {', '.join(f'{c:.1%}' for c in covered)}). "
+            "The integral is over the overlap and is biased by what was left "
+            "out",
             CoverageWarning,
             stacklevel=2,
         )

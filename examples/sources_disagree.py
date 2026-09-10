@@ -52,9 +52,11 @@ for water_type in SHARED:
           f"{inverted / measured:>7.2f}x")
 
 print("""
-At Jerlov III the two differ by a factor of 3.8. A visibility estimate, a
-synthetic image, or a fitted attenuation coefficient built on one of these is
-not comparable with one built on the other.""")
+At Jerlov III the inverted value is 3.8 times the measured one. At Jerlov IB
+it is less than half. **The disagreement does not even run one way**, so no
+correction factor reconciles them: a visibility estimate, a synthetic image or
+a fitted attenuation coefficient built on one is simply not comparable with
+one built on the other.""")
 
 # --------------------------------------------------------------------------
 rule("2. Which to prefer, and why the package has a default")
