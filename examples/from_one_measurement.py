@@ -102,7 +102,7 @@ wl = np.arange(420.0, 681.0, 20.0)
 a_measured = 0.02 + 0.35 * np.exp(-(wl - 420.0) / 90.0) + 0.30 * (wl > 600)
 b_measured = 0.45 * (550.0 / wl) ** 0.8
 mine = jerlov.Water.from_measurements(wl, a=a_measured, b=b_measured,
-                                      name="Station 14, 3 m")
+                                      name="Station 14, 3 m")   # reused below
 print(f"\n  {mine}")
 print(f"  a(550) = {mine.a(550):.4f}   b(550) = {mine.b(550):.4f}   "
       f"c(550) = {mine.c(550):.4f}")
@@ -124,7 +124,98 @@ print("""
   point that builds the same kind of object.""")
 
 # --------------------------------------------------------------------------
-rule("4. Which published type is your water closest to?")
+rule("4. A backscattering sensor")
+
+print("""`Water.bb` refuses to guess a backscattering ratio, because the Jerlov
+classification does not determine one. With an instrument you do not have to
+guess: a HydroScat, an ECO-BB or a VSF meter reports the volume scattering
+function at one angle, and Boss & Pegau (2001) give the conversion.""")
+
+angle, beta, nm, salinity = 140.0, 0.0021, 532.0, 35.0
+measured = jerlov.bb_from_vsf(beta, angle, nm, salinity_psu=salinity)
+
+print(f"""
+  reading      beta({angle:g} deg) = {beta} 1/(m sr) at {nm:g} nm, S = {salinity:g} psu
+
+  bb           {measured.bb:.5f} 1/m
+   of which
+    particles  {measured.particulate:.5f}
+    water      {measured.water:.5f}   (Morel's formula, not your instrument)
+
+  chi_p        {measured.chi_p:.2f} +- {measured.quoted_error_percent:.1f}%""")
+
+print("""
+  The water term is subtracted before the conversion and added back after,
+  because chi differs between water and particles everywhere except near 118
+  degrees. That crossing is why instruments cluster around 120.""")
+
+print(f"\n  {'angle':>7} {'chi_p':>7} {'spread':>8}")
+for a_deg in (90, 110, 120, 140, 160, 170):
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always")
+        r = jerlov.bb_from_vsf(beta, float(a_deg), nm, salinity_psu=salinity)
+    flag = "  <- warns" if any(
+        issubclass(e.category, jerlov.AngleWarning) for e in caught) else ""
+    print(f"  {a_deg:>5} deg {r.chi_p:>7.2f} {r.quoted_error_percent:>7.1f}%{flag}")
+
+print("""
+  Angles outside 90 to 170 are refused: no measurement in the set went
+  further. The quoted spread is chi_p alone; the water amplitude carries a
+  further 15 percent, and your calibration sits on top of both.""")
+
+# --------------------------------------------------------------------------
+rule("5. What the measurement buys you")
+
+print("""Combine parts 3 and 4: your own a and b, and your own bb. The
+backscattering ratio is now measured rather than stated.""")
+
+bb_over_b = measured.bb / mine.b(nm)
+print(f"\n  bb/b at {nm:g} nm = {measured.bb:.5f} / {mine.b(nm):.4f} "
+      f"= {bb_over_b:.4f}")
+print("""
+  Reported ranges are roughly 0.005 to 0.01 for open ocean and 0.015 to 0.03
+  for coastal water, so this water sits at the turbid end.""")
+
+surface = np.interp(wl, *jerlov.d65(), left=0.0, right=0.0)
+kd_source = jerlov.water("II", source="austin1986")
+with warnings.catch_warnings():
+    warnings.simplefilter("ignore", jerlov.ProvenanceWarning)
+    scene = jerlov.Scene.at_depth(mine, 8.0, surface, wl, kd=kd_source)
+white = scene.downwelling / np.pi
+
+print("""
+Had you guessed 0.015, a reasonable-looking coastal figure, against what you
+measured:
+""")
+print(f"  {'':>18}" + "".join(f"{d:>10.0f} m" for d in (2.0, 5.0, 10.0)))
+at_five = {}
+for label, ratio in (("guessed 0.015", 0.015),
+                     (f"measured {bb_over_b:.3f}", bb_over_b)):
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        b_inf = jerlov.veiling_radiance_estimate(
+            mine, scene.downwelling, wl, backscatter_ratio=ratio)
+        veiling, contrast = [], []
+        for distance in (2.0, 5.0, 10.0):
+            observed = scene.observe(np.full_like(wl, 0.5), distance,
+                                     veiling_radiance=b_inf)
+            veiling.append(np.mean(observed.veiling_fraction))
+            contrast.append(np.mean(np.abs(observed.contrast(0.1 * white))))
+    at_five[label] = contrast[1]
+    print(f"  {label:>16}  " + "".join(f"{v:>11.1%}" for v in veiling)
+          + "   veiling")
+    print(f"  {'':>16}  " + "".join(f"{c:>11.3f}" for c in contrast)
+          + "   contrast")
+
+guessed, actual = at_five["guessed 0.015"], at_five[f"measured {bb_over_b:.3f}"]
+print(f"""
+  At 5 m the guess puts the contrast {guessed / actual - 1:.0%} above what the
+  measurement gives. That is why `Water.bb` has no default: a plausible number
+  produces a plausible answer, and there is nothing in the output to say which
+  one you got.""")
+
+# --------------------------------------------------------------------------
+rule("6. Which published type is your water closest to?")
 
 print("""There is no classify() here, deliberately: a single Kd does not pin a
 water type, and the boundaries differ between editions of the classification.
@@ -158,5 +249,10 @@ print("""  - The Kd reconstruction is a two-parameter model fitted to Pacific an
   - a = c - b inherits the error of both.
   - The synthetic spectra in part 3 are made up. Yours are not, which is the
     point of that route.
-  - Nothing here gives you bb. See DATA.md section 10.
+  - The backscattering conversion rests on 41 measured scattering functions,
+    and on Morel's formula for pure sea water whose amplitude is good to
+    about 15 percent. Neither includes your instrument's calibration.
+  - Measuring bb tells you about the water you were in. It still gives no bb
+    for a Jerlov water type, because a water type is defined by Kd and Kd
+    barely depends on bb. DATA.md sections 10 and 18.
 """)

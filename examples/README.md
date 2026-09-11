@@ -24,7 +24,7 @@ copy of the package silently wins over the working tree. In a clone, run
 | If you | Start with |
 |---|---|
 | wonder why `water()` asks for a source | `sources_disagree.py` |
-| have measurements from an instrument | `from_one_measurement.py` |
+| have measurements from an instrument, including a backscattering sensor | `from_one_measurement.py` |
 | need synthetic underwater imagery | `synthetic_underwater_images.py` |
 | write an ocean circulation model | `solar_heating.py` |
 | study vision, or design a sensor | `what_an_eye_sees.py` |
@@ -40,9 +40,15 @@ guess.
 
 **`from_one_measurement.py`** — the routes from an instrument reading to a
 spectrum: reconstructing Kd from one wavelength (Austin & Petzold 1986),
-estimating b from a transmissometer's c (Smart 2007), and handing over your
-own measured spectra with `Water.from_measurements`. Each result carries the
-accuracy the paper claims for it.
+estimating b from a transmissometer's c (Smart 2007), handing over your own
+measured spectra with `Water.from_measurements`, and converting a
+backscattering sensor's single-angle reading to bb (Boss & Pegau 2001). Each
+result carries the accuracy the paper claims for it.
+
+It ends by putting the measured bb back into a scene and comparing against a
+plausible guess: at 5 m the guess overstates the contrast by 65 percent. That
+is the argument for why `Water.bb` has no default, made with numbers rather
+than asserted.
 
 **`synthetic_underwater_images.py`** — how five reflectance patches appear at
 ranges from 0 to 16 m in Jerlov III water at 15 m depth, white-balanced two

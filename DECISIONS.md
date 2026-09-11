@@ -341,8 +341,20 @@ A fourth asserts that the tests import `jerlov` from the working tree. That is
 the `sys.path` trap in section 17, and it produced a failure that looked like
 a missing method rather than a stale install.
 
-All four skip when `pyproject.toml` is absent, so running the suite against an
-installed wheel does not fail on files that are deliberately not shipped.
+Two more close the gap between the modules and their data, in both
+directions: every table a module reads must be present, and every table a
+build script writes must have arrived. `boss2001_chi.csv` once failed to reach
+a working copy, and the first sign was thirteen FileNotFoundErrors deep inside
+the backscattering tests. The check now names the file and says which script
+makes it.
+
+Two more again keep `.zenodo.json` honest: the entry count it quotes must
+match `DATA.md`, and every shipped module must be mentioned somewhere in the
+description. That file is read only when Zenodo archives a release, so nothing
+else notices when it goes stale, and it had gone stale four times.
+
+All of these skip when `pyproject.toml` is absent, so running the suite against
+an installed wheel does not fail on files that are deliberately not shipped.
 
 ## 19. Shortwave penetration is in scope after all, reversing section 12
 
@@ -409,17 +421,47 @@ gives them the starting point.
 **Rejected:** a partial validation, clear water only, with equipment to hand.
 It would produce a figure that reads as validation and is not one.
 
-## 22. Planned
+## 22. Measuring bb is in scope; guessing it is still not
+
+`jerlov/backscattering.py` converts a single-angle volume scattering
+measurement into bb, following Boss & Pegau (2001).
+
+This does not weaken section 4. `Water.bb` still refuses to supply a
+backscattering ratio, because the Jerlov classification still does not
+determine one. What changed is that a caller with an instrument no longer has
+to guess: the route from a HydroScat or ECO-BB reading to bb is published,
+settled, and now checked.
+
+Three things shaped the API.
+
+**The water half is computed, not transcribed.** Morel's formula for the
+scattering of pure sea water is exact, so chi_w must give the same bb_w at
+every angle and that value must equal the direct integral of the definition of
+bb. `tools/build_boss2001.py` asserts both. Only chi_p, which rests on 41
+measured scattering functions, is a table.
+
+**The angle range is enforced.** 90 to 170 degrees, which is what the
+measurements cover, and a warning above a 10 percent quoted spread. At 170 the
+spread is 34.8 percent against 3 to 6 in the middle, and a caller who picked
+that angle should be told rather than handed a number.
+
+**chi and chi_p are kept apart.** They are printed under the same symbol by
+different authors, and differ by 9 percent at 140 degrees because one includes
+water. The shipped table marks the rows from other authors
+`other_definition` rather than dropping them: a reader comparing against those
+papers needs to see why the numbers differ, not wonder where they went.
+
+## 23. Planned
 
 Recorded so the shape of the API can be judged against where it is going.
 
 - **Akkaynak-Treibitz coefficients**: beta_D, beta_B and B_inf for a stated
   distance range. The range must be an argument, not hidden, because those
   coefficients are not constants.
-- **Petzold phase functions**: measured volume scattering functions, so that a
-  backscatter ratio can be chosen from a measurement rather than guessed. It
-  will not determine bb per Jerlov type — nothing available does — but it
-  replaces a guess with a stated provenance.
+- **Petzold phase functions**: measured volume scattering functions, so that
+  a backscatter ratio can be chosen from a measurement rather than guessed
+  when no instrument reading is available. Section 22 covers the case where
+  there is one.
 
 Validation is deliberately staged. The package can claim that it implements
 published coefficients correctly, and the tests demonstrate that. It cannot

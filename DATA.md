@@ -3,7 +3,7 @@
 What every shipped table is, where it came from, what was verified, and what
 is known to be wrong with it.
 
-Seventeen entries are recorded below. Eight are confirmed defects, three were
+Eighteen entries are recorded below. Eight are confirmed defects, three were
 open questions that the first edition of Jerlov settled, and the rest are
 notes rather than defects. None of them is repaired silently: values that
 could be recovered carry `status = reconstructed` and say how, values that
@@ -26,6 +26,7 @@ could not are `missing`, and values that are used but doubtful are `suspect`.
 | `jerlov1968_kd.csv` | Kd from the **first edition**. 16 wavelengths, 10 types | 160 |
 | `jerlov1968_total_irradiance.csv` | Percent of total irradiance 300-2500 nm by depth | 120 |
 | `paulson1977_shortwave.csv` | Two-exponential shortwave penetration parameters | 9 |
+| `boss2001_chi.csv` | chi for converting a single-angle measurement to bb | 12 |
 
 ## The `status` column
 
@@ -370,6 +371,11 @@ closest is Neuner et al. (2020), Proc. SPIE 11506, 1150608, DOI
 machine learning; from the abstract this is classification rather than
 derivation of bb per type. **Abstract only; the full text was not obtained.**
 
+**Layer 1b: from a measurement, yes.** If you have an instrument, the
+conversion from what it reads to bb is settled; see section 18. That does not
+give bb per water type, but it means a caller with a HydroScat or an ECO-BB
+need not guess.
+
 **Layer 3: the data to close it exists.** Smart (2007) gives the inventory of
 the World-wide Ocean Optics Database:
 
@@ -676,3 +682,87 @@ The chlorophyll route is not shipped. It is a model with a free parameter
 assigned per water type, not a measurement or an inversion of one, and the
 assignment differs between papers that use it. It is recorded here so that a
 reader meeting those numbers can tell which family they belong to.
+
+
+## 18. Converting a single-angle measurement to bb (note)
+
+`boss2001_chi.csv`. Backscattering sensors measure the volume scattering
+function at one angle in the backward hemisphere. The conversion is
+
+```
+bb = 2 pi chi_p(theta) [beta(theta) - beta_w(theta)] + bb_w
+```
+
+Source: Boss, E. and Pegau, W. S. (2001), "Relationship of light scattering at
+an angle in the backward direction to the backscattering coefficient",
+*Appl. Opt.* **40**, 5503-5507, DOI `10.1364/AO.40.005503`, Eq. (10) and
+Table 1.
+
+### chi_p, from 41 measured scattering functions
+
+| angle | 90 | 100 | 110 | 120 | 130 | 140 | 150 | 160 | 170 |
+|---|---|---|---|---|---|---|---|---|---|
+| chi_p | 0.71 | 0.90 | 1.03 | 1.12 | 1.17 | 1.18 | 1.13 | 1.00 | 0.62 |
+| spread % | 4.3 | 2.6 | 3.1 | 4.2 | 3.3 | 3.5 | 4.2 | 6.4 | **34.8** |
+
+**The error at 170 degrees is an order of magnitude worse than in the
+middle.** The shape of the scattering function varies most steeply near the
+ends, so a measurement there pins bb least well. Both this paper and Maffione
+& Dana (1997) recommend 110 to 160 degrees. `bb_from_vsf` warns above 10
+percent and refuses outside 90 to 170, which is the span the measurements
+cover.
+
+### The water half is analytic, and checked against itself
+
+Morel's formula, the paper's Eqs. (4), (5) and (9):
+
+```
+A(lambda, S)  = 1.38 (lambda / 500 nm)^-4.32 (1 + 0.3 S / 37 psu) 1e-4
+beta_w(theta) = A [1 + cos^2(theta) (1 - delta) / (1 + delta)]
+chi_w(theta)  = [1 + (1/3)(1-delta)/(1+delta)] / [1 + ((1-delta)/(1+delta)) cos^2(theta)]
+```
+
+with delta = 0.09, the depolarisation ratio Morel suggests from a range of
+0.07 to 0.11.
+
+Because chi_w is exact, it must give the same bb_w at every angle, and that
+value must equal the direct integral of the definition. It does, to one part
+in 10^15. **Any transcription error in these three equations breaks that
+check**, which is why they are checked rather than trusted.
+
+The amplitude carries about 15 percent uncertainty, which the authors give as
+the agreement between measurement and theory. That is not in the quoted error
+on chi_p, and neither is your instrument's calibration.
+
+### Three published values for the same conversion
+
+| Source | Angle | Value | Quantity |
+|---|---|---|---|
+| Oishi (1990), quoted by Maffione & Dana | 120 | 1.14 | chi |
+| Boss & Pegau (2001) | 120 | 1.12 | chi_p |
+| Oishi (1990) | 140 | 1.08 | chi |
+| Maffione & Dana (1997) | 140 | 1.08 | chi |
+| Boss & Pegau (2001) | 140 | **1.18** | chi_p |
+
+**chi and chi_p are not the same quantity**: one includes scattering by the
+water and the other does not, so these are not simply in conflict. But they
+are printed under the same symbol in the same field, and the 9 percent gap at
+140 degrees is the water term. Anyone lifting a number without reading which
+one it is will be wrong by about that much. The rows from other authors are
+shipped with `status = other_definition` so they can be compared rather than
+mistaken for each other.
+
+The papers also explain why instruments cluster near 120 degrees: chi_w and
+chi_p cross at about 118, and at the crossing the water contribution does not
+have to be known. Reproducing that crossing from the shipped table gives
+116.9 degrees.
+
+### What this does and does not settle
+
+**It settles the measurement route.** A caller with a HydroScat, an ECO-BB or
+a VSF meter no longer has to state a backscattering ratio; they can convert
+what they measured.
+
+**It does not settle section 10.** There is still no bb for a Jerlov water
+type, because a water type is defined by Kd and Kd barely depends on bb.
+`Water.bb` still requires an explicit ratio.

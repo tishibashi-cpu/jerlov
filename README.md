@@ -178,6 +178,25 @@ Two silent errors are checked rather than assumed:
 - **Gamut.** Underwater colours often fall outside sRGB. Clipping changes
   them, so `GamutWarning` says so.
 
+## If you measured backscattering
+
+`Water.bb` refuses to guess a backscattering ratio. If you have an instrument
+you do not have to:
+
+```python
+r = jerlov.bb_from_vsf(beta=0.0021, angle_deg=140, wavelength_nm=532)
+r.bb, r.particulate, r.water     # 1/m
+r.chi_p, r.quoted_error_percent  # 1.18, 3.5
+```
+
+Boss & Pegau (2001). The pure sea water terms are analytic and are checked
+against the definition of bb rather than transcribed; only the particle
+conversion is tabulated. Angles outside 90-170 degrees are refused, and 170
+warns: its quoted spread is **34.8 percent** against 3-6 in the middle.
+
+This gives the bb of the water your instrument was in. It still gives no bb
+for a Jerlov water type, because nothing does.
+
 ## The type changes with depth
 
 The classification is defined on the top 10 m, but clarity does not stay put.
@@ -247,7 +266,7 @@ made.
 ## Provenance and design
 
 `DATA.md` records, for every shipped table, where it came from, what was
-verified, and what is known to be wrong with it. Seventeen entries are
+verified, and what is known to be wrong with it. Eighteen entries are
 documented there: eight confirmed defects in the source literature, three
 questions the first edition of Jerlov settled, and the rest notes.
 

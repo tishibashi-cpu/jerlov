@@ -140,3 +140,75 @@ def test_the_README_agrees_with_DATA_md_on_the_count():
     assert match, "the README no longer states the count"
     assert WORDS[match.group(1)] == _numbered_sections(data)
     assert WORDS[match.group(2)] == _confirmed_sections(data)
+
+
+@source_tree
+def test_the_zenodo_description_agrees_with_DATA_md():
+    """It has now gone stale four times, and only an archive run reads it."""
+    import json
+
+    record = json.loads((ROOT / ".zenodo.json").read_text())
+    data = (ROOT / "DATA.md").read_text()
+    description = record["description"]
+
+    match = re.search(r"(\w+) entries are documented, (\w+) of them confirmed",
+                      description)
+    assert match, "the Zenodo description no longer states a countable summary"
+    assert WORDS[match.group(1)] == _numbered_sections(data), (
+        f".zenodo.json says {match.group(1)}, DATA.md has "
+        f"{_numbered_sections(data)} sections"
+    )
+    assert WORDS[match.group(2)] == _confirmed_sections(data)
+
+
+@source_tree
+def test_the_zenodo_record_names_every_shipped_module():
+    """A capability the record does not mention is one nobody will find."""
+    record = __import__("json").loads((ROOT / ".zenodo.json").read_text())
+    described = record["description"].lower()
+    for module, phrase in (
+        ("scene.py", "veiling"),
+        ("colour.py", "srgb"),
+        ("shortwave.py", "shortwave"),
+        ("backscattering.py", "backscattering coefficient"),
+        ("water.py", "scattering coefficients"),
+    ):
+        assert (ROOT / "jerlov" / module).exists()
+        assert phrase in described, (
+            f"{module} ships but the Zenodo description never mentions "
+            f"{phrase!r}"
+        )
+
+
+@source_tree
+def test_every_module_can_find_the_tables_it_reads():
+    """A missing data file should fail here, not thirteen tests later.
+
+    `jerlov/data/boss2001_chi.csv` once failed to reach a working copy, and
+    the first sign of it was thirteen unrelated-looking FileNotFoundErrors
+    deep inside the backscattering tests.
+    """
+    shipped = {p.name for p in (ROOT / "jerlov" / "data").glob("*.csv")}
+    wanted = set()
+    for module in (ROOT / "jerlov").glob("*.py"):
+        wanted |= set(re.findall(r'_rows\(\s*"([^"]+\.csv)"', module.read_text()))
+    assert wanted, "no module reads a table any more, which cannot be right"
+    missing = sorted(wanted - shipped)
+    assert not missing, (
+        f"these are read by jerlov/*.py but not present in jerlov/data/: "
+        f"{missing}. Run the matching script in tools/."
+    )
+
+
+@source_tree
+def test_every_build_script_produces_a_shipped_table():
+    """The other direction: a script whose output never arrived."""
+    shipped = {p.name for p in (ROOT / "jerlov" / "data").glob("*.csv")}
+    for script in sorted((ROOT / "tools").glob("build_*.py")):
+        written = set(re.findall(r'DATA_DIR / "([^"]+\.csv)"', script.read_text()))
+        written |= set(re.findall(r'report\(\s*"([^"]+\.csv)"', script.read_text()))
+        assert written, f"{script.name} writes no table"
+        missing = sorted(written - shipped)
+        assert not missing, (
+            f"{script.name} writes {missing}, which is not in jerlov/data/"
+        )

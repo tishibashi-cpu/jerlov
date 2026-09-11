@@ -1,0 +1,13 @@
+source,angle_deg,chi,quantity,percent_error,status,note
+boss2001,90,0.71,chi_p,4.3,ok,"the water contribution to the measured signal is largest here, so removing it matters most"
+boss2001,100,0.9,chi_p,2.6,ok,
+boss2001,110,1.03,chi_p,3.1,ok,
+boss2001,120,1.12,chi_p,4.2,ok,
+boss2001,130,1.17,chi_p,3.3,ok,
+boss2001,140,1.18,chi_p,3.5,ok,
+boss2001,150,1.13,chi_p,4.2,ok,
+boss2001,160,1.0,chi_p,6.4,ok,
+boss2001,170,0.62,chi_p,34.8,suspect,"the volume scattering function varies most steeply here, and no measurement in the set went beyond 170 deg"
+oishi1990,120,1.14,chi,,other_definition,"chi including water, quoted by Maffione & Dana (1997) from Oishi (1990), Appl. Opt. 29, 4658"
+oishi1990,140,1.08,chi,,other_definition,as above
+maffione1997,140,1.08,chi,9.0,other_definition,"chi including water, Maffione & Dana (1997), Appl. Opt. 36, 6057, from Mie computations; the 9 percent is their standard deviation"

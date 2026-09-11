@@ -4,6 +4,14 @@ Every coefficient carries its source, and values that a published table got
 wrong are flagged rather than quietly repaired.
 """
 
+from .backscattering import (
+    AngleWarning,
+    Backscattering,
+    bb_from_vsf,
+    particulate_chi,
+    pure_water_backscattering,
+    pure_water_vsf,
+)
 from .colour import (
     CoverageWarning,
     GamutWarning,
@@ -57,6 +65,12 @@ __all__ = [
     "water_type_at_depth",
     "shortwave_parameters",
     "solar_fraction",
+    "bb_from_vsf",
+    "particulate_chi",
+    "pure_water_vsf",
+    "pure_water_backscattering",
+    "Backscattering",
+    "AngleWarning",
     "ShortwaveParameters",
     "kd_spectrum",
     "b_from_c",
@@ -64,4 +78,4 @@ __all__ = [
     "MissingQuantityError",
 ]
 
-__version__ = "0.2.2"
+__version__ = "0.3.0"
