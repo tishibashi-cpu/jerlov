@@ -250,6 +250,18 @@ release.
 would fix the symptom by narrowing the claim, and would leave the next
 lower-bound claim just as untested.
 
+**It then happened again.** Two modules written later reached for
+`np.trapezoid` directly, and the oldest-NumPy job caught them before release.
+The shim had been sitting in `colour.py`, where nobody writing about
+scattering would look for it. It now lives in `jerlov/_data.py`, which every
+module already imports, and `tests/test_packaging.py` refuses any file in the
+repository that names either `np.trapezoid` or `np.trapz`.
+
+That is the general shape: a rule kept in one module is a rule the next module
+does not know about. Either move it somewhere shared, or make a test enforce
+it. Here both were needed, because the shared location alone would not have
+stopped a third module from reaching past it.
+
 ## 16. Coefficients that cannot be told apart still get names
 
 `Scene.attenuation_coefficients` returns beta_D, beta_B and B_inf for the

@@ -22,9 +22,8 @@ import numpy as np
 
 from . import _data
 
-# numpy.trapezoid is the name from NumPy 2.0; before that it was numpy.trapz.
-# The package claims to work from NumPy 1.22, so it must not assume either.
-_trapezoid = getattr(np, "trapezoid", None) or np.trapz
+#: Kept as a module-level name because tests and examples import it.
+_trapezoid = _data.trapezoid
 
 #: sRGB primaries and white point, IEC 61966-2-1.
 SRGB_PRIMARIES = np.array([

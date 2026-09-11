@@ -212,3 +212,26 @@ def test_every_build_script_produces_a_shipped_table():
         assert not missing, (
             f"{script.name} writes {missing}, which is not in jerlov/data/"
         )
+
+
+@source_tree
+def test_nothing_reaches_for_a_numpy_2_only_name():
+    """`numpy.trapezoid` arrived in NumPy 2.0 and `numpy.trapz` left in it.
+
+    `jerlov._data.trapezoid` resolves whichever exists. This has now been got
+    wrong twice: once in colour.py, shipped in 0.1.1, and once in the
+    backscattering tests, caught by CI before release. Both times the local
+    NumPy was new enough for it to pass.
+    """
+    offenders = []
+    for path in list(ROOT.glob("jerlov/*.py")) + list(ROOT.glob("tests/*.py")) \
+            + list(ROOT.glob("tools/*.py")) + list(ROOT.glob("examples/*.py")):
+        text = path.read_text()
+        for name in ("np.trapezoid", "np.trapz", "numpy.trapezoid",
+                     "numpy.trapz"):
+            if name + "(" in text:
+                offenders.append(f"{path.relative_to(ROOT)}: {name}")
+    assert not offenders, (
+        "use jerlov._data.trapezoid instead, which resolves whichever name "
+        f"the installed NumPy has: {offenders}"
+    )

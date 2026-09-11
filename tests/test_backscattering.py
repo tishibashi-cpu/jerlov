@@ -9,6 +9,7 @@ import numpy as np
 import pytest
 
 import jerlov
+from jerlov._data import trapezoid
 from jerlov.backscattering import AngleWarning, DEPOLARISATION_RATIO
 
 
@@ -20,7 +21,7 @@ def test_pure_water_backscattering_is_the_integral_of_its_own_vsf():
     for nm in (440.0, 532.0, 650.0):
         theta = np.radians(np.linspace(90.0, 180.0, 90001))
         vsf = jerlov.pure_water_vsf(np.degrees(theta), nm)
-        integrated = 2 * math.pi * float(np.trapezoid(vsf * np.sin(theta), theta))
+        integrated = 2 * math.pi * float(trapezoid(vsf * np.sin(theta), theta))
         assert jerlov.pure_water_backscattering(nm) == pytest.approx(
             integrated, rel=1e-6
         )

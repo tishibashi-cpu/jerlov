@@ -29,6 +29,9 @@ import numpy as np
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
 from _common import DATA_DIR, report
 
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent.parent))
+from jerlov._data import trapezoid
+
 #: Table 1. chi_p and the percent error, from 41 VSF measurements in which
 #: water contributed less than 6 percent of bb. The error is half the
 #: difference between the 10th and 90th percentiles.
@@ -85,7 +88,7 @@ by_angle = [2 * math.pi * amplitude * beta_w_shape(t) * chi_w(t)
             for t in range(90, 171, 10)]
 theta = np.radians(np.linspace(90.0, 180.0, 90001))
 direct = 2 * math.pi * amplitude * float(
-    np.trapezoid((1 + ratio() * np.cos(theta) ** 2) * np.sin(theta), theta))
+    trapezoid((1 + ratio() * np.cos(theta) ** 2) * np.sin(theta), theta))
 spread = (max(by_angle) - min(by_angle)) / direct
 print(f"check: chi_w reproduces the Eq. (3) integral at every angle")
 print(f"  by angle {min(by_angle):.6f} to {max(by_angle):.6f}, "
