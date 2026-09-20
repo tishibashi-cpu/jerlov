@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: What this package will and will not do
+    url: https://github.com/tishibashi-cpu/jerlov/blob/main/DECISIONS.md
+    about: Design decisions, and the alternatives that were rejected
+  - name: Where every number came from
+    url: https://github.com/tishibashi-cpu/jerlov/blob/main/DATA.md
+    about: Provenance, and eighteen recorded defects in the source literature

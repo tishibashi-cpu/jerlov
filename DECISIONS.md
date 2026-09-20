@@ -463,7 +463,35 @@ water. The shipped table marks the rows from other authors
 `other_definition` rather than dropping them: a reader comparing against those
 papers needs to see why the numbers differ, not wonder where they went.
 
-## 23. Planned
+## 23. The prose is tested against the code
+
+`tests/test_quoted_figures.py` recomputes every figure the documentation
+states: the factor of 3.8 between the two published scattering coefficients,
+the 5.1 across three routes, the 46 percent by which the shortwave fit misses
+its own source, the 34.8 percent spread at 170 degrees, the 116.9 degree
+crossing, the 65 percent by which a guessed backscattering ratio overstates
+contrast. Two of them read the number out of `README.md` and compare it
+against the call printed beside it.
+
+Those figures were each computed once and then written into prose, where
+nothing was watching them. A reader has no way to tell a stale number from a
+current one, and the numbers are the reason to trust the package at all.
+
+The direction of the fix matters when one fails. **Usually the prose is what
+needs updating**; the code changed on purpose and the sentence did not follow.
+Occasionally it is the other way round and the change to the code was a
+mistake, which is the case the test exists for.
+
+**Rejected:** generating the prose from the code, or a doctest-style
+mechanism. The figures appear inside sentences that explain what they mean,
+and a sentence written around a number is not something to generate. Checking
+is enough.
+
+This came from revising something else entirely and finding two claims there
+that the code contradicted. The lesson transferred: a number written into
+running text is a number nothing checks.
+
+## 24. Planned
 
 Recorded so the shape of the API can be judged against where it is going.
 

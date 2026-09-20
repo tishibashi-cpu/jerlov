@@ -235,3 +235,41 @@ def test_nothing_reaches_for_a_numpy_2_only_name():
         "use jerlov._data.trapezoid instead, which resolves whichever name "
         f"the installed NumPy has: {offenders}"
     )
+
+
+@source_tree
+def test_the_files_a_reviewer_looks_for_are_present():
+    """JOSS checks for community guidelines; the rest are cheap to keep."""
+    for name in ("README.md", "LICENSE", "NOTICE", "CITATION.cff",
+                 "CONTRIBUTING.md", "CODE_OF_CONDUCT.md", "CHANGELOG.md",
+                 "DATA.md", "DECISIONS.md", ".zenodo.json"):
+        assert (ROOT / name).exists(), f"{name} is missing"
+
+
+@source_tree
+def test_contributing_says_how_to_report_and_how_to_contribute():
+    """The three things JOSS asks a contributing guide to cover."""
+    text = (ROOT / "CONTRIBUTING.md").read_text().lower()
+    assert "issues" in text, "no way to report a problem is given"
+    assert "pip install -e" in text, "no way to set the package up is given"
+    assert "pull request" in text, "no way to contribute a change is given"
+
+
+@source_tree
+def test_the_changelog_covers_the_current_version():
+    """A release whose changes are only in a GitHub Release is invisible to
+    anyone who installed from PyPI."""
+    changelog = (ROOT / "CHANGELOG.md").read_text()
+    assert f"## {jerlov.__version__}" in changelog, (
+        f"CHANGELOG.md has no entry for {jerlov.__version__}"
+    )
+
+
+@source_tree
+def test_type_hints_reach_the_caller():
+    """Annotations are useless to a user without the marker file."""
+    assert (ROOT / "jerlov" / "py.typed").exists()
+    assert '"jerlov" = ["py.typed"]' in (ROOT / "pyproject.toml").read_text(), (
+        "py.typed exists but is not listed as package data, so it will not "
+        "be installed"
+    )

@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "jerlov"
-version = "0.3.0"
+version = "0.3.1"
 description = "Inherent optical properties of Jerlov water types, with provenance"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -30,3 +30,4 @@ include = ["jerlov*"]
 
 [tool.setuptools.package-data]
 "jerlov.data" = ["*.csv"]
+"jerlov" = ["py.typed"]

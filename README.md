@@ -273,6 +273,19 @@ questions the first edition of Jerlov settled, and the rest notes.
 `DECISIONS.md` records why the package is shaped the way it is, including the
 alternatives that were rejected and why.
 
+## Contributing, and reporting a wrong number
+
+`CONTRIBUTING.md` sets out what goes in and what it takes: a primary source, a
+script in `tools/` that produces the table, checks inside that script against
+the paper's own equations, an entry in `DATA.md`, and a regression test.
+
+**A coefficient that disagrees with a paper you have is the most useful report
+this package can receive.** `DATA.md` exists because several such
+disagreements turned out to be defects in the literature rather than here.
+Issues: <https://github.com/tishibashi-cpu/jerlov/issues>
+
+`CHANGELOG.md` covers every release.
+
 ## Licence
 
 Apache-2.0. The Williamson & Hollins data are Crown copyright, Dstl, under
