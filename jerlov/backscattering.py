@@ -70,11 +70,15 @@ def pure_water_vsf(angle_deg, wavelength_nm, salinity_psu: float = 37.0):
     The amplitude carries about 15 percent uncertainty, which the authors give
     as the agreement between measurement and theory.
     """
-    angle = np.atleast_1d(np.asarray(angle_deg, dtype=float))
+    angle = np.asarray(angle_deg, dtype=float)
     amplitude = (1.38 * (np.asarray(wavelength_nm, dtype=float) / 500.0) ** -4.32
                  * (1 + 0.3 * salinity_psu / 37.0) * 1e-4)
     out = amplitude * (1 + _ratio() * np.cos(np.radians(angle)) ** 2)
-    return _like_input(np.atleast_1d(out), angle_deg)
+    # Angle and wavelength broadcast against each other; the answer is a
+    # float only when neither of them was an array.
+    if np.ndim(out) == 0:
+        return float(out)
+    return out
 
 
 def pure_water_backscattering(wavelength_nm, salinity_psu: float = 37.0):
@@ -181,7 +185,7 @@ def bb_from_vsf(beta, angle_deg: float, wavelength_nm, *,
             "scattering function varies steeply here and a single-angle "
             "measurement pins bb poorly.",
             AngleWarning,
-            stacklevel=2,
+            stacklevel=_data.caller_stacklevel(),
         )
 
     scalar = np.ndim(beta) == 0 and np.ndim(wavelength_nm) == 0
@@ -198,7 +202,7 @@ def bb_from_vsf(beta, angle_deg: float, wavelength_nm, *,
             "so the particle contribution came out negative. Check the "
             "calibration, the wavelength and the salinity.",
             AngleWarning,
-            stacklevel=2,
+            stacklevel=_data.caller_stacklevel(),
         )
 
     def shape(values):

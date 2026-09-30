@@ -165,3 +165,23 @@ def test_it_says_nothing_about_a_jerlov_type():
     """The point of DATA.md section 10 has not quietly gone away."""
     with pytest.raises(jerlov.MissingQuantityError):
         jerlov.water("III").bb(532)
+
+
+def test_one_angle_many_wavelengths_gives_one_value_per_wavelength():
+    """A scalar angle used to return the first wavelength's value alone."""
+    nms = [450.0, 532.0, 700.0]
+    vsf = jerlov.pure_water_vsf(124.0, nms)
+    assert np.shape(vsf) == (3,)
+    for value, nm in zip(vsf, nms):
+        assert value == pytest.approx(jerlov.pure_water_vsf(124.0, nm))
+
+
+def test_an_array_of_wavelengths_matches_one_call_per_wavelength():
+    """The water term must be subtracted at each wavelength, not the first."""
+    nms = [450.0, 532.0, 700.0]
+    together = jerlov.bb_from_vsf([0.001] * 3, 124.0, nms)
+    for k, nm in enumerate(nms):
+        alone = jerlov.bb_from_vsf(0.001, 124.0, nm)
+        assert together.bb[k] == pytest.approx(alone.bb)
+        assert together.particulate[k] == pytest.approx(alone.particulate)
+        assert together.water[k] == pytest.approx(alone.water)
