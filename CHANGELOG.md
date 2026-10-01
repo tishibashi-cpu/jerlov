@@ -4,7 +4,7 @@ Every release is archived on Zenodo under the concept DOI
 [10.5281/zenodo.22321312](https://doi.org/10.5281/zenodo.22321312), which
 always resolves to the latest version.
 
-## Unreleased
+## 0.3.2 — 2026-10-01
 
 **Fixed.** `b_from_c` given an array of c at a single wavelength returned
 only the first element, silently. The shape of the answer was taken from the
