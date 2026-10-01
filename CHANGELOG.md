@@ -4,6 +4,30 @@ Every release is archived on Zenodo under the concept DOI
 [10.5281/zenodo.22321312](https://doi.org/10.5281/zenodo.22321312), which
 always resolves to the latest version.
 
+## 0.3.2 — 2026-10-01
+
+**Fixed.** `b_from_c` given an array of c at a single wavelength returned
+only the first element, silently. The shape of the answer was taken from the
+wavelength alone; it now follows c and the wavelength together.
+
+`pure_water_vsf` given one angle and several wavelengths returned the value at
+the first wavelength only. Through it, `bb_from_vsf` with an array of
+wavelengths subtracted the 450 nm water term from every reading, so its `bb`
+and `particulate` were wrong at every wavelength but the first while `water`
+looked right. Scalar calls, and every figure in the documentation, were not
+affected.
+
+`ProvenanceWarning` pointed at `water.py` rather than at the line that asked
+for the value, and `CoverageWarning` and `GamutWarning` did the same when
+reached through `spectrum_to_srgb`. A fixed `stacklevel` is right for one call
+path only; warnings now point at the first frame outside the package.
+
+The table loaders are cached, and `jerlov.water()` handed out the cached
+arrays themselves. An in-place edit such as `w.wavelengths *= 2` changed the
+table for every later caller in the process. The cached arrays are now
+read-only, and `Water` copies what it is given, including a caller's own
+measurements, which it previously shared.
+
 ## 0.3.1 — 2026-09-20
 
 **Added.** `CONTRIBUTING.md`, `CODE_OF_CONDUCT.md`, this changelog, and issue

@@ -213,3 +213,58 @@ def test_interpolating_across_a_gap_still_gives_nan():
         assert np.isnan(w.a(650))          # a published value that is wrong
         assert np.isnan(w.a(660))          # and interpolation across it
         assert np.isnan(w.a(675))
+
+
+def test_b_from_c_keeps_every_c_at_a_single_wavelength():
+    """An array of c at one wavelength used to come back as its first value."""
+    c = np.array([0.5, 1.0, 2.0])
+    out = jerlov.b_from_c(c, 488.0, bw=0.003, cw=0.02)
+    assert out.shape == (3,)
+    for value, single in zip(out, c):
+        assert value == pytest.approx(
+            jerlov.b_from_c(float(single), 488.0, bw=0.003, cw=0.02)
+        )
+    assert isinstance(jerlov.b_from_c(0.5, 488.0, bw=0.003, cw=0.02), float)
+
+
+def test_a_returned_water_cannot_corrupt_the_packaged_table():
+    """The loaders are cached; a caller's in-place edit must stay local."""
+    w = jerlov.water("III")
+    before = jerlov.water("III").wavelengths.copy()
+    w.wavelengths *= 2.0
+    assert np.array_equal(jerlov.water("III").wavelengths, before)
+
+
+def test_the_cached_tables_are_read_only():
+    from jerlov import _data
+
+    wl, m, kw = _data.austin_model()
+    with pytest.raises(ValueError):
+        wl[0] = 0.0
+    wl, values, _ = _data.spectrum(
+        "williamson2022_iop.csv", "III", "a", "value_per_m"
+    )
+    with pytest.raises(ValueError):
+        values[0] = 0.0
+
+
+def test_measurements_are_copied_not_shared():
+    wl = np.array([400.0, 500.0, 600.0])
+    a = np.array([0.1, 0.2, 0.3])
+    mine = Water.from_measurements(wl, a=a)
+    a[1] = 99.0
+    assert mine.a(500.0) == pytest.approx(0.2)
+
+
+@pytest.mark.parametrize("method", ["kd", "c"])
+def test_a_provenance_warning_points_at_the_callers_line(method):
+    """Not at water.py: `c` reaches the check one frame deeper than `kd`."""
+    source = "jerlov1976" if method == "kd" else "williamson2022"
+    w = jerlov.water("9C" if method == "kd" else "III", source=source)
+    query = 349.5 if method == "kd" else 305.0
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always")
+        getattr(w, method)(query)
+    flagged = [c for c in caught if issubclass(c.category, ProvenanceWarning)]
+    assert flagged
+    assert all(c.filename == __file__ for c in flagged)

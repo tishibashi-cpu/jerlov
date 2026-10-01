@@ -8,10 +8,10 @@ silently cleaned up on the way in.
 from __future__ import annotations
 
 import csv
+import os
+import sys
 from functools import lru_cache
 from importlib import resources
-
-import numpy as np
 
 import numpy as np
 
@@ -22,6 +22,36 @@ import numpy as np
 #: meant two later modules reached for np.trapezoid and broke the oldest
 #: supported NumPy.
 trapezoid = getattr(np, "trapezoid", None) or np.trapz
+
+_PACKAGE_DIR = os.path.dirname(os.path.abspath(__file__)) + os.sep
+
+
+def caller_stacklevel() -> int:
+    """The ``stacklevel`` that points a warning at the caller's own code.
+
+    Call it from the function that calls ``warnings.warn``. A fixed number
+    is right only for one call path: ``Water.c`` reaches the flag check one
+    frame deeper than ``Water.a`` does, and ``Scene`` deeper still, so a
+    constant pointed some warnings at this package instead of at the line
+    that asked for the value.
+    """
+    frame = sys._getframe(1)
+    level = 1
+    while frame is not None and frame.f_code.co_filename.startswith(_PACKAGE_DIR):
+        frame = frame.f_back
+        level += 1
+    return level
+
+
+def _frozen(array: np.ndarray) -> np.ndarray:
+    """Make a cached array read-only.
+
+    The loaders below are cached, so every caller gets the same array
+    objects. Writing into one would silently change the table for every
+    later caller in the process.
+    """
+    array.setflags(write=False)
+    return array
 
 #: Values whose ``status`` is one of these should not be used without the
 #: caller being told. See README sections 1-6.
@@ -75,8 +105,8 @@ def spectrum(
         )
     order = np.argsort(wl)
     return (
-        np.asarray(wl, dtype=float)[order],
-        np.asarray(values, dtype=float)[order],
+        _frozen(np.asarray(wl, dtype=float)[order]),
+        _frozen(np.asarray(values, dtype=float)[order]),
         tuple(statuses[i] for i in order),
     )
 
@@ -104,7 +134,7 @@ def austin_model() -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     m = np.array([float(r["M_slope"]) for r in rows])
     kw = np.array([float(r["Kw_pure_seawater_per_m"]) for r in rows])
     order = np.argsort(wl)
-    return wl[order], m[order], kw[order]
+    return _frozen(wl[order]), _frozen(m[order]), _frozen(kw[order])
 
 
 @lru_cache(maxsize=None)
@@ -119,5 +149,5 @@ def b_from_c_ratio() -> tuple[np.ndarray, dict[str, np.ndarray]]:
             for r in rows
             if r["statistic"] == stat
         }
-        out[stat] = np.array([by_wl[w] for w in wl])
-    return np.array(wl), out
+        out[stat] = _frozen(np.array([by_wl[w] for w in wl]))
+    return _frozen(np.array(wl)), out
