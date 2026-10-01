@@ -163,7 +163,7 @@ def integrate_response(spectrum, wavelengths, response, response_wavelengths,
             "The integral is over the overlap and is biased by what was left "
             "out",
             CoverageWarning,
-            stacklevel=2,
+            stacklevel=_data.caller_stacklevel(),
         )
 
     resampled = np.stack(
@@ -202,7 +202,7 @@ def xyz_to_srgb(xyz, *, clip: bool = True) -> np.ndarray:
             "the colour lies outside the sRGB gamut"
             + (" and has been clipped" if clip else ""),
             GamutWarning,
-            stacklevel=2,
+            stacklevel=_data.caller_stacklevel(),
         )
     if clip:
         linear = np.clip(linear, 0.0, 1.0)

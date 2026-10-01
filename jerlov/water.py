@@ -75,7 +75,9 @@ class Water:
         source: Source | None = None,
         flags: dict[str, tuple[str, ...]] | None = None,
     ) -> None:
-        self.wavelengths = np.asarray(wavelengths, dtype=float)
+        # Copied, so that neither the caller's arrays nor the packaged tables
+        # can change underneath this object, and it cannot change them.
+        self.wavelengths = np.array(wavelengths, dtype=float)
         if self.wavelengths.ndim != 1 or self.wavelengths.size == 0:
             raise ValueError("wavelengths must be a non-empty 1-D array")
         if np.any(np.diff(self.wavelengths) <= 0):
@@ -85,7 +87,7 @@ class Water:
         for key, value in (("a", a), ("b", b), ("Kd", kd)):
             if value is None:
                 continue
-            arr = np.asarray(value, dtype=float)
+            arr = np.array(value, dtype=float)
             if arr.shape != self.wavelengths.shape:
                 raise ValueError(f"{key} must have the same shape as wavelengths")
             self._series[key] = arr
@@ -163,7 +165,7 @@ class Water:
                 + "; ".join(sorted(hit))
                 + ". See the package README for what is known about them.",
                 ProvenanceWarning,
-                stacklevel=3,
+                stacklevel=_data.caller_stacklevel(),
             )
 
     def a(self, wl):
@@ -368,7 +370,7 @@ def kd_spectrum(kd, wavelength_nm: float, at):
             "Austin & Petzold (1986) reported exactly this problem in "
             "Jerlov's own type I values.",
             ProvenanceWarning,
-            stacklevel=2,
+            stacklevel=_data.caller_stacklevel(),
         )
     result = np.interp(query, wl, m) / m1 * (kd - kw1) + np.interp(query, wl, kw)
     return _like_input(result, at)
@@ -395,5 +397,11 @@ def b_from_c(c, wavelength_nm, *, bw, cw, bound: str = "average"):
             f"wavelength outside the measured range ({wl[0]:g}-{wl[-1]:g} nm)"
         )
     ratio = np.interp(query, wl, ratios[bound])
+    if np.ndim(wavelength_nm) == 0:
+        ratio = ratio[0]
     result = (np.asarray(c, dtype=float) - cw) * ratio + bw
-    return _like_input(np.atleast_1d(result), wavelength_nm)
+    # c and the wavelength broadcast against each other; the answer is a
+    # float only when neither of them was an array.
+    if np.ndim(result) == 0:
+        return float(result)
+    return result
