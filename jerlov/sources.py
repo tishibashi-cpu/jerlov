@@ -55,7 +55,7 @@ HALTRIN1999 = ScatteringConstants(
 #: Solonenko & Mobley (2015) Eqs. (8a)-(8d). The small-particle coefficient
 #: 1.513 does not match Haltrin's 1.151302; the digit appears to have been
 #: dropped in transcription. Their published tables were computed with 1.513,
-#: so this value is required to reproduce them. See README section 6.
+#: so this value is required to reproduce them. See DATA.md section 6.
 SOLONENKO2015_SCATTERING = ScatteringConstants(
     bw_coeff=0.00583,
     bw_exponent=4.322,

@@ -44,6 +44,25 @@ def _like_input(result: np.ndarray, original) -> np.ndarray | float:
     return result
 
 
+def _support(grid: np.ndarray, query: np.ndarray) -> list[tuple[int, ...]]:
+    """The indices of the samples of ``grid`` each query's answer rests on.
+
+    A query that lands exactly on a sample rests on that sample alone: it is
+    not interpolated, so its neighbours are no part of the answer. Otherwise
+    it rests on the samples either side. The NaN check and the provenance
+    warnings all use this, so that they cannot disagree about what a value
+    depends on.
+    """
+    n = grid.size
+    out: list[tuple[int, ...]] = []
+    for i, w_query in zip(np.searchsorted(grid, query), query):
+        if i < n and grid[i] == w_query:
+            out.append((int(i),))
+        else:
+            out.append((max(int(i) - 1, 0), min(int(i), n - 1)))
+    return out
+
+
 class Water:
     """Absorption and scattering coefficients as functions of wavelength.
 
@@ -129,33 +148,25 @@ class Water:
                 f"wavelength outside the range of the data ({lo:g}-{hi:g} nm). "
                 "This package does not extrapolate."
             )
-        self._warn_if_flagged(quantity, query)
+        support = _support(self.wavelengths, query)
+        self._warn_if_flagged(quantity, support)
         values = self._series[quantity]
         out = np.interp(query, self.wavelengths, values)
         # np.interp happily bridges a NaN-free path around a NaN, so check the
-        # samples the answer actually rests on. A query that lands exactly on
-        # a sample rests on that sample alone: it is not interpolated, so a
-        # missing neighbour must not poison it.
-        idx = np.searchsorted(self.wavelengths, query)
-        for k, (i, w_query) in enumerate(zip(idx, query)):
-            exact = i < self.wavelengths.size and self.wavelengths[i] == w_query
-            if exact:
-                if np.isnan(values[i]):
-                    out[k] = np.nan
-                continue
-            left, right = max(i - 1, 0), min(i, values.size - 1)
-            if np.any(np.isnan(values[left:right + 1])):
+        # samples the answer actually rests on.
+        for k, samples in enumerate(support):
+            if any(np.isnan(values[j]) for j in samples):
                 out[k] = np.nan
         return _like_input(out, wl)
 
-    def _warn_if_flagged(self, quantity: str, query: np.ndarray) -> None:
+    def _warn_if_flagged(self, quantity: str,
+                         support: list[tuple[int, ...]]) -> None:
         statuses = self._flags.get(quantity)
         if not statuses:
             return
         hit: set[str] = set()
-        idx = np.searchsorted(self.wavelengths, query)
-        for i in idx:
-            for j in (max(i - 1, 0), min(i, len(statuses) - 1)):
+        for samples in support:
+            for j in samples:
                 status = statuses[j]
                 if status in _data.QUESTIONABLE:
                     hit.add(f"{status} at {self.wavelengths[j]:g} nm")
@@ -163,7 +174,7 @@ class Water:
             warnings.warn(
                 f"{quantity} for Jerlov {self.name} rests on flagged values: "
                 + "; ".join(sorted(hit))
-                + ". See the package README for what is known about them.",
+                + ". See DATA.md for what is known about them.",
                 ProvenanceWarning,
                 stacklevel=_data.caller_stacklevel(),
             )
@@ -190,7 +201,7 @@ class Water:
         ``backscatter_ratio`` is bb/b and has no default. It is not determined
         by the Jerlov classification: deriving it from the particle
         concentrations of Solonenko & Mobley and of Williamson & Hollins gives
-        answers that differ by up to a factor of 31. See README section 10.
+        answers that differ by up to a factor of 31. See DATA.md section 10.
 
         Reported ranges are roughly 0.005-0.01 for open ocean and 0.015-0.03
         for coastal water; the Petzold average-particle phase function gives
@@ -201,7 +212,7 @@ class Water:
                 "bb is not determined by the water type. Pass "
                 "backscatter_ratio=... explicitly (bb/b; roughly 0.005-0.01 "
                 "for open ocean, 0.015-0.03 for coastal water). "
-                "See README section 10."
+                "See DATA.md section 10."
             )
         if not 0.0 < backscatter_ratio < 0.5:
             raise ValueError("backscatter_ratio must lie in (0, 0.5)")
@@ -332,6 +343,10 @@ def water_type_at_depth(surface_water_type: str, depth_m: float) -> str | None:
     return None
 
 
+#: Austin & Petzold (1986) state their model holds below this K(490), 1/m.
+AUSTIN_KD490_LIMIT = 0.16
+
+
 def kd_spectrum(kd, wavelength_nm: float, at):
     """Reconstruct a Kd spectrum from a single measured value.
 
@@ -342,38 +357,96 @@ def kd_spectrum(kd, wavelength_nm: float, at):
     Parameters
     ----------
     kd:
-        Measured Kd in 1/m.
+        Measured Kd in 1/m. A scalar, or an array of measurements all made at
+        ``wavelength_nm`` (several stations, say); each is reconstructed
+        separately.
     wavelength_nm:
-        Wavelength at which ``kd`` was measured.
+        Wavelength at which ``kd`` was measured. A single value.
     at:
         Wavelength(s) at which to evaluate the spectrum.
 
+    Returns
+    -------
+    A float for scalar ``kd`` and ``at``. Otherwise an array of shape
+    ``kd.shape + at.shape``: one spectrum per measurement.
+
     Notes
     -----
-    The authors state the model holds for K(490) < 0.16 1/m. Accuracy is about
+    The authors state the model holds for K(490) < 0.16 1/m, and a
+    :class:`ProvenanceWarning` is raised for any measurement whose K(490),
+    measured or implied by the model, is not below that. Accuracy is about
     8 percent at wavelengths up to 590 nm and degrades to about 31 percent at
-    670 nm; M below 365 nm is itself extrapolated.
+    670 nm. M below 365 nm is itself extrapolated, and a result that rests on
+    it also warns.
     """
     wl, m, kw = _data.austin_model()
     lo, hi = float(wl[0]), float(wl[-1])
+    if np.ndim(wavelength_nm) != 0:
+        raise ValueError(
+            "wavelength_nm must be a single wavelength; for measurements at "
+            "different wavelengths, call kd_spectrum once for each"
+        )
+    wavelength_nm = float(wavelength_nm)
     query = _as_array(at)
     for value, label in ((wavelength_nm, "wavelength_nm"), (query, "at")):
         if np.any(np.asarray(value) < lo) or np.any(np.asarray(value) > hi):
             raise ValueError(f"{label} outside the model range ({lo:g}-{hi:g} nm)")
+    kd_values = np.asarray(kd, dtype=float)
 
     m1 = float(np.interp(wavelength_nm, wl, m))
     kw1 = float(np.interp(wavelength_nm, wl, kw))
-    if kd < kw1:
+    below = kd_values < kw1
+    if np.any(below):
+        shown = ", ".join(f"{v:g}" for v in np.atleast_1d(kd_values)[
+            np.atleast_1d(below)][:5])
         warnings.warn(
-            f"Kd={kd:g} is below the pure sea water value {kw1:g} at "
+            f"Kd={shown} is below the pure sea water value {kw1:g} at "
             f"{wavelength_nm:g} nm, which is not physically possible. "
             "Austin & Petzold (1986) reported exactly this problem in "
             "Jerlov's own type I values.",
             ProvenanceWarning,
             stacklevel=_data.caller_stacklevel(),
         )
-    result = np.interp(query, wl, m) / m1 * (kd - kw1) + np.interp(query, wl, kw)
-    return _like_input(result, at)
+
+    kd490 = (float(np.interp(490.0, wl, m)) / m1 * (kd_values - kw1)
+             + float(np.interp(490.0, wl, kw)))
+    outside = kd490 >= AUSTIN_KD490_LIMIT
+    if np.any(outside):
+        shown = ", ".join(f"{v:.3g}" for v in np.atleast_1d(kd490)[
+            np.atleast_1d(outside)][:5])
+        warnings.warn(
+            f"K(490) = {shown} 1/m"
+            + (" (implied by the model)" if wavelength_nm != 490.0 else "")
+            + f" is not below {AUSTIN_KD490_LIMIT:g} 1/m, the limit Austin & "
+            "Petzold (1986) give for their model. The reconstruction is "
+            "outside the range it was fitted to.",
+            ProvenanceWarning,
+            stacklevel=_data.caller_stacklevel(),
+        )
+
+    statuses = _data.austin_model_status()
+    flagged: set[str] = set()
+    for samples in _support(wl, np.concatenate(([wavelength_nm], query))):
+        for j in samples:
+            if statuses[j] in _data.QUESTIONABLE:
+                flagged.add(f"{statuses[j]} at {wl[j]:g} nm")
+    if flagged:
+        warnings.warn(
+            "the result rests on values of M that Austin & Petzold (1986) "
+            "flag as " + "; ".join(sorted(flagged)) + ", and say should be "
+            "used with caution",
+            ProvenanceWarning,
+            stacklevel=_data.caller_stacklevel(),
+        )
+
+    ratio = np.interp(query, wl, m) / m1
+    result = (ratio * (kd_values[..., None] - kw1)
+              + np.interp(query, wl, kw))
+    if np.ndim(at) == 0:
+        result = result[..., 0]
+    if np.ndim(result) == 0:
+        return float(result)
+    return result
 
 
 def b_from_c(c, wavelength_nm, *, bw, cw, bound: str = "average"):

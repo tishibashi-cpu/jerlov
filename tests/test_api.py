@@ -63,7 +63,7 @@ def test_missing_values_stay_missing():
 
 
 def test_flagged_wavelengths_warn():
-    """Jerlov IA's b is inconsistent with its own Table 3; see README 4."""
+    """Jerlov IA's b is inconsistent with its own Table 3; see DATA.md section 4."""
     w = jerlov.water("IA", source="solonenko2015")
     with pytest.warns(ProvenanceWarning, match="suspect"):
         w.b(550)
@@ -112,7 +112,10 @@ def test_kd_spectrum_reproduces_austin_table6():
         "austin1986_kd.csv", "II", None, "Kd_downwelling_per_m"
     )
     k475 = float(kd[np.where(wl == 475)[0][0]])
-    predicted = jerlov.kd_spectrum(k475, 475, wl)
+    # Table VI starts at 350 nm, where the paper itself flags M as
+    # extrapolated, so reproducing it must say so.
+    with pytest.warns(ProvenanceWarning, match="extrapolated at 350 nm"):
+        predicted = jerlov.kd_spectrum(k475, 475, wl)
     assert np.max(np.abs(100 * (predicted - kd) / kd)) < 0.5
 
 
@@ -268,3 +271,54 @@ def test_a_provenance_warning_points_at_the_callers_line(method):
     flagged = [c for c in caught if issubclass(c.category, ProvenanceWarning)]
     assert flagged
     assert all(c.filename == __file__ for c in flagged)
+
+
+def test_a_flag_on_a_neighbour_does_not_warn_at_an_exact_sample():
+    """350 nm is sound; only 349 nm is missing. The answer at 350 rests on
+    350 alone, as the NaN check already knew."""
+    w = jerlov.water("9C", source="jerlov1976")
+    with warnings.catch_warnings():
+        warnings.simplefilter("error", ProvenanceWarning)
+        assert np.isfinite(w.kd(350.0))
+    with pytest.warns(ProvenanceWarning, match="missing at 349 nm"):
+        w.kd(349.5)
+
+
+def test_kd_spectrum_takes_several_measurements_at_once():
+    kd = np.array([0.03, 0.06, 0.1])
+    at = np.array([440.0, 550.0, 650.0])
+    together = jerlov.kd_spectrum(kd, 490, at)
+    assert together.shape == (3, 3)
+    for row, single in zip(together, kd):
+        assert np.allclose(row, jerlov.kd_spectrum(float(single), 490, at))
+    at_one = jerlov.kd_spectrum(kd, 490, 550.0)
+    assert at_one.shape == (3,)
+    assert np.allclose(at_one, together[:, 1])
+
+
+def test_kd_spectrum_wants_one_measurement_wavelength():
+    with pytest.raises(ValueError, match="single wavelength"):
+        jerlov.kd_spectrum(0.06, [490, 500], 550)
+
+
+def test_kd_spectrum_warns_outside_the_fitted_range():
+    """Austin & Petzold: the model holds for K(490) < 0.16 1/m."""
+    with pytest.warns(ProvenanceWarning, match="0.16"):
+        jerlov.kd_spectrum(0.2, 490, 550)
+    # Measured elsewhere, the K(490) the model implies is what counts.
+    with pytest.warns(ProvenanceWarning, match="implied by the model"):
+        jerlov.kd_spectrum(0.3, 440, 550)
+    with warnings.catch_warnings():
+        warnings.simplefilter("error", ProvenanceWarning)
+        jerlov.kd_spectrum(0.15, 490, 550)
+
+
+def test_kd_spectrum_warns_where_m_is_extrapolated():
+    with pytest.warns(ProvenanceWarning, match="extrapolated at 355 nm"):
+        jerlov.kd_spectrum(0.06, 490, 355.0)
+    with pytest.warns(ProvenanceWarning, match="extrapolated at 360 nm"):
+        jerlov.kd_spectrum(0.06, 490, 362.0)
+    # 365 nm is the first sound value of M, and rests on it alone.
+    with warnings.catch_warnings():
+        warnings.simplefilter("error", ProvenanceWarning)
+        jerlov.kd_spectrum(0.06, 490, [365.0, 550.0])
