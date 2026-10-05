@@ -82,7 +82,7 @@ def test_solonenko_b_follows_from_its_own_table3(water_type):
     """Eq. (8) with the paper's own constants must give the shipped b.
 
     Jerlov I and IA are excluded: their Table 3 entries are not consistent
-    with their b column. See README section 4.
+    with their b column. See DATA.md section 4.
     """
     wl, b, statuses = series("solonenko2015_iop.csv", water_type, "b")
     _, cl, cs, _ = SM_TABLE3[water_type]
@@ -97,7 +97,7 @@ def test_solonenko_b_follows_from_its_own_table3(water_type):
 
 @pytest.mark.parametrize("water_type", ["I", "IA"])
 def test_solonenko_table3_is_inconsistent_for_the_clearest_types(water_type):
-    """Guard the known defect of README section 4, so a fix is noticed."""
+    """Guard the known defect of DATA.md section 4, so a fix is noticed."""
     wl, b, _ = series("solonenko2015_iop.csv", water_type, "b")
     _, cl, cs, _ = SM_TABLE3[water_type]
     predicted = scattering(SOLONENKO2015_SCATTERING, wl, cs, cl)

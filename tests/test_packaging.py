@@ -273,3 +273,34 @@ def test_type_hints_reach_the_caller():
         "py.typed exists but is not listed as package data, so it will not "
         "be installed"
     )
+
+
+@source_tree
+def test_every_cited_section_exists():
+    """A reference that leads nowhere is worse than none.
+
+    Error messages and docstrings pointed readers at "README section 10",
+    but the README has no numbered sections; the numbered ones are in
+    DATA.md. Every "DATA.md section N" cited in the code must exist there,
+    and nothing may cite a numbered README section.
+    """
+    numbered = {
+        int(n) for n in re.findall(r"^## (\d+)\. ",
+                                   (ROOT / "DATA.md").read_text(), re.M)
+    }
+    offenders = []
+    for path in sorted(list(ROOT.glob("jerlov/*.py"))
+                       + list(ROOT.glob("jerlov/data/*.csv"))
+                       + list(ROOT.glob("tests/*.py"))
+                       + list(ROOT.glob("examples/*.py"))):
+        text = path.read_text()
+        where = path.relative_to(ROOT)
+        for match in re.finditer(r"README (?:sections? )?\d", text):
+            if path.name != "test_packaging.py":
+                offenders.append(f"{where}: '{match.group(0)}'")
+        for first, last in re.findall(
+                r"DATA\.md sections? (\d+)(?:\s*(?:-|and)\s*(\d+))?", text):
+            for n in {int(first), int(last or first)}:
+                if n not in numbered:
+                    offenders.append(f"{where}: DATA.md section {n}")
+    assert not offenders, f"references to nothing: {offenders}"

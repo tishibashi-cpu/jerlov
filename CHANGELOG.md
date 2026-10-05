@@ -4,6 +4,33 @@ Every release is archived on Zenodo under the concept DOI
 [10.5281/zenodo.22321312](https://doi.org/10.5281/zenodo.22321312), which
 always resolves to the latest version.
 
+## 0.3.3 — 2026-10-05
+
+**Fixed.** A `ProvenanceWarning` was raised for a wavelength that lands
+exactly on a sound sample whenever the sample beside it was flagged:
+`water("9C", source="jerlov1976").kd(350)` warned that 349 nm is missing,
+though the answer at 350 nm rests on 350 nm alone. The NaN check has known
+this since 0.2.1; the warning did not. Both now ask one function which
+samples an answer rests on, so they cannot disagree again. The test suite,
+which printed six such warnings, now prints none.
+
+`kd_spectrum` given an array of Kd failed with numpy's "truth value of an
+array is ambiguous". It now reconstructs one spectrum per measurement,
+returning shape `kd.shape + at.shape`. Several measurement wavelengths are
+refused with a message saying so.
+
+**Added.** `kd_spectrum` warns when K(490), measured or implied by the
+model, is not below 0.16 1/m, the limit Austin & Petzold give for their model.
+It also warns when the answer rests on the values of M below 365 nm that the
+paper itself flags as extrapolated. Both limits were stated in the docstring
+and checked by nothing.
+
+**Docs.** Error messages, docstrings and comments sent readers to "README
+section 10" and the like. The README has no numbered sections; DATA.md does,
+and every such reference now points there. The message raised by `Water.bb`
+without a backscattering ratio, which every new user meets, was one of them.
+A test now checks that every "DATA.md section N" cited in the code exists.
+
 ## 0.3.2 — 2026-10-01
 
 **Fixed.** `b_from_c` given an array of c at a single wavelength returned

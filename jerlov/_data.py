@@ -54,7 +54,7 @@ def _frozen(array: np.ndarray) -> np.ndarray:
     return array
 
 #: Values whose ``status`` is one of these should not be used without the
-#: caller being told. See README sections 1-6.
+#: caller being told. See DATA.md sections 1-6.
 QUESTIONABLE = frozenset({"suspect", "missing", "extrapolated",
                           "model_extrapolation", "reconstructed"})
 
@@ -135,6 +135,14 @@ def austin_model() -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     kw = np.array([float(r["Kw_pure_seawater_per_m"]) for r in rows])
     order = np.argsort(wl)
     return _frozen(wl[order]), _frozen(m[order]), _frozen(kw[order])
+
+
+@lru_cache(maxsize=None)
+def austin_model_status() -> tuple[str, ...]:
+    """The ``status`` of each row of :func:`austin_model`, in the same order."""
+    rows = sorted(_rows("austin1986_model.csv"),
+                  key=lambda r: float(r["wavelength_nm"]))
+    return tuple(r["status"] for r in rows)
 
 
 @lru_cache(maxsize=None)
