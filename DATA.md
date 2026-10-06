@@ -3,7 +3,7 @@
 What every shipped table is, where it came from, what was verified, and what
 is known to be wrong with it.
 
-Eighteen entries are recorded below. Eight are confirmed defects, three were
+Nineteen entries are recorded below. Eight are confirmed defects, three were
 open questions that the first edition of Jerlov settled, and the rest are
 notes rather than defects. None of them is repaired silently: values that
 could be recovered carry `status = reconstructed` and say how, values that
@@ -113,7 +113,8 @@ up to 34 percent. Solonenko & Mobley cite Jerlov & Koczy (1951) and Jerlov
 
 **They were right and the discrepancy is an edition difference.** Jerlov
 (1968) Table XX was obtained and transcribed; it is shipped as
-`jerlov1968_kd.csv`. Converting its transmittances to Kd and comparing:
+`jerlov1968_kd.csv`, and since 0.5.0 is `water(t, source="jerlov1968")`.
+Converting its transmittances to Kd and comparing:
 
 | Type | against Jerlov 1968 | against Jerlov 1976 |
 |---|---|---|
@@ -311,7 +312,8 @@ model interpolation or extrapolation and is marked `model_extrapolation`;
 `williamson2022_measured.csv` holds the raw measured points. Hollins &
 Williamson (2023) state that the fitting process behind the smooth spectra
 would bias some analyses and that the individual points are preferable
-(section 2.A). Use these for validation.
+(section 2.A). Use these for validation; `measured_points(t, "a")` returns
+them with their spread and campaign count.
 
 The paper kept only averages built from five or more measurements.
 Reproducing that filter gives **53 points each for a and b, 106 in total,
@@ -513,6 +515,9 @@ in the upper ocean as a sum of two exponentials:
 I(z) / I(0) = R exp(-z/zeta1) + (1 - R) exp(-z/zeta2)
 ```
 
+The table Paulson & Simpson fitted, Jerlov (1968) Table XXI, is
+`jerlov1968_solar_fraction(t)`, for all ten types.
+
 Source: Paulson, C. A. and Simpson, J. J. (1977), "Irradiance measurements in
 the upper ocean", *J. Phys. Oceanogr.* 7, 952-956, DOI
 `10.1175/1520-0485(1977)007<0952:IMITUO>2.0.CO;2`, Table 2.
@@ -669,7 +674,7 @@ built on another, and none of the three papers says which of the others it
 disagrees with.
 
 Paglierani et al. (2023), *Quantum Engineering* **2023**, 7185329, DOI
-`10.1155/2023.7185329`, a review of underwater quantum key distribution, says
+`10.1155/2023/7185329`, a review of underwater quantum key distribution, says
 so plainly:
 
 > some works strictly adopt the values proposed by Mobley ... Other works,
@@ -768,3 +773,34 @@ what they measured.
 **It does not settle section 10.** There is still no bb for a Jerlov water
 type, because a water type is defined by Kd and Kd barely depends on bb.
 `Water.bb` still requires an explicit ratio.
+
+## 19. Three Kd columns in Solonenko & Mobley (note)
+
+Tables 4 to 8 of Solonenko & Mobley (2015) give Kd three times over, and they
+are three different things (Section 4 and Appendix A of the paper):
+
+| Column | What it is | Here |
+|---|---|---|
+| K_d^0 | Jerlov's reference values; parenthesised ones are extrapolated | `water(t, source="jerlov1968")`, section 2 |
+| K_d | Kd of the paper's bio-optical model, Eq. (4), with the retrieved a and b; within 15 percent of K_d^0 | `.kd()` |
+| K_d^H | Kd computed by HydroLight from the retrieved a and b | `.kd_hydrolight()` |
+
+K_d^H is the paper's check on its own retrieval. HydroLight was run with the
+retrieved a and b, the Petzold average-particle phase function, a clear sky,
+infinitely deep water and no inelastic scattering. The modelling depth was 10
+scattering lengths for every type except Jerlov III, where 6 matched Jerlov
+better.
+
+**The tabulated values do not quite reach the paper's figure for them.** The
+paper says that 90 percent of the points in its Fig. 5 lie within 20 percent
+of K_d^0. Recomputing `100 (K_d^0 - K_d^H) / K_d^0` from the tables gives
+86.5 percent of all 163 cells where both are given, and 87.9 percent of the
+141 where neither is flagged. The difference is probably which points made it
+onto the plot; the tables are what is shipped. `tests/test_quoted_figures.py`
+pins both numbers.
+
+The KdH cells of the duplicated rows of section 1 are unrecoverable and are
+shipped as `missing`.
+
+A small slip in the same paper: its reference 2, Austin & Petzold (1986),
+gives the pages as "253471"; they are 471-479.

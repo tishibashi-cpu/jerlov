@@ -124,3 +124,28 @@ def solar_fraction(water_type: str, depth_m):
     there.
     """
     return shortwave_parameters(water_type).fraction_at(depth_m)
+
+
+def jerlov1968_solar_fraction(water_type: str) -> tuple[np.ndarray, np.ndarray]:
+    """Jerlov (1968) Table XXI: ``(depths_m, fraction)`` of surface irradiance.
+
+    Broadband, 300-2500 nm, as measured and tabulated by Jerlov, for all ten
+    types including the coastal ones. These are the values Paulson & Simpson
+    fitted, for the oceanic types, to obtain :func:`shortwave_parameters`,
+    so they are what to compare the fit against.
+
+    ``fraction`` is 0 to 1, not percent. Depths the table leaves blank are
+    kept, as NaN, so that a gap stays visible.
+    """
+    rows = [r for r in _data._rows("jerlov1968_total_irradiance.csv")
+            if r["water_type"] == water_type]
+    if not rows:
+        known = sorted({r["water_type"]
+                        for r in _data._rows("jerlov1968_total_irradiance.csv")})
+        raise KeyError(f"Table XXI has no water type {water_type!r} "
+                       f"(known: {', '.join(known)})")
+    rows.sort(key=lambda r: float(r["depth_m"]))
+    depths = np.array([float(r["depth_m"]) for r in rows])
+    fraction = np.array([float(r["percent_of_surface"]) / 100
+                         if r["percent_of_surface"] else np.nan for r in rows])
+    return depths, fraction

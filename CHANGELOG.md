@@ -4,6 +4,60 @@ Every release is archived on Zenodo under the concept DOI
 [10.5281/zenodo.22321312](https://doi.org/10.5281/zenodo.22321312), which
 always resolves to the latest version.
 
+## 0.5.0 — 2026-10-06
+
+Three tables that had been transcribed, checked against their papers and
+shipped, but were reachable only through a private loader, now have public
+entry points. No coefficient changed, and nothing existing behaves
+differently.
+
+**Added.** `water(t, source="jerlov1968")`: Kd from the first edition of the
+classification, Jerlov (1968) Table XX, for all ten types from 310 to 700 nm.
+It is also the Kd0 column of Solonenko & Mobley (2015), which reproduces it to
+transcription accuracy. Its caveats say how far it is from the 1976 edition:
+1 to 15 percent on average by type, up to 35 percent at single wavelengths.
+
+`measured_points(t, quantity)`: the measured a and b points behind the
+Williamson & Hollins (2022) spectra, with their standard deviation and the
+number of campaigns behind each. Hollins & Williamson (2023) recommend these
+over the fitted spectra for validation. The paper's own filter, five or more
+campaigns, is applied unless `include_sparse=True`; Jerlov IA and 7C have no
+point that passes it, and are refused rather than returned empty.
+
+`jerlov1968_solar_fraction(t)`: Jerlov (1968) Table XXI, the broadband
+irradiance with depth that Paulson & Simpson fitted, for all ten types. Blanks
+stay NaN.
+
+`pure_water_scattering(wavelength_nm)`: the total scattering coefficient of
+pure sea water, from the same Morel formula as the rest of `backscattering`.
+It is twice `pure_water_backscattering` by symmetry, and Morel's
+`b_w = 16.06 beta_w(90)`, both checked. It is the `bw` that `b_from_c` asks
+for, if that is what the c measurement was corrected with.
+
+**Changed.** `examples/solar_heating.py` uses `jerlov1968_solar_fraction`
+instead of the private loader; its output is unchanged. Tests now fail if a
+shipped table is never read by the package, or if an example reaches into
+`jerlov._data`.
+
+`Water.kd_hydrolight(wl)`, for source `solonenko2015`: the paper's third Kd
+column, K_d^H, which HydroLight computed from the retrieved a and b with the
+Petzold average-particle phase function. It is the paper's check on its own
+retrieval and a different quantity from `.kd()`, the Kd of its bio-optical
+model. Its definition, from Section 4 and Appendix A of the paper, is now in
+DATA.md section 19, with one finding: the paper says 90 percent of the points
+in its Fig. 5 are within 20 percent of Jerlov's Kd, and the tabulated values
+give 87 percent.
+
+**Docs.** DATA.md has a nineteenth entry, so the count in DATA.md, the README
+and `.zenodo.json` moves from eighteen to nineteen. The Solonenko & Mobley
+caveat said only a is lost in the duplicated rows of Table 7; Kd and KdH are
+lost there too.
+
+The DOI of Paglierani et al. (2023) was given as `10.1155/2023.7185329`, which
+resolves to nothing; it is `10.1155/2023/7185329`. It was wrong in DATA.md,
+`sources/README.md` and `.zenodo.json`, so every Zenodo record from 0.2.2 on
+carries the broken link in its related works; 0.5.0 will carry the right one.
+
 ## 0.4.1 — 2026-10-06
 
 Inputs that used to slip past the package's own checks are now refused, and

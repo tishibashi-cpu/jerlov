@@ -95,6 +95,22 @@ def pure_water_backscattering(wavelength_nm, salinity_psu: float = 37.0):
     return _like_input(np.atleast_1d(out), wavelength_nm)
 
 
+def pure_water_scattering(wavelength_nm, salinity_psu: float = 37.0):
+    """``b_w``, the total scattering coefficient of pure sea water, 1/m.
+
+    :func:`pure_water_vsf` integrated over all directions. Its shape is
+    symmetric about 90 degrees, so this is exactly twice
+    :func:`pure_water_backscattering`; it is Morel's ``b_w = 16.06 beta_w(90)``
+    with the depolarisation ratio used here.
+
+    It is the ``bw`` that :func:`~jerlov.b_from_c` asks for, from the same
+    formula as the rest of this module. Other tabulations of pure water
+    scattering differ from Morel's by several percent; pass whichever one
+    your c measurement was corrected with.
+    """
+    return 2.0 * pure_water_backscattering(wavelength_nm, salinity_psu)
+
+
 def _chi_table():
     rows = [r for r in _data._rows("boss2001_chi.csv")
             if r["source"] == "boss2001"]

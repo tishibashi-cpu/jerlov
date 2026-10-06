@@ -508,3 +508,25 @@ Validation is deliberately staged. The package can claim that it implements
 published coefficients correctly, and the tests demonstrate that. It cannot
 claim that it predicts what a camera will record underwater; that needs
 measurements that have not been made. The README says so.
+
+## 25. A table worth shipping is worth an entry point
+
+Three tables had been transcribed, checked against their papers and shipped,
+and then left where only the private loader could reach them:
+`jerlov1968_kd.csv`, `jerlov1968_total_irradiance.csv` and
+`williamson2022_measured.csv`. An example read one of them through
+`jerlov._data`, which is what a user would have had to do too.
+
+That is the worst of both: the work of establishing the provenance was done,
+and the user who needed the numbers either went without or copied them from a
+secondary source, which is the situation this package exists to end. All three
+now have public entry points, and `tests/test_packaging.py` fails if a shipped
+table is never read by the package or if an example reaches into `_data`.
+
+The KdH column of Solonenko & Mobley (2015) was held back at first: its
+definition was not recorded in DATA.md, and a quantity whose meaning has not
+been established from the paper does not get a public name. Reading the paper
+established it (DATA.md section 19), and it is now `Water.kd_hydrolight`.
+Reading it also showed that the tabulated values reach 87 percent within 20
+percent of Jerlov, not the 90 the paper states, which is now recorded rather
+than repeated.

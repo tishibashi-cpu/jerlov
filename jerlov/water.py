@@ -9,6 +9,7 @@ same path.
 from __future__ import annotations
 
 import warnings
+from dataclasses import dataclass
 
 import numpy as np
 
@@ -87,6 +88,9 @@ class Water:
         wavelengths where the value is unknown.
     kd:
         Downwelling diffuse attenuation coefficient in 1/m, if known.
+    kd_hydrolight:
+        Kd recomputed by a radiative transfer model from ``a`` and ``b``, as
+        Solonenko & Mobley (2015) publish it. See :meth:`kd_hydrolight`.
     name:
         Jerlov water type, when the object came from one.
     source:
@@ -102,6 +106,7 @@ class Water:
         b=None,
         *,
         kd=None,
+        kd_hydrolight=None,
         name: str | None = None,
         source: Source | None = None,
         flags: dict[str, tuple[str, ...]] | None = None,
@@ -119,7 +124,8 @@ class Water:
             raise ValueError("wavelengths must be strictly ascending")
 
         self._series: dict[str, np.ndarray] = {}
-        for key, value in (("a", a), ("b", b), ("Kd", kd)):
+        for key, value in (("a", a), ("b", b), ("Kd", kd),
+                           ("KdH", kd_hydrolight)):
             if value is None:
                 continue
             arr = np.array(value, dtype=float)
@@ -217,6 +223,26 @@ class Water:
         """Downwelling diffuse attenuation coefficient in 1/m."""
         return self._interp("Kd", wl)
 
+    def kd_hydrolight(self, wl):
+        """Kd recomputed by HydroLight from this water's a and b, in 1/m.
+
+        Only Solonenko & Mobley (2015) publish it, as K_d^H in Tables 4-8.
+        It is their check that the a and b they retrieved reproduce Jerlov's
+        Kd: HydroLight run with those a and b, the Petzold average-particle
+        phase function, a clear sky, infinitely deep water and no inelastic
+        scattering, to an optical depth of 10 scattering lengths, or 6 for
+        Jerlov III, where that matched Jerlov better (Section 4 and Appendix
+        A). The paper says 90 percent of the points in its Fig. 5 lie within
+        20 percent of Jerlov's; the tabulated values give 87 percent. See
+        DATA.md section 19.
+
+        It is not the same quantity as :meth:`kd`, which for this source is
+        the Kd of the paper's own bio-optical model, fitted to Jerlov to
+        within 15 percent. Comparing the two shows how much the retrieved
+        IOPs depend on the model they were retrieved with.
+        """
+        return self._interp("KdH", wl)
+
     def bb(self, wl, *, backscatter_ratio: float | None = None):
         """Backscattering coefficient in 1/m.
 
@@ -267,11 +293,12 @@ class Water:
 
 _IOP_FILES = {
     "williamson2022": ("williamson2022_iop.csv", ("a", "b")),
-    "solonenko2015": ("solonenko2015_iop.csv", ("a", "b", "Kd")),
+    "solonenko2015": ("solonenko2015_iop.csv", ("a", "b", "Kd", "KdH")),
 }
 
 _KD_FILES = {
     "jerlov1976": ("jerlov1976_kd.csv", "Kd_downwelling_per_m"),
+    "jerlov1968": ("jerlov1968_kd.csv", "Kd_downwelling_per_m"),
     "austin1986": ("austin1986_kd.csv", "Kd_downwelling_per_m"),
 }
 
@@ -311,6 +338,7 @@ def water(water_type: str, source: str = "williamson2022") -> Water:
             a=series.get("a"),
             b=series.get("b"),
             kd=series.get("Kd"),
+            kd_hydrolight=series.get("KdH"),
             name=water_type,
             source=src,
             flags=flags,
@@ -518,3 +546,64 @@ def b_from_c(c, wavelength_nm, *, bw, cw, bound: str = "average"):
     if np.ndim(result) == 0:
         return float(result)
     return result
+
+
+@dataclass(frozen=True, eq=False)   # == on arrays has no single answer
+class MeasuredPoints:
+    """Measured a or b of one Jerlov type, before any spectral fitting."""
+
+    water_type: str
+    quantity: str
+    wavelengths: np.ndarray
+    """nm, ascending."""
+    values: np.ndarray
+    """1/m: the average over campaigns."""
+    std_dev: np.ndarray
+    """1/m, across campaigns; NaN where none was given."""
+    n_campaigns: np.ndarray
+    """How many campaigns each average rests on."""
+    included: np.ndarray
+    """True where the paper kept the point (five or more campaigns)."""
+
+
+def measured_points(water_type: str, quantity: str, *,
+                    include_sparse: bool = False) -> MeasuredPoints:
+    """The measured a or b points behind Williamson & Hollins (2022).
+
+    The smooth spectra returned by ``water(..., source="williamson2022")``
+    were fitted to these. Hollins & Williamson (2023) say the fitting would
+    bias some analyses and that the individual points are preferable for
+    validation; they come with their spread and their campaign count.
+
+    The paper kept only averages built from five or more campaigns, 53 each
+    for a and b. Points below that are left out unless
+    ``include_sparse=True``. Jerlov IA and 7C rest on a single campaign
+    throughout, so without it they have no points at all, and this raises
+    rather than returning nothing. See DATA.md section 9.
+    """
+    if quantity not in ("a", "b"):
+        raise ValueError("quantity must be 'a' or 'b'")
+    rows = [r for r in _data._rows("williamson2022_measured.csv")
+            if r["water_type"] == water_type and r["quantity"] == quantity]
+    if not rows:
+        known = sorted({r["water_type"]
+                        for r in _data._rows("williamson2022_measured.csv")})
+        raise KeyError(f"no measured points for Jerlov {water_type!r} "
+                       f"(known: {', '.join(known)})")
+    kept = [r for r in rows if include_sparse or r["status"] == "included"]
+    if not kept:
+        raise KeyError(
+            f"every measured point for Jerlov {water_type} rests on fewer "
+            "than five campaigns, and the paper excluded them all. Pass "
+            "include_sparse=True to get them anyway."
+        )
+    kept.sort(key=lambda r: float(r["wavelength_nm"]))
+    return MeasuredPoints(
+        water_type=water_type,
+        quantity=quantity,
+        wavelengths=np.array([float(r["wavelength_nm"]) for r in kept]),
+        values=np.array([float(r["value_per_m"]) for r in kept]),
+        std_dev=np.array([_data._to_float(r["std_dev_per_m"]) for r in kept]),
+        n_campaigns=np.array([int(r["n_campaigns"]) for r in kept]),
+        included=np.array([r["status"] == "included" for r in kept]),
+    )

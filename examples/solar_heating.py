@@ -12,7 +12,6 @@ fitted to.
 import numpy as np
 
 import jerlov
-from jerlov import _data
 
 
 def rule(title):
@@ -94,23 +93,20 @@ rule("4. Where the parameters came from, and where they fail")
 print("""Paulson & Simpson fitted Jerlov (1968) Table XXI, which this package
 ships. Feeding the published parameters back gives:
 """)
-rows = _data._rows("jerlov1968_total_irradiance.csv")
 print(f"  {'type':>5} {'depth':>7} {'Jerlov':>9} {'2-exp fit':>11} {'error':>8}")
 worst = 0.0
-for row in rows:
-    if row["water_type"] not in OCEANIC or not row["percent_of_surface"]:
-        continue
-    depth = float(row["depth_m"])
-    if depth == 0 or depth > 100:
-        continue
-    want = float(row["percent_of_surface"]) / 100
-    got = jerlov.solar_fraction(row["water_type"], depth)
-    error = (got - want) / want
-    worst = max(worst, abs(error))
-    if depth in (1.0, 10.0, 50.0):
-        flag = "  <--" if abs(error) > 0.30 else ""
-        print(f"  {row['water_type']:>5} {depth:>5.0f} m {want:>9.4g} "
-              f"{got:>11.4g} {error:>+7.1%}{flag}")
+for water_type in OCEANIC:
+    depths, measured = jerlov.jerlov1968_solar_fraction(water_type)
+    for depth, want in zip(depths, measured):
+        if depth == 0 or depth > 100 or np.isnan(want):
+            continue
+        got = jerlov.solar_fraction(water_type, depth)
+        error = (got - want) / want
+        worst = max(worst, abs(error))
+        if depth in (1.0, 10.0, 50.0):
+            flag = "  <--" if abs(error) > 0.30 else ""
+            print(f"  {water_type:>5} {depth:>5.0f} m {want:>9.4g} "
+                  f"{got:>11.4g} {error:>+7.1%}{flag}")
 
 print(f"""
   Worst disagreement anywhere in the upper 100 m: {worst:.0%}, at 1 m.

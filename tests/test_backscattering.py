@@ -189,3 +189,17 @@ def test_an_array_of_wavelengths_matches_one_call_per_wavelength():
         assert together.bb[k] == pytest.approx(alone.bb)
         assert together.particulate[k] == pytest.approx(alone.particulate)
         assert together.water[k] == pytest.approx(alone.water)
+
+
+def test_total_pure_water_scattering_is_morels():
+    """b_w = 16.06 beta_w(90) in Morel's form, and twice bb_w by symmetry."""
+    for nm in (440.0, 550.0, 650.0):
+        b_w = jerlov.pure_water_scattering(nm)
+        assert b_w == pytest.approx(2 * jerlov.pure_water_backscattering(nm))
+        assert b_w / jerlov.pure_water_vsf(90.0, nm) == pytest.approx(16.06, abs=0.01)
+        theta = np.radians(np.linspace(0.0, 180.0, 180001))
+        vsf = jerlov.pure_water_vsf(np.degrees(theta), nm)
+        integrated = 2 * math.pi * float(trapezoid(vsf * np.sin(theta), theta))
+        assert b_w == pytest.approx(integrated, rel=1e-6)
+    assert isinstance(jerlov.pure_water_scattering(550.0), float)
+    assert jerlov.pure_water_scattering([440.0, 550.0]).shape == (2,)

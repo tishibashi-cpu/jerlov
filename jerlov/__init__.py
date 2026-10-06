@@ -10,6 +10,7 @@ from .backscattering import (
     bb_from_vsf,
     particulate_chi,
     pure_water_backscattering,
+    pure_water_scattering,
     pure_water_vsf,
 )
 from .colour import (
@@ -30,16 +31,19 @@ from .scene import (
 )
 from .shortwave import (
     ShortwaveParameters,
+    jerlov1968_solar_fraction,
     shortwave_parameters,
     solar_fraction,
 )
 from .sources import SOURCES, Source, get_source
 from .water import (
+    MeasuredPoints,
     MissingQuantityError,
     ProvenanceWarning,
     Water,
     b_from_c,
     kd_spectrum,
+    measured_points,
     water,
     water_type_at_depth,
 )
@@ -65,17 +69,21 @@ __all__ = [
     "water_type_at_depth",
     "shortwave_parameters",
     "solar_fraction",
+    "jerlov1968_solar_fraction",
     "bb_from_vsf",
     "particulate_chi",
     "pure_water_vsf",
     "pure_water_backscattering",
+    "pure_water_scattering",
     "Backscattering",
     "AngleWarning",
     "ShortwaveParameters",
     "kd_spectrum",
     "b_from_c",
+    "measured_points",
+    "MeasuredPoints",
     "ProvenanceWarning",
     "MissingQuantityError",
 ]
 
-__version__ = "0.4.1"
+__version__ = "0.5.0"

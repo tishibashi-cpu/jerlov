@@ -115,7 +115,7 @@ SOURCES: dict[str, Source] = {
             "of Jerlov water types', Appl. Opt. 54, 5392-5401 (2015)"
         ),
         doi="10.1364/AO.54.005392",
-        quantities=("a", "b", "Kd", "Kd0", "KdH"),
+        quantities=("a", "b", "Kd", "KdH"),
         water_types=ALL_TYPES,
         wavelength_range_nm=(300.0, 700.0),
         measured=False,
@@ -123,7 +123,13 @@ SOURCES: dict[str, Source] = {
         caveats=(
             "a and b were obtained by inverting Kd, not by measurement.",
             "Table 7 duplicates rows for Jerlov 3C (675, 700 nm) and 5C "
-            "(600-700 nm). b has been reconstructed from Eq. (8); a is absent.",
+            "(600-700 nm). b has been reconstructed from Eq. (8); a, Kd and "
+            "KdH are absent there.",
+            "KdH (kd_hydrolight) is HydroLight's Kd from the retrieved a and "
+            "b with the Petzold average-particle phase function, computed to "
+            "10 scattering lengths except for Jerlov III, where 6 was used. "
+            "The paper reports 90 percent within 20 percent of Jerlov's Kd; "
+            "the tabulated values give 87 percent. See DATA.md section 19.",
             "The small-particle scattering coefficient used here (1.513) does "
             "not match Haltrin (1999), which gives 1.151302.",
             "The paper's Kd0 column is a reference spectrum from Jerlov (1951, "
@@ -131,7 +137,8 @@ SOURCES: dict[str, Source] = {
             "water() does not return it: it disagrees with Jerlov (1976) by up to "
             "34 percent, falls below the paper's own absorption at 600 nm for "
             "types I, IA, IB and II, and is identical for 1C and III from 525 "
-            "to 700 nm. Use source 'jerlov1976' or 'austin1986' for Kd.",
+            "to 700 nm. Use source 'jerlov1976' or 'austin1986' for Kd, or "
+            "'jerlov1968' for the first edition itself.",
         ),
     ),
     "jerlov1976": Source(
@@ -146,6 +153,28 @@ SOURCES: dict[str, Source] = {
             "Austin & Petzold (1986) showed that Jerlov's type I values fall "
             "below the attenuation of pure sea water at several wavelengths "
             "and recommended replacing them; see source 'austin1986'.",
+        ),
+    ),
+    "jerlov1968": Source(
+        key="jerlov1968",
+        citation=(
+            "N. G. Jerlov, 'Optical Oceanography' (Elsevier, 1968), Table XX"
+        ),
+        doi=None,
+        quantities=("Kd",),
+        water_types=ALL_TYPES,
+        wavelength_range_nm=(310.0, 700.0),
+        measured=True,
+        caveats=(
+            "The first edition of the classification. It differs from Jerlov "
+            "(1976) by 1 to 15 percent on average depending on the type, and "
+            "by up to 35 percent at single wavelengths; do not mix the two. "
+            "See DATA.md section 2.",
+            "Kd is -ln(T) of the printed transmittance per metre, given to two "
+            "or three figures, so Kd is no more precise than that.",
+            "Jerlov 7C and 9C are blank at 310 nm.",
+            "This is the Kd0 column of Solonenko & Mobley (2015), which "
+            "reproduces this table to transcription accuracy.",
         ),
     ),
     "austin1986": Source(

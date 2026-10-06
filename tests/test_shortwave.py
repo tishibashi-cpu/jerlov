@@ -6,7 +6,6 @@ import numpy as np
 import pytest
 
 import jerlov
-from jerlov import _data
 
 
 def test_the_five_oceanic_types_are_present():
@@ -53,22 +52,17 @@ def test_how_far_the_published_fit_sits_from_its_own_source():
     caller heating a 1 m surface layer should know, and because a change in
     either the parameters or the source table would move these numbers.
     """
-    rows = _data._rows("jerlov1968_total_irradiance.csv")
     worst_at_1m, worst_below = 0.0, 0.0
-    for row in rows:
-        if row["water_type"] not in ("I", "IA", "IB", "II", "III"):
-            continue
-        if not row["percent_of_surface"]:
-            continue
-        depth = float(row["depth_m"])
-        if depth == 0 or depth > 100:
-            continue
-        want = float(row["percent_of_surface"]) / 100
-        error = abs(jerlov.solar_fraction(row["water_type"], depth) - want) / want
-        if depth == 1:
-            worst_at_1m = max(worst_at_1m, error)
-        else:
-            worst_below = max(worst_below, error)
+    for water_type in ("I", "IA", "IB", "II", "III"):
+        depths, measured = jerlov.jerlov1968_solar_fraction(water_type)
+        for depth, want in zip(depths, measured):
+            if depth == 0 or depth > 100 or np.isnan(want):
+                continue
+            error = abs(jerlov.solar_fraction(water_type, depth) - want) / want
+            if depth == 1:
+                worst_at_1m = max(worst_at_1m, error)
+            else:
+                worst_below = max(worst_below, error)
 
     assert 0.40 < worst_at_1m < 0.50, worst_at_1m
     assert worst_below < 0.25, worst_below
@@ -123,3 +117,16 @@ def test_a_depth_that_is_nan_is_refused():
         jerlov.solar_fraction("I", float("nan"))
     with pytest.raises(ValueError, match="not NaN"):
         jerlov.solar_fraction("I", [1.0, float("nan")])
+
+
+def test_table_xxi_is_public():
+    depths, fraction = jerlov.jerlov1968_solar_fraction("I")
+    assert depths[0] == 0 and fraction[0] == 1.0
+    assert fraction[list(depths).index(10.0)] == pytest.approx(0.222)
+    # Blanks in the table stay blanks.
+    assert np.isnan(fraction[list(depths).index(20.0)])
+    # All ten types, coastal included, though Paulson & Simpson fitted five.
+    for t in ("1C", "3C", "5C", "7C", "9C"):
+        assert len(jerlov.jerlov1968_solar_fraction(t)[0]) == 12
+    with pytest.raises(KeyError, match="known:"):
+        jerlov.jerlov1968_solar_fraction("IV")

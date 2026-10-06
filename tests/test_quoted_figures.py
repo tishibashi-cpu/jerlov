@@ -21,7 +21,6 @@ import numpy as np
 import pytest
 
 import jerlov
-from jerlov import _data
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 source_tree = pytest.mark.skipif(
@@ -84,19 +83,14 @@ def test_the_small_particle_coefficients_differ_by_the_stated_amount():
 
 def test_the_shortwave_fit_misses_its_source_by_the_stated_amount():
     """README, DATA.md section 14 and solar_heating.py all say 46 percent."""
-    rows = _data._rows("jerlov1968_total_irradiance.csv")
     worst = 0.0
-    for row in rows:
-        if row["water_type"] not in ("I", "IA", "IB", "II", "III"):
-            continue
-        if not row["percent_of_surface"]:
-            continue
-        depth = float(row["depth_m"])
-        if depth == 0 or depth > 100:
-            continue
-        want = float(row["percent_of_surface"]) / 100
-        got = jerlov.solar_fraction(row["water_type"], depth)
-        worst = max(worst, abs(got - want) / want)
+    for water_type in ("I", "IA", "IB", "II", "III"):
+        depths, measured = jerlov.jerlov1968_solar_fraction(water_type)
+        for depth, want in zip(depths, measured):
+            if depth == 0 or depth > 100 or np.isnan(want):
+                continue
+            got = jerlov.solar_fraction(water_type, depth)
+            worst = max(worst, abs(got - want) / want)
     assert worst == pytest.approx(0.46, abs=0.01)
 
 
@@ -190,3 +184,47 @@ def test_the_readme_quotes_a_chi_p_the_package_produces():
     result = jerlov.bb_from_vsf(0.0021, 140.0, 532.0)
     assert result.chi_p == pytest.approx(float(match.group(1)))
     assert result.quoted_error_percent == pytest.approx(float(match.group(2)))
+
+
+def test_the_two_editions_differ_by_the_stated_amounts():
+    """The jerlov1968 caveat says 1 to 15 percent on average, and up to 35
+    at single wavelengths, against Jerlov (1976)."""
+    from jerlov.sources import ALL_TYPES
+
+    means, worst = [], 0.0
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        for t in ALL_TYPES:
+            old = jerlov.water(t, source="jerlov1968")
+            new = jerlov.water(t, source="jerlov1976")
+            x, y = old.kd(old.wavelengths), new.kd(old.wavelengths)
+            ok = np.isfinite(x) & np.isfinite(y)
+            rel = np.abs(x[ok] - y[ok]) / y[ok]
+            means.append(rel.mean())
+            worst = max(worst, rel.max())
+    assert 0.01 <= min(means) < 0.02
+    assert 0.14 < max(means) <= 0.15
+    assert 0.34 < worst <= 0.35
+
+
+def test_kd_hydrolight_agrees_with_jerlov_as_data_md_says():
+    """DATA.md section 19: 86.5 percent of all cells within 20 percent of
+    K_d^0, 87.9 percent of unflagged ones, against the paper's 90."""
+    from jerlov import _data
+    from jerlov.sources import ALL_TYPES
+
+    every, sound = [], []
+    for t in ALL_TYPES:
+        _, k0, s0 = _data.spectrum("solonenko2015_iop.csv", t, "Kd0",
+                                   "value_per_m")
+        _, kh, sh = _data.spectrum("solonenko2015_iop.csv", t, "KdH",
+                                   "value_per_m")
+        for x, y, a, b in zip(k0, kh, s0, sh):
+            if np.isfinite(x) and np.isfinite(y):
+                within = abs(x - y) / x <= 0.20
+                every.append(within)
+                if a not in _data.QUESTIONABLE and b not in _data.QUESTIONABLE:
+                    sound.append(within)
+    assert len(every) == 163 and len(sound) == 141
+    assert np.mean(every) == pytest.approx(0.865, abs=0.001)
+    assert np.mean(sound) == pytest.approx(0.879, abs=0.001)
