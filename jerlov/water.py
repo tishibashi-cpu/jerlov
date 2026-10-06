@@ -325,6 +325,11 @@ def water_type_at_depth(surface_water_type: str, depth_m: float) -> str | None:
     any particular place or season. The paper says so explicitly, and gives
     per-cell cruise and month counts for anyone who needs to judge that.
     """
+    depth_m = float(depth_m)
+    if not np.isfinite(depth_m):
+        # NaN fails every comparison below, so it would otherwise fall
+        # through to "no statement" and look like a deliberate answer.
+        raise ValueError(f"depth_m must be a finite number, not {depth_m!r}")
     if depth_m < 0:
         raise ValueError("depth_m cannot be negative")
     rows = _data._rows("williamson2023_depth.csv")
@@ -334,10 +339,14 @@ def water_type_at_depth(surface_water_type: str, depth_m: float) -> str | None:
             f"unknown water type {surface_water_type!r} "
             f"(known: {', '.join(sorted(known))})"
         )
-    for row in rows:
-        if row["surface_water_type"] != surface_water_type:
-            continue
-        if float(row["depth_min_m"]) <= depth_m < float(row["depth_max_m"]):
+    own = [r for r in rows if r["surface_water_type"] == surface_water_type]
+    deepest = max(float(r["depth_max_m"]) for r in own)
+    for row in own:
+        top, bottom = float(row["depth_min_m"]), float(row["depth_max_m"])
+        # A boundary belongs to the layer below it, except at the bottom of
+        # the deepest layer, which has no layer below: 200 m is still
+        # inside the paper's profile.
+        if top <= depth_m < bottom or depth_m == bottom == deepest:
             return row["water_type"] or None
     # Beyond 200 m the paper makes no statement at all.
     return None

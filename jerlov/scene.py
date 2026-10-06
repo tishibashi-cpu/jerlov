@@ -120,8 +120,27 @@ class Observation:
     def contrast(self, background_radiance) -> np.ndarray:
         """Apparent contrast against a background seen through the same path.
 
-        The path radiance is common to target and background and cancels, so
-        this is the inherent contrast reduced by the transmittance.
+        ``background_radiance`` is the radiance leaving the background, on
+        the scene's wavelengths and in the unit of the target radiance
+        (``reflectance * downwelling / pi``), not a reflectance.
+
+        With ``L_t`` and ``L_b`` the radiances leaving target and background,
+        ``t`` the transmittance and ``B`` the veiling radiance at infinity::
+
+            C(r) = (L_t - L_b) t / (L_b t + B (1 - t))
+                 = C_0 * L_b t / (L_b t + B (1 - t)),   C_0 = (L_t - L_b) / L_b
+
+        The path radiance is common to both and cancels from the numerator,
+        but not from the denominator, so the loss of contrast is the veiling
+        light's doing rather than the transmittance's:
+
+        - With no veiling radiance (``B = 0``) the contrast is not reduced at
+          all; target and background are dimmed by the same factor.
+        - Against a background that is the water itself (``L_b = B``, a
+          horizontal line of sight into open water) it is ``C_0 * t``, the
+          classic result.
+        - It falls faster than that against a background darker than ``B``,
+          and more slowly against a brighter one.
         """
         background = _as_array(background_radiance)
         observed_background = (

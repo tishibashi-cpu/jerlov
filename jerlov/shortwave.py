@@ -63,7 +63,8 @@ def _rows():
     return _data._rows("paulson1977_shortwave.csv")
 
 
-def shortwave_parameters(water_type: str) -> ShortwaveParameters:
+def shortwave_parameters(water_type: str, *,
+                         include_non_types: bool = False) -> ShortwaveParameters:
     """Paulson & Simpson parameters for a Jerlov water type.
 
     Only the five oceanic types I, IA, IB, II and III were fitted; the paper
@@ -72,10 +73,23 @@ def shortwave_parameters(water_type: str) -> ShortwaveParameters:
     ``water_type="I_upper50"`` selects the paper's alternative fit for type I
     over the upper 50 m, which it gives because ``ln I`` against depth changes
     slope below that. The plain ``"I"`` row is the 100 m fit.
+
+    Table 2 also prints three rows that are not water types: the authors'
+    composite observations, their Run 1, and a Kraus (1972) value from Crater
+    Lake (keys ``"composite_observations"``, ``"run_1"`` and
+    ``"kraus_1972_very_clear"``). They are refused unless
+    ``include_non_types=True`` is passed, so that one cannot be mistaken for
+    a Jerlov type; their ``water_type`` is empty. See DATA.md section 14.
     """
     rows = _rows()
     for row in rows:
         if row["key"] == water_type:
+            if row["status"] == "not_a_water_type" and not include_non_types:
+                raise KeyError(
+                    f"{water_type!r} is a row of Paulson & Simpson (1977) "
+                    f"Table 2 but not a Jerlov water type: {row['note']}. "
+                    "Pass include_non_types=True to get it anyway."
+                )
             return ShortwaveParameters(
                 key=row["key"],
                 water_type=row["water_type"],

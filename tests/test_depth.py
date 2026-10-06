@@ -48,6 +48,20 @@ def test_boundaries_belong_to_the_layer_below():
     assert jerlov.water_type_at_depth("I", 19.999) == "I"  # end of 10-20
 
 
+def test_the_bottom_of_the_profile_is_inside_it():
+    """200 m closes the deepest layer; there is no layer below to own it."""
+    assert jerlov.water_type_at_depth("I", 200.0) == "IB"
+    assert jerlov.water_type_at_depth("I", 199.9) == "IB"
+    assert jerlov.water_type_at_depth("I", 200.1) is None
+
+
+def test_a_depth_that_is_not_a_number_is_refused():
+    """NaN used to fall through to None, which reads as the paper's answer."""
+    for bad in (float("nan"), float("inf")):
+        with pytest.raises(ValueError, match="finite"):
+            jerlov.water_type_at_depth("I", bad)
+
+
 def test_unknown_type_names_the_alternatives():
     with pytest.raises(KeyError, match="known:"):
         jerlov.water_type_at_depth("IV", 10.0)

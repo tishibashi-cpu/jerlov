@@ -46,11 +46,18 @@ M={w:m for w,m,_ in T4}; KW={w:k for w,_,k in T4}
 # Check: Eq. (6), anchored at Jerlov's K(475), must reproduce Table VI.
 print("check: K(l) = [M(l)/M(475)] * [K(475) - Kw(475)] + Kw(l) vs Table VI")
 print(f"{'type':>5} {'K(475)':>9} {'max error %':>13}")
+worst=0.0
 for t,vals in T6.items():
     k475=vals[WL.index(475)]
     e=[100*((M[w]/M[475])*(k475-KW[475])+KW[w]-vals[i])/vals[i] for i,w in enumerate(WL)]
     print(f"{t:>4} {k475:>8.4f} {max(e,key=abs):>+12.2f}")
+    worst=max(worst,max(abs(x) for x in e))
+# DATA.md: Eq. (6) reproduces the printed table to within 0.39 percent. A
+# larger miss means a transcription error above, and nothing is written.
+if worst>0.5:
+    raise SystemExit(f"Eq. (6) no longer reproduces Table VI: worst {worst:.2f}%")
 
+n_kd=n_model=0
 with open(DATA_DIR / "austin1986_kd.csv","w",newline="",encoding="utf-8") as f:
     wr=csv.writer(f); wr.writerow(["water_type","wavelength_nm","Kd_downwelling_per_m","status","note"])
     for t,vals in T6.items():
@@ -61,12 +68,12 @@ with open(DATA_DIR / "austin1986_kd.csv","w",newline="",encoding="utf-8") as f:
                 st,nt="jerlov_original","475 nm is identical to Jerlov (1976) Table XXVII"
             else:
                 st,nt="model","computed from K(475) by Austin & Petzold Eq. (6)"
-            wr.writerow([t,w,f"{vals[i]:.4f}",st,nt])
+            wr.writerow([t,w,f"{vals[i]:.4f}",st,nt]); n_kd+=1
 
 with open(DATA_DIR / "austin1986_model.csv","w",newline="",encoding="utf-8") as f:
     wr=csv.writer(f); wr.writerow(["wavelength_nm","M_slope","Kw_pure_seawater_per_m","status","note"])
     for w,m,k in T4:
         st="extrapolated" if w in (350,355,360) else "ok"
         nt="the paper states this M was extrapolated and should be used with caution" if st=="extrapolated" else ""
-        wr.writerow([w,f"{m:.4f}",f"{k:.4f}",st,nt])
-report("austin1986_kd.csv", 90); report("austin1986_model.csv", 71)
+        wr.writerow([w,f"{m:.4f}",f"{k:.4f}",st,nt]); n_model+=1
+report("austin1986_kd.csv", n_kd); report("austin1986_model.csv", n_model)
