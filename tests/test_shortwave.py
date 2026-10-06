@@ -96,9 +96,15 @@ def test_the_alternative_type_I_fit_is_reachable():
 
 
 def test_the_rows_that_are_not_water_types_are_not_offered():
+    """They used to come back like any type, so `solar_fraction("run_1", z)`
+    gave a Jerlov-looking answer for one cruise's run."""
     for key in ("composite_observations", "run_1", "kraus_1972_very_clear"):
-        p = jerlov.shortwave_parameters(key)
-        assert p.water_type == ""      # reachable by key, but not a type
+        with pytest.raises(KeyError, match="not a Jerlov water type"):
+            jerlov.shortwave_parameters(key)
+        with pytest.raises(KeyError, match="not a Jerlov water type"):
+            jerlov.solar_fraction(key, 10.0)
+        p = jerlov.shortwave_parameters(key, include_non_types=True)
+        assert p.water_type == ""      # reachable when asked for, not a type
         assert "Not a Jerlov type" in p.note
 
 

@@ -563,7 +563,9 @@ line below "Type I"; the text makes clear both are the oceanic type.
 **Three rows are not water types at all**: the authors' own composite
 observations, their Run 1, and a Kraus (1972) value from Crater Lake. They are
 shipped with `status = not_a_water_type` so a reader comparing against the
-paper does not think they are missing.
+paper does not think they are missing, and `shortwave_parameters` refuses
+them unless asked with `include_non_types=True`, so that none can be taken
+for a Jerlov type by accident.
 
 ## 15. The backscattering ratio is still being guessed (note)
 

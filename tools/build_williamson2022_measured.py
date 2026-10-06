@@ -35,6 +35,11 @@ bad=[k for k,v in PUB.items() if k not in idx or abs(idx[k]-v)/v>0.01]
 print("  mismatches:", bad if bad else f"none ({len(PUB)} points, all within 1%)")
 print(f"  kept (n>=5): {cnt['included']} points for a and b together; the paper reports 53 each")
 print(f"  excluded (n<5): {cnt['excluded_sparse']} points")
+if bad:
+    raise SystemExit(f"no longer matches Hollins & Williamson (2023): {bad}")
+kept={q:sum(1 for r in out if r[2]==q and r[7]=='included') for q in ("a","b")}
+if kept!={"a":53,"b":53}:
+    raise SystemExit(f"the n>=5 filter kept {kept}; the paper reports 53 each")
 
 with open(DATA_DIR / "williamson2022_measured.csv","w",newline="",encoding="utf-8") as f:
     wr=csv.writer(f)

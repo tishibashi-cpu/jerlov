@@ -136,6 +136,16 @@ def integrate_response(spectrum, wavelengths, response, response_wavelengths,
     -------
     Array of shape ``(k,)``: the integral of spectrum times each channel over
     wavelength, in the units of the spectrum times nm.
+
+    Notes
+    -----
+    The integral is taken on the spectrum's own wavelengths, with the
+    response interpolated onto them. Sample at 5 nm or finer where you can:
+    on coarser grids the narrow peaks of a response, or of the spectrum,
+    fall between samples, and the error grows quickly. Interpolating the
+    spectrum onto the response's grid instead is no cure, since it only
+    trades this error for one in the shape assumed between the spectrum's
+    samples.
     """
     spectrum = np.asarray(spectrum, dtype=float)
     wavelengths = np.asarray(wavelengths, dtype=float)
@@ -149,6 +159,12 @@ def integrate_response(spectrum, wavelengths, response, response_wavelengths,
         raise ValueError("response must be aligned with response_wavelengths")
     if wavelengths.size < 2:
         raise ValueError("at least two wavelengths are needed to integrate")
+    # Descending wavelengths make the integral negative and the coverage
+    # zero, so a reversed spectrum came out as a negative colour.
+    for grid, label in ((wavelengths, "wavelengths"),
+                        (response_wavelengths, "response_wavelengths")):
+        if np.any(np.diff(grid) <= 0):
+            raise ValueError(f"{label} must be strictly ascending")
 
     covered = [_coverage(wavelengths, response_wavelengths, response[:, k])
                for k in range(response.shape[1])]

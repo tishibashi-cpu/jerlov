@@ -222,3 +222,13 @@ def test_water_reddens_nothing_and_blues_everything():
     # At the surface the target is neutral; underwater it is not.
     assert np.allclose(surface, surface[0], atol=1e-6)
     assert underwater[2] > underwater[0], "blue should survive better than red"
+
+
+def test_wavelengths_must_ascend():
+    """A reversed spectrum used to integrate to a negative XYZ."""
+    wl = np.arange(360.0, 831.0, 5.0)
+    flat = np.ones_like(wl)
+    with pytest.raises(ValueError, match="strictly ascending"):
+        jerlov.spectrum_to_xyz(flat[::-1], wl[::-1])
+    with pytest.raises(ValueError, match="strictly ascending"):
+        jerlov.integrate_response(flat, wl, flat, wl[::-1])

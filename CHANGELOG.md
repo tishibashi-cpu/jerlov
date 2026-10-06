@@ -4,6 +4,43 @@ Every release is archived on Zenodo under the concept DOI
 [10.5281/zenodo.22321312](https://doi.org/10.5281/zenodo.22321312), which
 always resolves to the latest version.
 
+## 0.4.0 — 2026-10-06
+
+Three calls that used to return an answer now raise instead, because the
+answer was not one: hence 0.4 rather than 0.3.4. No coefficient changed.
+
+**Changed.** `shortwave_parameters` refuses the three rows of Paulson &
+Simpson's Table 2 that are not Jerlov types (the authors' composite
+observations, their Run 1, and Kraus's Crater Lake value) unless called with
+`include_non_types=True`. They used to come back like any type, so
+`solar_fraction("run_1", 10.0)` gave a Jerlov-looking answer for one cruise.
+
+**Fixed.** `water_type_at_depth` returned `None` for a NaN depth, which reads
+as the paper declining to say; NaN and infinity now raise. 200 m, the bottom
+of the paper's deepest layer, returned `None` as if beyond the profile; it now
+belongs to the 190-200 m layer, since there is no layer below to own it.
+
+`integrate_response`, and through it `spectrum_to_xyz` and `spectrum_to_srgb`,
+integrated a spectrum given in descending wavelength order to a negative XYZ.
+Both grids must now ascend.
+
+**Docs.** `Observation.contrast` said the inherent contrast is reduced by the
+transmittance. That holds only against a background as bright as the water's
+own veiling light. Without veiling light the contrast is not reduced at all,
+and against a darker background it falls faster than the transmittance. The
+docstring now gives the formula and the three cases, and a test checks each.
+The computation itself was right.
+
+`integrate_response` now says how its accuracy depends on sampling. Moving
+the integral onto the union of the two wavelength grids was tried and not
+adopted: on five test spectra sampled at 25 nm it was better for a flat
+spectrum and worse for the other four.
+
+**Tools.** Three rebuild scripts printed their checks against the paper and
+wrote the table whatever the checks said. `build_austin1986.py`,
+`build_williamson2022_iop.py` and `build_williamson2022_measured.py` now stop
+without writing when a check fails, as the others already did.
+
 ## 0.3.3 — 2026-10-05
 
 **Fixed.** A `ProvenanceWarning` was raised for a wavelength that lands

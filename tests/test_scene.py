@@ -89,6 +89,34 @@ def test_contrast_decays_with_distance():
     assert contrasts[-1] < 0.01
 
 
+def test_contrast_follows_the_formula_in_its_docstring():
+    """The docstring used to say the inherent contrast is simply reduced by
+    the transmittance. That holds only against a background as bright as the
+    water's own veiling light."""
+    s = scene()
+    target = flat(0.8) * s.downwelling / np.pi
+    background = flat(0.1) * s.downwelling / np.pi
+    inherent = (target - background) / background
+    veil = flat(0.02)
+    for r in (0.5, 2.0, 8.0):
+        t = s.transmittance(r)
+        obs = s.observe(flat(0.8), r, veiling_radiance=veil)
+        expected = inherent * background * t / (background * t + veil * (1 - t))
+        assert np.allclose(obs.contrast(background), expected)
+        # No veiling light: dimming target and background alike leaves the
+        # contrast where it was.
+        bare = s.observe(flat(0.8), r, veiling_radiance=flat(0.0))
+        assert np.allclose(bare.contrast(background), inherent)
+        # A background that is the water itself gives the classic C_0 * t.
+        water = s.observe(flat(0.8), r, veiling_radiance=background)
+        assert np.allclose(water.contrast(background), inherent * t)
+        # Darker than the water, it falls faster than that; brighter, slower.
+        assert np.all(np.abs(s.observe(flat(0.8), r, veiling_radiance=2 * background)
+                             .contrast(background)) < np.abs(inherent * t))
+        assert np.all(np.abs(s.observe(flat(0.8), r, veiling_radiance=background / 2)
+                             .contrast(background)) > np.abs(inherent * t))
+
+
 def test_turbid_water_veils_faster_than_clear():
     clear = scene("IB").observe(flat(), 3.0, veiling_radiance=flat(0.01))
     turbid = scene("5C").observe(flat(), 3.0, veiling_radiance=flat(0.01))
