@@ -25,7 +25,7 @@ from dataclasses import dataclass
 import numpy as np
 
 from . import _data
-from .water import _like_input
+from .water import ProvenanceWarning, _like_input
 
 CITATION = (
     "Boss, E. and Pegau, W. S. (2001), 'Relationship of light scattering at "
@@ -201,7 +201,9 @@ def bb_from_vsf(beta, angle_deg: float, wavelength_nm, *,
             "the measured scattering is below that of pure sea water alone, "
             "so the particle contribution came out negative. Check the "
             "calibration, the wavelength and the salinity.",
-            AngleWarning,
+            # Not an AngleWarning: the angle is not the problem, and a caller
+            # filtering out angle advice must still be told about this.
+            ProvenanceWarning,
             stacklevel=_data.caller_stacklevel(),
         )
 
