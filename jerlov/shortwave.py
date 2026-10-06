@@ -20,7 +20,7 @@ from dataclasses import dataclass
 import numpy as np
 
 from . import _data
-from .water import _like_input
+from .water import _like_input, _require_number
 
 CITATION = (
     "Paulson, C. A. and Simpson, J. J. (1977), 'Irradiance measurements in "
@@ -48,6 +48,7 @@ class ShortwaveParameters:
     def fraction_at(self, depth_m):
         """``I(z)/I(0)`` at one or more depths."""
         z = np.atleast_1d(np.asarray(depth_m, dtype=float))
+        _require_number(z, "depth_m")
         if np.any(z < 0):
             raise ValueError("depth_m cannot be negative")
         out = (self.R * np.exp(-z / self.zeta1_m)

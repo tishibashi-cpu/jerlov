@@ -29,7 +29,7 @@ from dataclasses import dataclass
 
 import numpy as np
 
-from .water import MissingQuantityError, Water, _as_array
+from .water import MissingQuantityError, Water, _as_array, _require_number
 
 
 @dataclass(frozen=True)
@@ -216,14 +216,19 @@ class Scene:
         must come from somewhere explicit.
         """
         wavelengths = np.asarray(wavelengths, dtype=float)
+        _require_number(depth_m, "depth_m")
         if depth_m < 0:
             raise ValueError("depth_m cannot be negative")
+        surface = np.asarray(surface_downwelling, dtype=float)
+        if surface.shape != wavelengths.shape:
+            raise ValueError(
+                "surface_downwelling must have the same shape as wavelengths"
+            )
         kd_values = kd.kd(wavelengths) if isinstance(kd, Water) else (
             np.asarray(kd, dtype=float)
         )
         if kd_values.shape != wavelengths.shape:
             raise ValueError("kd must have the same shape as wavelengths")
-        surface = np.asarray(surface_downwelling, dtype=float)
         return cls(
             water,
             surface * np.exp(-kd_values * depth_m),
@@ -235,6 +240,7 @@ class Scene:
 
     def transmittance(self, distance_m: float) -> np.ndarray:
         """``exp(-c*r)``. No approximation beyond the value of c itself."""
+        _require_number(distance_m, "distance_m")
         if distance_m < 0:
             raise ValueError("distance_m cannot be negative")
         return np.exp(-self._c * distance_m)
@@ -267,6 +273,7 @@ class Scene:
         them as two independent quantities.
         """
         low, high = (float(v) for v in distance_range_m)
+        _require_number((low, high), "distance_range_m")
         if low < 0 or high < low:
             raise ValueError(
                 "distance_range_m must be (low, high) with 0 <= low <= high"
@@ -278,6 +285,8 @@ class Scene:
                 raise ValueError(
                     "veiling_radiance must have the same shape as wavelengths"
                 )
+            if np.any(b_inf < 0):
+                raise ValueError("veiling_radiance cannot be negative")
         c = self._c.copy()
         return AttenuationCoefficients(
             wavelengths=self.wavelengths,
@@ -330,6 +339,8 @@ class Scene:
             raise ValueError(
                 "veiling_radiance must have the same shape as wavelengths"
             )
+        if np.any(b_inf < 0):
+            raise ValueError("veiling_radiance cannot be negative")
 
         target = rho * self.downwelling / np.pi
         t = self.transmittance(distance_m)
@@ -376,6 +387,9 @@ def veiling_radiance_estimate(water: Water, downwelling, wavelengths, *,
     ed = np.asarray(downwelling, dtype=float)
     if ed.shape != wavelengths.shape:
         raise ValueError("downwelling must have the same shape as wavelengths")
+    if np.any(ed < 0):
+        # Scene refuses this too; a negative irradiance gave a negative B_inf.
+        raise ValueError("downwelling irradiance cannot be negative")
     bb = water.bb(wavelengths, backscatter_ratio=backscatter_ratio)
     c = water.c(wavelengths)
     return bb * ed / (2.0 * np.pi * c)

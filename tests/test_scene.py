@@ -307,3 +307,40 @@ def test_the_result_does_not_alias_the_scene():
     p.beta_D[0] = 999.0
     assert not np.allclose(s.water.c(WL)[0], 999.0)
     assert not np.allclose(p.beta_B[0], 999.0)
+
+
+# -- inputs that used to pass every guard ----------------------------------
+
+
+def test_a_distance_or_depth_that_is_nan_is_refused():
+    """`value < 0` is False for NaN, so NaN used to come back as a result
+    made of NaN rather than as an error."""
+    s = scene()
+    nan = float("nan")
+    with pytest.raises(ValueError, match="not NaN"):
+        s.transmittance(nan)
+    with pytest.raises(ValueError, match="not NaN"):
+        s.observe(flat(0.5), nan, veiling_radiance=flat(0.02))
+    with pytest.raises(ValueError, match="not NaN"):
+        s.attenuation_coefficients((nan, 5.0))
+    with pytest.raises(ValueError, match="not NaN"):
+        Scene.at_depth(jerlov.water("III"), nan, flat(1.0), WL, kd=flat(0.1))
+
+
+def test_negative_veiling_radiance_is_refused():
+    """Scene already refused a negative irradiance; a negative B_inf gave a
+    negative radiance just the same."""
+    s = scene()
+    with pytest.raises(ValueError, match="cannot be negative"):
+        s.observe(flat(0.5), 2.0, veiling_radiance=flat(-0.02))
+    with pytest.raises(ValueError, match="cannot be negative"):
+        s.attenuation_coefficients((1.0, 5.0), veiling_radiance=flat(-0.02))
+    with pytest.raises(ValueError, match="cannot be negative"):
+        jerlov.veiling_radiance_estimate(
+            jerlov.water("III"), flat(-1.0), WL, backscatter_ratio=0.015)
+
+
+def test_a_surface_spectrum_of_the_wrong_length_is_named():
+    """It used to fail inside numpy with "operands could not be broadcast"."""
+    with pytest.raises(ValueError, match="surface_downwelling must have"):
+        Scene.at_depth(jerlov.water("III"), 5.0, np.ones(3), WL, kd=flat(0.1))

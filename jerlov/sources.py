@@ -127,7 +127,8 @@ SOURCES: dict[str, Source] = {
             "The small-particle scattering coefficient used here (1.513) does "
             "not match Haltrin (1999), which gives 1.151302.",
             "The paper's Kd0 column is a reference spectrum from Jerlov (1951, "
-            "1968) and is not shipped: it disagrees with Jerlov (1976) by up to "
+            "1968). It is kept in solonenko2015_iop.csv for comparison but "
+            "water() does not return it: it disagrees with Jerlov (1976) by up to "
             "34 percent, falls below the paper's own absorption at 600 nm for "
             "types I, IA, IB and II, and is identical for 1C and III from 525 "
             "to 700 nm. Use source 'jerlov1976' or 'austin1986' for Kd.",

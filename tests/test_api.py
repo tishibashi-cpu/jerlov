@@ -322,3 +322,30 @@ def test_kd_spectrum_warns_where_m_is_extrapolated():
     with warnings.catch_warnings():
         warnings.simplefilter("error", ProvenanceWarning)
         jerlov.kd_spectrum(0.06, 490, [365.0, 550.0])
+
+
+def test_wavelengths_must_be_finite():
+    """NaN passed the ascending check, because every comparison with it is
+    False, and broke interpolation afterwards."""
+    with pytest.raises(ValueError, match="finite"):
+        Water([400.0, float("nan"), 600.0], a=[0.1, 0.2, 0.3])
+
+
+def test_flags_must_cover_every_wavelength():
+    """Too few used to surface as IndexError when a value was asked for."""
+    with pytest.raises(ValueError, match="one per wavelength"):
+        Water([400.0, 500.0, 600.0], a=[0.1, 0.2, 0.3], flags={"a": ("ok",)})
+
+
+def test_b_from_c_warns_when_c_is_below_pure_water():
+    """b came out negative without a word; kd_spectrum already warned in the
+    same situation."""
+    with pytest.warns(ProvenanceWarning, match="below the pure water value"):
+        jerlov.b_from_c(0.01, 555.0, bw=0.0019, cw=0.0659)
+    # cw may be given per wavelength; the warning must not trip over that.
+    with pytest.warns(ProvenanceWarning, match="below the pure water value"):
+        jerlov.b_from_c(0.01, [532.0, 555.0], bw=np.array([0.0024, 0.0019]),
+                        cw=np.array([0.0545, 0.0659]))
+    with warnings.catch_warnings():
+        warnings.simplefilter("error", ProvenanceWarning)
+        jerlov.b_from_c(0.5, 555.0, bw=0.0019, cw=0.0659)

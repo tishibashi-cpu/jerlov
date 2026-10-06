@@ -116,3 +116,10 @@ def test_negative_depth_is_refused():
 def test_scalar_in_scalar_out():
     assert isinstance(jerlov.solar_fraction("I", 10.0), float)
     assert isinstance(jerlov.solar_fraction("I", [1.0, 10.0]), np.ndarray)
+
+
+def test_a_depth_that_is_nan_is_refused():
+    with pytest.raises(ValueError, match="not NaN"):
+        jerlov.solar_fraction("I", float("nan"))
+    with pytest.raises(ValueError, match="not NaN"):
+        jerlov.solar_fraction("I", [1.0, float("nan")])

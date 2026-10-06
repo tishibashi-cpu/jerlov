@@ -33,6 +33,18 @@ def _as_array(x) -> np.ndarray:
     return np.atleast_1d(np.asarray(x, dtype=float))
 
 
+def _require_number(value, name: str) -> None:
+    """Refuse NaN in a distance, depth or range.
+
+    A check such as ``value < 0`` is False for NaN, so NaN used to pass every
+    such guard and come out as a result made of NaN, or as an answer that
+    looked deliberate. Spectra are not checked here: NaN in a spectrum marks
+    a gap in the data, which the package keeps visible on purpose.
+    """
+    if np.any(np.isnan(np.asarray(value, dtype=float))):
+        raise ValueError(f"{name} must be a number, not NaN")
+
+
 def _like_input(result: np.ndarray, original) -> np.ndarray | float:
     """Return a float for scalar input, an array otherwise.
 
@@ -99,6 +111,10 @@ class Water:
         self.wavelengths = np.array(wavelengths, dtype=float)
         if self.wavelengths.ndim != 1 or self.wavelengths.size == 0:
             raise ValueError("wavelengths must be a non-empty 1-D array")
+        if not np.all(np.isfinite(self.wavelengths)):
+            # np.diff gives NaN next to a NaN, and NaN <= 0 is False, so the
+            # ascending check below would let it through.
+            raise ValueError("wavelengths must all be finite numbers")
         if np.any(np.diff(self.wavelengths) <= 0):
             raise ValueError("wavelengths must be strictly ascending")
 
@@ -115,7 +131,13 @@ class Water:
 
         self.name = name
         self.source = source
-        self._flags = flags or {}
+        self._flags = dict(flags or {})
+        for key, statuses in self._flags.items():
+            if len(statuses) != self.wavelengths.size:
+                raise ValueError(
+                    f"flags[{key!r}] has {len(statuses)} entries; it needs one "
+                    f"per wavelength ({self.wavelengths.size})"
+                )
 
     # -- construction ----------------------------------------------------
 
@@ -481,7 +503,16 @@ def b_from_c(c, wavelength_nm, *, bw, cw, bound: str = "average"):
     ratio = np.interp(query, wl, ratios[bound])
     if np.ndim(wavelength_nm) == 0:
         ratio = ratio[0]
-    result = (np.asarray(c, dtype=float) - cw) * ratio + bw
+    c_values = np.asarray(c, dtype=float)
+    if np.any(c_values < cw):
+        warnings.warn(
+            "c is below the pure water value cw, which is not "
+            "physically possible, so the particle term (c - cw) is negative "
+            "and so may b be. Check the calibration of c and the value of cw.",
+            ProvenanceWarning,
+            stacklevel=_data.caller_stacklevel(),
+        )
+    result = (c_values - cw) * ratio + bw
     # c and the wavelength broadcast against each other; the answer is a
     # float only when neither of them was an array.
     if np.ndim(result) == 0:

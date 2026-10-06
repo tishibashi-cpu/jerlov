@@ -136,8 +136,12 @@ def test_the_recommended_angles_do_not_warn():
 
 
 def test_a_reading_below_pure_water_warns_rather_than_passing():
-    with pytest.warns(AngleWarning, match="below that of pure sea water"):
+    """A provenance problem, not advice about the angle: it used to be an
+    AngleWarning, so filtering out angle advice silenced it too."""
+    with pytest.warns(jerlov.ProvenanceWarning,
+                      match="below that of pure sea water") as caught:
         jerlov.bb_from_vsf(1e-6, 140.0, 400.0)
+    assert not any(issubclass(w.category, AngleWarning) for w in caught)
 
 
 def test_negative_scattering_is_refused():

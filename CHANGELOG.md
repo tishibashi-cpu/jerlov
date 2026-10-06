@@ -4,6 +4,49 @@ Every release is archived on Zenodo under the concept DOI
 [10.5281/zenodo.22321312](https://doi.org/10.5281/zenodo.22321312), which
 always resolves to the latest version.
 
+## 0.4.1 — 2026-10-06
+
+Inputs that used to slip past the package's own checks are now refused, and
+two physically impossible results now say so. No coefficient changed, and
+every valid call returns what it returned before.
+
+**Fixed.** NaN passed every guard written as `value < 0`, since any comparison
+with NaN is False. `Scene.observe` and `Scene.transmittance` with a NaN
+distance, `Scene.at_depth` with a NaN depth, `attenuation_coefficients` with a
+NaN in its range and `solar_fraction` with a NaN depth all returned results
+made of NaN. They now raise. NaN inside a spectrum is still accepted, because
+it marks a gap in the data, which the package keeps visible on purpose.
+
+`Water` accepted NaN among its wavelengths, which passed the ascending check
+for the same reason and broke interpolation afterwards. It also accepted
+`flags` shorter than its wavelengths, which surfaced as `IndexError` only when
+a value was asked for. Both are now refused when the `Water` is made.
+
+`Scene.observe` and `attenuation_coefficients` accepted a negative veiling
+radiance, and `veiling_radiance_estimate` a negative downwelling irradiance,
+returning negative radiance. `Scene` itself already refused a negative
+irradiance; all three now do.
+
+`Scene.at_depth` given a surface spectrum of the wrong length failed inside
+numpy with "operands could not be broadcast together"; it now names the
+argument.
+
+`b_from_c` with c below the pure water value cw returned a negative b without
+comment. It now raises a `ProvenanceWarning`, as `kd_spectrum` already did in
+the same situation.
+
+**Changed.** `bb_from_vsf` warns of a reading below that of pure sea water
+with a `ProvenanceWarning` rather than an `AngleWarning`. The angle is not
+the problem, and a caller filtering out angle advice was silencing it too.
+
+**Docs.** DECISIONS.md section 24 still listed the Akkaynak-Treibitz
+coefficients as planned, though they arrived in 0.1.3, and section 12 still
+listed `Scene` as planned and shortwave heating as out of scope, which
+section 19 reversed. Both are annotated rather than rewritten, so the record
+of each decision stays. The Solonenko & Mobley caveat said the Kd0 column is
+not shipped; it is in the CSV, and what was meant is that `water()` does not
+return it.
+
 ## 0.4.0 — 2026-10-06
 
 Three calls that used to return an answer now raise instead, because the

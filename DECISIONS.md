@@ -149,7 +149,8 @@ In:
 - Inherent optical properties of the Jerlov water types, with provenance
 - Conversions between them, where a published relation exists
 - Enough of the light field to answer "what does an object at distance r,
-  seen by an observer at depth z, look like" (planned; see below)
+  seen by an observer at depth z, look like" (planned when this was
+  written; now `Scene`, see section 13)
 
 Out:
 
@@ -157,7 +158,7 @@ Out:
 - Remote sensing reflectance, the view from above the surface. HYDROPT and
   OpticalRS occupy that ground.
 - Shortwave heating for ocean circulation models, where the Jerlov type is an
-  integer index and no spectrum is involved.
+  integer index and no spectrum is involved. (Reversed in section 19.)
 - Machine-learning image restoration.
 - Deriving new coefficients from primary observations.
 
@@ -495,9 +496,9 @@ running text is a number nothing checks.
 
 Recorded so the shape of the API can be judged against where it is going.
 
-- **Akkaynak-Treibitz coefficients**: beta_D, beta_B and B_inf for a stated
-  distance range. The range must be an argument, not hidden, because those
-  coefficients are not constants.
+- ~~**Akkaynak-Treibitz coefficients**~~: done in 0.1.3, as
+  `Scene.attenuation_coefficients`; see section 16. The distance range is a
+  required argument, as planned.
 - **Petzold phase functions**: measured volume scattering functions, so that
   a backscatter ratio can be chosen from a measurement rather than guessed
   when no instrument reading is available. Section 22 covers the case where
