@@ -88,6 +88,9 @@ class Water:
         wavelengths where the value is unknown.
     kd:
         Downwelling diffuse attenuation coefficient in 1/m, if known.
+    kd_hydrolight:
+        Kd recomputed by a radiative transfer model from ``a`` and ``b``, as
+        Solonenko & Mobley (2015) publish it. See :meth:`kd_hydrolight`.
     name:
         Jerlov water type, when the object came from one.
     source:
@@ -103,6 +106,7 @@ class Water:
         b=None,
         *,
         kd=None,
+        kd_hydrolight=None,
         name: str | None = None,
         source: Source | None = None,
         flags: dict[str, tuple[str, ...]] | None = None,
@@ -120,7 +124,8 @@ class Water:
             raise ValueError("wavelengths must be strictly ascending")
 
         self._series: dict[str, np.ndarray] = {}
-        for key, value in (("a", a), ("b", b), ("Kd", kd)):
+        for key, value in (("a", a), ("b", b), ("Kd", kd),
+                           ("KdH", kd_hydrolight)):
             if value is None:
                 continue
             arr = np.array(value, dtype=float)
@@ -218,6 +223,26 @@ class Water:
         """Downwelling diffuse attenuation coefficient in 1/m."""
         return self._interp("Kd", wl)
 
+    def kd_hydrolight(self, wl):
+        """Kd recomputed by HydroLight from this water's a and b, in 1/m.
+
+        Only Solonenko & Mobley (2015) publish it, as K_d^H in Tables 4-8.
+        It is their check that the a and b they retrieved reproduce Jerlov's
+        Kd: HydroLight run with those a and b, the Petzold average-particle
+        phase function, a clear sky, infinitely deep water and no inelastic
+        scattering, to an optical depth of 10 scattering lengths, or 6 for
+        Jerlov III, where that matched Jerlov better (Section 4 and Appendix
+        A). The paper says 90 percent of the points in its Fig. 5 lie within
+        20 percent of Jerlov's; the tabulated values give 87 percent. See
+        DATA.md section 19.
+
+        It is not the same quantity as :meth:`kd`, which for this source is
+        the Kd of the paper's own bio-optical model, fitted to Jerlov to
+        within 15 percent. Comparing the two shows how much the retrieved
+        IOPs depend on the model they were retrieved with.
+        """
+        return self._interp("KdH", wl)
+
     def bb(self, wl, *, backscatter_ratio: float | None = None):
         """Backscattering coefficient in 1/m.
 
@@ -268,7 +293,7 @@ class Water:
 
 _IOP_FILES = {
     "williamson2022": ("williamson2022_iop.csv", ("a", "b")),
-    "solonenko2015": ("solonenko2015_iop.csv", ("a", "b", "Kd")),
+    "solonenko2015": ("solonenko2015_iop.csv", ("a", "b", "Kd", "KdH")),
 }
 
 _KD_FILES = {
@@ -313,6 +338,7 @@ def water(water_type: str, source: str = "williamson2022") -> Water:
             a=series.get("a"),
             b=series.get("b"),
             kd=series.get("Kd"),
+            kd_hydrolight=series.get("KdH"),
             name=water_type,
             source=src,
             flags=flags,

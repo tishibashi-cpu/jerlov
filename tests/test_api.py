@@ -410,3 +410,31 @@ def test_measured_points_name_bad_arguments():
         jerlov.measured_points("III", "Kd")
     with pytest.raises(KeyError, match="known:"):
         jerlov.measured_points("I", "a")
+
+
+def test_kd_hydrolight_is_the_papers_third_kd_column():
+    """Solonenko & Mobley Tables 4-8, K_d^H, read off the printed page."""
+    printed = {("I", 300): 0.200, ("III", 475): 0.101, ("1C", 700): 0.688,
+               ("9C", 300): 7.066, ("IB", 550): 0.072}
+    for (t, nm), value in printed.items():
+        w = jerlov.water(t, source="solonenko2015")
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", ProvenanceWarning)
+            assert w.kd_hydrolight(nm) == pytest.approx(value)
+    # It is a different quantity from .kd(), not a copy of it.
+    w = jerlov.water("III", source="solonenko2015")
+    assert w.kd(475.0) == pytest.approx(0.110)
+    assert w.kd_hydrolight(475.0) != w.kd(475.0)
+
+
+def test_kd_hydrolight_keeps_the_unrecoverable_cells_missing():
+    w = jerlov.water("5C", source="solonenko2015")
+    with pytest.warns(ProvenanceWarning, match="missing at 650 nm"):
+        assert np.isnan(w.kd_hydrolight(650.0))
+
+
+def test_only_solonenko_has_kd_hydrolight():
+    for source in ("williamson2022", "jerlov1976", "jerlov1968", "austin1986"):
+        t = jerlov.SOURCES[source].water_types[0]
+        with pytest.raises(MissingQuantityError, match="'KdH'"):
+            jerlov.water(t, source=source).kd_hydrolight(500.0)

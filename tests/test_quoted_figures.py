@@ -205,3 +205,26 @@ def test_the_two_editions_differ_by_the_stated_amounts():
     assert 0.01 <= min(means) < 0.02
     assert 0.14 < max(means) <= 0.15
     assert 0.34 < worst <= 0.35
+
+
+def test_kd_hydrolight_agrees_with_jerlov_as_data_md_says():
+    """DATA.md section 19: 86.5 percent of all cells within 20 percent of
+    K_d^0, 87.9 percent of unflagged ones, against the paper's 90."""
+    from jerlov import _data
+    from jerlov.sources import ALL_TYPES
+
+    every, sound = [], []
+    for t in ALL_TYPES:
+        _, k0, s0 = _data.spectrum("solonenko2015_iop.csv", t, "Kd0",
+                                   "value_per_m")
+        _, kh, sh = _data.spectrum("solonenko2015_iop.csv", t, "KdH",
+                                   "value_per_m")
+        for x, y, a, b in zip(k0, kh, s0, sh):
+            if np.isfinite(x) and np.isfinite(y):
+                within = abs(x - y) / x <= 0.20
+                every.append(within)
+                if a not in _data.QUESTIONABLE and b not in _data.QUESTIONABLE:
+                    sound.append(within)
+    assert len(every) == 163 and len(sound) == 141
+    assert np.mean(every) == pytest.approx(0.865, abs=0.001)
+    assert np.mean(sound) == pytest.approx(0.879, abs=0.001)

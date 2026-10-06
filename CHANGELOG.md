@@ -39,10 +39,19 @@ instead of the private loader; its output is unchanged. Tests now fail if a
 shipped table is never read by the package, or if an example reaches into
 `jerlov._data`.
 
-**Not added.** The KdH column of Solonenko & Mobley stays unexposed: its
-definition is not recorded in DATA.md, and a quantity whose meaning has not
-been established from the paper does not get a public name. DECISIONS.md
-section 25.
+`Water.kd_hydrolight(wl)`, for source `solonenko2015`: the paper's third Kd
+column, K_d^H, which HydroLight computed from the retrieved a and b with the
+Petzold average-particle phase function. It is the paper's check on its own
+retrieval and a different quantity from `.kd()`, the Kd of its bio-optical
+model. Its definition, from Section 4 and Appendix A of the paper, is now in
+DATA.md section 19, with one finding: the paper says 90 percent of the points
+in its Fig. 5 are within 20 percent of Jerlov's Kd, and the tabulated values
+give 87 percent.
+
+**Docs.** DATA.md has a nineteenth entry, so the count in DATA.md, the README
+and `.zenodo.json` moves from eighteen to nineteen. The Solonenko & Mobley
+caveat said only a is lost in the duplicated rows of Table 7; Kd and KdH are
+lost there too.
 
 ## 0.4.1 — 2026-10-06
 

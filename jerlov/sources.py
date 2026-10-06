@@ -115,7 +115,7 @@ SOURCES: dict[str, Source] = {
             "of Jerlov water types', Appl. Opt. 54, 5392-5401 (2015)"
         ),
         doi="10.1364/AO.54.005392",
-        quantities=("a", "b", "Kd", "Kd0", "KdH"),
+        quantities=("a", "b", "Kd", "KdH"),
         water_types=ALL_TYPES,
         wavelength_range_nm=(300.0, 700.0),
         measured=False,
@@ -123,7 +123,13 @@ SOURCES: dict[str, Source] = {
         caveats=(
             "a and b were obtained by inverting Kd, not by measurement.",
             "Table 7 duplicates rows for Jerlov 3C (675, 700 nm) and 5C "
-            "(600-700 nm). b has been reconstructed from Eq. (8); a is absent.",
+            "(600-700 nm). b has been reconstructed from Eq. (8); a, Kd and "
+            "KdH are absent there.",
+            "KdH (kd_hydrolight) is HydroLight's Kd from the retrieved a and "
+            "b with the Petzold average-particle phase function, computed to "
+            "10 scattering lengths except for Jerlov III, where 6 was used. "
+            "The paper reports 90 percent within 20 percent of Jerlov's Kd; "
+            "the tabulated values give 87 percent. See DATA.md section 19.",
             "The small-particle scattering coefficient used here (1.513) does "
             "not match Haltrin (1999), which gives 1.151302.",
             "The paper's Kd0 column is a reference spectrum from Jerlov (1951, "

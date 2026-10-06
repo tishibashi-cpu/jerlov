@@ -523,6 +523,10 @@ secondary source, which is the situation this package exists to end. All three
 now have public entry points, and `tests/test_packaging.py` fails if a shipped
 table is never read by the package or if an example reaches into `_data`.
 
-**Not done:** the KdH column of Solonenko & Mobley (2015). Its definition is
-not recorded in DATA.md, and a quantity whose meaning has not been established
-from the paper does not get a public name.
+The KdH column of Solonenko & Mobley (2015) was held back at first: its
+definition was not recorded in DATA.md, and a quantity whose meaning has not
+been established from the paper does not get a public name. Reading the paper
+established it (DATA.md section 19), and it is now `Water.kd_hydrolight`.
+Reading it also showed that the tabulated values reach 87 percent within 20
+percent of Jerlov, not the 90 the paper states, which is now recorded rather
+than repeated.

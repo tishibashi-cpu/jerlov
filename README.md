@@ -80,6 +80,9 @@ reconstructed at 650 nm. ...
 | `jerlov1968` | Kd only, first edition | I-9C | 310-700 nm |
 | `austin1986` | Kd only, replacement values | I-1C | 350-700 nm |
 
+`solonenko2015` also carries `kd_hydrolight()`, the Kd that HydroLight
+computed from its a and b; DATA.md section 19 says how it differs from `kd()`.
+
 `jerlov.SOURCES` holds the full citation, DOI and caveats for each. The two
 Jerlov editions differ by up to 35 percent at single wavelengths; establish
 which one a number came from before comparing it with either.
@@ -274,7 +277,7 @@ made.
 ## Provenance and design
 
 `DATA.md` records, for every shipped table, where it came from, what was
-verified, and what is known to be wrong with it. Eighteen entries are
+verified, and what is known to be wrong with it. Nineteen entries are
 documented there: eight confirmed defects in the source literature, three
 questions the first edition of Jerlov settled, and the rest notes.
 
