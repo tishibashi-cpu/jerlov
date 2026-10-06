@@ -77,9 +77,12 @@ reconstructed at 650 nm. ...
 | `williamson2022` | measurement | IB-5C | 300-800 nm |
 | `solonenko2015` | inversion of Kd | I-9C | 300-700 nm |
 | `jerlov1976` | Kd only | I-9C | 300-715 nm |
+| `jerlov1968` | Kd only, first edition | I-9C | 310-700 nm |
 | `austin1986` | Kd only, replacement values | I-1C | 350-700 nm |
 
-`jerlov.SOURCES` holds the full citation, DOI and caveats for each.
+`jerlov.SOURCES` holds the full citation, DOI and caveats for each. The two
+Jerlov editions differ by up to 35 percent at single wavelengths; establish
+which one a number came from before comparing it with either.
 
 ## Looking at something through water
 
@@ -221,6 +224,10 @@ jerlov.kd_spectrum(kd=0.06, wavelength_nm=490, at=[440, 550, 650])
 
 # Estimate b from a transmissometer's c (Smart 2007).
 jerlov.b_from_c(c=0.5, wavelength_nm=555, bw=0.0019, cw=0.0659)
+jerlov.pure_water_scattering(555)   # Morel's bw, if that is what c was corrected with
+
+# The measured points behind the williamson2022 spectra, with their spread.
+m = jerlov.measured_points("III", "a")   # m.wavelengths, m.values, m.std_dev
 
 # Use your own measurements; they take exactly the same path.
 jerlov.Water.from_measurements(wavelengths, a=..., b=...)
@@ -234,6 +241,7 @@ exponentials, with parameters per Jerlov type from Paulson & Simpson (1977):
 ```python
 jerlov.solar_fraction("IB", 10.0)        # 0.183 of the surface irradiance
 p = jerlov.shortwave_parameters("IB")    # R, zeta1_m, zeta2_m
+depths, fraction = jerlov.jerlov1968_solar_fraction("IB")   # the table itself
 ```
 
 Broadband, 300-2500 nm; nothing to do with the spectral quantities above. The

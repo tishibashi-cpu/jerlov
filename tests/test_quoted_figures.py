@@ -21,7 +21,6 @@ import numpy as np
 import pytest
 
 import jerlov
-from jerlov import _data
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 source_tree = pytest.mark.skipif(
@@ -84,19 +83,14 @@ def test_the_small_particle_coefficients_differ_by_the_stated_amount():
 
 def test_the_shortwave_fit_misses_its_source_by_the_stated_amount():
     """README, DATA.md section 14 and solar_heating.py all say 46 percent."""
-    rows = _data._rows("jerlov1968_total_irradiance.csv")
     worst = 0.0
-    for row in rows:
-        if row["water_type"] not in ("I", "IA", "IB", "II", "III"):
-            continue
-        if not row["percent_of_surface"]:
-            continue
-        depth = float(row["depth_m"])
-        if depth == 0 or depth > 100:
-            continue
-        want = float(row["percent_of_surface"]) / 100
-        got = jerlov.solar_fraction(row["water_type"], depth)
-        worst = max(worst, abs(got - want) / want)
+    for water_type in ("I", "IA", "IB", "II", "III"):
+        depths, measured = jerlov.jerlov1968_solar_fraction(water_type)
+        for depth, want in zip(depths, measured):
+            if depth == 0 or depth > 100 or np.isnan(want):
+                continue
+            got = jerlov.solar_fraction(water_type, depth)
+            worst = max(worst, abs(got - want) / want)
     assert worst == pytest.approx(0.46, abs=0.01)
 
 
@@ -190,3 +184,24 @@ def test_the_readme_quotes_a_chi_p_the_package_produces():
     result = jerlov.bb_from_vsf(0.0021, 140.0, 532.0)
     assert result.chi_p == pytest.approx(float(match.group(1)))
     assert result.quoted_error_percent == pytest.approx(float(match.group(2)))
+
+
+def test_the_two_editions_differ_by_the_stated_amounts():
+    """The jerlov1968 caveat says 1 to 15 percent on average, and up to 35
+    at single wavelengths, against Jerlov (1976)."""
+    from jerlov.sources import ALL_TYPES
+
+    means, worst = [], 0.0
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        for t in ALL_TYPES:
+            old = jerlov.water(t, source="jerlov1968")
+            new = jerlov.water(t, source="jerlov1976")
+            x, y = old.kd(old.wavelengths), new.kd(old.wavelengths)
+            ok = np.isfinite(x) & np.isfinite(y)
+            rel = np.abs(x[ok] - y[ok]) / y[ok]
+            means.append(rel.mean())
+            worst = max(worst, rel.max())
+    assert 0.01 <= min(means) < 0.02
+    assert 0.14 < max(means) <= 0.15
+    assert 0.34 < worst <= 0.35

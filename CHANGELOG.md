@@ -4,6 +4,46 @@ Every release is archived on Zenodo under the concept DOI
 [10.5281/zenodo.22321312](https://doi.org/10.5281/zenodo.22321312), which
 always resolves to the latest version.
 
+## 0.5.0 — 2026-10-06
+
+Three tables that had been transcribed, checked against their papers and
+shipped, but were reachable only through a private loader, now have public
+entry points. No coefficient changed, and nothing existing behaves
+differently.
+
+**Added.** `water(t, source="jerlov1968")`: Kd from the first edition of the
+classification, Jerlov (1968) Table XX, for all ten types from 310 to 700 nm.
+It is also the Kd0 column of Solonenko & Mobley (2015), which reproduces it to
+transcription accuracy. Its caveats say how far it is from the 1976 edition:
+1 to 15 percent on average by type, up to 35 percent at single wavelengths.
+
+`measured_points(t, quantity)`: the measured a and b points behind the
+Williamson & Hollins (2022) spectra, with their standard deviation and the
+number of campaigns behind each. Hollins & Williamson (2023) recommend these
+over the fitted spectra for validation. The paper's own filter, five or more
+campaigns, is applied unless `include_sparse=True`; Jerlov IA and 7C have no
+point that passes it, and are refused rather than returned empty.
+
+`jerlov1968_solar_fraction(t)`: Jerlov (1968) Table XXI, the broadband
+irradiance with depth that Paulson & Simpson fitted, for all ten types. Blanks
+stay NaN.
+
+`pure_water_scattering(wavelength_nm)`: the total scattering coefficient of
+pure sea water, from the same Morel formula as the rest of `backscattering`.
+It is twice `pure_water_backscattering` by symmetry, and Morel's
+`b_w = 16.06 beta_w(90)`, both checked. It is the `bw` that `b_from_c` asks
+for, if that is what the c measurement was corrected with.
+
+**Changed.** `examples/solar_heating.py` uses `jerlov1968_solar_fraction`
+instead of the private loader; its output is unchanged. Tests now fail if a
+shipped table is never read by the package, or if an example reaches into
+`jerlov._data`.
+
+**Not added.** The KdH column of Solonenko & Mobley stays unexposed: its
+definition is not recorded in DATA.md, and a quantity whose meaning has not
+been established from the paper does not get a public name. DECISIONS.md
+section 25.
+
 ## 0.4.1 — 2026-10-06
 
 Inputs that used to slip past the package's own checks are now refused, and

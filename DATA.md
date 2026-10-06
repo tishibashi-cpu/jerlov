@@ -113,7 +113,8 @@ up to 34 percent. Solonenko & Mobley cite Jerlov & Koczy (1951) and Jerlov
 
 **They were right and the discrepancy is an edition difference.** Jerlov
 (1968) Table XX was obtained and transcribed; it is shipped as
-`jerlov1968_kd.csv`. Converting its transmittances to Kd and comparing:
+`jerlov1968_kd.csv`, and since 0.5.0 is `water(t, source="jerlov1968")`.
+Converting its transmittances to Kd and comparing:
 
 | Type | against Jerlov 1968 | against Jerlov 1976 |
 |---|---|---|
@@ -311,7 +312,8 @@ model interpolation or extrapolation and is marked `model_extrapolation`;
 `williamson2022_measured.csv` holds the raw measured points. Hollins &
 Williamson (2023) state that the fitting process behind the smooth spectra
 would bias some analyses and that the individual points are preferable
-(section 2.A). Use these for validation.
+(section 2.A). Use these for validation; `measured_points(t, "a")` returns
+them with their spread and campaign count.
 
 The paper kept only averages built from five or more measurements.
 Reproducing that filter gives **53 points each for a and b, 106 in total,
@@ -512,6 +514,9 @@ in the upper ocean as a sum of two exponentials:
 ```
 I(z) / I(0) = R exp(-z/zeta1) + (1 - R) exp(-z/zeta2)
 ```
+
+The table Paulson & Simpson fitted, Jerlov (1968) Table XXI, is
+`jerlov1968_solar_fraction(t)`, for all ten types.
 
 Source: Paulson, C. A. and Simpson, J. J. (1977), "Irradiance measurements in
 the upper ocean", *J. Phys. Oceanogr.* 7, 952-956, DOI

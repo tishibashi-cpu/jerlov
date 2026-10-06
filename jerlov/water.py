@@ -9,6 +9,7 @@ same path.
 from __future__ import annotations
 
 import warnings
+from dataclasses import dataclass
 
 import numpy as np
 
@@ -272,6 +273,7 @@ _IOP_FILES = {
 
 _KD_FILES = {
     "jerlov1976": ("jerlov1976_kd.csv", "Kd_downwelling_per_m"),
+    "jerlov1968": ("jerlov1968_kd.csv", "Kd_downwelling_per_m"),
     "austin1986": ("austin1986_kd.csv", "Kd_downwelling_per_m"),
 }
 
@@ -518,3 +520,64 @@ def b_from_c(c, wavelength_nm, *, bw, cw, bound: str = "average"):
     if np.ndim(result) == 0:
         return float(result)
     return result
+
+
+@dataclass(frozen=True, eq=False)   # == on arrays has no single answer
+class MeasuredPoints:
+    """Measured a or b of one Jerlov type, before any spectral fitting."""
+
+    water_type: str
+    quantity: str
+    wavelengths: np.ndarray
+    """nm, ascending."""
+    values: np.ndarray
+    """1/m: the average over campaigns."""
+    std_dev: np.ndarray
+    """1/m, across campaigns; NaN where none was given."""
+    n_campaigns: np.ndarray
+    """How many campaigns each average rests on."""
+    included: np.ndarray
+    """True where the paper kept the point (five or more campaigns)."""
+
+
+def measured_points(water_type: str, quantity: str, *,
+                    include_sparse: bool = False) -> MeasuredPoints:
+    """The measured a or b points behind Williamson & Hollins (2022).
+
+    The smooth spectra returned by ``water(..., source="williamson2022")``
+    were fitted to these. Hollins & Williamson (2023) say the fitting would
+    bias some analyses and that the individual points are preferable for
+    validation; they come with their spread and their campaign count.
+
+    The paper kept only averages built from five or more campaigns, 53 each
+    for a and b. Points below that are left out unless
+    ``include_sparse=True``. Jerlov IA and 7C rest on a single campaign
+    throughout, so without it they have no points at all, and this raises
+    rather than returning nothing. See DATA.md section 9.
+    """
+    if quantity not in ("a", "b"):
+        raise ValueError("quantity must be 'a' or 'b'")
+    rows = [r for r in _data._rows("williamson2022_measured.csv")
+            if r["water_type"] == water_type and r["quantity"] == quantity]
+    if not rows:
+        known = sorted({r["water_type"]
+                        for r in _data._rows("williamson2022_measured.csv")})
+        raise KeyError(f"no measured points for Jerlov {water_type!r} "
+                       f"(known: {', '.join(known)})")
+    kept = [r for r in rows if include_sparse or r["status"] == "included"]
+    if not kept:
+        raise KeyError(
+            f"every measured point for Jerlov {water_type} rests on fewer "
+            "than five campaigns, and the paper excluded them all. Pass "
+            "include_sparse=True to get them anyway."
+        )
+    kept.sort(key=lambda r: float(r["wavelength_nm"]))
+    return MeasuredPoints(
+        water_type=water_type,
+        quantity=quantity,
+        wavelengths=np.array([float(r["wavelength_nm"]) for r in kept]),
+        values=np.array([float(r["value_per_m"]) for r in kept]),
+        std_dev=np.array([_data._to_float(r["std_dev_per_m"]) for r in kept]),
+        n_campaigns=np.array([int(r["n_campaigns"]) for r in kept]),
+        included=np.array([r["status"] == "included" for r in kept]),
+    )

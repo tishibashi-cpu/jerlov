@@ -304,3 +304,21 @@ def test_every_cited_section_exists():
                 if n not in numbered:
                     offenders.append(f"{where}: DATA.md section {n}")
     assert not offenders, f"references to nothing: {offenders}"
+
+
+@source_tree
+def test_every_shipped_table_is_read_by_the_package():
+    """Three checked tables used to ship with no public way to reach them:
+    one example read a CSV through the private loader instead. A table worth
+    shipping is worth an entry point."""
+    code = "".join(p.read_text() for p in ROOT.glob("jerlov/*.py"))
+    unread = [p.name for p in sorted(ROOT.glob("jerlov/data/*.csv"))
+              if p.name not in code]
+    assert not unread, f"shipped but never read by the package: {unread}"
+
+
+@source_tree
+def test_examples_use_only_the_public_api():
+    offenders = [p.name for p in ROOT.glob("examples/*.py")
+                 if "_data" in p.read_text()]
+    assert not offenders, f"examples reaching into jerlov._data: {offenders}"

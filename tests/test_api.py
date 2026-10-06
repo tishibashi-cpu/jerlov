@@ -146,7 +146,8 @@ def test_sources_are_described():
         assert source.key == key
         assert source.citation
         assert source.water_types
-        if key != "jerlov1976":
+        # Jerlov's books predate DOIs; everything else must carry one.
+        if key not in ("jerlov1968", "jerlov1976"):
             assert source.doi
 
 
@@ -349,3 +350,63 @@ def test_b_from_c_warns_when_c_is_below_pure_water():
     with warnings.catch_warnings():
         warnings.simplefilter("error", ProvenanceWarning)
         jerlov.b_from_c(0.5, 555.0, bw=0.0019, cw=0.0659)
+
+
+# -- tables that were shipped but not reachable ----------------------------
+
+
+def test_the_first_edition_is_a_kd_source():
+    """jerlov1968_kd.csv was shipped and checked but only reachable through a
+    private loader. It is the Kd0 column of Solonenko & Mobley."""
+    w = jerlov.water("III", source="jerlov1968")
+    assert w.source.key == "jerlov1968"
+    assert w.range_nm == (310.0, 700.0)
+    assert w.has("Kd") and not w.has("a")
+    # Jerlov printed transmittance per metre; Kd is -ln of it.
+    assert w.kd(475.0) == pytest.approx(-np.log(0.89), abs=5e-4)
+    # Kd0 of Solonenko & Mobley is this table.
+    from jerlov import _data
+    wl, kd0, _ = _data.spectrum("solonenko2015_iop.csv", "III", "Kd0",
+                                "value_per_m")
+    inside = (wl >= 350) & (wl <= 700)
+    assert np.allclose(w.kd(wl[inside]), kd0[inside], rtol=0.01)
+
+
+def test_the_first_edition_keeps_its_gaps():
+    w = jerlov.water("7C", source="jerlov1968")
+    with pytest.warns(ProvenanceWarning, match="missing at 310 nm"):
+        assert np.isnan(w.kd(310.0))
+
+
+def test_measured_points_follow_the_papers_filter():
+    for quantity in ("a", "b"):
+        total = sum(
+            len(jerlov.measured_points(t, quantity).values)
+            for t in ("IB", "II", "III", "1C", "3C", "5C")
+        )
+        assert total == 53
+    m = jerlov.measured_points("III", "a")
+    assert np.all(m.included) and np.all(m.n_campaigns >= 5)
+    assert np.all(np.diff(m.wavelengths) > 0)
+    assert 412 <= m.wavelengths[0] and m.wavelengths[-1] <= 715
+
+
+def test_measured_points_refuse_a_type_with_none_kept():
+    with pytest.raises(KeyError, match="include_sparse=True"):
+        jerlov.measured_points("IA", "a")
+    sparse = jerlov.measured_points("IA", "a", include_sparse=True)
+    assert len(sparse.values) > 0 and not np.any(sparse.included)
+
+
+def test_measured_points_sit_near_the_fitted_spectrum():
+    """The smooth spectra were fitted to these points."""
+    m = jerlov.measured_points("III", "b")
+    fitted = jerlov.water("III").b(m.wavelengths)
+    assert np.max(np.abs(fitted - m.values) / m.values) < 0.25
+
+
+def test_measured_points_name_bad_arguments():
+    with pytest.raises(ValueError, match="'a' or 'b'"):
+        jerlov.measured_points("III", "Kd")
+    with pytest.raises(KeyError, match="known:"):
+        jerlov.measured_points("I", "a")
