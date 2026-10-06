@@ -53,6 +53,11 @@ and `.zenodo.json` moves from eighteen to nineteen. The Solonenko & Mobley
 caveat said only a is lost in the duplicated rows of Table 7; Kd and KdH are
 lost there too.
 
+The DOI of Paglierani et al. (2023) was given as `10.1155/2023.7185329`, which
+resolves to nothing; it is `10.1155/2023/7185329`. It was wrong in DATA.md,
+`sources/README.md` and `.zenodo.json`, so every Zenodo record from 0.2.2 on
+carries the broken link in its related works; 0.5.0 will carry the right one.
+
 ## 0.4.1 — 2026-10-06
 
 Inputs that used to slip past the package's own checks are now refused, and

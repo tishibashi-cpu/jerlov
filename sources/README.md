@@ -40,7 +40,7 @@ not needed to rebuild the tables.
 | Aas et al. (2013), Oceanologia 55(2), 471-482 (open access) | `10.5697/oc.55-2.471` |
 | Jia et al. (2021), Remote Sens. 13, 4018 (open access) | `10.3390/rs13194018` |
 | Woźniak & Pelevin (1991), Oceanologia 31, 25-55 | no DOI |
-| Paglierani et al. (2023), Quantum Engineering 2023, 7185329 (open access) | `10.1155/2023.7185329` |
+| Paglierani et al. (2023), Quantum Engineering 2023, 7185329 (open access) | `10.1155/2023/7185329` |
 | Abd El-Mottaleb et al. (2024), Results in Engineering 24, 102941 (open access) | `10.1016/j.rineng.2024.102941` |
 | Austin & Petzold (1990), Proc. SPIE 1302, 79-93 | `10.1117/12.943302` |
 | Haltrin (1999), Appl. Opt. 38, 6826-6832 | — |

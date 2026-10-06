@@ -30,7 +30,7 @@
     {"identifier": "10.1002/lol2.10338", "relation": "isDerivedFrom", "resource_type": "publication-article", "scheme": "doi"},
     {"identifier": "10.1175/1520-0485(1977)007<0952:IMITUO>2.0.CO;2", "relation": "isDerivedFrom", "resource_type": "publication-article", "scheme": "doi"},
     {"identifier": "10.1364/AO.40.005503", "relation": "isDerivedFrom", "resource_type": "publication-article", "scheme": "doi"},
-    {"identifier": "10.1155/2023.7185329", "relation": "references", "resource_type": "publication-article", "scheme": "doi"},
+    {"identifier": "10.1155/2023/7185329", "relation": "references", "resource_type": "publication-article", "scheme": "doi"},
     {"identifier": "10.1016/j.rineng.2024.102941", "relation": "references", "resource_type": "publication-article", "scheme": "doi"},
     {"identifier": "10.3390/rs13194018", "relation": "references", "resource_type": "publication-article", "scheme": "doi"}
   ]

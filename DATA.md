@@ -674,7 +674,7 @@ built on another, and none of the three papers says which of the others it
 disagrees with.
 
 Paglierani et al. (2023), *Quantum Engineering* **2023**, 7185329, DOI
-`10.1155/2023.7185329`, a review of underwater quantum key distribution, says
+`10.1155/2023/7185329`, a review of underwater quantum key distribution, says
 so plainly:
 
 > some works strictly adopt the values proposed by Mobley ... Other works,
