@@ -50,14 +50,17 @@ could not are `missing`, and values that are used but doubtful are `suspect`.
   Dstl. Open Government Licence v3.0.
 
 - **Austin & Petzold 1986.** Opt. Eng. 25(3), 471-479, DOI
-  `10.1117/12.7973845`. Tables VI and IV. The type I row is pure sea water Kw;
+  `10.1117/12.7973845`. Tables VI and IV, checked against the paper in full
+  (71 rows of M and Kw, 90 values of K). The type I row is pure sea water Kw;
   only the 475 nm column is Jerlov's own value. The rest was computed with the
   paper's Eq. (6), which reproduces the printed table to within 0.39 percent.
   M at 350, 355 and 360 nm is extrapolated, as the paper states. Austin &
   Petzold (1990), Proc. SPIE 1302, 79-93, tested the model against 83 new
-  stations from 24.4 to 77.7 degrees north and recommended no change, but
-  reports poor agreement beyond 590 nm: a coefficient of variation of 31
-  percent at 670 nm.
+  stations from 24.4 to 77.7 degrees north and recommended no change. The
+  coefficient of variation is under 8 percent up to 590 nm except at 410 nm,
+  which the paper puts down to yellow substance, and 9 percent or more
+  beyond, reaching 31 percent at 670 nm. (Its abstract gives the northern
+  limit as 77.4 degrees; the body says 77.7 twice.)
 
 - **Solonenko & Mobley 2015.** Appl. Opt. 54, 5392-5401, DOI
   `10.1364/AO.54.005392`. Tables 3 to 8.
@@ -79,6 +82,9 @@ could not are `missing`, and values that are used but doubtful are `suspect`.
 In Solonenko & Mobley (2015) Table 7, the rows for Jerlov 3C at 675 and 700 nm
 are identical in every column to the rows at 300 and 310 nm. For Jerlov 5C,
 the five rows from 600 to 700 nm are identical to those from 300 to 400 nm.
+
+Every other cell of Tables 4 to 8, 815 of 850, equals the shipped file; the
+35 that do not are these seven rows in their five columns.
 
 Four independent lines of evidence:
 
@@ -112,8 +118,9 @@ up to 34 percent. Solonenko & Mobley cite Jerlov & Koczy (1951) and Jerlov
 (1968) for it, not Jerlov (1976).
 
 **They were right and the discrepancy is an edition difference.** Jerlov
-(1968) Table XX was obtained and transcribed; it is shipped as
-`jerlov1968_kd.csv`, and since 0.5.0 is `water(t, source="jerlov1968")`.
+(1968) Table XX was obtained and transcribed; all 160 cells of its
+transmittance per metre were checked against the scan, and Kd is -ln of each.
+It is shipped as `jerlov1968_kd.csv`, and since 0.5.0 is `water(t, source="jerlov1968")`.
 Converting its transmittances to Kd and comparing:
 
 | Type | against Jerlov 1968 | against Jerlov 1976 |
@@ -233,7 +240,8 @@ underlying observations, which are not in either edition.
 
 ## 6. The small-particle scattering coefficient (confirmed)
 
-The model originates in Haltrin (1999), Eqs. (5)-(7):
+The model originates in Haltrin (1999), *Appl. Opt.* **38**, 6826-6832,
+Eqs. (5)-(7), checked against the paper:
 
 ```
 bw(l) = 0.005826 (1/m)   * (400/l)**4.322
@@ -242,7 +250,9 @@ bl(l) = 0.341074 (m^2/g) * (400/l)**0.3
 ```
 
 **The correct small-particle coefficient is 1.151302.** Williamson & Hollins
-use 1.1513, which matches. Solonenko & Mobley print 1.513; a digit appears to
+use 1.1513, which matches; they print all three constants rounded (0.00583,
+1.1513, 0.3411), and since 0.5.1 the `williamson2022` source carries those
+rather than Haltrin's. Solonenko & Mobley print 1.513; a digit appears to
 have been dropped.
 
 **They also computed with it.** Only 1.513 reproduces their published b
@@ -298,12 +308,22 @@ disagreement with measurement.
 printed Table 7. **The paper prints 10 nm spacing; the spreadsheet holds 1
 nm.**
 
-Two checks were made:
+Checks against the paper:
 
-- 72 points against the printed Table 7: **all within 0.5 percent**
-- b recomputed from Eqs. (7)-(11) with the Bs, Bl of Table 6 and the
-  coefficient 1.1513: **within 5.3 percent**. The worst is Jerlov III at -5.3
-  percent, probably because the 2023 paper updates its Bl from 0.90 to 0.91.
+- All 612 cells of the printed Table 7, at 10 nm from 300 to 800 nm: **equal
+  to three significant figures.** (The build script checks 72 of them.)
+- b recomputed from Eqs. (8)-(11) with the paper's own constants (0.00583,
+  1.1513, 0.3411) and the Bs, Bl of its Table 6: **within 0.73 percent** at
+  every wavelength from 300 to 800 nm, for every type.
+
+**Until 0.5.1 the second check used the wrong Table 6.** Hollins & Williamson
+(2023), Appl. Opt. 62, 6218-6233, DOI `10.1364/AO.493186`, also has a Table
+6, which refits the same model to the measured points rather than to the
+spectra (IB 0.010/0.37, II 0.022/0.52, III 0.00/0.90, ...). Its Table 11
+revises Jerlov III's Bl to 0.91. Those values had been entered here as the
+2022 table, and against the 2022 spectra they miss by up to 5.3 percent, at
+Jerlov III. This file put that down to the revision to 0.91; the real cause
+was the wrong table. Nothing shipped was affected, only the check.
 
 **Measured points exist only from 412 to 715 nm.** Everything outside that is
 model interpolation or extrapolation and is marked `model_extrapolation`;
@@ -315,9 +335,16 @@ would bias some analyses and that the individual points are preferable
 (section 2.A). Use these for validation; `measured_points(t, "a")` returns
 them with their spread and campaign count.
 
-The paper kept only averages built from five or more measurements.
+The paper kept only averages built from five or more measurements ("Entries
+with less than five values contributing to the final average were removed").
 Reproducing that filter gives **53 points each for a and b, 106 in total,
-matching the paper.** The 46 excluded points are kept with
+matching the paper**, and the campaign count of every point equals the 106
+counts of its Table 3.
+
+**Hollins & Williamson (2023) Table 1 prints only 51 of the 53 a values.**
+Jerlov 5C at 676 and 715 nm are shown as "-", although the 2022 Table 3 gives
+them 7 and 6 values, above the threshold. Their Table 2, for b, has all 53.
+This package follows the 2022 paper, which states 53 for each. The 46 excluded points are kept with
 `status = excluded_sparse`. Jerlov IA and 7C are excluded throughout: one
 measurement campaign each.
 
@@ -401,7 +428,8 @@ b = (c - cw) * ratio + bw
 
 Least squares fits for six datasets: the US continental shelf (CMO),
 Chesapeake Bay (COPE), the Sea of Japan and the Yellow Sea. **Accurate to
-about 10 percent.**
+about 10 percent.** All 30 cells of the summary in Table 1 (average, minimum
+and maximum at ten wavelengths) were checked against the paper.
 
 Three cautions:
 
@@ -481,11 +509,14 @@ Availability Statement gets lake positions in Maine.
 
 The published Table 2 takes, for each near-surface type and layer, the deeper
 type with the largest campaign count, subject to a minimum of ten campaigns.
-The paper states that in 3 of 119 cases it instead chose the second-highest,
-"as this count was close to the maximum and more consistent with the
-surrounding depth layers", but does not say which.
+The paper states that in "three out of the 119 cases" it instead chose the
+second-highest, "as this count was close to the maximum and more consistent
+with the surrounding depth layers", and marks them with asterisks in the
+table. (Table 2 in fact has 120 declared cells, the ten surface ones
+included; the 119 is the paper's.)
 
-Applying the stated rule and comparing against the printed table locates them:
+Applying the stated rule independently finds the same three, which is the
+check that the rule has been read correctly:
 
 | Near-surface type | Layer | Largest count | Published |
 |---|---|---|---|
@@ -493,7 +524,8 @@ Applying the stated rule and comparing against the printed table locates them:
 | I | 180-190 m | IA | **IB** |
 | IA | 190-200 m | IA | **IB** |
 
-Exactly three, exactly where the paper's asterisks are. `tools/` fixes this
+Exactly three, exactly where the paper's asterisks are. All 120 cells of the
+printed Table 2, asterisks included, equal the shipped file. `tools/` fixes this
 count, so a change in either the data or the rule will be noticed.
 
 Cells with fewer than ten campaigns are carried with `status = undeclared` and
@@ -516,14 +548,18 @@ I(z) / I(0) = R exp(-z/zeta1) + (1 - R) exp(-z/zeta2)
 ```
 
 The table Paulson & Simpson fitted, Jerlov (1968) Table XXI, is
-`jerlov1968_solar_fraction(t)`, for all ten types.
+`jerlov1968_solar_fraction(t)`, for all ten types. Its footnote gives a solar
+altitude of 90 degrees for the oceanic types and 45 for the coastal ones, so
+the parameters describe a sun at the zenith. All 120 cells, blanks included,
+were checked against a scan of the 1968 edition.
 
 Source: Paulson, C. A. and Simpson, J. J. (1977), "Irradiance measurements in
 the upper ocean", *J. Phys. Oceanogr.* 7, 952-956, DOI
 `10.1175/1520-0485(1977)007<0952:IMITUO>2.0.CO;2`, Table 2.
 
 These parameters are used by ROMS, MITgcm, NEMO and CESM among others, and are
-usually copied from secondary sources rather than the paper.
+usually copied from secondary sources rather than the paper. All nine rows of
+Table 2 were checked against the paper.
 
 ### The fit is repeated rather than trusted
 
@@ -548,8 +584,11 @@ shallow fit has four points and the deep fit as few as three.
 
 Feeding the printed parameters back gives, against Jerlov Table XXI, an error
 of **46 percent at 1 m** for types II and III, falling below 25 percent from
-2 m down. Two exponentials cannot follow the sharp near-surface decay; the
-paper is explicit that the fit excludes the 10 m point for the same reason.
+2 m down. Two exponentials cannot follow the sharp near-surface decay. The
+paper says "the fit is least accurate in the upper 10 m" and that it fitted
+the table "neglecting the 10 m value", adding that the fit at 10 m "could be
+improved by including" it. It gives no reason for the exclusion; this file
+once supplied one.
 
 Anyone heating a 1 m surface layer with these parameters should know this.
 `tests/test_shortwave.py` pins both numbers.
@@ -616,9 +655,9 @@ through the Dstl dataset, against an independent transcription.
 
 | Source | Agreement with the shipped file |
 |---|---|
-| Jerlov (1976) Table XXVII, from the scan | 143 cells, **exactly** |
+| Jerlov (1976) Table XXVII, from the scan | all 158 cells, **exactly** |
 | Woźniak & Pelevin (1991) Table 1 | 157 of 158 cells |
-| Paglierani et al. (2023) Table 10 | all cells, unit stated correctly |
+| Paglierani et al. (2023) Table 10 | all 158 cells, unit stated correctly |
 
 Three transcriptions, one of which has the unit wrong and one digit off. The
 shipped file agrees with the two that are right.
@@ -674,16 +713,19 @@ built on another, and none of the three papers says which of the others it
 disagrees with.
 
 Paglierani et al. (2023), *Quantum Engineering* **2023**, 7185329, DOI
-`10.1155/2023/7185329`, a review of underwater quantum key distribution, says
-so plainly:
+`10.1155/2023/7185329`, a review of underwater quantum key distribution,
+makes the same observation about a different scheme:
 
 > some works strictly adopt the values proposed by Mobley ... Other works,
 > conversely, though adopting the same water types, use slightly different
 > numeric values for those coefficients.
 
-"Slightly" understates it by the table above, but the observation is the
-reason `jerlov.water()` requires a source and `Water` carries the one it came
-from.
+The "water types" there are Mobley's four (pure sea water, clear ocean,
+coastal, turbid harbour; their Table 11), not Jerlov's: their next sentence
+begins "With respect to Jerlov classification". This file once quoted it as if
+it were about the Jerlov coefficients. It is the same failure in a
+neighbouring scheme, and the reason `jerlov.water()` requires a source and
+`Water` carries the one it came from.
 
 The chlorophyll route is not shipped. It is a model with a free parameter
 assigned per water type, not a measurement or an inversion of one, and the
@@ -703,7 +745,8 @@ bb = 2 pi chi_p(theta) [beta(theta) - beta_w(theta)] + bb_w
 Source: Boss, E. and Pegau, W. S. (2001), "Relationship of light scattering at
 an angle in the backward direction to the backscattering coefficient",
 *Appl. Opt.* **40**, 5503-5507, DOI `10.1364/AO.40.005503`, Eq. (10) and
-Table 1.
+Table 1. Table 1 and the constants of Eqs. (4) and (5) were checked against
+the paper.
 
 ### chi_p, from 41 measured scattering functions
 
@@ -712,12 +755,21 @@ Table 1.
 | chi_p | 0.71 | 0.90 | 1.03 | 1.12 | 1.17 | 1.18 | 1.13 | 1.00 | 0.62 |
 | spread % | 4.3 | 2.6 | 3.1 | 4.2 | 3.3 | 3.5 | 4.2 | 6.4 | **34.8** |
 
-**The error at 170 degrees is an order of magnitude worse than in the
-middle.** The shape of the scattering function varies most steeply near the
-ends, so a measurement there pins bb least well. Both this paper and Maffione
-& Dana (1997) recommend 110 to 160 degrees. `bb_from_vsf` warns above 10
-percent and refuses outside 90 to 170, which is the span the measurements
-cover.
+**The error at 170 degrees is an order of magnitude worse than at the other
+angles,** where it runs from 2.6 to 6.4 percent. The shape of the scattering
+function varies most near the ends, so a measurement there pins bb least
+well.
+
+The two papers recommend different things, and this file once ran them
+together. Maffione & Dana (1997), *Appl. Opt.* **36**, 6057-6067, recommend
+sensors covering "roughly 110-160°". Boss & Pegau recommend measuring near
+117 degrees, and otherwise removing the water contribution first, which they
+support "for angles spanning from near 90° to 160°".
+
+`bb_from_vsf` warns above 10 percent and refuses outside 90 to 170, the span
+of Table 1. It is not the span of the measurements: the instrument behind
+them measured from 90 to 177.3 degrees, and it is Petzold's measurements, an
+older set, that stop at 170.
 
 ### The water half is analytic, and checked against itself
 

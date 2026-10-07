@@ -13,7 +13,11 @@ import pytest
 
 import jerlov
 from jerlov import _data
-from jerlov.sources import HALTRIN1999, SOLONENKO2015_SCATTERING
+from jerlov.sources import (
+    HALTRIN1999,
+    SOLONENKO2015_SCATTERING,
+    WILLIAMSON2022_SCATTERING,
+)
 
 WL17 = [300, 310, 350, 375, 400, 425, 450, 475, 500,
         525, 550, 575, 600, 625, 650, 675, 700]
@@ -29,8 +33,17 @@ SM_TABLE3 = {
 }
 OCEANIC = {"I", "IA", "IB", "II", "III"}
 
-# Williamson & Hollins (2022) Table 6: (Cs, Cl).
+# Williamson & Hollins (2022) Table 6: (Cs, Cl), printed there as Bs, Bl.
+# These generated the published spectra, Table 7.
 WH_TABLE6 = {
+    "IB": (0.012, 0.365), "II": (0.025, 0.510), "III": (0.011, 0.896),
+    "1C": (0.000, 1.373), "3C": (0.000, 2.074), "5C": (0.000, 3.846),
+}
+
+# Hollins & Williamson (2023) Table 6, "This Work": a later fit of the same
+# model to the measured points rather than to the spectra. Until 0.5.1 these
+# were used here under the label of the 2022 table. See DATA.md section 9.
+HW2023_TABLE6 = {
     "IB": (0.010, 0.37), "II": (0.022, 0.52), "III": (0.00, 0.90),
     "1C": (0.02, 1.32), "3C": (0.00, 2.07), "5C": (0.00, 3.8),
 }
@@ -132,12 +145,39 @@ def test_corrupted_rows_have_no_absorption_value():
 
 
 @pytest.mark.parametrize("water_type", sorted(WH_TABLE6))
-def test_williamson_b_follows_from_haltrin_constants(water_type):
+def test_williamson_b_follows_from_its_own_table6(water_type):
+    """Eqs. (8)-(11) with the paper's own Table 6 give back its spectra.
+
+    This used to be checked with the 2023 parameters and a 6 percent
+    tolerance, which hid the mix-up: with the right table the worst
+    disagreement is 0.73 percent, everywhere from 300 to 800 nm.
+    """
     wl, b, _ = series("williamson2022_iop.csv", water_type, "b")
     cs, cl = WH_TABLE6[water_type]
-    predicted = scattering(HALTRIN1999, wl, cs, cl)
+    predicted = scattering(WILLIAMSON2022_SCATTERING, wl, cs, cl)
     error = 100 * (predicted - b) / b
-    assert np.max(np.abs(error)) < 6.0
+    assert np.max(np.abs(error)) < 1.0
+
+
+def test_the_2023_parameters_were_fitted_to_something_else():
+    """Hollins & Williamson (2023) refitted the same model to the measured
+    points. Against the 2022 spectra those parameters miss by up to 5.3
+    percent, at Jerlov III; that is the figure DATA.md once attributed to an
+    update of Bl."""
+    worst = {}
+    for water_type, (cs, cl) in HW2023_TABLE6.items():
+        wl, b, _ = series("williamson2022_iop.csv", water_type, "b")
+        predicted = scattering(WILLIAMSON2022_SCATTERING, wl, cs, cl)
+        worst[water_type] = np.max(np.abs(100 * (predicted - b) / b))
+    assert max(worst, key=worst.get) == "III"
+    assert 5.0 < worst["III"] < 5.5
+
+
+def test_williamson_constants_are_its_own_not_haltrins():
+    """The paper prints Haltrin's constants rounded; the source carries them."""
+    k = jerlov.get_source("williamson2022").scattering
+    assert (k.bw_coeff, k.small_coeff, k.large_coeff) == (0.00583, 1.1513, 0.3411)
+    assert k.small_coeff != HALTRIN1999.small_coeff
 
 
 def test_williamson_matches_published_table7():

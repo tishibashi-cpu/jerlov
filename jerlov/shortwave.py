@@ -119,9 +119,10 @@ def solar_fraction(water_type: str, depth_m):
         0.183
 
     Jerlov's own Table XXI gives 16.9 percent for IB at 10 m. The difference
-    is expected: Paulson & Simpson deliberately excluded the 10 m point from
-    the fit, saying the two-exponential form does not capture the transition
-    there.
+    is expected: Paulson & Simpson fitted the table "neglecting the 10 m
+    value", and say that "the fit is least accurate in the upper 10 m" and
+    "could be improved by including the value at 10 m". They give no reason
+    for leaving it out.
     """
     return shortwave_parameters(water_type).fraction_at(depth_m)
 
@@ -136,6 +137,11 @@ def jerlov1968_solar_fraction(water_type: str) -> tuple[np.ndarray, np.ndarray]:
 
     ``fraction`` is 0 to 1, not percent. Depths the table leaves blank are
     kept, as NaN, so that a gap stays visible.
+
+    The table's footnote gives the conditions: a solar altitude of 90
+    degrees for the oceanic types and 45 degrees for the coastal ones. The
+    Paulson & Simpson parameters, fitted to the oceanic columns, carry the
+    first of these with them.
     """
     rows = [r for r in _data._rows("jerlov1968_total_irradiance.csv")
             if r["water_type"] == water_type]

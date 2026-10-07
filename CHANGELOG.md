@@ -4,6 +4,59 @@ Every release is archived on Zenodo under the concept DOI
 [10.5281/zenodo.22321312](https://doi.org/10.5281/zenodo.22321312), which
 always resolves to the latest version.
 
+## 0.5.1 — 2026-10-07
+
+Every paper this package draws on was read again against what it ships. No
+shipped coefficient was wrong. Statements about the papers were, in several
+places, and so was one of the checks.
+
+**Checked against the papers.** All of: Jerlov (1968) Tables XX and XXI and
+Jerlov (1976) Table XXVII; Austin & Petzold (1986) Tables IV and VI;
+Solonenko & Mobley (2015) Tables 3 to 8, where the only cells that differ are
+the duplicated rows already recorded; Williamson & Hollins (2022) Tables 3, 6
+and 7, all 612 cells of the last; Williamson & Hollins (2023) Table 2;
+Paulson & Simpson (1977) Table 2; Boss & Pegau (2001) Table 1 and Eqs. (4)
+and (5); Smart (2007) Table 1; Haltrin (1999) Eqs. (4) to (7); and the
+figures quoted from Austin & Petzold (1990), Hollins & Williamson (2023),
+Oishi (1990), Maffione & Dana (1997), Woźniak & Pelevin (1991), Paglierani et
+al. (2023), Jia et al. (2021) and Abd El-Mottaleb et al. (2024). DATA.md
+records what was checked in each section.
+
+**Fixed.** The check that Williamson & Hollins (2022) b follows from their
+Eqs. (8)-(11) used the Table 6 of Hollins & Williamson (2023), a later refit
+to the measured points, under the name of the 2022 table. With the 2022
+table the agreement is 0.73 percent, not 5.3, and the build script and test
+now require 1 percent. DATA.md had put the 5.3 down to a revision of Bl; the
+cause was the wrong table. Only the check was affected.
+
+The `williamson2022` source carried Haltrin's constants (0.005826, 1.151302,
+0.341074) rather than the ones the paper prints and computed with (0.00583,
+1.1513, 0.3411). The largest difference is 0.07 percent, in the pure water
+term, and moves no result that matters; what it broke was the rule that a
+source carries its own constants.
+
+**Docs.** Statements the papers do not support, corrected:
+
+- Boss & Pegau "made no measurement beyond 170 degrees": their instrument
+  measured to 177.3; Table 1 stops at 170. In the error message, the CSV
+  note, DATA.md, DECISIONS.md and an example.
+- "Both papers recommend 110 to 160 degrees": that is Maffione & Dana. Boss
+  & Pegau recommend near 117 degrees, or water removal from near 90 to 160.
+- Paulson & Simpson excluded the 10 m point "because the two-exponential
+  form does not capture the transition": the paper gives no reason.
+- The spread of chi_p away from 170 degrees is 2.6 to 6.4 percent, not
+  "3 to 6"; the test that pinned it checked only the upper end.
+- DATA.md section 17 quoted Paglierani et al. about coefficients varying
+  between works as if it concerned Jerlov types; it concerns Mobley's four.
+- DATA.md section 13 said Williamson & Hollins (2023) do not say which three
+  cells depart from their rule; they mark them with asterisks.
+
+Added to the record: Jerlov (1968) Table XXI is for a solar altitude of 90
+degrees (oceanic) and 45 (coastal), now in `jerlov1968_solar_fraction` and
+DATA.md; the 8 percent accuracy of Austin & Petzold's model excludes 410 nm;
+Hollins & Williamson (2023) Table 1 omits two a values that the 2022 paper's
+own filter keeps, and this package follows the 2022 paper.
+
 ## 0.5.0 — 2026-10-06
 
 Three tables that had been transcribed, checked against their papers and

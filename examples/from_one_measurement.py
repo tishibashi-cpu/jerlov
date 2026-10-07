@@ -60,8 +60,9 @@ Two limits, both stated by the authors:
 
   - K(490) must be below 0.16 1/m. Beyond that the linearity the model rests
     on fails. Yours is %.3f, so this is fine.
-  - Accuracy is about 8 percent up to 590 nm, degrading to 31 percent at
-    670 nm (Austin & Petzold 1990, from 83 stations up to 77.7 N).""" % measured_kd)
+  - Accuracy is about 8 percent up to 590 nm except at 410 nm, degrading to
+    31 percent at 670 nm (Austin & Petzold 1990, from 83 stations up to
+    77.7 N).""" % measured_kd)
 
 try:
     jerlov.kd_spectrum(0.060, 490, 900.0)
@@ -159,8 +160,8 @@ for a_deg in (90, 110, 120, 140, 160, 170):
     print(f"  {a_deg:>5} deg {r.chi_p:>7.2f} {r.quoted_error_percent:>7.1f}%{flag}")
 
 print("""
-  Angles outside 90 to 170 are refused: no measurement in the set went
-  further. The quoted spread is chi_p alone; the water amplitude carries a
+  Angles outside 90 to 170 are refused: Boss & Pegau tabulate nothing
+  further, although their instrument reached 177.3. The quoted spread is chi_p alone; the water amplitude carries a
   further 15 percent, and your calibration sits on top of both.""")
 
 # --------------------------------------------------------------------------
@@ -242,8 +243,8 @@ print("""
 rule("What each of these assumed")
 
 print("""  - The Kd reconstruction is a two-parameter model fitted to Pacific and
-    Atlantic stations. Its own authors put it at 8 percent below 590 nm and
-    31 percent at 670 nm.
+    Atlantic stations. Its own authors put it at 8 percent below 590 nm
+    (410 nm aside) and 31 percent at 670 nm.
   - The b-from-c ratio is an average over six datasets, about 10 percent, and
     lower than tabulated in CDOM-rich water.
   - a = c - b inherits the error of both.

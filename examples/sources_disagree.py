@@ -12,6 +12,7 @@ import warnings
 import numpy as np
 
 import jerlov
+from jerlov.sources import HALTRIN1999
 
 WAVELENGTHS = np.array([412.0, 440.0, 488.0, 510.0, 555.0, 650.0])
 SHARED = ["IB", "II", "III", "1C", "3C", "5C"]
@@ -90,6 +91,7 @@ Reproducing a published table therefore needs that paper's own constant, so
 the constants live with the source rather than with the equations.""")
 
 print(f"\n{'source':>16} {'small-particle coefficient':>28}")
+print(f"{'Haltrin (1999)':>16} {HALTRIN1999.small_coeff:>28}")
 for key in ("williamson2022", "solonenko2015"):
     source = jerlov.get_source(key)
     print(f"{key:>16} {source.scattering.small_coeff:>28}")

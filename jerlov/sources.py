@@ -52,6 +52,20 @@ HALTRIN1999 = ScatteringConstants(
     large_backscatter_prob=6.4e-4,
 )
 
+#: Williamson & Hollins (2022) Eqs. (8), (10) and (11): Haltrin's model with
+#: the constants as that paper prints them, rounded from Haltrin's. The
+#: largest difference is 0.07 percent, in the pure water term, but the rule
+#: here is that a source carries its own constants, and these are the ones
+#: its Table 7 came from.
+WILLIAMSON2022_SCATTERING = ScatteringConstants(
+    bw_coeff=0.00583,
+    bw_exponent=4.322,
+    small_coeff=1.1513,
+    small_exponent=1.7,
+    large_coeff=0.3411,
+    large_exponent=0.3,
+)
+
 #: Solonenko & Mobley (2015) Eqs. (8a)-(8d). The small-particle coefficient
 #: 1.513 does not match Haltrin's 1.151302; the digit appears to have been
 #: dropped in transcription. Their published tables were computed with 1.513,
@@ -101,7 +115,7 @@ SOURCES: dict[str, Source] = {
         water_types=("IB", "II", "III", "1C", "3C", "5C"),
         wavelength_range_nm=(300.0, 800.0),
         measured=True,
-        scattering=HALTRIN1999,
+        scattering=WILLIAMSON2022_SCATTERING,
         caveats=(
             "Measured data exist only between 412 and 715 nm. Values outside "
             "that band are model interpolation or extrapolation.",

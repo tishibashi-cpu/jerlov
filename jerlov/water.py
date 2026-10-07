@@ -433,10 +433,12 @@ def kd_spectrum(kd, wavelength_nm: float, at):
     -----
     The authors state the model holds for K(490) < 0.16 1/m, and a
     :class:`ProvenanceWarning` is raised for any measurement whose K(490),
-    measured or implied by the model, is not below that. Accuracy is about
-    8 percent at wavelengths up to 590 nm and degrades to about 31 percent at
-    670 nm. M below 365 nm is itself extrapolated, and a result that rests on
-    it also warns.
+    measured or implied by the model, is not below that. Austin & Petzold
+    (1990) put its accuracy, as a coefficient of variation over 83 stations,
+    under 8 percent at wavelengths up to 590 nm except at 410 nm, where yellow
+    substance makes it worse, and 9 percent or more beyond, reaching 31
+    percent at 670 nm. M below 365 nm is itself extrapolated, and a result
+    that rests on it also warns.
     """
     wl, m, kw = _data.austin_model()
     lo, hi = float(wl[0]), float(wl[-1])

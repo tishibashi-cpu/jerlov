@@ -44,22 +44,25 @@ print("  mismatches:", bad if bad else "none (72 points, all within 0.5%)")
 if bad:
     raise SystemExit(f"the spreadsheet no longer matches the printed Table 7: {bad}")
 
-# Check 2: is b reproduced by Eqs. (7)-(11) with a small-particle coefficient of 1.1513?
-PAR={"IB":(0.010,0.37),"II":(0.022,0.52),"III":(0.00,0.90),"1C":(0.02,1.32),"3C":(0.00,2.07),"5C":(0.00,3.8)}
-print("\ncheck 2: Eqs. (7)-(11) with Table 6 Bs, Bl and coefficient 1.1513")
+# Check 2: is b reproduced by Eqs. (8)-(11) with the paper's own Table 6?
+# Not the Table 6 of Hollins & Williamson (2023), which refits the model to
+# the measured points: this script used those until 0.5.1, and they miss the
+# 2022 spectra by up to 5.3 percent. See DATA.md section 9.
+PAR={"IB":(0.012,0.365),"II":(0.025,0.510),"III":(0.011,0.896),"1C":(0.000,1.373),"3C":(0.000,2.074),"5C":(0.000,3.846)}
+print("\ncheck 2: Eqs. (8)-(11) with the 2022 Table 6 Bs, Bl")
 print(f"{'type':>5} {'Bs':>7} {'Bl':>6} {'median %':>10} {'max %':>8}")
 worst=0.0
 for t in T:
     Bs,Bl=PAR[t]; ws_=np.array(sorted(data[("b",t)]),float)
     obs=np.array([data[("b",t)][int(w)] for w in ws_])
-    pred=0.00583*(400/ws_)**4.322 + Bs*1.1513*(400/ws_)**1.7 + Bl*0.341074*(400/ws_)**0.3
+    pred=0.00583*(400/ws_)**4.322 + Bs*1.1513*(400/ws_)**1.7 + Bl*0.3411*(400/ws_)**0.3
     e=100*(pred-obs)/obs
     print(f"{t:>4} {Bs:>7} {Bl:>6} {np.median(e):>+10.2f} {e[np.argmax(abs(e))]:>+9.2f}")
     worst=max(worst,float(np.max(abs(e))))
-# DATA.md section 9: the equations reproduce b to within 5.3 percent, the
-# worst being Jerlov III. Beyond that the data or the constants changed.
-if worst>5.5:
-    raise SystemExit(f"Eqs. (7)-(11) no longer reproduce b: worst {worst:.2f}%")
+# DATA.md section 9: the equations reproduce b to within 0.73 percent, the
+# worst being Jerlov IB. Beyond 1 percent the data or the constants changed.
+if worst>1.0:
+    raise SystemExit(f"Eqs. (8)-(11) no longer reproduce b: worst {worst:.2f}%")
 
 # Write the table.
 n=0

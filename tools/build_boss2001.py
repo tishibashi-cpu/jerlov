@@ -106,8 +106,10 @@ crossing = float(fine[int(np.argmin(np.abs(gap)))])
 print(f"check: chi_w meets chi_p at {crossing:.1f} deg (the paper says ~118)")
 assert 114.0 < crossing < 122.0, crossing
 
-# Check 3: chi_p peaks in the middle of the backward hemisphere, which is the
-# reason both papers recommend 110-160 degrees.
+# Check 3: chi_p peaks in the middle of the backward hemisphere and its
+# spread is worst at the end. Maffione & Dana (1997) recommend roughly 110-160
+# degrees for that reason; Boss & Pegau recommend near 117, or water removal
+# from near 90 to 160.
 peak = max(CHI_P, key=lambda t: CHI_P[t][0])
 print(f"check: chi_p peaks at {peak} deg, and the error is worst at "
       f"{max(CHI_P, key=lambda t: CHI_P[t][1])} deg")
@@ -128,8 +130,9 @@ with path.open("w", newline="", encoding="utf-8") as handle:
         status = "ok"
         if angle == 170:
             status = "suspect"
-            note = ("the volume scattering function varies most steeply here, "
-                    "and no measurement in the set went beyond 170 deg")
+            note = ("the quoted spread is 34.8 percent here, against 2.6 to "
+                    "6.4 at the other angles; Table 1 stops at this angle, although the "
+                    "instrument measured to 177.3 deg")
         elif angle == 90:
             note = ("the water contribution to the measured signal is largest "
                     "here, so removing it matters most")
