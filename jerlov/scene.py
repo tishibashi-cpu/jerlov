@@ -195,10 +195,12 @@ class Scene:
                 "the water must carry both a and b; c = a + b drives the path"
             )
         self.water = water
-        self.wavelengths = np.asarray(wavelengths, dtype=float)
+        # Copies, so that changing the caller's arrays afterwards cannot
+        # leave the wavelengths out of step with c, evaluated once below.
+        self.wavelengths = np.array(wavelengths, dtype=float)
         if self.wavelengths.ndim != 1 or self.wavelengths.size == 0:
             raise ValueError("wavelengths must be a non-empty 1-D array")
-        self.downwelling = np.asarray(downwelling, dtype=float)
+        self.downwelling = np.array(downwelling, dtype=float)
         if self.downwelling.shape != self.wavelengths.shape:
             raise ValueError("downwelling must have the same shape as wavelengths")
         if np.any(self.downwelling < 0):

@@ -37,7 +37,7 @@ w.a(550), w.b(550), w.c(550)
 The same Jerlov water type has different coefficients in different papers, and
 the differences are not small. Solonenko & Mobley (2015) obtained a and b by
 inverting Kd; Williamson & Hollins (2022) measured them. At 510 nm their
-scattering coefficients differ by up to a factor of 2.6.
+scattering coefficients differ by up to a factor of 3.8, at Jerlov III.
 
 The equations differ too. Both papers use the scattering model of Haltrin
 (1999), but with different constants: Haltrin's Eq. (6) gives a

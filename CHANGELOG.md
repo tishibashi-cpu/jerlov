@@ -4,6 +4,31 @@ Every release is archived on Zenodo under the concept DOI
 [10.5281/zenodo.22321312](https://doi.org/10.5281/zenodo.22321312), which
 always resolves to the latest version.
 
+## 0.7.2 — 2026-10-07
+
+Fixes from a review of the whole package. No shipped value changed.
+
+**Fixed.**
+
+- A NaN wavelength passed the range checks of `Water.a`, `b`, `c`, `kd`
+  and `kd_hydrolight`, `kd_spectrum` and `b_from_c`, since `NaN < lo` is
+  False. It came back as NaN, and `Water` warned about the last sample of
+  the table, 800 nm or 715 nm, instead. It is now refused.
+- `descend` froze the caller's wavelength array along with its own copy,
+  so the caller could no longer write to it. It now copies first.
+- `Scene` kept the caller's wavelength and downwelling arrays rather than
+  copies. Changing them afterwards left the wavelengths out of step with
+  c, which is evaluated once. It now copies them.
+- The pure water scattering functions, and so `bb_from_vsf`, accepted a
+  wavelength of zero or less and returned inf or NaN with only a NumPy
+  RuntimeWarning. They now refuse it, as they already refused a bad
+  salinity.
+
+**Docs.** The README said the scattering coefficients of the two IOP sources
+differ at 510 nm "by up to a factor of 2.6". The largest factor is 3.8, at
+Jerlov III, as `examples/sources_disagree.py` already said. A test claimed to
+check the README's figure but never read the README; one now does.
+
 ## 0.7.1 — 2026-10-07
 
 Examples for what 0.6.0 and 0.7.0 added. No code or shipped value changed.

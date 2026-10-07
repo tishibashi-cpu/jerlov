@@ -216,3 +216,15 @@ def test_a_salinity_that_is_not_one_is_refused():
             with pytest.raises(ValueError, match="salinity_psu"):
                 call(bad)
     jerlov.pure_water_vsf(120.0, 532.0, 0.0)   # fresh water is fine
+
+
+def test_a_wavelength_that_is_not_one_is_refused():
+    for bad in (0.0, -500.0, float("nan"), float("inf")):
+        for call in (lambda w: jerlov.pure_water_vsf(120.0, w),
+                     lambda w: jerlov.pure_water_backscattering(w),
+                     lambda w: jerlov.pure_water_scattering(w),
+                     lambda w: jerlov.bb_from_vsf(0.0021, 140.0, w)):
+            with warnings.catch_warnings():
+                warnings.simplefilter("error")
+                with pytest.raises(ValueError, match="wavelength_nm"):
+                    call(bad)

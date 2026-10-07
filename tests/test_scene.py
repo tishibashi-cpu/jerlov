@@ -353,3 +353,11 @@ def test_an_observation_with_no_light_has_a_quiet_repr():
     with warnings.catch_warnings():
         warnings.simplefilter("error")
         assert "veiling undefined" in repr(o)
+
+
+def test_a_scene_does_not_follow_later_changes_to_the_callers_arrays():
+    wl, ed = WL.copy(), np.ones(WL.size)
+    s = Scene(jerlov.water("II"), ed, wl)
+    wl[0], ed[0] = 999.0, -1.0
+    assert s.wavelengths[0] == WL[0]
+    assert s.downwelling[0] == 1.0
