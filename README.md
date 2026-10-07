@@ -308,9 +308,12 @@ python examples/from_one_measurement.py        from an instrument reading
 python examples/synthetic_underwater_images.py appearance at range and depth
 python examples/solar_heating.py               for ocean circulation models
 python examples/what_an_eye_sees.py            any spectral sensitivity
+python examples/light_at_depth.py              light through the depth profile
+python examples/measured_scattering.py         Petzold's measured bb/b
+python examples/what_is_in_the_water.py        absorption without the water
 ```
 
-Five scripts, each aimed at a different reader; `examples/README.md` says
+Eight scripts, each aimed at a different reader; `examples/README.md` says
 which to start with. CI runs all of them on every push, so an example that has
 stopped working is a failed build. Every one ends with the assumptions it
 made.

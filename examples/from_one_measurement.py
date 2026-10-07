@@ -1,8 +1,8 @@
 """You measured something in the field. What can you get from it?
 
 Instruments give one quantity at one wavelength, or a handful. The published
-relations turn that into more, at a stated accuracy. This shows the three
-routes the package provides, and what each of them costs you.
+relations turn that into more, at a stated accuracy. This shows the routes
+the package provides, and what each of them costs you.
 
     python examples/from_one_measurement.py
 
@@ -120,6 +120,41 @@ except jerlov.MissingQuantityError as error:
           f"{str(error).split('.')[0]}.")
 
 print("""
+Your own doubts travel with the data too. Say the 680 nm channel of the
+absorption meter drifted during the cast, and every value has a standard
+uncertainty from replicate casts. Mark them, using the same statuses the
+published tables use:""")
+
+statuses = ["suspect" if nm == 680.0 else "ok" for nm in wl]
+sigma_a = 0.004 + 0.05 * a_measured            # 1/m, from replicates
+flagged = jerlov.Water.from_measurements(
+    wl, a=a_measured, b=b_measured, name="Station 14, 3 m",
+    flags={"a": statuses}, uncertainty={"a": sigma_a})
+
+with warnings.catch_warnings(record=True) as caught:
+    warnings.simplefilter("always")
+    value = flagged.a(670.0)
+print(f"\n  a(670) = {value:.4f} +- {flagged.uncertainty('a', 670.0):.4f} 1/m")
+for message in caught:
+    print(f"  warns: {message.message}")
+with warnings.catch_warnings():
+    warnings.simplefilter("error")
+    flagged.a(550.0)                               # rests on sound values
+print(f"  caveats(): {flagged.caveats()}")
+
+try:
+    jerlov.Water.from_measurements(wl, a=a_measured,
+                                   flags={"a": ["ok"] * (wl.size - 1)
+                                          + ["drifted"]})
+except ValueError as error:
+    print(f"\n  A status the package does not know is refused, since it would"
+          f" never warn:\n    {str(error).split(';')[0]}")
+
+print("""
+  The uncertainty is carried and interpolated like the values, but not
+  propagated into c: that needs the correlation between your a and b
+  errors, which only you know.
+
   Everything downstream takes it: Scene, the colour conversions, the
   Akkaynak-Treibitz coefficients. A published water type is only an entry
   point that builds the same kind of object.""")
