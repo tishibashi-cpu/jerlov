@@ -145,6 +145,57 @@ def jerlov(t, w):
     s = src[JWL.index(w)][COL[t]]
     return float(s) if s and s.strip() else None
 
+# Jerlov (1976) Table XXVII as printed, Kd * 100 in 1/m, 0-10 m. The Dstl file
+# is at 1 nm from 300 to 715 nm; Jerlov printed 16 wavelengths from 310 to
+# 700. Everything else in the file was filled in by Dstl, and is marked so.
+PRINTED_WL = [310,350,375,400,425,450,475,500,525,550,575,600,625,650,675,700]
+TABLE_XXVII = {
+    "I":  [15,6.2,3.8,2.8,2.2,1.9,1.8,2.7,4.3,6.3,8.9,23.5,30.5,36,42,56],
+    "IA": [18,7.8,5.2,3.8,3.1,2.6,2.5,3.2,4.8,6.7,9.4,24,31,37,43,57],
+    "IB": [22,10,6.6,5.1,4.2,3.6,3.3,4.2,5.4,7.2,9.9,24.5,31.5,37.5,43.5,58],
+    "II": [37,17.5,12.2,9.6,8.1,6.8,6.2,7.0,7.6,8.9,11.5,26,33.5,40,46.5,61],
+    "III":[65,32,22,18.5,16,13.5,11.6,11.5,11.6,12.0,14.8,29.5,37.5,44.5,52,66],
+    "1C": [180,120,80,51,36,25,17,14,13,12,15,30,37,45,51,65],
+    "3C": [240,170,110,78,54,39,29,22,20,19,21,33,40,46,56,71],
+    "5C": [350,230,160,110,78,56,43,36,31,30,33,40,48,54,65,80],
+    "7C": [None,300,210,160,120,89,71,58,49,46,46,48,54,63,78,92],
+    "9C": [None,390,300,240,190,160,123,99,78,63,58,60,65,76,92,110],
+}
+
+print("check 0: Jerlov 1976 against Table XXVII, and how Dstl filled the rest")
+bad = []
+for t, row in TABLE_XXVII.items():
+    for w, v in zip(PRINTED_WL, row):
+        got = jerlov(t, w)
+        if (v is None) != (got is None) or (v is not None and abs(got*100 - v) > 1e-9):
+            bad.append((t, w, got, v))
+if bad:
+    raise SystemExit(f"ip_jerlov.csv no longer matches Table XXVII: {bad}")
+print("  158 printed cells: all equal")
+worst_between = worst_beyond = 0.0
+for t, row in TABLE_XXVII.items():
+    pw = [w for w, v in zip(PRINTED_WL, row) if v is not None]
+    pk = [jerlov(t, w) for w in pw]
+    for w in JWL:
+        v = jerlov(t, w)
+        if v is None or w in pw:
+            continue
+        if pw[0] < w < pw[-1]:
+            lin = float(np.interp(w, pw, pk))
+            worst_between = max(worst_between, abs(v - lin) / lin)
+        else:
+            (w0, k0), (w1, k1) = ((pw[0], pk[0]), (pw[1], pk[1])) if w < pw[0] \
+                else ((pw[-2], pk[-2]), (pw[-1], pk[-1]))
+            lin = k0 + (k1 - k0) * (w - w0) / (w1 - w0)
+            worst_beyond = max(worst_beyond, abs(v - lin) / lin)
+print(f"  between printed wavelengths: linear interpolation to {worst_between:.2%}")
+print(f"  beyond 310-700 nm: linear extrapolation to {worst_beyond:.2%}")
+# The file's own rounding allows a fraction of a percent; more means Dstl
+# filled the gaps some other way, and the statuses below would be wrong.
+if worst_between > 0.005 or worst_beyond > 0.005:
+    raise SystemExit("ip_jerlov.csv is no longer linear between and beyond "
+                     "Jerlov's printed values")
+
 # ------------------------------- self-checks --------------------------------
 print("check 1: does Eq. (3) reproduce the Kd column? (catches transcription errors)")
 worst = []
@@ -209,12 +260,19 @@ with open(DATA_DIR / "jerlov1976_kd.csv", "w", newline="") as f:
     wr = csv.writer(f)
     wr.writerow(["water_type","wavelength_nm","Kd_downwelling_per_m","status","note"])
     for t in COL:
+        printed = [w for w, v in zip(PRINTED_WL, TABLE_XXVII[t]) if v is not None]
         for w in JWL:
             v = jerlov(t, w)
             if v is None:
                 wr.writerow([t, w, "", "missing", "Jerlov 1976 has no value at this wavelength"])
-            else:
+            elif w in printed:
                 wr.writerow([t, w, f"{v:.6g}", "ok", ""])
+            elif printed[0] < w < printed[-1]:
+                wr.writerow([t, w, f"{v:.6g}", "interpolated", ""])
+            else:
+                wr.writerow([t, w, f"{v:.6g}", "extrapolated_by_dataset",
+                             f"Jerlov printed {printed[0]}-{printed[-1]} nm; "
+                             "linear extrapolation in the Dstl dataset"])
 
 # ============================= CSV 2: S&M 2015 ================================
 CORRUPT_NOTE = "the published value is wrong: the row was duplicated from another wavelength"

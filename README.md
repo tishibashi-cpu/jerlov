@@ -76,7 +76,7 @@ reconstructed at 650 nm. ...
 |---|---|---|---|
 | `williamson2022` | measurement | IB-5C | 300-800 nm |
 | `solonenko2015` | inversion of Kd | I-9C | 300-700 nm |
-| `jerlov1976` | Kd only | I-9C | 300-715 nm |
+| `jerlov1976` | Kd only | I-9C | 300-715 nm; printed 310-700, and outside that it warns |
 | `jerlov1968` | Kd only, first edition | I-9C | 310-700 nm |
 | `austin1986` | Kd only, replacement values | I-1C | 350-700 nm |
 

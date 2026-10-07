@@ -4,6 +4,31 @@ Every release is archived on Zenodo under the concept DOI
 [10.5281/zenodo.22321312](https://doi.org/10.5281/zenodo.22321312), which
 always resolves to the latest version.
 
+## 0.5.2 — 2026-10-07
+
+The two Dstl datasets behind five of the shipped tables were obtained and the
+tables rebuilt from them: all five came out identical to the shipped files.
+Doing so showed that one of them claims more than its source printed.
+
+**Changed.** `jerlov1976_kd.csv` is at 1 nm from 300 to 715 nm, but Jerlov
+(1976) Table XXVII has 16 wavelengths, 310 to 700 nm. The rest was filled in
+by the Dstl dataset it comes through: 3672 values by linear interpolation
+between printed wavelengths, and 230, at 300-309 and 701-715 nm, by linear
+extrapolation from the two end values. All 4060 were marked `ok`, which
+DATA.md defines as the published value. They are now `ok` (158, checked
+against the table), `interpolated` and `extrapolated_by_dataset`, two new
+statuses. The extrapolated ones raise a `ProvenanceWarning`, since the
+package does not extrapolate; the interpolated ones do not. No value changed.
+
+`tools/build_jerlov1976_and_solonenko2015.py` now carries Table XXVII as
+printed and stops if the dataset departs from it, or stops being linear
+between and beyond it.
+
+**Docs.** The depth-profile dataset, figshare 21710252, is CC BY 4.0; its
+download note said Open Government Licence, which is the 2022 dataset's. The
+same script reported "19 layers from 0 to 200 m"; they are 10 to 200 m, below
+the surface layer.
+
 ## 0.5.1 — 2026-10-07
 
 Every paper this package draws on was read again against what it ships. No

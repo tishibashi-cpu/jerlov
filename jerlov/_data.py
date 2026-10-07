@@ -56,7 +56,8 @@ def _frozen(array: np.ndarray) -> np.ndarray:
 #: Values whose ``status`` is one of these should not be used without the
 #: caller being told. See DATA.md sections 1-6.
 QUESTIONABLE = frozenset({"suspect", "missing", "extrapolated",
-                          "model_extrapolation", "reconstructed"})
+                          "model_extrapolation", "reconstructed",
+                          "extrapolated_by_dataset"})
 
 
 def _read(name: str) -> list[dict[str, str]]:

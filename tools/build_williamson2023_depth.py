@@ -23,7 +23,8 @@ FIGSHARE_DEPTH = (
     "figshare DOI 10.6084/m9.figshare.21710252\n"
     "  Williamson, C. A. and Hollins, R. C. (2023), 'Dataset to accompany\n"
     "  paper: Depth profiles of Jerlov water types'.\n"
-    "  Crown copyright, Dstl. Open Government Licence v3.0.\n"
+    "  CC BY 4.0, as its metadata document states; not the Open\n"
+    "  Government Licence of the 2022 dataset.\n"
     "  NOTE: the Data Availability Statement of the paper gives\n"
     "  10.6084/m9.figshare.24128862, which is a different dataset entirely\n"
     "  (lake locations in the United States). Use the DOI above, which is\n"
@@ -86,7 +87,8 @@ for surface in TYPES:
         else:
             out.append([surface, low, high, largest, counts[largest], "ok", ""])
 
-print(f"check: {len(layers)} layers of 10 m from 0 to 200 m")
+print(f"check: {len(layers)} layers of 10 m from 10 to 200 m, "
+      "below the surface layer that defines the type")
 print(f"check: departures from 'largest count' = {len(departures)}, "
       f"the paper states 3")
 for surface, layer, largest, published in departures:

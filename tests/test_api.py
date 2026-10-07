@@ -438,3 +438,38 @@ def test_only_solonenko_has_kd_hydrolight():
         t = jerlov.SOURCES[source].water_types[0]
         with pytest.raises(MissingQuantityError, match="'KdH'"):
             jerlov.water(t, source=source).kd_hydrolight(500.0)
+
+
+# -- what Jerlov printed, and what the dataset filled in ------------------
+
+
+def test_jerlov1976_marks_what_jerlov_did_not_print():
+    """Jerlov printed 310-700 nm at 16 wavelengths. Until 0.5.2 the 1 nm
+    values the Dstl file filled in, including 230 linear extrapolations
+    beyond that range, were all marked ok. DATA.md section 16."""
+    from collections import Counter
+    from jerlov import _data
+    counts = Counter(r["status"] for r in _data._rows("jerlov1976_kd.csv"))
+    assert counts == {"ok": 158, "interpolated": 3672,
+                      "extrapolated_by_dataset": 230, "missing": 100}
+    for t in ("I", "III", "9C"):
+        wl, _, st = _data.spectrum("jerlov1976_kd.csv", t, None,
+                                   "Kd_downwelling_per_m")
+        status = dict(zip(wl, st))
+        assert status[475.0] == "ok" and status[480.0] == "interpolated"
+        assert status[701.0] == status[715.0] == "extrapolated_by_dataset"
+
+
+def test_an_extrapolated_jerlov1976_value_warns_and_the_rest_do_not():
+    w = jerlov.water("I", source="jerlov1976")
+    with pytest.warns(ProvenanceWarning, match="extrapolated_by_dataset"):
+        w.kd(305.0)
+    with pytest.warns(ProvenanceWarning, match="extrapolated_by_dataset"):
+        w.kd(710.0)
+    with warnings.catch_warnings():
+        warnings.simplefilter("error", ProvenanceWarning)
+        w.kd(310.0)                       # printed
+        w.kd(480.0)                       # interpolated
+        w.kd(np.arange(310.0, 701.0))     # everything Jerlov's table spans
+    # 300-309 and 701-715 nm: ten below, fifteen above.
+    assert "Kd: 25 wavelength(s) marked 'extrapolated_by_dataset'" in w.caveats()
