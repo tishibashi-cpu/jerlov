@@ -102,7 +102,7 @@ def _confirmed_sections(text: str) -> int:
 def test_DATA_md_counts_its_own_sections():
     """The opening summary is written by hand and has drifted three times."""
     text = (ROOT / "DATA.md").read_text()
-    match = re.search(r"^(\w+) entries are recorded below\. (\w+) are confirmed",
+    match = re.search(r"^([\w-]+) entries are recorded below\. ([\w-]+) are confirmed",
                       text, re.MULTILINE)
     assert match, "DATA.md no longer opens with a countable summary"
     claimed_total, claimed_confirmed = (WORDS[g] for g in match.groups())
@@ -135,7 +135,7 @@ def test_the_zenodo_record_will_carry_what_it_should():
 def test_the_README_agrees_with_DATA_md_on_the_count():
     data = (ROOT / "DATA.md").read_text()
     readme = (ROOT / "README.md").read_text()
-    match = re.search(r"(\w+) entries are\s+documented there: (\w+) confirmed",
+    match = re.search(r"([\w-]+) entries are\s+documented there: ([\w-]+) confirmed",
                       readme)
     assert match, "the README no longer states the count"
     assert WORDS[match.group(1)] == _numbered_sections(data)
@@ -151,7 +151,7 @@ def test_the_zenodo_description_agrees_with_DATA_md():
     data = (ROOT / "DATA.md").read_text()
     description = record["description"]
 
-    match = re.search(r"(\w+) entries are documented, (\w+) of them confirmed",
+    match = re.search(r"([\w-]+) entries are documented, ([\w-]+) of them confirmed",
                       description)
     assert match, "the Zenodo description no longer states a countable summary"
     assert WORDS[match.group(1)] == _numbered_sections(data), (

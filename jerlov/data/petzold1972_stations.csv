@@ -1,0 +1,9 @@
+station,locale,date,wavelength_nm,c_per_m,b_per_m,a_per_m,bb_over_b,slope_below_0.1deg,median_angle_deg,report_figure
+AUTEC 7,"Tongue of the Ocean, Bahamas",1971-07-09,530,0.199,0.117,0.082,0.025,-1.599,2.815,23
+AUTEC 8,"Tongue of the Ocean, Bahamas",1971-07-13,530,0.151,0.037,0.114,0.044,-1.191,6.252,25
+AUTEC 9,"Tongue of the Ocean, Bahamas",1971-07-14,530,0.165,0.043,0.122,0.038,-1.248,5.203,27
+HAOCE 5,"Avalon Cove, Catalina Island",1971-07-31,530,0.470,0.275,0.195,0.014,-1.546,2.152,29
+HAOCE 11,"Catalina Channel, offshore southern California",1971-08-05,530,0.398,0.219,0.179,0.013,-1.545,2.534,31
+NUC 2200,San Diego Harbor,1971-10-04,530,1.920,1.583,0.337,0.019,-1.249,4.497,33
+NUC 2040,San Diego Harbor,1971-10-05,530,2.190,1.824,0.366,0.020,-1.346,4.680,35
+NUC 2240,San Diego Harbor,1971-10-05,530,1.330,1.205,0.125,0.018,-1.442,4.682,37

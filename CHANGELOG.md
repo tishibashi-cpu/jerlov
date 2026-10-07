@@ -4,6 +4,32 @@ Every release is archived on Zenodo under the concept DOI
 [10.5281/zenodo.22321312](https://doi.org/10.5281/zenodo.22321312), which
 always resolves to the latest version.
 
+## 0.7.0 — 2026-10-07
+
+**Added.** `petzold_scattering(station)`: the volume scattering functions
+Petzold (1972) measured in eight ocean waters, from the Tongue of the Ocean,
+Bahamas, to San Diego Harbor, at the report's 55 angles from 0.1 to 180
+degrees and 530 nm, each with its c, b, a and backscatter ratio B/S. They are
+shipped as `petzold1972_vsf.csv` and `petzold1972_stations.csv`, and
+`PETZOLD_STATIONS` lists them clearest first.
+
+- `vsf_at(angle)` interpolates in log-log within the table, and
+  `phase_function()` is the vsf over b.
+- `backscatter_ratio` is a measured bb/b, 0.013 to 0.044 across the eight,
+  for `Water.bb` in place of a guess. It belongs to that water, not to a
+  Jerlov type, and no station is mapped to one.
+- Below 0.169 degree at the Bahamas and Catalina stations nothing was
+  measured, and the report extended sigma with a power law. Those 15 values
+  are `extrapolated` and warn.
+
+Every value was read from the report's page images and compared with its
+OCR text. `tools/build_petzold1972.py` carries them as literals and checks
+them against the report's integrals, its second printing of sigma, its
+summary pages and the smoothness of the curves. DATA.md section 21 and
+DECISIONS.md section 27.
+
+**Docs.** `tools/README.md` said two scripts need no input; seven do.
+
 ## 0.6.0 — 2026-10-07
 
 **Added.**

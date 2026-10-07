@@ -364,7 +364,9 @@ class Water:
 
         Reported ranges are roughly 0.005-0.01 for open ocean and 0.015-0.03
         for coastal water; the Petzold average-particle phase function gives
-        about 0.0183.
+        about 0.0183. Petzold's eight measured waters give 0.013 to 0.044;
+        :func:`~jerlov.petzold_scattering` returns each with its own, so that
+        a ratio can be taken from a measured water rather than invented.
         """
         if backscatter_ratio is None:
             raise MissingQuantityError(

@@ -11,8 +11,10 @@ for f in tools/build_*.py; do python "$f" || break; done
 git diff --stat jerlov/data/     # must be empty
 ```
 
-Two of the scripts need no input and will run immediately;
-the others stop with a message naming the file to fetch and its DOI.
+Seven of the scripts read no file and will run immediately: six carry
+their numbers as literals, and `build_cie.py` takes the CIE tables from
+`colour-science`. The others stop with a message naming the file to fetch
+and its DOI.
 
 `openpyxl` and `colour-science` are needed only here, never at run time.
 Two figshare datasets are needed, `20290782` and `21710252`; the scripts name
