@@ -164,6 +164,12 @@ SOURCES: dict[str, Source] = {
         wavelength_range_nm=(300.0, 715.0),
         measured=True,
         caveats=(
+            "Jerlov printed 16 wavelengths, 310 to 700 nm. The 1 nm values "
+            "between them are linear interpolation, and those at 300-309 and "
+            "701-715 nm linear extrapolation, both by the Dstl dataset this "
+            "table came through; they are marked 'interpolated' and "
+            "'extrapolated_by_dataset', and the latter warn. See DATA.md "
+            "section 16.",
             "Austin & Petzold (1986) showed that Jerlov's type I values fall "
             "below the attenuation of pure sea water at several wavelengths "
             "and recommended replacing them; see source 'austin1986'.",

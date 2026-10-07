@@ -13,7 +13,7 @@ could not are `missing`, and values that are used but doubtful are `suspect`.
 
 | File | Contents | Rows |
 |---|---|---|
-| `jerlov1976_kd.csv` | Downwelling diffuse attenuation Kd. 1 nm, 300-715 nm, 10 types | 4160 |
+| `jerlov1976_kd.csv` | Downwelling diffuse attenuation Kd. 1 nm, 300-715 nm, 10 types; Jerlov printed 16 wavelengths, 310-700 | 4160 |
 | `williamson2022_iop.csv` | a and b. **1 nm**, 300-800 nm, 6 types | 6012 |
 | `solonenko2015_iop.csv` | Kd0, Kd, KdH, a, b. 17 wavelengths, 10 types | 850 |
 | `williamson2022_measured.csv` | Measured a, b points with standard deviation and count | 152 |
@@ -28,6 +28,13 @@ could not are `missing`, and values that are used but doubtful are `suspect`.
 | `paulson1977_shortwave.csv` | Two-exponential shortwave penetration parameters | 9 |
 | `boss2001_chi.csv` | chi for converting a single-angle measurement to bb | 12 |
 
+The four tables drawn from the two Dstl datasets (`williamson2022_iop`,
+`williamson2022_measured`, `solonenko2015_iop` and `williamson2023_depth`)
+and `jerlov1976_kd` were rebuilt from those datasets with the scripts in
+`tools/`, and came out identical, byte for byte, to the files shipped in
+0.5.1. Version 0.5.2 then changed the `status` column of `jerlov1976_kd`
+only; see section 16.
+
 ## The `status` column
 
 | Value | Meaning | How to treat it |
@@ -38,6 +45,8 @@ could not are `missing`, and values that are used but doubtful are `suspect`.
 | `missing` | The published value is wrong and could not be recovered | Empty. Interpolate yourself or avoid that wavelength |
 | `suspect` | Used as published, but an internal inconsistency was found | Read the `note` before relying on it |
 | `model_extrapolation` | Outside the range of the underlying measurements | Usable, but not measured |
+| `interpolated` | Not printed: linearly interpolated between printed values by the dataset the table came through | Usable; no more precise than the printed neighbours |
+| `extrapolated_by_dataset` | Not printed: beyond the printed range, linearly extrapolated by the dataset the table came through | Usable, but rests on nobody's measurement; warns |
 
 ## Sources
 
@@ -47,7 +56,8 @@ could not are `missing`, and values that are used but doubtful are `suspect`.
   to agree. The provenance of the file is not entirely clear: Williamson &
   Hollins (2022) attribute the same figure to Jerlov (1964), while Williamson
   & Hollins (2023) attribute it to Jerlov (1976). (c) Crown copyright (2022),
-  Dstl. Open Government Licence v3.0.
+  Dstl. Open Government Licence v3.0. Only 158 of its values are Jerlov's;
+  the rest were filled in by Dstl, and section 16 says how.
 
 - **Austin & Petzold 1986.** Opt. Eng. 25(3), 471-479, DOI
   `10.1117/12.7973845`. Tables VI and IV, checked against the paper in full
@@ -492,8 +502,9 @@ water clears with depth, 3C reaching II by 40 m.
 
 Source: Williamson, C. A. and Hollins, R. C. (2023), "Depth profiles of Jerlov
 water types", *Limnol. Oceanogr. Lett.* 8, 781-788, DOI `10.1002/lol2.10338`.
-Open access, CC-BY. Derived from `op_STEP_6_FINAL.csv` in the accompanying
-dataset rather than from the printed Table 2, which gives the same values.
+Open access, CC-BY; the accompanying dataset is CC BY 4.0 too, unlike the
+2022 one, which is under the Open Government Licence. Derived from
+`op_STEP_6_FINAL.csv` in that dataset rather than from the printed Table 2, which gives the same values.
 
 **The paper's Data Availability Statement gives the wrong DOI.**
 
@@ -669,6 +680,26 @@ queries that land exactly on a sample, which are not interpolated at all.
 Fixed, with both halves of the behaviour pinned in `tests/test_api.py`. It had
 gone unnoticed because nothing had previously been checked against a printed
 table cell by cell.
+
+### What the shipped file adds to the table
+
+Jerlov printed Table XXVII at 16 wavelengths, 310 to 700 nm. The Dstl file
+the package takes it from is at 1 nm from 300 to 715 nm, and rebuilding it
+from that file (`tools/build_jerlov1976_and_solonenko2015.py`) shows how the
+rest was made:
+
+| Rows | What they are | `status` |
+|---|---|---|
+| 158 | Jerlov's printed values, checked against the table | `ok` |
+| 3672 | Between printed wavelengths: linear interpolation, to within 0.22 percent | `interpolated` |
+| 230 | 300-309 and 701-715 nm: linear extrapolation from the two end values, to within 0.03 percent | `extrapolated_by_dataset` |
+| 100 | No value: 7C and 9C below 350 nm | `missing` |
+
+**Until 0.5.2 all 4060 values were marked `ok`.** The 230 extrapolated ones
+rest on nobody's measurement, and the package's rule is that it does not
+extrapolate (DECISIONS.md section 5); they now raise a `ProvenanceWarning`.
+The interpolated ones are as good as the printed values either side of them
+and do not warn, but they are no longer described as published values.
 
 ### More editions than expected
 
