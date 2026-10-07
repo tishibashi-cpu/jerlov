@@ -68,13 +68,37 @@ Database, which holds 1,200 bb profiles that nobody appears to have used for
 this. That is a paper's worth of work and out of scope; it is recorded in
 DATA.md section 10 so that someone can do it.
 
-## 5. No extrapolation
+## 5. No extrapolation, and none that is silent
 
-Asking for a wavelength outside the data raises `ValueError`. A silently
-extrapolated value is indistinguishable from a measured one at the point of
-use, and the caller has no way to find out afterwards.
+The package itself never extrapolates. Asking for a wavelength outside a
+table raises `ValueError`, and so does an angle outside Petzold's or Boss &
+Pegau's tables. `kd_spectrum` applies the same rule to the Austin & Petzold
+model range, `b_from_c` to Smart's, and `water_type_at_depth` and `descend`
+make no statement below 200 m. A silently extrapolated value is
+indistinguishable from a measured one at the point of use, and the caller
+has no way to find out afterwards.
 
-`kd_spectrum` applies the same rule to the Austin & Petzold model range.
+**Values that a source extrapolated are another matter.** Some shipped tables
+contain them, because the source printed them: Williamson & Hollins' model
+spectra outside 412-715 nm, the Dstl dataset's extension of Jerlov (1976) to
+300-309 and 701-715 nm, Austin & Petzold's M below 365 nm, Petzold's power
+law below 0.169 degree. They are inside the table's range, so they are
+returned, but each is marked in the `status` column and warns with
+`ProvenanceWarning` when used. The rule is that no extrapolated value is
+silent, not that none exists.
+
+**Two kinds of axis are not tables.**
+
+- *Depth in a fitted formula.* `ShortwaveParameters.fraction_at` evaluates
+  Paulson & Simpson's two exponentials at any depth, but they were fitted to
+  the upper 100 m (50 m for `I_upper50`). Until 0.7.3 it extrapolated below
+  that without a word; it now warns. `Scene.at_depth` applies one Kd at any
+  depth, which is an approximation it states, not an extrapolation of data.
+- *Analytic formulas.* `pure_water_vsf`, `pure_water_backscattering` and
+  `pure_water_scattering` evaluate Morel's formula at any positive
+  wavelength. The formula has no table to fall outside, but it was not
+  established at every wavelength either, and its range is not enforced
+  here.
 
 ## 6. Gaps stay gaps
 

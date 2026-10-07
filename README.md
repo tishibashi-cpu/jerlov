@@ -47,7 +47,8 @@ paper's own constant, so constants are attached to sources.
 
 ## What this package will not do
 
-- **Extrapolate.** Asking for a wavelength outside the data raises.
+- **Extrapolate.** Asking for a wavelength outside the data raises. Values
+  that a source itself extrapolated are returned, but marked, and they warn.
 - **Fill a gap.** Where a published value is wrong and could not be
   recovered, the value is NaN and stays NaN through interpolation.
 - **Supply bb.** The backscattering coefficient is not determined by the

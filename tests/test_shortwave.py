@@ -84,9 +84,9 @@ def test_the_alternative_type_I_fit_is_reachable():
     assert fifty.fit_depth_m == 50
     assert fifty.water_type == "I"
     assert fifty.R != hundred.R
-    # The paper gives it because the profile changes slope; deeper down they
-    # must therefore disagree.
-    assert abs(fifty.fraction_at(80.0) - hundred.fraction_at(80.0)) > 1e-4
+    # The paper gives it because the profile changes slope; they must
+    # therefore disagree, even inside the 50 m both were fitted over.
+    assert abs(fifty.fraction_at(40.0) - hundred.fraction_at(40.0)) > 1e-4
 
 
 def test_the_rows_that_are_not_water_types_are_not_offered():
@@ -130,3 +130,27 @@ def test_table_xxi_is_public():
         assert len(jerlov.jerlov1968_solar_fraction(t)[0]) == 12
     with pytest.raises(KeyError, match="known:"):
         jerlov.jerlov1968_solar_fraction("IV")
+
+
+def test_below_the_fitted_depth_it_warns():
+    """Paulson & Simpson fitted the upper 100 m, and 50 m for I_upper50."""
+    import warnings
+
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        jerlov.solar_fraction("IB", 100.0)
+        jerlov.shortwave_parameters("I_upper50").fraction_at([0.0, 50.0])
+    with pytest.warns(jerlov.ProvenanceWarning, match="upper 100 m"):
+        jerlov.solar_fraction("IB", 100.5)
+    with pytest.warns(jerlov.ProvenanceWarning, match="upper 50 m"):
+        jerlov.shortwave_parameters("I_upper50").fraction_at([10.0, 60.0])
+
+
+def test_rows_that_are_not_types_carry_no_fit_depth_and_do_not_warn():
+    import warnings
+
+    p = jerlov.shortwave_parameters("run_1", include_non_types=True)
+    assert p.fit_depth_m is None
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        p.fraction_at(150.0)
