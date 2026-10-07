@@ -240,6 +240,9 @@ class Water:
                 f"(available: {available})"
             )
         query = _as_array(wl)
+        # NaN < lo is False, so a NaN wavelength passed the range check and
+        # came back as NaN, warned about the last sample of the table.
+        _require_number(query, "wavelength")
         lo, hi = self.range_nm
         if np.any(query < lo) or np.any(query > hi):
             raise ValueError(
@@ -591,7 +594,8 @@ def descend(surface_water_type: str, depth_m: float, wavelengths, *,
             f"{deepest:g} m, so there is no type to descend through to "
             f"{depth_m:g} m"
         )
-    query = _as_array(wavelengths)
+    # A copy: it is frozen below, and the caller's array must not be.
+    query = np.array(wavelengths, dtype=float, ndmin=1)
     optical_depth = np.zeros_like(query)
     layers: list[tuple[float, float, str]] = []
     kd: dict[str, np.ndarray] = {}
@@ -723,6 +727,8 @@ def kd_spectrum(kd, wavelength_nm: float, at):
         )
     wavelength_nm = float(wavelength_nm)
     query = _as_array(at)
+    _require_number(wavelength_nm, "wavelength_nm")
+    _require_number(query, "at")
     for value, label in ((wavelength_nm, "wavelength_nm"), (query, "at")):
         if np.any(np.asarray(value) < lo) or np.any(np.asarray(value) > hi):
             raise ValueError(f"{label} outside the model range ({lo:g}-{hi:g} nm)")
@@ -800,6 +806,7 @@ def b_from_c(c, wavelength_nm, *, bw, cw, bound: str = "average"):
     if bound not in ratios:
         raise ValueError(f"bound must be one of {sorted(ratios)}")
     query = _as_array(wavelength_nm)
+    _require_number(query, "wavelength_nm")
     if np.any(query < wl[0]) or np.any(query > wl[-1]):
         raise ValueError(
             f"wavelength outside the measured range ({wl[0]:g}-{wl[-1]:g} nm)"

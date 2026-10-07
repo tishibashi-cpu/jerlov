@@ -588,3 +588,33 @@ def test_c_warns_once_for_a_wavelength_flagged_in_both_a_and_b():
     assert messages[0].startswith("c for Jerlov 3C")
     assert "a missing at 675 nm" in messages[0]
     assert "b reconstructed at 675 nm" in messages[0]
+
+
+# -- 0.7.2: inputs that slipped through -------------------------------------
+
+@pytest.mark.parametrize("call", [
+    lambda: jerlov.water("III").a(float("nan")),
+    lambda: jerlov.water("III").c([500.0, float("nan")]),
+    lambda: jerlov.water("I", source="jerlov1976").kd(float("nan")),
+    lambda: jerlov.water("III", source="solonenko2015").kd_hydrolight(
+        float("nan")),
+    lambda: jerlov.kd_spectrum(0.06, 490.0, float("nan")),
+    lambda: jerlov.kd_spectrum(0.06, float("nan"), 500.0),
+    lambda: jerlov.b_from_c(0.5, float("nan"), bw=0.002, cw=0.066),
+])
+def test_a_wavelength_that_is_not_a_number_is_refused(call):
+    """NaN < lo is False, so NaN passed the range check, came back as NaN,
+    and warned about the last sample of the table instead."""
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")         # and no misleading warning
+        with pytest.raises(ValueError, match="NaN"):
+            call()
+
+
+def test_descend_leaves_the_callers_array_alone():
+    wl = np.array([450.0, 550.0])
+    d = jerlov.descend("II", 30.0, wl)
+    assert wl.flags.writeable
+    wl[0] = 999.0
+    assert d.wavelengths[0] == 450.0
+    assert not d.wavelengths.flags.writeable

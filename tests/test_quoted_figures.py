@@ -37,12 +37,36 @@ def quiet():
 
 
 def test_scattering_at_510nm_differs_by_the_stated_factor():
-    """README and sources_disagree.py both say 3.8 for Jerlov III."""
+    """sources_disagree.py says 3.8 for Jerlov III."""
     with quiet():
         warnings.simplefilter("ignore")
         measured = float(jerlov.water("III").b(510))
         inverted = float(jerlov.water("III", source="solonenko2015").b(510))
     assert inverted / measured == pytest.approx(3.8, abs=0.05)
+
+
+@source_tree
+def test_the_readme_states_the_largest_disagreement_at_510nm():
+    """The README said "up to a factor of 2.6" while this test's docstring
+    claimed it said 3.8; nothing read the README, so nothing noticed."""
+    from jerlov.sources import SOURCES
+
+    readme = (ROOT / "README.md").read_text()
+    match = re.search(r"differ by up to a factor of ([\d.]+), at Jerlov (\w+)",
+                      readme)
+    assert match, "the README no longer states the factor at 510 nm"
+    common = set(SOURCES["williamson2022"].water_types) & set(
+        SOURCES["solonenko2015"].water_types)
+    with quiet():
+        warnings.simplefilter("ignore")
+        factors = {}
+        for t in common:
+            one = float(jerlov.water(t).b(510))
+            other = float(jerlov.water(t, source="solonenko2015").b(510))
+            factors[t] = max(one, other) / min(one, other)
+    worst = max(factors, key=factors.get)
+    assert worst == match.group(2)
+    assert factors[worst] == pytest.approx(float(match.group(1)), abs=0.05)
 
 
 def test_the_disagreement_does_not_run_one_way():

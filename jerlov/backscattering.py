@@ -67,7 +67,14 @@ def _amplitude(wavelength_nm, salinity_psu) -> np.ndarray:
             f"salinity_psu must be a finite number, 0 or more, not "
             f"{salinity_psu!r}"
         )
-    return (1.38 * (np.asarray(wavelength_nm, dtype=float) / 500.0) ** -4.32
+    wavelength = np.asarray(wavelength_nm, dtype=float)
+    if not np.all(np.isfinite(wavelength)) or np.any(wavelength <= 0):
+        # Zero gave inf and a negative wavelength NaN, each with nothing but
+        # a NumPy RuntimeWarning.
+        raise ValueError(
+            f"wavelength_nm must be a positive number, not {wavelength_nm!r}"
+        )
+    return (1.38 * (wavelength / 500.0) ** -4.32
             * (1 + 0.3 * salinity / 37.0) * 1e-4)
 
 
