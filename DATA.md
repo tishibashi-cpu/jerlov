@@ -912,6 +912,17 @@ percent, or if aw exceeds any type's a beyond the rounding of a.
 chlorophyll coefficient A of the same lookup table is zero there, so every
 type's a is aw itself, to the three figures a is given to.
 
+**The measurements at 715 nm do not agree.** The measured average a at 715
+nm, `measured_points(t, "a")`, is 1.018 for Jerlov III and exactly 1.004 for
+1C, 3C and 5C, with a spread across campaigns of zero (of order 1e-16) over
+23, 28 and 6 campaigns; 7C's single campaign is 1.004 too. Identical values
+with no spread are not what independent measurements give, and neither
+paper says why. The fitted a there is 0.880 to 0.884, which is aw itself,
+so the measured points lie 14 to 16 percent above the fit. Hollins &
+Williamson (2023), whose Table 1 prints these as 1.02, 1.00 and 1.00,
+discarded the 715 nm data from their Kd analysis "because the value of Kd
+was usually less than a". Both are shipped as published.
+
 **It has not been compared with Buiteveld's own table**, which has not been
 obtained. Hollins & Williamson (2023) say that in their later study they
 adjusted some of Buiteveld's values above 500 nm, so that Kd - aw was

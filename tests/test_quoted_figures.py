@@ -263,3 +263,86 @@ def test_DATA_md_section_13_states_where_the_coastal_profiles_end():
     for t, depth in (("3C", 70.5), ("9C", 10.5), ("5C", 20.5), ("7C", 20.5)):
         with pytest.raises(jerlov.MissingQuantityError):
             jerlov.descend(t, depth, 500.0)
+
+
+def test_DATA_md_section_20_on_the_measurements_at_715_nm():
+    """1.004 with no spread for 1C, 3C, 5C; 1.018 for III; 14 to 16 percent
+    above the fit, which is aw there."""
+    import numpy as np
+
+    excess = []
+    for t in ("III", "1C", "3C", "5C"):
+        m = jerlov.measured_points(t, "a")
+        k = int(np.where(m.wavelengths == 715.0)[0][0])
+        if t == "III":
+            assert m.values[k] == pytest.approx(1.018, abs=0.0005)
+        else:
+            assert m.values[k] == 1.004
+            assert m.std_dev[k] < 1e-12
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", jerlov.ProvenanceWarning)
+            fitted = jerlov.water(t).a(715.0)
+        assert fitted == pytest.approx(jerlov.pure_water_absorption(715.0),
+                                       rel=0.01)
+        excess.append(100 * (m.values[k] / fitted - 1))
+    assert 13.5 < min(excess) and max(excess) < 16.0
+
+
+def test_examples_README_figures_for_the_depth_profile():
+    """3C receives 530 times more light at 60 m, I a third less; the 1
+    percent level of I rises from 197 to 133 m (all at 490 nm)."""
+    import math
+
+    def one_kd(t, z):
+        return math.exp(-jerlov.water(t, source="jerlov1976").kd(490.0) * z)
+
+    ratio_3c = jerlov.descend("3C", 60.0, 490.0).transmittance / one_kd("3C", 60.0)
+    ratio_i = jerlov.descend("I", 60.0, 490.0).transmittance / one_kd("I", 60.0)
+    assert round(ratio_3c, -1) == 530
+    assert ratio_i == pytest.approx(2 / 3, abs=0.02)
+
+    def depth_of_one_percent(t, layered):
+        for z in [k / 2 for k in range(1, 401)]:
+            t_z = (jerlov.descend(t, z, 490.0).transmittance if layered
+                   else one_kd(t, z))
+            if t_z <= 0.01:
+                return z
+
+    assert depth_of_one_percent("I", False) == 197.0
+    assert depth_of_one_percent("I", True) == 133.0
+
+
+def test_examples_README_figures_for_absorption_by_the_contents():
+    """Twelve times at 412 nm; pure water 78 to 98 percent at 600 nm."""
+    aw412, aw600 = (jerlov.pure_water_absorption(nm) for nm in (412, 600))
+    ratio = ((jerlov.water("5C").a(412) - aw412)
+             / (jerlov.water("IB").a(412) - aw412))
+    assert round(ratio) == 12
+    shares = [aw600 / jerlov.water(t).a(600)
+              for t in jerlov.get_source("williamson2022").water_types]
+    assert (round(100 * min(shares)), round(100 * max(shares))) == (78, 98)
+
+
+def test_examples_README_figure_for_measured_backscatter_ratios():
+    """measured_scattering.py: contrast at 5 m from 4.0 to 2.6 at 550 nm
+    across the coastal and harbor stations' ratios."""
+    import numpy as np
+
+    wl = np.arange(450.0, 651.0, 50.0)
+    w = jerlov.water("1C")
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", jerlov.ProvenanceWarning)
+        scene = jerlov.Scene.at_depth(
+            w, 10.0, np.interp(wl, *jerlov.d65()), wl,
+            kd=jerlov.water("1C", source="austin1986"))
+    contrasts = []
+    for s in jerlov.PETZOLD_STATIONS:
+        if s.startswith("AUTEC"):
+            continue
+        ratio = jerlov.petzold_scattering(s).backscatter_ratio
+        b_inf = jerlov.veiling_radiance_estimate(
+            w, scene.downwelling, wl, backscatter_ratio=ratio)
+        seen = scene.observe(np.full(wl.size, 0.3), 5.0,
+                             veiling_radiance=b_inf)
+        contrasts.append(seen.contrast(b_inf)[2])
+    assert (round(max(contrasts), 1), round(min(contrasts), 1)) == (4.0, 2.6)

@@ -1,6 +1,6 @@
 # Examples
 
-Five scripts. Each runs against the installed package and needs nothing beyond
+Eight scripts. Each runs against the installed package and needs nothing beyond
 NumPy.
 
 ```
@@ -9,6 +9,9 @@ python examples/from_one_measurement.py
 python examples/synthetic_underwater_images.py
 python examples/solar_heating.py
 python examples/what_an_eye_sees.py
+python examples/light_at_depth.py
+python examples/measured_scattering.py
+python examples/what_is_in_the_water.py
 ```
 
 CI runs all of them on every push, so an example that has stopped working is a
@@ -28,6 +31,9 @@ copy of the package silently wins over the working tree. In a clone, run
 | need synthetic underwater imagery | `synthetic_underwater_images.py` |
 | write an ocean circulation model | `solar_heating.py` |
 | study vision, or design a sensor | `what_an_eye_sees.py` |
+| need the light at depth, below the top 10 m | `light_at_depth.py` |
+| need a backscatter ratio and have no instrument | `measured_scattering.py` |
+| work with absorption, or with phytoplankton and CDOM | `what_is_in_the_water.py` |
 
 ## What each shows
 
@@ -44,6 +50,10 @@ estimating b from a transmissometer's c (Smart 2007), handing over your own
 measured spectra with `Water.from_measurements`, and converting a
 backscattering sensor's single-angle reading to bb (Boss & Pegau 2001). Each
 result carries the accuracy the paper claims for it.
+
+It also marks a doubtful channel and attaches replicate uncertainties to
+your own spectra: a value you flag `suspect` warns exactly as a published one
+does, and a status the package does not know is refused.
 
 It ends by putting the measured bb back into a scene and comparing against a
 plausible guess: at 5 m the guess overstates the contrast by 65 percent. That
@@ -65,6 +75,27 @@ because two exponentials cannot follow the near-surface decay.
 sensitivity. Six photoreceptors and a three-channel camera, at four depths.
 The ordering of the receptors reverses with depth, which is the reason
 deep-sea rod pigments cluster near 480 nm.
+
+**`light_at_depth.py`** — `descend` carries the downwelling irradiance
+down through the typical depth profile of Williamson & Hollins (2023), each
+10 m layer with its own type's Kd. The correction runs both ways: at 490 nm
+and 60 m, Jerlov I receives a third less light than its surface Kd implies,
+and 3C **530 times more**. The 1 percent light level of Jerlov I rises from
+197 m to 133 m. Where the paper declared no type, it stops.
+
+**`measured_scattering.py`** — Petzold's (1972) eight measured volume
+scattering functions. Their backscatter ratios run from **0.013 to 0.044**,
+the clearest water highest; every phase function falls by four orders of
+magnitude from 1 to 90 degrees and rises again by up to three times towards
+180. Swapping a guessed 0.015 for the measured ratios of the coastal and
+harbor waters moves the contrast of a target at 5 m from 4.0 to 2.6.
+
+**`what_is_in_the_water.py`** — the absorption of a water's contents, a
+minus the pure water spectrum the source built a on. At 412 nm the contents
+of 5C absorb twelve times what those of IB do; at 600 nm pure water is 78
+to 98 percent of every type's absorption. At
+715 nm the measured averages lie 14 to 16 percent above a fit that gives
+the contents nothing there.
 
 ## What they do not show
 

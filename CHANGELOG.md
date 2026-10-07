@@ -4,6 +4,34 @@ Every release is archived on Zenodo under the concept DOI
 [10.5281/zenodo.22321312](https://doi.org/10.5281/zenodo.22321312), which
 always resolves to the latest version.
 
+## 0.7.1 — 2026-10-07
+
+Examples for what 0.6.0 and 0.7.0 added. No code or shipped value changed.
+
+**Examples.** Three new scripts, and one extended; `examples/README.md` says
+which to read.
+
+- `light_at_depth.py`: `descend` through the typical depth profile. At 490
+  nm and 60 m, Jerlov I receives a third less light than its surface Kd
+  implies and 3C 530 times more; the 1 percent light level of I rises from
+  197 to 133 m. It also shows where the profile runs out.
+- `measured_scattering.py`: Petzold's eight stations, their B/S of 0.013 to
+  0.044 and the shape of their phase functions, and what a measured ratio
+  changes in a scene against a guessed one.
+- `what_is_in_the_water.py`: a minus the pure water absorption the source
+  built a on, the share of absorption that is the water, and the measured
+  points behind it.
+- `from_one_measurement.py` now marks a doubtful channel and attaches
+  replicate uncertainties with `from_measurements(flags=, uncertainty=)`.
+
+**Docs.** Writing the absorption example turned up something in the
+Williamson & Hollins data, now in DATA.md section 20. The measured average a
+at 715 nm is exactly 1.004 for 1C, 3C and 5C, with zero spread over 23, 28
+and 6 campaigns. Identical values with no spread are not what independent
+measurements give, and neither paper says why. The measured points lie 14
+to 16 percent above the fitted a, which at 715 nm is pure water alone. Both
+are shipped as published.
+
 ## 0.7.0 — 2026-10-07
 
 **Added.** `petzold_scattering(station)`: the volume scattering functions
