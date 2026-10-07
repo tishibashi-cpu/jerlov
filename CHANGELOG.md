@@ -4,6 +4,26 @@ Every release is archived on Zenodo under the concept DOI
 [10.5281/zenodo.22321312](https://doi.org/10.5281/zenodo.22321312), which
 always resolves to the latest version.
 
+## 0.7.3 — 2026-10-07
+
+**Fixed.** `ShortwaveParameters.fraction_at`, and so `solar_fraction`,
+evaluated Paulson & Simpson's two exponentials at any depth without a word.
+They were fitted to Jerlov's Table XXI in the upper 100 m, or 50 m for
+`I_upper50`, as the paper's text says. Below that the result is
+extrapolation, and it now raises a `ProvenanceWarning`. The values are
+unchanged.
+
+**Docs.** DECISIONS.md section 5, "No extrapolation", claimed more than the
+package did. It now separates three cases:
+
+- the package's own refusal to extrapolate;
+- values that a source extrapolated, which are shipped, marked and warn;
+- the axes that are not tables: the depth of a fitted formula, now warned
+  about, and the wavelength of Morel's pure water formula, which is not
+  range-checked.
+
+The README's "will not extrapolate" says the same.
+
 ## 0.7.2 — 2026-10-07
 
 Fixes from a review of the whole package. No shipped value changed.

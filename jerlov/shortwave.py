@@ -15,12 +15,13 @@ them from Jerlov (1968) Table XXI and reproduces R for every row.
 
 from __future__ import annotations
 
+import warnings
 from dataclasses import dataclass
 
 import numpy as np
 
 from . import _data
-from .water import _like_input, _require_number
+from .water import ProvenanceWarning, _like_input, _require_number
 
 CITATION = (
     "Paulson, C. A. and Simpson, J. J. (1977), 'Irradiance measurements in "
@@ -42,15 +43,33 @@ class ShortwaveParameters:
     zeta2_m: float
     """Attenuation length of the slow term, metres. Blue-green light."""
     fit_depth_m: float | None
-    """Depth range the row was fitted over. Not printed in the table."""
+    """Depth the row was fitted down to: 100 m, or 50 m for ``I_upper50``.
+    The paper's text says so; the table does not. None for the rows that are
+    not Jerlov types."""
     note: str
 
     def fraction_at(self, depth_m):
-        """``I(z)/I(0)`` at one or more depths."""
+        """``I(z)/I(0)`` at one or more depths.
+
+        Below :attr:`fit_depth_m` the two exponentials are extrapolated
+        beyond the data they were fitted to, and a
+        :class:`~jerlov.ProvenanceWarning` says so. Jerlov's own Table XXI
+        goes deeper for the clearer types; see
+        :func:`jerlov1968_solar_fraction`.
+        """
         z = np.atleast_1d(np.asarray(depth_m, dtype=float))
         _require_number(z, "depth_m")
         if np.any(z < 0):
             raise ValueError("depth_m cannot be negative")
+        if self.fit_depth_m is not None and np.any(z > self.fit_depth_m):
+            warnings.warn(
+                f"{self.key}: Paulson & Simpson (1977) fitted these "
+                f"parameters to the upper {self.fit_depth_m:g} m; at "
+                f"{float(np.max(z)):g} m the two exponentials are "
+                "extrapolated. See DATA.md section 14.",
+                ProvenanceWarning,
+                stacklevel=_data.caller_stacklevel(),
+            )
         out = (self.R * np.exp(-z / self.zeta1_m)
                + (1 - self.R) * np.exp(-z / self.zeta2_m))
         return _like_input(out, depth_m)
