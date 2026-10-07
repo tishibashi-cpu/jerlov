@@ -4,6 +4,44 @@ Every release is archived on Zenodo under the concept DOI
 [10.5281/zenodo.22321312](https://doi.org/10.5281/zenodo.22321312), which
 always resolves to the latest version.
 
+## 0.6.0 — 2026-10-07
+
+**Added.**
+
+- `pure_water_absorption(wavelength_nm, source="williamson2022")`: the
+  absorption of pure water that the source built its a on, so that the part
+  of a due to what is in the water is a minus this, from one source. Only
+  Williamson & Hollins (2022) publish theirs, in their spreadsheet, 1 nm
+  from 300 to 800 nm, now `williamson2022_aw.csv`. With it and their Table 6,
+  their Eqs. (4)-(6) give back the shipped a to a median of 0.10-0.28
+  percent, and `tools/build_williamson2022_aw.py` stops if that fails. From
+  720 nm every type's a is this aw. Other sources raise
+  `MissingQuantityError`, saying why: Solonenko & Mobley show theirs only as
+  a figure, and the rest give Kd only. DATA.md section 20.
+- `descend(surface_type, depth_m, wavelengths, source="jerlov1976")`:
+  downwelling irradiance carried down through the typical profile of
+  Williamson & Hollins (2023), each 10 m layer with the Kd of its own type.
+  It returns the transmittance and the layers crossed, and stops with
+  `MissingQuantityError` at a layer the paper declared no type for, rather
+  than carrying the last type on. DECISIONS.md section 26.
+- `Water.from_measurements(..., flags=..., uncertainty=...)`: a caller's own
+  statuses, from the package's vocabulary, warn as published ones do; an
+  unknown status is refused, so a misspelt one cannot silently never warn.
+  Uncertainty is read back with `Water.uncertainty(quantity, wl)`.
+
+**Fixed.**
+
+- `Water.c` warned once for a and once for b, twice for a wavelength
+  flagged in both. It now warns once, naming both.
+- The pure water scattering functions accepted a negative or NaN salinity
+  and returned a number. They now refuse it.
+- `repr` of an `Observation` with no light anywhere raised a NumPy
+  `RuntimeWarning`; it now says the veiling fraction is undefined.
+
+**Not done.** Petzold's volume scattering functions are still planned. They
+are to come from his report, SIO Ref. 72-78 (1972), which has not yet been
+obtained.
+
 ## 0.5.2 — 2026-10-07
 
 The two Dstl datasets behind five of the shipped tables were obtained and the

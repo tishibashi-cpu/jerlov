@@ -30,6 +30,10 @@ class MissingQuantityError(LookupError):
     """Raised when a quantity is not determined by the available data."""
 
 
+#: The quantities a caller can supply, by the names from_measurements takes.
+_MEASURED_KEYS = {"a": "a", "b": "b", "kd": "Kd", "Kd": "Kd"}
+
+
 def _as_array(x) -> np.ndarray:
     return np.atleast_1d(np.asarray(x, dtype=float))
 
@@ -96,7 +100,11 @@ class Water:
     source:
         The :class:`~jerlov.sources.Source` the coefficients came from.
     flags:
-        Per-wavelength status strings, parallel to ``wavelengths``.
+        Per-wavelength status strings, parallel to ``wavelengths``, keyed by
+        quantity (``"a"``, ``"b"``, ``"Kd"``, ``"KdH"``).
+    uncertainty:
+        Per-wavelength standard uncertainty in 1/m, keyed the same way. NaN
+        where it is not known. See :meth:`uncertainty`.
     """
 
     def __init__(
@@ -110,6 +118,7 @@ class Water:
         name: str | None = None,
         source: Source | None = None,
         flags: dict[str, tuple[str, ...]] | None = None,
+        uncertainty: dict[str, np.ndarray] | None = None,
     ) -> None:
         # Copied, so that neither the caller's arrays nor the packaged tables
         # can change underneath this object, and it cannot change them.
@@ -144,14 +153,74 @@ class Water:
                     f"flags[{key!r}] has {len(statuses)} entries; it needs one "
                     f"per wavelength ({self.wavelengths.size})"
                 )
+        self._uncertainty: dict[str, np.ndarray] = {}
+        for key, value in (uncertainty or {}).items():
+            if key not in self._series:
+                raise ValueError(
+                    f"uncertainty given for {key!r}, which this water does "
+                    f"not carry (it has {', '.join(sorted(self._series))})"
+                )
+            arr = np.array(value, dtype=float)
+            if arr.shape != self.wavelengths.shape:
+                raise ValueError(
+                    f"uncertainty[{key!r}] must have the same shape as "
+                    "wavelengths"
+                )
+            if np.any(arr < 0):
+                # NaN < 0 is False, so NaN, "not known", passes.
+                raise ValueError(f"uncertainty[{key!r}] cannot be negative")
+            arr.setflags(write=False)
+            self._uncertainty[key] = arr
 
     # -- construction ----------------------------------------------------
 
     @classmethod
     def from_measurements(cls, wavelengths, a=None, b=None, *, kd=None,
-                          name: str | None = None) -> "Water":
-        """Build a :class:`Water` from the caller's own measurements."""
-        return cls(wavelengths, a=a, b=b, kd=kd, name=name, source=None)
+                          name: str | None = None, flags=None,
+                          uncertainty=None) -> "Water":
+        """Build a :class:`Water` from the caller's own measurements.
+
+        Parameters
+        ----------
+        flags:
+            Optional ``{quantity: statuses}``, one status per wavelength,
+            for ``"a"``, ``"b"`` or ``"kd"``. The statuses are those of the
+            packaged tables (DATA.md, "The status column"), so that a value
+            you mark ``"suspect"`` or ``"extrapolated"`` warns exactly as a
+            published one does. An unknown status is refused rather than
+            ignored, since a misspelt flag would otherwise never warn.
+        uncertainty:
+            Optional ``{quantity: standard uncertainty}`` in 1/m, one value
+            per wavelength, NaN where unknown. Read it back with
+            :meth:`uncertainty`.
+        """
+        def keyed(mapping, what):
+            out = {}
+            for key, value in (mapping or {}).items():
+                if key not in _MEASURED_KEYS:
+                    raise ValueError(
+                        f"{what} for {key!r}: expected one of "
+                        f"{', '.join(sorted(_MEASURED_KEYS))}"
+                    )
+                out[_MEASURED_KEYS[key]] = value
+            return out
+
+        statuses = {}
+        for key, values in keyed(flags, "flags").items():
+            values = tuple(str(v) for v in values)
+            unknown = sorted(set(values) - _data.STATUSES)
+            if unknown:
+                raise ValueError(
+                    f"unknown status {', '.join(map(repr, unknown))} in "
+                    f"flags; the statuses are {', '.join(sorted(_data.STATUSES))}"
+                )
+            statuses[key] = values
+        given = {"a": a, "b": b, "Kd": kd}
+        for key in statuses:
+            if given[key] is None:
+                raise ValueError(f"flags given for {key!r}, but no {key} values")
+        return cls(wavelengths, a=a, b=b, kd=kd, name=name, source=None,
+                   flags=statuses, uncertainty=keyed(uncertainty, "uncertainty"))
 
     # -- access ----------------------------------------------------------
 
@@ -162,7 +231,8 @@ class Water:
     def has(self, quantity: str) -> bool:
         return quantity in self._series
 
-    def _interp(self, quantity: str, wl) -> np.ndarray:
+    def _interp(self, quantity: str, wl, *, warn: bool = True,
+                values: np.ndarray | None = None) -> np.ndarray:
         if quantity not in self._series:
             available = ", ".join(sorted(self._series)) or "none"
             raise MissingQuantityError(
@@ -177,8 +247,10 @@ class Water:
                 "This package does not extrapolate."
             )
         support = _support(self.wavelengths, query)
-        self._warn_if_flagged(quantity, support)
-        values = self._series[quantity]
+        if warn:
+            self._warn_if_flagged(quantity, support)
+        if values is None:
+            values = self._series[quantity]
         out = np.interp(query, self.wavelengths, values)
         # np.interp happily bridges a NaN-free path around a NaN, so check the
         # samples the answer actually rests on.
@@ -187,25 +259,37 @@ class Water:
                 out[k] = np.nan
         return _like_input(out, wl)
 
-    def _warn_if_flagged(self, quantity: str,
-                         support: list[tuple[int, ...]]) -> None:
+    def _label(self) -> str:
+        if self.source is not None:
+            return f"Jerlov {self.name}"
+        return repr(self.name) if self.name else "this water"
+
+    def _flag_hits(self, quantity: str,
+                   support: list[tuple[int, ...]]) -> set[str]:
         statuses = self._flags.get(quantity)
-        if not statuses:
-            return
         hit: set[str] = set()
+        if not statuses:
+            return hit
         for samples in support:
             for j in samples:
                 status = statuses[j]
                 if status in _data.QUESTIONABLE:
                     hit.add(f"{status} at {self.wavelengths[j]:g} nm")
+        return hit
+
+    def _warn(self, what: str, hit) -> None:
         if hit:
             warnings.warn(
-                f"{quantity} for Jerlov {self.name} rests on flagged values: "
+                f"{what} for {self._label()} rests on flagged values: "
                 + "; ".join(sorted(hit))
                 + ". See DATA.md for what is known about them.",
                 ProvenanceWarning,
                 stacklevel=_data.caller_stacklevel(),
             )
+
+    def _warn_if_flagged(self, quantity: str,
+                         support: list[tuple[int, ...]]) -> None:
+        self._warn(quantity, self._flag_hits(quantity, support))
 
     def a(self, wl):
         """Absorption coefficient in 1/m."""
@@ -216,8 +300,17 @@ class Water:
         return self._interp("b", wl)
 
     def c(self, wl):
-        """Beam attenuation coefficient ``a + b`` in 1/m."""
-        return self.a(wl) + self.b(wl)
+        """Beam attenuation coefficient ``a + b`` in 1/m.
+
+        One warning covers both terms: a wavelength flagged in a and in b
+        is one fact about c, not two.
+        """
+        a = self._interp("a", wl, warn=False)
+        b = self._interp("b", wl, warn=False)
+        support = _support(self.wavelengths, _as_array(wl))
+        self._warn("c", {f"{q} {h}" for q in ("a", "b")
+                         for h in self._flag_hits(q, support)})
+        return a + b
 
     def kd(self, wl):
         """Downwelling diffuse attenuation coefficient in 1/m."""
@@ -242,6 +335,24 @@ class Water:
         IOPs depend on the model they were retrieved with.
         """
         return self._interp("KdH", wl)
+
+    def uncertainty(self, quantity: str, wl):
+        """The standard uncertainty of ``quantity`` at ``wl``, in 1/m.
+
+        Only measurements carry one: pass it to :meth:`from_measurements`.
+        Between measured wavelengths it is interpolated linearly, as the
+        values are, which assumes the errors at neighbouring wavelengths are
+        fully correlated. NaN where it was not given.
+        """
+        quantity = _MEASURED_KEYS.get(quantity, quantity)
+        if quantity not in self._uncertainty:
+            raise MissingQuantityError(
+                f"no uncertainty was given for {quantity!r}"
+                + ("" if self.source is None else
+                   f"; source {self.source.key!r} publishes none")
+            )
+        return self._interp(quantity, wl, warn=False,
+                            values=self._uncertainty[quantity])
 
     def bb(self, wl, *, backscatter_ratio: float | None = None):
         """Backscattering coefficient in 1/m.
@@ -400,6 +511,167 @@ def water_type_at_depth(surface_water_type: str, depth_m: float) -> str | None:
             return row["water_type"] or None
     # Beyond 200 m the paper makes no statement at all.
     return None
+
+
+@dataclass(frozen=True, eq=False)   # == on arrays has no single answer
+class Descent:
+    """Downwelling irradiance carried down through changing water types."""
+
+    surface_water_type: str
+    depth_m: float
+    source: str
+    """The source of every layer's Kd."""
+    wavelengths: np.ndarray
+    """nm, as asked for."""
+    layers: tuple[tuple[float, float, str], ...]
+    """``(top, bottom, water type)`` of each layer crossed, in metres; the
+    last stops at ``depth_m``."""
+    transmittance: np.ndarray
+    """``Ed(depth) / Ed(0)``: ``exp(-sum(Kd_i * thickness_i))``."""
+
+
+def descend(surface_water_type: str, depth_m: float, wavelengths, *,
+            source: str = "jerlov1976") -> Descent:
+    """Attenuate downwelling irradiance through the typical depth profile.
+
+    :meth:`Scene.at_depth` uses one Kd all the way down, but water clears or
+    darkens with depth. This takes the type of each 10 m layer from
+    :func:`water_type_at_depth`, Williamson & Hollins (2023), and the Kd of
+    that type from ``source``::
+
+        Ed(z) / Ed(0) = exp(-sum over layers of Kd_type(layer) * thickness)
+
+    The top 10 m are the surface type itself. To build a scene from the
+    result::
+
+        d = jerlov.descend("1C", 45.0, wl)
+        scene = jerlov.Scene(w, surface * d.transmittance, wl, depth_m=45.0)
+
+    Parameters
+    ----------
+    source:
+        Where every layer's Kd comes from. Jerlov (1976), the default, covers
+        all ten types; the profile can pass through any of them.
+
+    Raises
+    ------
+    MissingQuantityError
+        Where the descent reaches a layer for which Williamson & Hollins
+        declared no type, too few campaigns supporting one, or below 200 m,
+        where they make no statement. A coastal profile runs out quickly:
+        Jerlov 9C below 10 m, 5C and 7C below 20 m, 3C below 70 m.
+
+    Notes
+    -----
+    Two approximations, both stated rather than hidden. The Kd of a type is
+    that of its surface layer, applied unchanged at depth, since that is
+    how the classification is defined. And the profile is what was typical
+    across more than 2500 campaigns, not what holds at a given place or
+    season; see :func:`water_type_at_depth`.
+    """
+    depth_m = float(depth_m)
+    if not np.isfinite(depth_m):
+        raise ValueError(f"depth_m must be a finite number, not {depth_m!r}")
+    if depth_m < 0:
+        raise ValueError("depth_m cannot be negative")
+    get_source(source)
+    rows = sorted(
+        (r for r in _data._rows("williamson2023_depth.csv")
+         if r["surface_water_type"] == surface_water_type),
+        key=lambda r: float(r["depth_min_m"]),
+    )
+    if not rows:
+        water_type_at_depth(surface_water_type, 0.0)   # raises, naming types
+    deepest = float(rows[-1]["depth_max_m"])
+    if depth_m > deepest:
+        raise MissingQuantityError(
+            f"Williamson & Hollins (2023) make no statement below "
+            f"{deepest:g} m, so there is no type to descend through to "
+            f"{depth_m:g} m"
+        )
+    query = _as_array(wavelengths)
+    optical_depth = np.zeros_like(query)
+    layers: list[tuple[float, float, str]] = []
+    kd: dict[str, np.ndarray] = {}
+    for row in rows:
+        top, bottom = float(row["depth_min_m"]), float(row["depth_max_m"])
+        if top >= depth_m:
+            break
+        water_type = row["water_type"]
+        if not water_type:
+            raise MissingQuantityError(
+                f"Williamson & Hollins (2023) declare no type between "
+                f"{top:g} and {bottom:g} m below Jerlov {surface_water_type} "
+                f"water: fewer than ten campaigns supported one. The "
+                f"descent can go no deeper than {top:g} m."
+            )
+        if water_type not in kd:
+            kd[water_type] = _as_array(
+                water(water_type, source).kd(query))
+        bottom = min(bottom, depth_m)
+        optical_depth += kd[water_type] * (bottom - top)
+        layers.append((top, bottom, water_type))
+    query.setflags(write=False)
+    return Descent(
+        surface_water_type=surface_water_type,
+        depth_m=depth_m,
+        source=source,
+        wavelengths=query,
+        layers=tuple(layers),
+        transmittance=_like_input(np.exp(-optical_depth), wavelengths),
+    )
+
+
+#: Why each source without a pure water absorption has none.
+_NO_AW = {
+    "solonenko2015": (
+        "Solonenko & Mobley (2015) used the average of Pope & Fry (1997), "
+        "Buiteveld et al. (1994) and Pegau et al. (1997), which they show "
+        "only as a curve in their Fig. 2"
+    ),
+    "jerlov1976": "Jerlov (1976) gives Kd only",
+    "jerlov1968": "Jerlov (1968) gives Kd only",
+    "austin1986": (
+        "Austin & Petzold (1986) give Kd only. Their Kw is the diffuse "
+        "attenuation of pure sea water, not its absorption"
+    ),
+}
+
+
+def pure_water_absorption(wavelength_nm, source: str = "williamson2022"):
+    """The absorption of pure water that ``source`` computed its a with, 1/m.
+
+    A Jerlov type's a is that of pure water plus what is dissolved and
+    suspended in it, and each source started from its own pure water
+    spectrum. This returns that spectrum, so that the part of a due to the
+    water's contents is ``w.a(l) - pure_water_absorption(l)`` for the same
+    source, and not a difference between two tabulations.
+
+    Only Williamson & Hollins (2022) publish theirs, in the spreadsheet that
+    accompanies the paper: 1 nm from 300 to 800 nm. The paper attributes it
+    to Buiteveld et al. (1994); it has not been compared with Buiteveld's
+    table here, but it is the aw their a was built on, which the build
+    script checks. From 720 nm their model gives the water's contents no
+    absorption at all, so every type's a is this. See DATA.md section 20.
+
+    Other sources raise :class:`MissingQuantityError`, saying why.
+    """
+    get_source(source)          # an unknown key says which ones exist
+    if source != "williamson2022":
+        raise MissingQuantityError(
+            f"source {source!r} publishes no pure water absorption: "
+            f"{_NO_AW[source]}. Only 'williamson2022' does."
+        )
+    wl, values, _ = _data.spectrum("williamson2022_aw.csv", None, None,
+                                   "aw_per_m")
+    query = _as_array(wavelength_nm)
+    _require_number(query, "wavelength_nm")
+    if np.any(query < wl[0]) or np.any(query > wl[-1]):
+        raise ValueError(
+            f"wavelength outside the range of the data ({wl[0]:g}-"
+            f"{wl[-1]:g} nm). This package does not extrapolate."
+        )
+    return _like_input(np.interp(query, wl, values), wavelength_nm)
 
 
 #: Austin & Petzold (1986) state their model holds below this K(490), 1/m.

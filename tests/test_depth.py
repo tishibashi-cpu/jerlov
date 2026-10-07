@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+import math
+
+import numpy as np
 import pytest
 
 import jerlov
@@ -99,3 +102,62 @@ def test_declared_rows_carry_their_campaign_count():
             assert int(row["n_campaigns"]) >= 10
         elif row["status"] == "undeclared":
             assert row["water_type"] == ""
+
+
+# -- descending through the profile ----------------------------------------
+
+def test_descent_within_the_surface_layer_is_beer_lambert():
+    wl = np.array([450.0, 550.0])
+    d = jerlov.descend("III", 8.0, wl)
+    kd = jerlov.water("III", source="jerlov1976").kd(wl)
+    assert np.allclose(d.transmittance, np.exp(-kd * 8.0))
+    assert d.layers == ((0.0, 8.0, "III"),)
+
+
+def test_descent_follows_the_type_of_each_layer():
+    """1C is 1C to 20 m, III to 40, II below; see the paper's Table 2."""
+    d = jerlov.descend("1C", 45.0, 500.0)
+    assert [t for _, _, t in d.layers] == ["1C", "1C", "III", "III", "II"]
+    assert d.layers[-1] == (40.0, 45.0, "II")
+    kd = {t: jerlov.water(t, source="jerlov1976").kd(500.0)
+          for t in ("1C", "III", "II")}
+    expected = math.exp(-(20 * kd["1C"] + 20 * kd["III"] + 5 * kd["II"]))
+    assert d.transmittance == pytest.approx(expected)
+
+
+def test_clearing_water_lets_more_light_down_than_its_surface_type_says():
+    d = jerlov.descend("3C", 60.0, 500.0)
+    surface_only = math.exp(-jerlov.water("3C", source="jerlov1976").kd(500.0)
+                            * 60.0)
+    assert d.transmittance > 10 * surface_only
+
+
+def test_descent_stops_where_the_paper_declared_nothing():
+    jerlov.descend("3C", 70.0, 500.0)          # the last declared layer
+    with pytest.raises(jerlov.MissingQuantityError, match="70 and 80 m"):
+        jerlov.descend("3C", 70.5, 500.0)
+    with pytest.raises(jerlov.MissingQuantityError, match="10 and 20 m"):
+        jerlov.descend("9C", 15.0, 500.0)
+    with pytest.raises(jerlov.MissingQuantityError, match="below 200 m"):
+        jerlov.descend("IB", 250.0, 500.0)
+
+
+def test_descent_needs_a_source_covering_every_layer():
+    """austin1986 has no 3C, which the 3C profile starts in."""
+    with pytest.raises(KeyError, match="does not cover"):
+        jerlov.descend("3C", 30.0, 500.0, source="austin1986")
+    jerlov.descend("I", 30.0, 500.0, source="austin1986")
+
+
+def test_descent_refuses_what_is_not_a_depth():
+    for bad in (-1.0, float("nan"), float("inf")):
+        with pytest.raises(ValueError):
+            jerlov.descend("I", bad, 500.0)
+    with pytest.raises(KeyError, match="known"):
+        jerlov.descend("XI", 10.0, 500.0)
+
+
+def test_descent_to_the_surface_is_no_attenuation():
+    d = jerlov.descend("II", 0.0, [450.0, 550.0])
+    assert np.all(d.transmittance == 1.0)
+    assert d.layers == ()

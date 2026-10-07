@@ -473,3 +473,118 @@ def test_an_extrapolated_jerlov1976_value_warns_and_the_rest_do_not():
         w.kd(np.arange(310.0, 701.0))     # everything Jerlov's table spans
     # 300-309 and 701-715 nm: ten below, fifteen above.
     assert "Kd: 25 wavelength(s) marked 'extrapolated_by_dataset'" in w.caveats()
+
+
+# -- pure water absorption -------------------------------------------------
+
+@pytest.mark.filterwarnings("ignore::jerlov.ProvenanceWarning")
+def test_pure_water_absorption_is_the_one_williamson2022_built_a_on():
+    """From 720 nm their model leaves only water; a is aw there."""
+    for t in ("IB", "III", "5C"):
+        w = jerlov.water(t)
+        for wl in (720.0, 760.0, 800.0):
+            assert w.a(wl) == pytest.approx(
+                jerlov.pure_water_absorption(wl), rel=0.005)
+
+
+@pytest.mark.filterwarnings("ignore::jerlov.ProvenanceWarning")
+def test_pure_water_absorption_never_exceeds_a():
+    wl = np.arange(300.0, 801.0)
+    aw = jerlov.pure_water_absorption(wl)
+    for t in jerlov.get_source("williamson2022").water_types:
+        assert np.all(aw <= jerlov.water(t).a(wl) * 1.005)
+
+
+def test_pure_water_absorption_scalar_in_scalar_out():
+    assert isinstance(jerlov.pure_water_absorption(440), float)
+    assert jerlov.pure_water_absorption(440) == pytest.approx(0.0104)
+
+
+def test_sources_without_pure_water_absorption_say_why():
+    with pytest.raises(MissingQuantityError, match="Fig. 2"):
+        jerlov.pure_water_absorption(500, source="solonenko2015")
+    with pytest.raises(MissingQuantityError, match="not its absorption"):
+        jerlov.pure_water_absorption(500, source="austin1986")
+    for key in ("jerlov1976", "jerlov1968"):
+        with pytest.raises(MissingQuantityError, match="Kd only"):
+            jerlov.pure_water_absorption(500, source=key)
+    with pytest.raises(KeyError, match="known sources"):
+        jerlov.pure_water_absorption(500, source="pope1997")
+
+
+def test_pure_water_absorption_does_not_extrapolate():
+    for wl in (299.0, 801.0):
+        with pytest.raises(ValueError, match="does not extrapolate"):
+            jerlov.pure_water_absorption(wl)
+    with pytest.raises(ValueError, match="NaN"):
+        jerlov.pure_water_absorption(float("nan"))
+
+
+# -- the caller's own flags and uncertainty --------------------------------
+
+def _station(**kwargs):
+    return Water.from_measurements(
+        [400.0, 500.0, 600.0], a=[0.10, 0.05, 0.30], b=[0.20, 0.18, 0.15],
+        name="station 4", **kwargs)
+
+
+def test_a_flag_on_a_measurement_warns_like_a_published_one():
+    w = _station(flags={"a": ["ok", "suspect", "ok"]})
+    with pytest.warns(ProvenanceWarning, match="'station 4'.*suspect at 500"):
+        w.a(450)
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        w.a(400)
+        w.b(450)
+    assert "a: 1 wavelength(s) marked 'suspect'" in w.caveats()
+
+
+def test_a_misspelt_flag_is_refused_rather_than_never_warning():
+    with pytest.raises(ValueError, match="unknown status 'suspcet'"):
+        _station(flags={"a": ["ok", "suspcet", "ok"]})
+
+
+def test_flags_must_match_a_given_quantity_and_the_grid():
+    with pytest.raises(ValueError, match="expected one of"):
+        _station(flags={"c": ["ok"] * 3})
+    with pytest.raises(ValueError, match="no Kd values"):
+        _station(flags={"kd": ["ok"] * 3})
+    with pytest.raises(ValueError, match="one per wavelength"):
+        _station(flags={"a": ["ok"] * 2})
+
+
+def test_uncertainty_is_interpolated_like_the_values():
+    w = _station(uncertainty={"a": [0.01, 0.02, np.nan]})
+    assert w.uncertainty("a", 450) == pytest.approx(0.015)
+    assert np.isnan(w.uncertainty("a", 550))
+    with pytest.raises(MissingQuantityError, match="'b'"):
+        w.uncertainty("b", 450)
+
+
+def test_uncertainty_is_refused_where_it_cannot_be_right():
+    with pytest.raises(ValueError, match="negative"):
+        _station(uncertainty={"a": [0.01, -0.02, 0.01]})
+    with pytest.raises(ValueError, match="same shape"):
+        _station(uncertainty={"b": [0.01]})
+    with pytest.raises(ValueError, match="does not carry"):
+        Water.from_measurements([400.0, 500.0], a=[0.1, 0.2],
+                                uncertainty={"b": [0.01, 0.01]})
+
+
+def test_published_sources_have_no_uncertainty_to_give():
+    with pytest.raises(MissingQuantityError, match="publishes none"):
+        jerlov.water("III").uncertainty("a", 500)
+
+
+def test_c_warns_once_for_a_wavelength_flagged_in_both_a_and_b():
+    """Solonenko 3C at 675 nm: a missing and b reconstructed, one warning."""
+    w = jerlov.water("3C", source="solonenko2015")
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always")
+        w.c(675)
+    messages = [str(x.message) for x in caught
+                if issubclass(x.category, ProvenanceWarning)]
+    assert len(messages) == 1
+    assert messages[0].startswith("c for Jerlov 3C")
+    assert "a missing at 675 nm" in messages[0]
+    assert "b reconstructed at 675 nm" in messages[0]

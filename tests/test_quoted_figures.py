@@ -233,3 +233,33 @@ def test_kd_hydrolight_agrees_with_jerlov_as_data_md_says():
     assert len(every) == 163 and len(sound) == 141
     assert np.mean(every) == pytest.approx(0.865, abs=0.001)
     assert np.mean(sound) == pytest.approx(0.879, abs=0.001)
+
+
+@source_tree
+def test_the_readme_quotes_a_pure_water_absorption_the_package_produces():
+    readme = (ROOT / "README.md").read_text()
+    match = re.search(r"pure_water_absorption\(440\)\s*#\s*([\d.]+)", readme)
+    assert match, "the README no longer shows that call with its result"
+    assert jerlov.pure_water_absorption(440) == pytest.approx(
+        float(match.group(1)))
+
+
+@source_tree
+def test_the_readme_shows_the_layers_descend_crosses():
+    readme = (ROOT / "README.md").read_text()
+    match = re.search(r"d\.layers\s*#\s*\((.*)\)\n", readme)
+    assert match, "the README no longer shows the layers of a descent"
+    shown = re.findall(r"\((\d+), (\d+), '(\w+)'\)", match.group(1))
+    layers = jerlov.descend("1C", 45.0, 500.0).layers
+    assert [(float(a), float(b), t) for a, b, t in shown] == \
+        [layers[0], layers[1], layers[2], layers[-1]]
+
+
+def test_DATA_md_section_13_states_where_the_coastal_profiles_end():
+    """DATA.md section 13 says 3C reaches only 70 m; the descend docstring
+    adds 9C below 10 m and 5C and 7C below 20 m."""
+    jerlov.descend("3C", 70.0, 500.0)
+    jerlov.descend("9C", 10.0, 500.0)
+    for t, depth in (("3C", 70.5), ("9C", 10.5), ("5C", 20.5), ("7C", 20.5)):
+        with pytest.raises(jerlov.MissingQuantityError):
+            jerlov.descend(t, depth, 500.0)

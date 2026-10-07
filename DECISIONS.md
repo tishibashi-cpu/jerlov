@@ -505,7 +505,10 @@ Recorded so the shape of the API can be judged against where it is going.
 - **Petzold phase functions**: measured volume scattering functions, so that
   a backscatter ratio can be chosen from a measurement rather than guessed
   when no instrument reading is available. Section 22 covers the case where
-  there is one.
+  there is one. Still planned in 0.6.0: the tables are to be
+  transcribed from Petzold's own report, SIO Ref. 72-78 (1972), and checked
+  against it, not taken from a later retabulation, and the report had not
+  been obtained.
 
 Validation is deliberately staged. The package can claim that it implements
 published coefficients correctly, and the tests demonstrate that. It cannot
@@ -533,3 +536,33 @@ established it (DATA.md section 19), and it is now `Water.kd_hydrolight`.
 Reading it also showed that the tabulated values reach 87 percent within 20
 percent of Jerlov, not the 90 the paper states, which is now recorded rather
 than repeated.
+
+## 26. Deeper than one Kd, and the caller's own doubts
+
+**`descend`.** `Scene.at_depth` uses one Kd from the surface down, and says
+so. Williamson & Hollins (2023) give the type that is typical in each 10 m
+layer, so a descent can use the right Kd for each layer instead. Two choices
+were made in it.
+
+Where the paper declared no type, the descent stops with
+`MissingQuantityError`. Carrying the last declared type on would have given
+an answer at every depth, which is what a user would want and exactly the
+guess the paper declined to make. A coastal descent therefore ends early: 9C
+at 10 m, 3C at 70 m.
+
+Every layer's Kd comes from one source, Jerlov (1976) unless the caller says
+otherwise. Mixing sources between layers would make the profile a profile of
+sources as much as of water; a source that lacks a type the profile passes
+through is refused, by the same `KeyError` as `water()`.
+
+**Flags and uncertainty on measurements.** `from_measurements` used to accept
+only values, so a user's doubtful point looked as sound as the rest, while a
+published one with the same doubt warned. The caller's statuses are the
+package's own vocabulary, not free text: a status the package does not know
+would have no defined meaning, and a misspelt `"suspect"` would never warn,
+so both are refused. Uncertainty is carried and interpolated, but not
+propagated into c or anything derived from it; propagation needs the
+correlation between a and b, which only the caller knows.
+
+**`Water.c` warns once.** It used to warn for a and for b separately, so a
+wavelength flagged in both produced two warnings about one value of c.

@@ -156,10 +156,17 @@ class Observation:
 
     def __repr__(self) -> str:  # pragma: no cover - convenience only
         lo, hi = self.wavelengths[0], self.wavelengths[-1]
+        fraction = self.veiling_fraction
+        if np.all(np.isnan(fraction)):
+            # nanmin of nothing warns; NaN everywhere means nothing reached
+            # the observer, or c was unknown at every wavelength.
+            veiling = "undefined"
+        else:
+            veiling = (f"{np.nanmin(fraction):.0%}"
+                       f"-{np.nanmax(fraction):.0%}")
         return (
             f"<Observation r={self.distance_m:g} m, {lo:g}-{hi:g} nm, "
-            f"veiling {np.nanmin(self.veiling_fraction):.0%}"
-            f"-{np.nanmax(self.veiling_fraction):.0%}>"
+            f"veiling {veiling}>"
         )
 
 
@@ -208,7 +215,8 @@ class Scene:
 
         ``Ed(z) = Ed(0) * exp(-Kd * z)``, which assumes Kd is constant with
         depth. Jerlov's own classification is defined over the upper 10 m, so
-        this is reasonable there and increasingly rough below it.
+        this is reasonable there and increasingly rough below it. Below it,
+        :func:`~jerlov.descend` changes the type layer by layer instead.
 
         ``kd`` is either a :class:`~jerlov.water.Water` carrying Kd, such as
         ``jerlov.water("III", source="austin1986")``, or an array on

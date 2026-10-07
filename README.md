@@ -219,6 +219,18 @@ jerlov.water_type_at_depth("9C", 15.0)    # None: the paper declined to say
 nothing is asserted. This is a lookup, not a correction applied on your
 behalf.
 
+To carry the downwelling irradiance down through that profile, with each 10 m
+layer attenuating by the Kd of its own type:
+
+```python
+d = jerlov.descend("1C", 45.0, wl)        # source="jerlov1976" by default
+d.layers          # ((0, 10, '1C'), (10, 20, '1C'), (20, 30, 'III'), ..., (40, 45, 'II'))
+scene = jerlov.Scene(jerlov.water("II"), surface * d.transmittance, wl, depth_m=45.0)
+```
+
+It refuses to go through a layer the paper declared nothing for, rather than
+carrying the last type on: 3C stops at 70 m, 9C at 10 m.
+
 ## Other entry points
 
 ```python
@@ -232,8 +244,15 @@ jerlov.pure_water_scattering(555)   # Morel's bw, if that is what c was correcte
 # The measured points behind the williamson2022 spectra, with their spread.
 m = jerlov.measured_points("III", "a")   # m.wavelengths, m.values, m.std_dev
 
-# Use your own measurements; they take exactly the same path.
-jerlov.Water.from_measurements(wavelengths, a=..., b=...)
+# The pure water absorption williamson2022 built its a on (300-800 nm).
+jerlov.pure_water_absorption(440)        # 0.0104; other sources say why they have none
+
+# Use your own measurements; they take exactly the same path, flags included.
+w = jerlov.Water.from_measurements(
+    wavelengths, a=..., b=...,
+    flags={"a": statuses},             # "ok", "suspect", ...: as in DATA.md; flagged ones warn
+    uncertainty={"a": sigma_a},        # 1/m; w.uncertainty("a", 532)
+)
 ```
 
 ## Solar heating of the upper ocean
@@ -277,7 +296,7 @@ made.
 ## Provenance and design
 
 `DATA.md` records, for every shipped table, where it came from, what was
-verified, and what is known to be wrong with it. Nineteen entries are
+verified, and what is known to be wrong with it. Twenty entries are
 documented there: eight confirmed defects in the source literature, three
 questions the first edition of Jerlov settled, and the rest notes.
 
