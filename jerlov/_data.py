@@ -59,6 +59,10 @@ QUESTIONABLE = frozenset({"suspect", "missing", "extrapolated",
                           "model_extrapolation", "reconstructed",
                           "extrapolated_by_dataset"})
 
+#: Every status a spectrum can carry: the table in DATA.md, "The status
+#: column". A caller's own flags must be one of these.
+STATUSES = QUESTIONABLE | {"ok", "interpolated"}
+
 
 def _read(name: str) -> list[dict[str, str]]:
     path = resources.files("jerlov.data").joinpath(name)

@@ -344,3 +344,12 @@ def test_a_surface_spectrum_of_the_wrong_length_is_named():
     """It used to fail inside numpy with "operands could not be broadcast"."""
     with pytest.raises(ValueError, match="surface_downwelling must have"):
         Scene.at_depth(jerlov.water("III"), 5.0, np.ones(3), WL, kd=flat(0.1))
+
+
+def test_an_observation_with_no_light_has_a_quiet_repr():
+    s = Scene(jerlov.water("II"), np.zeros(WL.size), WL)
+    o = s.observe(np.full(WL.size, 0.5), 5.0,
+                  veiling_radiance=np.zeros(WL.size))
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        assert "veiling undefined" in repr(o)

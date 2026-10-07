@@ -37,13 +37,16 @@ from .shortwave import (
 )
 from .sources import SOURCES, Source, get_source
 from .water import (
+    Descent,
     MeasuredPoints,
     MissingQuantityError,
     ProvenanceWarning,
     Water,
     b_from_c,
+    descend,
     kd_spectrum,
     measured_points,
+    pure_water_absorption,
     water,
     water_type_at_depth,
 )
@@ -67,6 +70,9 @@ __all__ = [
     "Water",
     "water",
     "water_type_at_depth",
+    "descend",
+    "Descent",
+    "pure_water_absorption",
     "shortwave_parameters",
     "solar_fraction",
     "jerlov1968_solar_fraction",
@@ -86,4 +92,4 @@ __all__ = [
     "MissingQuantityError",
 ]
 
-__version__ = "0.5.2"
+__version__ = "0.6.0"

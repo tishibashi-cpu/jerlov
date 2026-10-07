@@ -204,3 +204,15 @@ def test_total_pure_water_scattering_is_morels():
         assert b_w == pytest.approx(integrated, rel=1e-6)
     assert isinstance(jerlov.pure_water_scattering(550.0), float)
     assert jerlov.pure_water_scattering([440.0, 550.0]).shape == (2,)
+
+
+def test_a_salinity_that_is_not_one_is_refused():
+    for bad in (-1.0, float("nan")):
+        for call in (lambda s: jerlov.pure_water_vsf(120.0, 532.0, s),
+                     lambda s: jerlov.pure_water_backscattering(532.0, s),
+                     lambda s: jerlov.pure_water_scattering(532.0, s),
+                     lambda s: jerlov.bb_from_vsf(0.0021, 140.0, 532.0,
+                                                  salinity_psu=s)):
+            with pytest.raises(ValueError, match="salinity_psu"):
+                call(bad)
+    jerlov.pure_water_vsf(120.0, 532.0, 0.0)   # fresh water is fine

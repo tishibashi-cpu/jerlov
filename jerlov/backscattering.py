@@ -57,6 +57,20 @@ class AngleWarning(UserWarning):
     """
 
 
+def _amplitude(wavelength_nm, salinity_psu) -> np.ndarray:
+    """Morel's A(lambda, S), Boss & Pegau Eq. (4), in 1/(m sr)."""
+    salinity = np.asarray(salinity_psu, dtype=float)
+    if not np.all(np.isfinite(salinity)) or np.any(salinity < 0):
+        # A negative salinity made pure water scatter less than fresh water,
+        # without complaint.
+        raise ValueError(
+            f"salinity_psu must be a finite number, 0 or more, not "
+            f"{salinity_psu!r}"
+        )
+    return (1.38 * (np.asarray(wavelength_nm, dtype=float) / 500.0) ** -4.32
+            * (1 + 0.3 * salinity / 37.0) * 1e-4)
+
+
 def _ratio() -> float:
     return (1 - DEPOLARISATION_RATIO) / (1 + DEPOLARISATION_RATIO)
 
@@ -73,8 +87,7 @@ def pure_water_vsf(angle_deg, wavelength_nm, salinity_psu: float = 37.0):
     as the agreement between measurement and theory.
     """
     angle = np.asarray(angle_deg, dtype=float)
-    amplitude = (1.38 * (np.asarray(wavelength_nm, dtype=float) / 500.0) ** -4.32
-                 * (1 + 0.3 * salinity_psu / 37.0) * 1e-4)
+    amplitude = _amplitude(wavelength_nm, salinity_psu)
     out = amplitude * (1 + _ratio() * np.cos(np.radians(angle)) ** 2)
     # Angle and wavelength broadcast against each other; the answer is a
     # float only when neither of them was an array.
@@ -90,8 +103,7 @@ def pure_water_backscattering(wavelength_nm, salinity_psu: float = 37.0):
     hemisphere, which for this angular shape is analytic.
     """
     r = _ratio()
-    amplitude = (1.38 * (np.asarray(wavelength_nm, dtype=float) / 500.0) ** -4.32
-                 * (1 + 0.3 * salinity_psu / 37.0) * 1e-4)
+    amplitude = _amplitude(wavelength_nm, salinity_psu)
     # integral of (1 + r cos^2) sin over 90..180 degrees is 1 + r/3
     out = 2.0 * math.pi * amplitude * (1 + r / 3.0)
     return _like_input(np.atleast_1d(out), wavelength_nm)

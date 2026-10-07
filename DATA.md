@@ -3,7 +3,7 @@
 What every shipped table is, where it came from, what was verified, and what
 is known to be wrong with it.
 
-Nineteen entries are recorded below. Eight are confirmed defects, three were
+Twenty entries are recorded below. Eight are confirmed defects, three were
 open questions that the first edition of Jerlov settled, and the rest are
 notes rather than defects. None of them is repaired silently: values that
 could be recovered carry `status = reconstructed` and say how, values that
@@ -27,6 +27,7 @@ could not are `missing`, and values that are used but doubtful are `suspect`.
 | `jerlov1968_total_irradiance.csv` | Percent of total irradiance 300-2500 nm by depth | 120 |
 | `paulson1977_shortwave.csv` | Two-exponential shortwave penetration parameters | 9 |
 | `boss2001_chi.csv` | chi for converting a single-angle measurement to bb | 12 |
+| `williamson2022_aw.csv` | Pure water absorption that Williamson & Hollins (2022) built their a on. 1 nm, 300-800 nm | 501 |
 
 The four tables drawn from the two Dstl datasets (`williamson2022_iop`,
 `williamson2022_measured`, `solonenko2015_iop` and `williamson2023_depth`)
@@ -887,3 +888,42 @@ shipped as `missing`.
 
 A small slip in the same paper: its reference 2, Austin & Petzold (1986),
 gives the pages as "253471"; they are 471-479.
+
+## 20. The pure water absorption behind Williamson & Hollins (note)
+
+A Jerlov type's a is that of pure water plus what is in it. Williamson &
+Hollins (2022) build theirs as `a = aw + aChl + aCDOM`, Eqs. (4)-(6), and say
+of aw only that it "was taken from Buiteveld et al." (1994, Proc. SPIE 2258,
+174-183). `williamson2022_aw.csv` is the aw they actually used: the lookup
+table in columns AK to AN of the sheet `a,b measured and model` of
+`20221121-Dstl_MIOP_analysis_v3.xlsx`, 1 nm from 300 to 800 nm, the same grid
+as their a. `pure_water_absorption()` returns it.
+
+**It is the aw their a was built on.** With it and the Chl, M and alpha of
+their Table 6, Eqs. (4)-(6) give back the shipped a of every type to a median
+of 0.10-0.28 percent; the worst single wavelength is 4.1 percent, for Jerlov
+1C at 301 nm, which is what Table 6's two or three printed figures allow.
+`tools/build_williamson2022_aw.py` stops if either figure grows past 0.5 or 5
+percent, or if aw exceeds any type's a beyond the rounding of a.
+
+**From 720 nm their model gives the water's contents no absorption**: the
+chlorophyll coefficient A of the same lookup table is zero there, so every
+type's a is aw itself, to the three figures a is given to.
+
+**It has not been compared with Buiteveld's own table**, which has not been
+obtained. Hollins & Williamson (2023) say that in their later study they
+adjusted some of Buiteveld's values above 500 nm, so that Kd - aw was
+smoother in the red; whether this 2022 table already carries such
+adjustments is not stated, and is not assumed here.
+
+Why only one source. Solonenko & Mobley (2015) averaged Pope & Fry (1997),
+Buiteveld et al. (1994) and Pegau et al. (1997), and show the result only as
+a curve in their Fig. 2; reading numbers off a figure is not done here. The
+Jerlov and Austin & Petzold sources give Kd only, and Austin & Petzold's Kw is
+the diffuse attenuation of pure sea water, not its absorption. Each of these
+raises `MissingQuantityError`, saying which case it is.
+
+Pope & Fry (1997) on its own, the most cited pure water spectrum, is not
+shipped either: none of the sources here used it alone, and one source's a
+minus another's aw is partly a difference between two laboratories' pure
+water, not the absorption of what was in the water.
