@@ -28,6 +28,12 @@ the DOIs `10.4319/lo.1968.13.4.0731` and `10.1126/science.163.3862.64.a` are
 reviews of the book, not the book. Not held by the University of Tsukuba
 library.
 
+**Petzold (1972)**, "Volume scattering functions for selected ocean waters",
+SIO Ref. 72-78, DTIC AD0753474 (approved for public release), has been
+obtained and transcribed into `petzold1972_vsf.csv` and
+`petzold1972_stations.csv`. `tools/build_petzold1972.py` carries the
+numbers as literals and needs no input; see DATA.md section 21.
+
 ## Read but not machine-processed
 
 These were read to establish provenance and are cited in `DATA.md`. They are

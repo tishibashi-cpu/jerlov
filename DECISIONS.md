@@ -502,13 +502,8 @@ Recorded so the shape of the API can be judged against where it is going.
 - ~~**Akkaynak-Treibitz coefficients**~~: done in 0.1.3, as
   `Scene.attenuation_coefficients`; see section 16. The distance range is a
   required argument, as planned.
-- **Petzold phase functions**: measured volume scattering functions, so that
-  a backscatter ratio can be chosen from a measurement rather than guessed
-  when no instrument reading is available. Section 22 covers the case where
-  there is one. Still planned in 0.6.0: the tables are to be
-  transcribed from Petzold's own report, SIO Ref. 72-78 (1972), and checked
-  against it, not taken from a later retabulation, and the report had not
-  been obtained.
+- ~~**Petzold phase functions**~~: done in 0.7.0, as `petzold_scattering`,
+  transcribed from Petzold's own report; see section 27.
 
 Validation is deliberately staged. The package can claim that it implements
 published coefficients correctly, and the tests demonstrate that. It cannot
@@ -566,3 +561,26 @@ correlation between a and b, which only the caller knows.
 
 **`Water.c` warns once.** It used to warn for a and for b separately, so a
 wavelength flagged in both produced two warnings about one value of c.
+
+## 27. Petzold's stations, one at a time
+
+The report's eight ocean stations are shipped as they are: eight measured
+waters, each with its own c, b, a and B/S. Three things that are commonly
+done with them were not.
+
+**No average.** The Petzold "average particle" phase function that HydroLight
+users know, which Solonenko & Mobley describe as the average of his coastal,
+harbor and ocean phase functions, is a later construction. It is not in the
+report, and the report is what was checked, so it is not shipped under
+Petzold's name.
+
+**No Jerlov mapping.** Petzold gives c at one wavelength and classifies
+nothing. Assigning his stations to Jerlov types would mean inventing the
+mapping, which is the kind of number this package exists to keep out.
+`backscatter_ratio` is offered as a measured alternative to a guessed
+bb/b, with the water it came from attached, not as the ratio of a type.
+
+**The report's extension is marked.** In the clearer waters nothing below
+0.169 degree was usable, and the 0.1 to 0.158 degree values there follow the
+printed power law exactly. They are shipped, since the report prints them and
+counts them in s, but as `extrapolated`, and `vsf_at` warns on them.

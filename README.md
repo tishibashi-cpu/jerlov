@@ -203,6 +203,28 @@ warns: its quoted spread is **34.8 percent** against 2.6-6.4 from 90 to 160.
 This gives the bb of the water your instrument was in. It still gives no bb
 for a Jerlov water type, because nothing does.
 
+## Measured scattering functions
+
+Without an instrument, the next best thing to a guess is a water that was
+measured. Petzold (1972) measured the volume scattering function from 0.1 to
+180 degrees in eight ocean waters, from the clear Tongue of the Ocean to San
+Diego Harbor:
+
+```python
+jerlov.PETZOLD_STATIONS                  # clearest first: 'AUTEC 8', ..., 'NUC 2040'
+f = jerlov.petzold_scattering("HAOCE 11")
+f.c, f.b, f.backscatter_ratio            # 0.398, 0.21933, 0.013  (1/m, 1/m, bb/b)
+f.vsf_at(120.0)                          # 1/(m sr), at 530 nm
+f.phase_function()                       # vsf / b, at f.angles_deg
+
+w.bb(532, backscatter_ratio=f.backscatter_ratio)   # bb/b of a measured water
+```
+
+The ratio spans **0.013 to 0.044** across the eight. These are eight waters
+on eight days in 1971, at 530 nm, water and particles together; none of them
+is a Jerlov type. Every value was transcribed from the report and checked
+against its own integrals and its second printing; DATA.md section 21.
+
 ## The type changes with depth
 
 The classification is defined on the top 10 m, but clarity does not stay put.
@@ -296,7 +318,7 @@ made.
 ## Provenance and design
 
 `DATA.md` records, for every shipped table, where it came from, what was
-verified, and what is known to be wrong with it. Twenty entries are
+verified, and what is known to be wrong with it. Twenty-one entries are
 documented there: eight confirmed defects in the source literature, three
 questions the first edition of Jerlov settled, and the rest notes.
 

@@ -23,6 +23,7 @@ from .colour import (
     spectrum_to_xyz,
     xyz_to_srgb,
 )
+from .petzold import PETZOLD_STATIONS, ScatteringFunction, petzold_scattering
 from .scene import (
     AttenuationCoefficients,
     Observation,
@@ -73,6 +74,9 @@ __all__ = [
     "descend",
     "Descent",
     "pure_water_absorption",
+    "petzold_scattering",
+    "PETZOLD_STATIONS",
+    "ScatteringFunction",
     "shortwave_parameters",
     "solar_fraction",
     "jerlov1968_solar_fraction",
@@ -92,4 +96,4 @@ __all__ = [
     "MissingQuantityError",
 ]
 
-__version__ = "0.6.0"
+__version__ = "0.7.0"

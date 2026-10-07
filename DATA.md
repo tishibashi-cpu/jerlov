@@ -3,7 +3,7 @@
 What every shipped table is, where it came from, what was verified, and what
 is known to be wrong with it.
 
-Twenty entries are recorded below. Eight are confirmed defects, three were
+Twenty-one entries are recorded below. Eight are confirmed defects, three were
 open questions that the first edition of Jerlov settled, and the rest are
 notes rather than defects. None of them is repaired silently: values that
 could be recovered carry `status = reconstructed` and say how, values that
@@ -27,6 +27,8 @@ could not are `missing`, and values that are used but doubtful are `suspect`.
 | `jerlov1968_total_irradiance.csv` | Percent of total irradiance 300-2500 nm by depth | 120 |
 | `paulson1977_shortwave.csv` | Two-exponential shortwave penetration parameters | 9 |
 | `boss2001_chi.csv` | chi for converting a single-angle measurement to bb | 12 |
+| `petzold1972_vsf.csv` | Volume scattering function at 55 angles, 0.1-180 deg, 530 nm, 8 stations | 440 |
+| `petzold1972_stations.csv` | c, b, a, B/S, slope and median angle of each station | 8 |
 | `williamson2022_aw.csv` | Pure water absorption that Williamson & Hollins (2022) built their a on. 1 nm, 300-800 nm | 501 |
 
 The four tables drawn from the two Dstl datasets (`williamson2022_iop`,
@@ -927,3 +929,82 @@ Pope & Fry (1997) on its own, the most cited pure water spectrum, is not
 shipped either: none of the sources here used it alone, and one source's a
 minus another's aw is partly a difference between two laboratories' pure
 water, not the absorption of what was in the water.
+
+## 21. Petzold's volume scattering functions (note)
+
+`petzold1972_vsf.csv` and `petzold1972_stations.csv` are transcribed from
+Petzold, T. J. (1972), "Volume scattering functions for selected ocean
+waters", SIO Ref. 72-78, Scripps Institution of Oceanography, Visibility
+Laboratory; DTIC AD0753474. The report is marked "Approved for public
+release; distribution unlimited". `petzold_scattering(station)` returns one
+station.
+
+**What was transcribed.** The eight ocean stations of the report's Figs. 22
+to 37: three in the Tongue of the Ocean, Bahamas (AUTEC 7, 8, 9), two off
+southern California (HAOCE 5 in Avalon Cove, Catalina Island, and HAOCE 11
+in the channel between Catalina and the coast) and three in San Diego Harbor
+(NUC 2200, 2040, 2240). For each, sigma(theta), its running integral and
+that integral over s at the report's 55 angles, and from the summary page c,
+s and a at 530 nm, B/S, the slope used below 0.1 degree and the median
+angle. The laboratory runs of Figs. 38 to 51 (fresh water, filtered sea
+water) are not ocean water and are not shipped.
+
+**How it was checked.** All 1320 table entries were read from the page
+images and compared with the report's own OCR text: every entry the OCR
+rendered legibly agreed, and the ones it garbled were read again at higher
+magnification. `tools/build_petzold1972.py` carries the numbers as literals
+and then requires, for every station:
+
+- sigma at the 21 angles it shares with the summary page's "ITERATED DATA"
+  column, a second printing of the same numbers, to agree to one unit in the
+  fifth figure;
+- the normalised integral to equal the integral over s;
+- each step of the integral to follow from sigma, taken as a power law
+  between printed angles: within 1 percent below 10 degrees, 3 percent
+  beyond;
+- sigma/s at 20, 40, 45 and 90 degrees, s, a = c - s, B/S and the median
+  angle to agree with the summary page;
+- below 10 degrees, each sigma to lie within 1.5 percent of a smooth curve
+  through its neighbours, and from 35 to 175 degrees each sigma between two
+  twice-printed angles within -5 and +2 percent of their geometric mean
+  (0.85 percent, and -3.9 and +1.0, as printed);
+- where nothing was measured below 0.169 degree, the values there to follow
+  the printed slope.
+
+Altering one digit at random and rerunning the script, every change to the
+first figure of sigma or of the integral, every change to the integral's
+first four figures, and 28 of 30 changes to the second figure of sigma made
+it fail. Changes of under about 1 percent to sigma mostly pass; for those the
+values rest on the two readings, and at 21 angles on the second printing.
+
+**Two things in the report itself.** At AUTEC 7 and 10 degrees the two
+printings differ in the fifth figure, 9.9396E-02 and 9.9395E-02; the table's
+value is shipped. And the running integral of NUC 2200 and NUC 2040
+alternates about the true value beyond about 90 degrees: pairs of 5-degree
+steps agree with sigma, single steps do not. It is in the printout, not the transcription, since the normalised
+column alternates with it. Neither affects sigma.
+
+**What is measured and what is not.** Only 0.169 degree and up was usable in
+the clearer waters (the report's section 5.1), so at the AUTEC and HAOCE
+stations sigma at 0.1, 0.126 and 0.158 degree is the report's power-law
+extension; those 15 rows are `extrapolated` and warn. Below 0.1 degree
+nothing is tabulated, but the report extends sigma to zero with the same
+slope and counts it in s: 3.4 to 14.5 percent of s, in line with its "3 to
+15 percent". The report puts the low-angle data at plus or minus 20 percent,
+30 at 0.169 degree in the clearest water, and the general-angle data at 5.
+
+**What these are not.** They are the scattering of eight particular waters on
+particular days in 1971, total of water and particles, at 530 nm, the
+wavelength the report gives for c; the scattering meters measured through a
+band in the green (its Fig. 3). Petzold classified nothing: no station is a
+Jerlov type, and none is mapped to one here. AUTEC 7, though in the Tongue of
+the Ocean, was over 7 fathoms of water; AUTEC 8 and 9 were over 850 and 1045.
+
+B/S across the eight runs from 0.013 to 0.044, a factor of three, which is
+the same point as section 10 made from the other direction: a backscattering
+ratio is a property of a water, not of a classification.
+
+The phase function Solonenko & Mobley (2015) used with HydroLight (section
+19) they describe as the average of Petzold's coastal, harbor and ocean
+phase functions. That average is not in this report, which stations and
+what processing went into it is not stated there, and it is not shipped.
