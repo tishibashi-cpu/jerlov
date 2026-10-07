@@ -1,10 +1,13 @@
 # -*- coding: utf-8 -*-
 """Extract the measured a and b points of Williamson & Hollins (2022).
 
-These are the values behind Tables 1 and 2 of Hollins & Williamson (2023),
-which recommends them over the fitted spectra when the fitting model would
-bias the result. The paper kept only averages built from five or more
-measurements; that filter is reproduced here and checked.
+These are the averages of Williamson & Hollins (2022), whose Table 3 gives
+how many values went into each, and they are the a_i, b_i of Hollins &
+Williamson (2023) Tables 1 and 2, which prefers them to the fitted spectra
+when the fitting model would bias the result. The 2022 paper kept only
+averages built from five or more values; that filter is reproduced here and
+checked. The 2023 Table 1 omits two a values that pass it (5C at 676 and
+715 nm); see DATA.md section 9.
 """
 
 import sys, pathlib

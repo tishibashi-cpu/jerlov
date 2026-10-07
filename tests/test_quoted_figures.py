@@ -71,7 +71,9 @@ def test_the_three_routes_span_the_stated_factor_at_532nm():
 
 def test_the_small_particle_coefficients_differ_by_the_stated_amount():
     """DATA.md section 6: 1.513 is 31 percent larger than 1.151302."""
-    haltrin = jerlov.get_source("williamson2022").scattering.small_coeff
+    from jerlov.sources import HALTRIN1999
+
+    haltrin = HALTRIN1999.small_coeff
     solonenko = jerlov.get_source("solonenko2015").scattering.small_coeff
     assert haltrin == pytest.approx(1.151302)
     assert solonenko == pytest.approx(1.513)
@@ -108,9 +110,12 @@ def test_the_worst_chi_p_spread_is_the_stated_figure():
     with pytest.warns(jerlov.AngleWarning, match="34.8"):
         result = jerlov.bb_from_vsf(0.002, 170.0, 532.0)
     assert result.quoted_error_percent == pytest.approx(34.8)
-    middle = [jerlov.bb_from_vsf(0.002, a, 532.0).quoted_error_percent
-              for a in (100.0, 120.0, 140.0, 160.0)]
-    assert max(middle) <= 6.5, "the 3-6 percent claim no longer holds"
+    # The other tabulated angles. This once said "3-6" and checked only the
+    # upper end, which let the 2.6 at 100 degrees through.
+    others = [jerlov.bb_from_vsf(0.002, a, 532.0).quoted_error_percent
+              for a in np.arange(90.0, 161.0, 10.0)]
+    assert min(others) == pytest.approx(2.6)
+    assert max(others) == pytest.approx(6.4)
 
 
 def test_chi_w_and_chi_p_cross_where_the_docs_say():

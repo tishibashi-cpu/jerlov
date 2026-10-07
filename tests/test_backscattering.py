@@ -61,7 +61,8 @@ def test_chi_p_matches_the_published_table():
 
 
 def test_chi_p_peaks_in_the_middle_of_the_backward_hemisphere():
-    """Which is why both papers recommend 110-160 degrees."""
+    """Maffione & Dana (1997) recommend roughly 110-160 degrees for this
+    reason. Boss & Pegau recommend near 117, or water removal up to 160."""
     angles = np.arange(90.0, 171.0, 1.0)
     values = [jerlov.particulate_chi(a) for a in angles]
     assert 130.0 <= angles[int(np.argmax(values))] <= 145.0

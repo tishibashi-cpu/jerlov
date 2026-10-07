@@ -198,7 +198,7 @@ r.chi_p, r.quoted_error_percent  # 1.18, 3.5
 Boss & Pegau (2001). The pure sea water terms are analytic and are checked
 against the definition of bb rather than transcribed; only the particle
 conversion is tabulated. Angles outside 90-170 degrees are refused, and 170
-warns: its quoted spread is **34.8 percent** against 3-6 in the middle.
+warns: its quoted spread is **34.8 percent** against 2.6-6.4 from 90 to 160.
 
 This gives the bb of the water your instrument was in. It still gives no bb
 for a Jerlov water type, because nothing does.

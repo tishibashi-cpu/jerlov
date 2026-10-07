@@ -48,10 +48,12 @@ _ERROR_WARN_PERCENT = 10.0
 class AngleWarning(UserWarning):
     """The conversion is poorly constrained at the requested angle.
 
-    The shape of the volume scattering function varies most steeply near 90
-    and 180 degrees, so a single-angle measurement there pins bb least well.
-    Both Boss & Pegau (2001) and Maffione & Dana (1997) recommend 110 to 160
-    degrees.
+    The shape of the volume scattering function varies most near 90 and 180
+    degrees, so a single-angle measurement there pins bb least well. Maffione
+    & Dana (1997) recommend sensors covering roughly 110 to 160 degrees. Boss
+    & Pegau (2001) recommend measuring near 117 degrees, and otherwise
+    removing the water contribution first, which they support from near 90
+    to 160 degrees.
     """
 
 
@@ -124,15 +126,15 @@ def _chi_table():
 def particulate_chi(angle_deg):
     """``chi_p`` at one angle, interpolated within Boss & Pegau Table 1.
 
-    Refuses outside 90 to 170 degrees, the range their measurements cover.
+    Refuses outside 90 to 170 degrees, the range their Table 1 covers.
     """
     angle = float(angle_deg)
     if not MIN_ANGLE_DEG <= angle <= MAX_ANGLE_DEG:
         raise ValueError(
             f"chi_p is tabulated from {MIN_ANGLE_DEG:g} to {MAX_ANGLE_DEG:g} "
-            f"degrees and {angle:g} is outside that. Boss & Pegau made no "
-            "measurement beyond 170 degrees, and this package does not "
-            "extrapolate."
+            f"degrees and {angle:g} is outside that. Boss & Pegau tabulate no "
+            "angle beyond 170 degrees, although their instrument reached "
+            "177.3, and this package does not extrapolate."
         )
     angles, values, _ = _chi_table()
     return float(np.interp(angle, angles, values))
@@ -197,7 +199,7 @@ def bb_from_vsf(beta, angle_deg: float, wavelength_nm, *,
     if error > _ERROR_WARN_PERCENT:
         warnings.warn(
             f"chi_p at {angle:g} degrees carries a quoted spread of "
-            f"{error:.1f}%, against 3-6% between 100 and 160 degrees. The "
+            f"{error:.1f}%, against 2.6-6.4% from 90 to 160 degrees. The "
             "scattering function varies steeply here and a single-angle "
             "measurement pins bb poorly.",
             AngleWarning,

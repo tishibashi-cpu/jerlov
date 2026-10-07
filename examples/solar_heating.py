@@ -112,9 +112,9 @@ print(f"""
   Worst disagreement anywhere in the upper 100 m: {worst:.0%}, at 1 m.
 
   Two exponentials cannot follow the sharp decay in the first metre or two.
-  The paper is explicit about the same limitation deeper down: it excluded the
-  10 m point from the fit because the form does not capture the transition
-  there.
+  The paper fitted the table "neglecting the 10 m value" and says the fit
+  "is least accurate in the upper 10 m"; it gives no reason for leaving that
+  point out.
 
   **If your top cell is a metre thick, this matters to you.** DATA.md
   section 14.""")

@@ -453,10 +453,13 @@ every angle and that value must equal the direct integral of the definition of
 bb. `tools/build_boss2001.py` asserts both. Only chi_p, which rests on 41
 measured scattering functions, is a table.
 
-**The angle range is enforced.** 90 to 170 degrees, which is what the
-measurements cover, and a warning above a 10 percent quoted spread. At 170 the
-spread is 34.8 percent against 3 to 6 in the middle, and a caller who picked
-that angle should be told rather than handed a number.
+**The angle range is enforced.** 90 to 170 degrees, the span of Boss &
+Pegau's Table 1, and a warning above a 10 percent quoted spread. At 170 the
+spread is 34.8 percent against 2.6 to 6.4 at the other angles, and a caller
+who picked that angle should be told rather than handed a number. (This said
+the range was what the measurements cover, and "3 to 6"; their instrument
+measured to 177.3 degrees, and the table is what stops at 170. Corrected in
+0.5.1 after reading the paper again.)
 
 **chi and chi_p are kept apart.** They are printed under the same symbol by
 different authors, and differ by 9 percent at 140 degrees because one includes
