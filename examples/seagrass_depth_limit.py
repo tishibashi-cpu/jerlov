@@ -4,15 +4,28 @@ For coastal ecology and habitat restoration. Seagrasses are found down to
 the depth at which enough of the surface light still reaches the bottom.
 Duarte (1991), compiling depth limits worldwide, found that on average
 about 11 percent of the surface irradiance reaches the deepest plants.
-Later studies report values from about 5 to 25 percent, higher in turbid
-water; the threshold is a property of the species and the site, not of the
-water. So it is an argument here, and three are tried.
+Other empirical determinations range from 5 to 25 percent (Kenworthy &
+Haunert 1991; Dennison et al. 1993), and seagrasses in turbid water have
+markedly higher percentages at their depth limits than those in clear
+water (Duarte et al. 2007). The threshold is a property of the species and
+the site, not of the water, so it is an argument here, and three are
+tried.
 
     python examples/seagrass_depth_limit.py
 
 The thresholds are quoted from the literature, not checked by this
-package. Duarte, C. M. (1991), "Seagrass depth limits", Aquatic Botany
-40, 363-377.
+package. The primary papers were not obtained; every figure above was
+read as the two reviews below cite it:
+
+    Ralph, P. J. et al. (2007), "Impact of light limitation on
+    seagrasses", J. Exp. Mar. Biol. Ecol. 350, 176-193; p. 177 for the
+    11 percent of Duarte (1991) and the 5-25 percent range.
+    Krause-Jensen, D. & Carstensen, J. (2018), "Light requirements of
+    marine rooted macrophytes", DCE research note, Aarhus University;
+    p. 3 for the 11 percent, pp. 3 and 5 for the turbid-water finding.
+
+    Duarte, C. M. (1991), "Seagrass depth limits", Aquatic Botany 40,
+    363-377, as both reviews cite it.
 """
 
 import math
