@@ -23,6 +23,7 @@ from .colour import (
     spectrum_to_xyz,
     xyz_to_srgb,
 )
+from .par import PAR_RANGE_NM, ParProfile, par_profile
 from .petzold import PETZOLD_STATIONS, ScatteringFunction, petzold_scattering
 from .scene import (
     AttenuationCoefficients,
@@ -39,11 +40,13 @@ from .shortwave import (
 from .sources import SOURCES, Source, get_source
 from .water import (
     Descent,
+    KdClassification,
     MeasuredPoints,
     MissingQuantityError,
     ProvenanceWarning,
     Water,
     b_from_c,
+    classify_kd,
     descend,
     kd_spectrum,
     measured_points,
@@ -73,6 +76,11 @@ __all__ = [
     "water_type_at_depth",
     "descend",
     "Descent",
+    "classify_kd",
+    "KdClassification",
+    "par_profile",
+    "ParProfile",
+    "PAR_RANGE_NM",
     "pure_water_absorption",
     "petzold_scattering",
     "PETZOLD_STATIONS",
@@ -96,4 +104,4 @@ __all__ = [
     "MissingQuantityError",
 ]
 
-__version__ = "0.8.0"
+__version__ = "0.9.0"

@@ -55,6 +55,10 @@ It also marks a doubtful channel and attaches replicate uncertainties to
 your own spectra: a value you flag `suspect` warns exactly as a published one
 does, and a status the package does not know is refused.
 
+It ranks the published types by their distance from a measured Kd, from one
+wavelength and from a spectrum, and shows why the spectrum tells oceanic and
+coastal types apart better.
+
 It ends by putting the measured bb back into a scene and comparing against a
 plausible guess: at 5 m the guess overstates the contrast by 65 percent. That
 is the argument for why `Water.bb` has no default, made with numbers rather
@@ -81,7 +85,10 @@ down through the typical depth profile of Williamson & Hollins (2023), each
 10 m layer with its own type's Kd. The correction runs both ways: at 490 nm
 and 60 m, Jerlov I receives a third less light than its surface Kd implies,
 and 3C **530 times more**. The 1 percent light level of Jerlov I rises from
-197 m to 133 m. Where the paper declared no type, it stops.
+197 m to 133 m. Where the paper declared no type, it stops. Then PAR, which
+reaches 1 percent shallower than 490 nm light from I to 5C and deeper in 7C
+and 9C, and a scene
+built from the descent with `Scene.at_depth`.
 
 **`measured_scattering.py`** — Petzold's (1972) eight measured volume
 scattering functions. Their backscatter ratios run from **0.013 to 0.044**,

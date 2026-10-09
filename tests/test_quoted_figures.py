@@ -370,3 +370,44 @@ def test_examples_README_figure_for_measured_backscatter_ratios():
                              veiling_radiance=b_inf)
         contrasts.append(seen.contrast(b_inf)[2])
     assert (round(max(contrasts), 1), round(min(contrasts), 1)) == (4.0, 2.6)
+
+
+def test_figures_for_the_PAR_depth_against_490nm():
+    """light_at_depth.py, its README and DECISIONS.md section 29: with D65,
+    PAR reaches 1 percent 15 to 21 percent shallower than 490 nm light in
+    the oceanic types, shallower down to 5C, and 12 and 45 percent deeper
+    in 7C and 9C. Jerlov I, layer by layer, rises from 167 m to 107 m."""
+    band = np.arange(400.0, 701.0, 5.0)
+    surface = np.interp(band, *jerlov.d65())
+    shallower = {}
+    with quiet():
+        warnings.simplefilter("ignore", jerlov.ProvenanceWarning)
+        for t in jerlov.get_source("jerlov1976").water_types:
+            w = jerlov.water(t, source="jerlov1976")
+            par = jerlov.par_profile(surface, band, 0.0, kd=w, unit="energy")
+            at_490 = math.log(100) / w.kd(490.0)
+            shallower[t] = 1 - par.depth_of_fraction() / at_490
+        layered = jerlov.par_profile(surface, band, 0.0, unit="energy",
+                                     kd=jerlov.descend("I", 200.0, band))
+        flat = jerlov.par_profile(surface, band, 0.0, unit="energy",
+                                  kd=jerlov.water("I", source="jerlov1976"))
+    oceanic = [100 * shallower[t] for t in ("I", "IA", "IB", "II", "III")]
+    assert (round(min(oceanic)), round(max(oceanic))) == (15, 21)
+    assert all(shallower[t] > 0 for t in ("1C", "3C", "5C"))
+    assert (round(-100 * shallower["7C"]), round(-100 * shallower["9C"])) \
+        == (12, 45)
+    assert (round(flat.depth_of_fraction()),
+            round(layered.depth_of_fraction())) == (167, 107)
+
+
+@source_tree
+def test_README_figures_for_classify_kd():
+    """README.md prints the repr of a classification; this is the
+    reconstructed spectrum of from_one_measurement.py, Kd(490) = 0.060."""
+    readme = (ROOT / "README.md").read_text()
+    quoted = re.search(r"# (<KdClassification [^>]+>)", readme).group(1)
+    band = np.arange(400.0, 651.0, 10.0)
+    with quiet():
+        warnings.simplefilter("ignore", jerlov.ProvenanceWarning)
+        result = jerlov.classify_kd(band, jerlov.kd_spectrum(0.060, 490, band))
+    assert repr(result) == quoted

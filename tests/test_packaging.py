@@ -172,6 +172,7 @@ def test_the_zenodo_record_names_every_shipped_module():
         ("shortwave.py", "shortwave"),
         ("backscattering.py", "backscattering coefficient"),
         ("water.py", "scattering coefficients"),
+        ("par.py", "photosynthetically available radiation"),
     ):
         assert (ROOT / "jerlov" / module).exists()
         assert phrase in described, (

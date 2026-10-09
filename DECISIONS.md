@@ -627,3 +627,62 @@ test keeps them so, for the reason in section 15.
 `pip install "jerlov[plot]"` commands stay silent. pip already installs the
 package and only warns, and a silent no-op extra is the same false claim.
 
+## 29. PAR, a descent into a scene, and the nearest type
+
+Three additions in 0.9.0, each with a choice that could have gone the other
+way.
+
+**`Scene.at_depth` takes a `Descent`.** Until now a descent reached a scene
+only by multiplying the surface spectrum by hand. `kd=` now accepts the
+descent itself, and refuses one computed to another depth or on other
+wavelengths: either mismatch gave a scene whose downwelling irradiance
+belonged somewhere else, with nothing to show it. The water along the path is
+still the caller's, and is not checked against the descent's last layer. A
+caller may know the water there better than the typical profile does, and the
+check would refuse exactly that case.
+
+**PAR counts photons, and the unit has no default.** `par_profile` requires
+`unit="energy"` or `"photons"`. Guessing either is wrong for the other kind
+of spectrum, and the error is not a factor that cancels: it reweights the
+blue against the red, so it changes the 1 percent depth as well as the
+value. It is planar PAR, from Ed, and says so; PAR on scalar irradiance is
+larger by a factor that depends on the light field, which nothing here
+determines. The 1 percent depth is found from the spectrum, not from
+ln(100) / Kd at a chosen wavelength, which is how it is usually quoted.
+With D65 at the surface, the spectral answer is shallower than that at 490
+nm by 15 to 21 percent in the oceanic types, and the gap closes through the
+coastal ones until, in 7C and 9C, it is deeper, by 12 and 45 percent: there
+the light that gets furthest is yellow-green, not blue. A first draft of
+the example said "shallower in every type", having checked only the types
+down to 5C.
+
+Below a descent, PAR has no answer. `depth_of_fraction` raises when the
+light has not fallen far enough by the bottom of the descent, rather than
+carrying the last layer's Kd on, for the reason in section 26.
+
+**`classify_kd` reverses an example, not a decision.** `from_one_measurement.py`
+said "there is no classify() here, deliberately": a single Kd does not pin a
+type, and the boundaries differ between the 1968, 1976 and 1978 editions.
+Both objections stand, and they are answered by what the function returns
+rather than by not having one.
+
+- It ranks every type by distance and returns the whole ranking, so an
+  ambiguous measurement looks ambiguous. The distance is the root mean
+  square of ln(measured / type), so that a relative difference counts the
+  same in clear water as in the red.
+- It draws no boundaries. It compares with the spectra of one edition, named
+  by `source`, and the result carries it.
+- `beyond` says when the measurement lies outside every type, where the
+  nearest is only an end of the classification.
+- Wavelengths at which any type has no Kd are left out of every distance,
+  and recorded, since distances over different wavelengths cannot be
+  compared.
+
+**Rejected:** interpolating between types to report "40 percent of the way
+from II to III". The types are points chosen by Jerlov, not samples of a
+continuum, and a fractional type would be a quantity nobody defined.
+
+**Rejected:** using Aas et al. (2013)'s K(475) boundaries. They are one
+author's reading of one edition, and the edition they read, Jerlov (1978),
+was not obtained (DATA.md section 2).
+

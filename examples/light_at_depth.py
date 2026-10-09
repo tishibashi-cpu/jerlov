@@ -117,7 +117,49 @@ print("""
   and that of 1C falls by a few metres.""")
 
 # --------------------------------------------------------------------------
-rule("4. Where the profile runs out")
+rule("4. PAR, not one wavelength")
+
+print("""Photosynthesis uses 400-700 nm, not 490. `par_profile` attenuates
+each wavelength with its own Kd and counts the photons that are left. D65
+stands in for the surface spectrum.""")
+
+band = np.arange(400.0, 701.0, 5.0)
+d65 = np.interp(band, *jerlov.d65())
+print(f"\n  {'surface':>7} {'one Kd':>9} {'per layer':>10}   1% at {NM:g} nm, per layer")
+par_depths = {}
+for surface_type in ("I", "IB", "II", "III", "1C", "3C", "5C", "7C", "9C"):
+    w = jerlov.water(surface_type, source="jerlov1976")
+    flat = jerlov.par_profile(d65, band, 0.0, kd=w, unit="energy")
+    # As deep as the profile goes for this type, in 10 m steps.
+    for depth in np.arange(200.0, 0.0, -10.0):
+        try:
+            d = jerlov.descend(surface_type, depth, band)
+            break
+        except jerlov.MissingQuantityError:
+            continue
+    layered = jerlov.par_profile(d65, band, 0.0, kd=d, unit="energy")
+    par_depths[surface_type] = (flat.depth_of_fraction(),
+                                layered.depth_of_fraction())
+    try:
+        shown = f"{par_depths[surface_type][1]:>8.1f} m"
+    except jerlov.MissingQuantityError:
+        shown = f"  none above {d.depth_m:g} m"
+    single, stopped = one_percent_depth(surface_type, layered=True)
+    print(f"  {surface_type:>7} {flat.depth_of_fraction():>7.1f} m {shown:>10}"
+          f"   {f'{single:.1f} m' if single else f'none above {stopped - 0.5:g} m':>10}")
+
+print(f"""
+  From I to 5C the 1 percent depth of PAR is shallower than that of light
+  at 490 nm: the red and the violet are gone within the first few metres,
+  so PAR loses most of its photons early and only then settles to the decay
+  of the blue-green. In 7C and 9C it is deeper, because there 490 nm is no
+  longer the wavelength that gets furthest; the yellow-green is. The layers
+  matter only where the light gets below the surface type's own layers, as
+  for Jerlov I, where the 1 percent depth of PAR rises from
+  {par_depths["I"][0]:.0f} m to {par_depths["I"][1]:.0f} m.""")
+
+# --------------------------------------------------------------------------
+rule("5. Where the profile runs out")
 
 for surface_type, depth in (("3C", 80.0), ("9C", 15.0), ("IB", 250.0)):
     try:
@@ -126,12 +168,12 @@ for surface_type, depth in (("3C", 80.0), ("9C", 15.0), ("IB", 250.0)):
         print(f"\n  {surface_type} to {depth:g} m:\n    {error}")
 
 # --------------------------------------------------------------------------
-rule("5. Into a scene")
+rule("6. Into a scene")
 
-print("""The transmittance multiplies a surface spectrum, and the result is
-the downwelling irradiance that `Scene` takes. A diver at 40 m under water
-that was 1C at the surface is typically in II, so the path between diver and
-target is II.""")
+print("""`Scene.at_depth` takes the descent as it is, and builds the
+downwelling irradiance from it. A diver at 40 m under water that was 1C at
+the surface is typically in II, so the path between diver and target is
+II.""")
 
 wl = np.arange(450.0, 651.0, 50.0)
 surface = np.interp(wl, *jerlov.d65())
@@ -141,9 +183,9 @@ with warnings.catch_warnings():
     warnings.simplefilter("error", jerlov.ProvenanceWarning)
     d = jerlov.descend("1C", 40.0, wl)
 here = jerlov.water_type_at_depth("1C", 40.0)
-scene = jerlov.Scene(jerlov.water(here), surface * d.transmittance, wl,
-                     depth_m=40.0)
-print(f"\n  water at 40 m: Jerlov {here}")
+scene = jerlov.Scene.at_depth(jerlov.water(here), 40.0, surface, wl, kd=d)
+print(f"\n  {d!r}")
+print(f"  water at 40 m: Jerlov {here}")
 print(f"  {'nm':>6} {'Ed(40)/Ed(0)':>14}")
 for nm, t in zip(wl, d.transmittance):
     print(f"  {nm:>6.0f} {t:>14.2e}")
@@ -162,6 +204,8 @@ print("""  - The profile is typical, not local. Williamson & Hollins (2023) give
     sources between layers would make the profile partly a profile of
     sources.
   - D65 stands in for the real surface spectrum.
+  - PAR here is planar: it integrates Ed. PAR defined on scalar
+    irradiance is larger, by a factor that depends on the light field.
 
   Every one of these is a choice you can replace with a measurement.
 """)

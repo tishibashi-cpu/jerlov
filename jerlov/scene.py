@@ -29,7 +29,13 @@ from dataclasses import dataclass
 
 import numpy as np
 
-from .water import MissingQuantityError, Water, _as_array, _require_number
+from .water import (
+    Descent,
+    MissingQuantityError,
+    Water,
+    _as_array,
+    _require_number,
+)
 
 
 @dataclass(frozen=True)
@@ -215,15 +221,26 @@ class Scene:
                  wavelengths, *, kd) -> "Scene":
         """Build a scene by attenuating a surface spectrum down to ``depth_m``.
 
-        ``Ed(z) = Ed(0) * exp(-Kd * z)``, which assumes Kd is constant with
-        depth. Jerlov's own classification is defined over the upper 10 m, so
-        this is reasonable there and increasingly rough below it. Below it,
-        :func:`~jerlov.descend` changes the type layer by layer instead.
+        ``kd`` says how the light got there. Either:
 
-        ``kd`` is either a :class:`~jerlov.water.Water` carrying Kd, such as
-        ``jerlov.water("III", source="austin1986")``, or an array on
-        ``wavelengths``. The default IOP source has no Kd of its own, so it
-        must come from somewhere explicit.
+        - a :class:`~jerlov.water.Water` carrying Kd, such as
+          ``jerlov.water("III", source="austin1986")``, or an array on
+          ``wavelengths``. Then ``Ed(z) = Ed(0) * exp(-Kd * z)``, which
+          assumes Kd is constant with depth. Jerlov's classification is
+          defined over the upper 10 m, so this is reasonable there and
+          increasingly rough below it. The default IOP source has no Kd of
+          its own, so it must come from somewhere explicit.
+        - a :class:`~jerlov.water.Descent` to ``depth_m`` on the same
+          wavelengths, from :func:`~jerlov.descend`, which changes the type
+          layer by layer::
+
+              d = jerlov.descend("1C", 45.0, wl)
+              scene = jerlov.Scene.at_depth(jerlov.water("II"), 45.0,
+                                            surface, wl, kd=d)
+
+        ``water`` is the water along the horizontal path at ``depth_m``,
+        and nothing checks it against the descent: there it is the type of
+        the last layer, ``d.layers[-1][2]``, unless you know better.
         """
         wavelengths = np.asarray(wavelengths, dtype=float)
         _require_number(depth_m, "depth_m")
@@ -234,17 +251,26 @@ class Scene:
             raise ValueError(
                 "surface_downwelling must have the same shape as wavelengths"
             )
-        kd_values = kd.kd(wavelengths) if isinstance(kd, Water) else (
-            np.asarray(kd, dtype=float)
-        )
-        if kd_values.shape != wavelengths.shape:
-            raise ValueError("kd must have the same shape as wavelengths")
-        return cls(
-            water,
-            surface * np.exp(-kd_values * depth_m),
-            wavelengths,
-            depth_m=depth_m,
-        )
+        if isinstance(kd, Descent):
+            if kd.depth_m != float(depth_m):
+                raise ValueError(
+                    f"the descent goes to {kd.depth_m:g} m, but the scene is "
+                    f"at {float(depth_m):g} m"
+                )
+            if not np.array_equal(kd.wavelengths, np.atleast_1d(wavelengths)):
+                raise ValueError(
+                    "the descent was computed on other wavelengths; pass the "
+                    "same wavelengths to descend() and at_depth()"
+                )
+            downwelling = surface * kd.transmittance
+        else:
+            kd_values = kd.kd(wavelengths) if isinstance(kd, Water) else (
+                np.asarray(kd, dtype=float)
+            )
+            if np.shape(kd_values) != wavelengths.shape:
+                raise ValueError("kd must have the same shape as wavelengths")
+            downwelling = surface * np.exp(-kd_values * depth_m)
+        return cls(water, downwelling, wavelengths, depth_m=depth_m)
 
     # -- the path --------------------------------------------------------
 

@@ -4,6 +4,35 @@ Every release is archived on Zenodo under the concept DOI
 [10.5281/zenodo.22321312](https://doi.org/10.5281/zenodo.22321312), which
 always resolves to the latest version.
 
+## 0.9.0 — 2026-10-09
+
+Three additions. No shipped value changed.
+
+**Added.**
+
+- `Scene.at_depth` takes the result of `descend` as `kd`, and builds the
+  downwelling irradiance from its layer-by-layer transmittance. A descent
+  to another depth, or on other wavelengths, is refused.
+- `par_profile`: PAR, the photon flux from 400 to 700 nm, at any depths
+  below a surface spectrum, each wavelength attenuated by its own Kd. `kd`
+  is a `Water`, an array or a `Descent`. `ParProfile.depth_of_fraction`
+  gives the depth at which PAR falls to a fraction of its surface value, 1
+  percent by default. `unit` (`"energy"` or `"photons"`) has no default.
+  This is planar PAR, from Ed.
+- `classify_kd`: ranks the Jerlov types of one source by their distance
+  from a measured Kd spectrum, the root mean square of ln(measured / type).
+  The result names the nearest type, gives every distance, says when the
+  measurement is clearer or more turbid than every type, and records the
+  wavelengths it left out. Flagged reference values give one
+  `ProvenanceWarning`, not one per type.
+
+**Examples.** `light_at_depth.py` adds PAR and its 1 percent depth, and
+builds its scene with `Scene.at_depth(kd=descent)`. `from_one_measurement.py`
+uses `classify_kd` where it used to say there was none.
+
+**Docs.** DECISIONS.md section 29 records the choices, including why the
+example's "no classify(), deliberately" was answered rather than kept.
+
 ## 0.8.0 — 2026-10-09
 
 Fixes from the review that followed 0.7.3. No shipped value changed.

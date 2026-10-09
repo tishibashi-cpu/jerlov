@@ -249,11 +249,43 @@ layer attenuating by the Kd of its own type:
 ```python
 d = jerlov.descend("1C", 45.0, wl)        # source="jerlov1976" by default
 d.layers          # ((0, 10, '1C'), (10, 20, '1C'), (20, 30, 'III'), ..., (40, 45, 'II'))
-scene = jerlov.Scene(jerlov.water("II"), surface * d.transmittance, wl, depth_m=45.0)
+d                 # <Descent 1C to 45 m: 1C 0-20, III 20-40, II 40-45 m; Kd from jerlov1976; ...>
+scene = jerlov.Scene.at_depth(jerlov.water("II"), 45.0, surface, wl, kd=d)
 ```
 
 It refuses to go through a layer the paper declared nothing for, rather than
 carrying the last type on: 3C stops at 70 m, 9C at 10 m.
+
+## Light for photosynthesis
+
+PAR, the photon flux from 400 to 700 nm, attenuated wavelength by wavelength
+rather than with one coefficient, and the depth at which it falls to 1
+percent of its surface value:
+
+```python
+p = jerlov.par_profile(surface, wl, [0, 25, 50], kd=d, unit="energy")
+p.par                      # umol photons m-2 s-1 at each depth
+p.fraction                 # PAR(z) / PAR(0)
+p.depth_of_fraction(0.01)  # m
+```
+
+`kd` is a `Water` carrying Kd, an array, or a `Descent`. `unit` has no
+default, because PAR counts photons and an energy spectrum read as photons is
+weighted wrongly with no sign of it. This is planar PAR, from Ed; PAR on
+scalar irradiance is larger by a factor this package cannot supply.
+
+## Which type is my water nearest?
+
+```python
+r = jerlov.classify_kd(wl, measured_kd)       # source="jerlov1976" by default
+r                 # <KdClassification II 0.064, then IB 0.412 (jerlov1976, 26 wavelengths)>
+r.distances       # every type, nearest first: rms of ln(measured / type)
+r.beyond          # "clearer" or "more turbid" than every type, or None
+```
+
+It ranks the types of one edition; it draws no boundaries, since those differ
+between editions. A single wavelength is accepted, and ranks oceanic and
+coastal types less well apart than a spectrum does.
 
 ## Other entry points
 
