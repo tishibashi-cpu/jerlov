@@ -22,7 +22,8 @@ they are Jerlov's coastal types 1 and 3, written 1C and 3C here as
 everywhere else in the package.
 
 Jerlov, N. G., "Classification of sea water in terms of quanta irradiance",
-J. Cons. int. Explor. Mer 37(3), 281-287. The pages carry no year; the
+J. Cons. int. Explor. Mer 37(3), 281-287, doi:10.1093/icesjms/37.3.281.
+The pages carry no year; the
 latest observations used are from June 1976. Tables 2 and 4 p. 284 and
 286, Tables 3 and 5 p. 285 and 286.
 """

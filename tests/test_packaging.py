@@ -372,7 +372,8 @@ def test_every_optional_extra_is_used_by_something():
             )
 
 
-WORD_COUNTS = {"Eight": 8, "Nine": 9, "Ten": 10, "Eleven": 11, "Twelve": 12}
+WORD_COUNTS = {"Eight": 8, "Nine": 9, "Ten": 10, "Eleven": 11, "Twelve": 12,
+               "Thirteen": 13, "Fourteen": 14, "Fifteen": 15}
 
 
 @source_tree

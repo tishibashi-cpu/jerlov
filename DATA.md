@@ -1027,8 +1027,9 @@ what processing went into it is not stated there, and it is not shipped.
 
 `jerlov1977_quanta.csv` is transcribed from Jerlov, N. G., "Classification
 of sea water in terms of quanta irradiance", *J. Cons. int. Explor. Mer*
-37(3), 281-287, by `tools/build_jerlov1977.py`. From profiles measured with
-quanta meters at stations in fourteen regions, Jerlov tabulated, for types
+37(3), 281-287, doi:10.1093/icesjms/37.3.281, by
+`tools/build_jerlov1977.py`. From profiles measured with quanta meters at
+stations in fourteen regions, Jerlov tabulated, for types
 I, IA, IB, II, III and coastal 1 and 3:
 
 - Table 2: the depths at which 30, 10, 3 and 1 percent of the surface quanta

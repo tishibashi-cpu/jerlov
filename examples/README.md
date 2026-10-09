@@ -1,6 +1,6 @@
 # Examples
 
-Twelve scripts. Each runs against the installed package and needs nothing beyond
+Thirteen scripts. Each runs against the installed package and needs nothing beyond
 NumPy.
 
 ```
@@ -16,6 +16,7 @@ python examples/euphotic_zone.py
 python examples/optical_link.py
 python examples/seagrass_depth_limit.py
 python examples/isolumes.py
+python examples/lure_colours.py
 ```
 
 CI runs all of them on every push, so an example that has stopped working is a
@@ -42,6 +43,7 @@ copy of the package silently wins over the working tree. In a clone, run
 | design an underwater optical link or a lidar | `optical_link.py` |
 | work on seagrass, or on restoring a meadow | `seagrass_depth_limit.py` |
 | study vertical migration, or where animals sit in the light | `isolumes.py` |
+| design or test painted fishing lures or other gear | `lure_colours.py` |
 
 ## What each shows
 
@@ -145,6 +147,18 @@ blue. In Jerlov I they are 58 and 61 m; with I's own Kd all the way down
 they would be 106 and 114 m, so the typical turn to IB below 40 m roughly
 halves them. A thousandth of the surface light lies 9 times shallower in 9C
 than in II.
+
+**`lure_colours.py`** — six painted finishes seen horizontally through 0.5
+to 5 m of water, as colour swatches beside the paint in air (and, with
+`--png`, an image) and as luminance contrast against the open water behind
+them. What the water
+decides is exact: at each wavelength the contrast left at range r is
+exp(-c r), so in Jerlov 1C 22 to 35 percent of it is left at 2 m,
+depending on wavelength. What it does not decide is where the contrast
+starts: with the light on the lure's side and the water's backscatter
+ratio as guesses, the same finish starts anywhere across a factor of
+**124**, and red, blue and black change sign. It says so, and suggests
+measuring the start instead.
 
 ## What they do not show
 
