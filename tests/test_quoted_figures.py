@@ -447,3 +447,103 @@ def test_figures_for_the_euphotic_zone_example():
     assert (jerlov.classify_kd(band, other).water_type,
             jerlov.classify_kd(band, other, source="jerlov1968").water_type
             ) == ("IB", "II")
+
+
+BAND = np.arange(400.0, 701.0, 5.0)
+
+
+def _d65():
+    return np.interp(BAND, *jerlov.d65())
+
+
+def test_figures_for_the_optical_link_example():
+    """4.34 dB per attenuation length, 9.2 in 40 dB; clearest at 494 nm in
+    IB and 564 nm in 5C; the sources' ranges at 532 nm differ by up to 2.9,
+    in III."""
+    per_length = 10 * math.log10(math.e)
+    assert round(per_length, 2) == 4.34
+    assert round(40 / per_length, 1) == 9.2
+    grid = np.arange(420.0, 651.0, 1.0)
+    for t, nm in (("IB", 494), ("5C", 564)):
+        assert grid[np.argmin(jerlov.water(t).c(grid))] == nm
+    ratios = {}
+    for t in ("IB", "II", "III", "1C", "3C", "5C"):
+        a = jerlov.water(t).c(532.0)
+        b = jerlov.water(t, source="solonenko2015").c(532.0)
+        ratios[t] = max(a, b) / min(a, b)
+    assert max(ratios, key=ratios.get) == "III"
+    assert round(ratios["III"], 1) == 2.9
+
+
+def _layered_limit(water_type, fraction):
+    for depth in np.arange(200.0, 0.0, -10.0):
+        try:
+            d = jerlov.descend(water_type, depth, BAND)
+        except jerlov.MissingQuantityError:
+            continue
+        p = jerlov.par_profile(_d65(), BAND, 0.0, kd=d, unit="energy")
+        return p.depth_of_fraction(fraction)
+
+
+def test_figures_for_the_seagrass_example():
+    """At 11 percent: 13.4 m in III, 2.7 m in 9C, 3.3 m lost from 1C to 3C;
+    the top-metre Kd(PAR) puts III at 9.4 m. 5 percent in 3C goes as deep
+    as 11 percent in 1C."""
+    limit = {t: _layered_limit(t, 0.11) for t in ("III", "1C", "3C", "9C")}
+    assert round(limit["III"], 1) == 13.4
+    assert round(limit["9C"], 1) == 2.7
+    assert round(limit["1C"] - limit["3C"], 1) == 3.3
+    top = jerlov.par_profile(_d65(), BAND, 1.0, unit="energy",
+                             kd=jerlov.water("III", source="jerlov1976"))
+    assert round(math.log(1 / 0.11) / -math.log(top.fraction), 1) == 9.4
+    assert round(_layered_limit("3C", 0.05), 1) == round(limit["1C"], 1)
+
+
+def test_figures_for_the_isolumes_example():
+    """Steps of 58 and 61 m in I, 106 and 114 m with one Kd; steps grow with
+    depth in every oceanic type; 1e-3 lies 9 times shallower in 9C than in
+    II; the light peaks at 475 nm below, 550 nm at the surface."""
+    def steps(kd, n):
+        p = jerlov.par_profile(_d65(), BAND, 0.0, kd=kd, unit="energy")
+        z = []
+        for level in (1e-1, 1e-2, 1e-3, 1e-4, 1e-5)[:n]:
+            try:
+                z.append(p.depth_of_fraction(level))
+            except jerlov.MissingQuantityError:
+                break
+        return np.diff(z)
+
+    deepest = {"I": 200.0, "IA": 200.0, "IB": 200.0, "II": 200.0,
+               "III": 170.0}
+    layered_i = steps(jerlov.descend("I", 200.0, BAND), 3)
+    assert [round(s) for s in layered_i] == [58, 61]
+    flat_i = steps(jerlov.water("I", source="jerlov1976"), 3)
+    assert [round(s) for s in flat_i] == [106, 114]
+    for t, depth in deepest.items():
+        s = steps(jerlov.descend(t, depth, BAND), 5)
+        assert np.all(np.diff(s) > 0), t
+    milli = {t: jerlov.par_profile(_d65(), BAND, 0.0, unit="energy",
+                                   kd=jerlov.water(t, source="jerlov1976")
+                                   ).depth_of_fraction(1e-3)
+             for t in ("II", "9C")}
+    assert round(milli["II"] / milli["9C"]) == 9
+    photons = _d65() * BAND
+    assert BAND[np.argmax(photons)] == 550.0
+    t23 = jerlov.descend("II", 23.0, BAND).transmittance
+    assert BAND[np.argmax(photons * t23)] == 475.0
+
+
+def test_figures_for_the_turbid_seagrass_section():
+    """Kd(PAR) to the 11 percent depth is above 0.27 1/m from 3C on and
+    below it to 1C; there 33.3 percent puts the limit 2.1 to 2.2 times
+    shallower than 11 percent."""
+    kd_column, ratio = {}, {}
+    for t in ("II", "III", "1C", "3C", "5C", "7C", "9C"):
+        z11 = _layered_limit(t, 0.11)
+        kd_column[t] = math.log(1 / 0.11) / z11
+        if kd_column[t] > 0.27:
+            ratio[t] = z11 / _layered_limit(t, 0.333)
+    assert set(ratio) == {"3C", "5C", "7C", "9C"}
+    assert kd_column["1C"] < 0.27
+    assert (round(min(ratio.values()), 1), round(max(ratio.values()), 1)) \
+        == (2.1, 2.2)

@@ -4,6 +4,33 @@ Every release is archived on Zenodo under the concept DOI
 [10.5281/zenodo.22321312](https://doi.org/10.5281/zenodo.22321312), which
 always resolves to the latest version.
 
+## 0.9.2 — 2026-10-09
+
+Three examples, each for a field the others did not reach. No code or
+shipped value changed.
+
+**Examples.**
+
+- `optical_link.py`, for underwater optical communication and lidar: beam
+  attenuation at laser lines, the range a loss budget buys, how far the two
+  published IOP sets disagree on it (a factor of 2.9 at 532 nm, Jerlov III),
+  Petzold's measured waters, and the narrow-beam lidar depth. What a wide
+  receiver gains from scattered light is stated and not computed.
+- `seagrass_depth_limit.py`, for coastal ecology and restoration: the depth
+  at which the bottom receives 25, 11 or 5 percent of the surface PAR, the
+  higher requirement Duarte et al. (2007) found in turbid water, the depth
+  lost per step along the coastal scale, and why a Kd(PAR) from the top
+  metre puts the limit too shallow. The light requirements are quoted from
+  the four primary papers, with pages and DOIs: Duarte (1991), Dennison et
+  al. (1993), Kenworthy & Haunert (1991) and Duarte et al. (2007). They are
+  not checked here.
+- `isolumes.py`, for vertical migration: where light levels from 1e-1 to
+  1e-5 of the surface lie, how far each moves for a tenfold dimming, the
+  colour of the light there, and oceanic against coastal water.
+
+Every figure `examples/README.md` quotes from them is checked by
+`tests/test_quoted_figures.py`.
+
 ## 0.9.1 — 2026-10-09
 
 Fixes from a review of what 0.9.0 added, and an example for it. No shipped
