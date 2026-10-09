@@ -107,6 +107,17 @@ def test_what_par_cannot_be_computed_from_is_refused():
     for bad in (-1.0, np.nan, np.inf):
         with pytest.raises(ValueError):
             jerlov.par_profile(FLAT, WL, bad, kd=FLAT, unit="photons")
+    infinite = FLAT.copy()
+    infinite[0] = np.inf
+    with pytest.raises(ValueError, match="finite"):
+        jerlov.par_profile(infinite, WL, 0.0, kd=FLAT, unit="photons")
+    with pytest.raises(ValueError, match="finite"):
+        jerlov.par_profile(FLAT, WL, 0.0, kd=infinite, unit="photons")
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        dark = jerlov.par_profile(FLAT * 0, WL, [0.0, 1.0], kd=FLAT,
+                                  unit="photons")
+        assert np.all(np.isnan(dark.fraction))
     with pytest.raises(ValueError, match="other wavelengths"):
         jerlov.par_profile(FLAT, WL, 0.0, unit="photons",
                            kd=jerlov.descend("I", 20.0, WL[::2]))
@@ -128,3 +139,29 @@ def test_the_profile_keeps_the_shape_of_the_depths_and_cannot_be_changed():
     depths[0, 0] = 99.0
     assert p.depths_m[0, 0] == 0.0
     assert repr(p).startswith("<ParProfile surface 300 umol m-2 s-1, 4 depths")
+
+
+def test_light_outside_the_band_neither_refuses_nor_warns():
+    """A radiometer's 300-800 nm spectrum was refused because Jerlov (1976)
+    stops at 715 nm, and Kd flagged at 705 nm warned, though PAR counts
+    neither."""
+    w = jerlov.water("II", source="jerlov1976")
+    wide = np.arange(300.0, 801.0, 5.0)
+    band = np.arange(400.0, 701.0, 5.0)
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        p_wide = jerlov.par_profile(np.ones_like(wide), wide, [0.0, 10.0],
+                                    kd=w, unit="energy")
+        p_band = jerlov.par_profile(np.ones_like(band), band, [0.0, 10.0],
+                                    kd=w, unit="energy")
+        just_past = np.arange(380.0, 711.0, 5.0)
+        jerlov.par_profile(np.ones_like(just_past), just_past, 10.0, kd=w,
+                           unit="energy")
+    assert p_wide.par == pytest.approx(p_band.par, rel=1e-12)
+    # A gap outside the band does not matter either; one inside does.
+    kd = np.full_like(wide, 0.1)
+    kd[0] = np.nan
+    assert jerlov.par_profile(FLAT, WL, 1.0, kd=np.full_like(WL, 0.1),
+                              unit="photons").par == pytest.approx(
+        jerlov.par_profile(np.ones_like(wide), wide, 1.0, kd=kd,
+                           unit="photons").par)

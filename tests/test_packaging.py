@@ -370,3 +370,22 @@ def test_every_optional_extra_is_used_by_something():
             assert re.search(rf"^\s*(import|from) {name}\b", code, re.M), (
                 f"extra {extra!r} installs {dist}, which nothing imports"
             )
+
+
+WORD_COUNTS = {"Eight": 8, "Nine": 9, "Ten": 10, "Eleven": 11, "Twelve": 12}
+
+
+@source_tree
+def test_the_READMEs_count_the_examples():
+    """Both said "Eight scripts", and a ninth was about to make them wrong."""
+    scripts = len(list((ROOT / "examples").glob("*.py")))
+    for readme in (ROOT / "README.md", ROOT / "examples" / "README.md"):
+        match = re.search(r"\b(\w+) scripts[,.]", readme.read_text())
+        assert match, f"{readme.name} no longer counts the examples"
+        assert WORD_COUNTS.get(match.group(1)) == scripts, (
+            f"{readme.relative_to(ROOT)} says {match.group(1)} scripts; "
+            f"examples/ has {scripts}"
+        )
+        for script in (ROOT / "examples").glob("*.py"):
+            assert script.name in readme.read_text(), (
+                f"{readme.relative_to(ROOT)} never mentions {script.name}")

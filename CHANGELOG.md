@@ -4,6 +4,31 @@ Every release is archived on Zenodo under the concept DOI
 [10.5281/zenodo.22321312](https://doi.org/10.5281/zenodo.22321312), which
 always resolves to the latest version.
 
+## 0.9.1 — 2026-10-09
+
+Fixes from a review of what 0.9.0 added, and an example for it. No shipped
+value changed.
+
+**Fixed.**
+
+- `par_profile` evaluated Kd at every wavelength it was given, though PAR
+  uses only 400 to 700 nm. A radiometer's 300-800 nm spectrum with Jerlov
+  (1976), which stops at 715 nm, was refused, and Kd flagged at 705 nm
+  warned about light PAR does not count. Kd is now evaluated only on the
+  samples PAR rests on.
+- `par_profile` let an infinite surface irradiance or Kd through, and
+  returned inf or NaN with only a NumPy RuntimeWarning. Both are refused.
+  With no light at the surface, `ParProfile.fraction` is NaN without a
+  warning.
+- `classify_kd` treated an infinite Kd as a gap and dropped it, leaving the
+  other wavelengths to decide alone. It is refused.
+
+**Examples.** `euphotic_zone.py`, for phytoplankton ecology: from one
+Kd(490) reading to the nearest type, its depth profile, PAR wavelength by
+wavelength, the 1 percent depth four ways, the colour of the light left at
+the bottom, and three editions of the classification compared. A test now
+keeps the count of examples in the two READMEs equal to the files.
+
 ## 0.9.0 — 2026-10-09
 
 Three additions. No shipped value changed.
