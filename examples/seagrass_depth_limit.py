@@ -1,31 +1,42 @@
 """How deep seagrass can grow, and how far a change in the water moves it.
 
 For coastal ecology and habitat restoration. Seagrasses are found down to
-the depth at which enough of the surface light still reaches the bottom.
-Duarte (1991), compiling depth limits worldwide, found that on average
-about 11 percent of the surface irradiance reaches the deepest plants.
-Other empirical determinations range from 5 to 25 percent (Kenworthy &
-Haunert 1991; Dennison et al. 1993), and seagrasses in turbid water have
-markedly higher percentages at their depth limits than those in clear
-water (Duarte et al. 2007). The threshold is a property of the species and
-the site, not of the water, so it is an argument here, and three are
-tried.
+the depth at which enough of the surface light still reaches the bottom,
+and how much is enough is not one number:
+
+- Duarte (1991), a regression over 72 depth limits worldwide: on average
+  10.8 percent of the surface irradiance (geometric mean, coefficient of
+  variation 16 percent; p. 365), "about 11%" in the abstract.
+- Dennison et al. (1993): 4 to 29 percent of the light just below the
+  surface, for submersed aquatic vegetation across species (p. 87 and
+  Table 1).
+- Kenworthy & Haunert (1991), a workshop's conclusion: at least 15 to 25
+  percent just for maintenance (p. 4).
+- Duarte et al. (2007), 424 later reports: in turbid water, with an
+  attenuation coefficient above 0.27 1/m, the apparent requirement is
+  higher; their equations give 45.0 percent for plants whose limit is at
+  1 m and 33.3 percent at 5 m, against 12.2 percent at 30 m (pp. 654-655).
+
+The threshold is a property of the species and the site, not of the
+water, so it is an argument here: 25, 11 and 5 percent are tried, and the
+turbid-water figure in part 2.
 
     python examples/seagrass_depth_limit.py
 
-The thresholds are quoted from the literature, not checked by this
-package. The primary papers were not obtained; every figure above was
-read as the two reviews below cite it:
+These are quoted, not checked by this package. Two cautions from the
+papers themselves: most of their attenuation coefficients were estimated
+from Secchi depths, by K = 1.7 / Secchi depth in Duarte (1991, p. 364) and
+for all but 27 of 424 reports in Duarte et al. (2007, p. 652); and neither
+says over which waveband K was measured where it was.
 
-    Ralph, P. J. et al. (2007), "Impact of light limitation on
-    seagrasses", J. Exp. Mar. Biol. Ecol. 350, 176-193; p. 177 for the
-    11 percent of Duarte (1991) and the 5-25 percent range.
-    Krause-Jensen, D. & Carstensen, J. (2018), "Light requirements of
-    marine rooted macrophytes", DCE research note, Aarhus University;
-    p. 3 for the 11 percent, pp. 3 and 5 for the turbid-water finding.
-
-    Duarte, C. M. (1991), "Seagrass depth limits", Aquatic Botany 40,
-    363-377, as both reviews cite it.
+    Duarte, C. M. (1991), Aquatic Botany 40, 363-377.
+        doi:10.1016/0304-3770(91)90081-F
+    Dennison, W. C. et al. (1993), BioScience 43, 86-94.
+        doi:10.2307/1311969
+    Kenworthy, W. J. & Haunert, D. E., eds. (1991), The light requirements
+        of seagrasses, NOAA Technical Memorandum NMFS-SEFC-287.
+    Duarte, C. M. et al. (2007), Estuaries and Coasts 30, 652-656.
+        doi:10.1007/BF02841962
 """
 
 import math
@@ -116,7 +127,36 @@ print(f"""
   limit quoted without the requirement it assumed is not a prediction.""")
 
 # --------------------------------------------------------------------------
-rule("2. One step more turbid")
+rule("2. Turbid water needs more light")
+
+print("""Duarte et al. (2007) found that above an attenuation coefficient of
+0.27 1/m seagrasses stop where more light is left: 33.3 percent for plants
+limited at 5 m. Which types are above 0.27, as Kd(PAR) averaged down to
+the 11 percent depth, and where 33.3 percent puts their limit:""")
+
+print(f"\n  {'type':>5} {'Kd(PAR)':>8} {'at 11%':>8} {'at 33.3%':>9}")
+turbid = {}
+for t in TYPES:
+    k_column = math.log(1 / 0.11) / limits[t, 0.11]
+    if k_column > 0.27:
+        turbid[t] = depth_limit(t, 0.333)[0]
+        print(f"  {t:>5} {k_column:>8.3f} {limits[t, 0.11]:>6.1f} m "
+              f"{turbid[t]:>7.1f} m")
+    else:
+        print(f"  {t:>5} {k_column:>8.3f} {limits[t, 0.11]:>6.1f} m "
+              f"{'clear':>9}")
+
+print(f"""
+  In the turbid types the 11 percent of Duarte (1991) puts the limit about
+  {min(limits[t, 0.11] / turbid[t] for t in turbid):.1f} to {max(limits[t, 0.11] / turbid[t] for t in turbid):.1f} times deeper than the 33.3 percent of Duarte et al. (2007).
+  And 33.3 percent is their figure for a limit at 5 m; every limit here is
+  shallower, where their equations ask for more still, up to 45.0 percent
+  at 1 m, so even these are if anything too deep. Their attenuation
+  coefficients are not Jerlov's, so which side of 0.27 a type falls is
+  approximate; near it, try both.""")
+
+# --------------------------------------------------------------------------
+rule("3. One step more turbid")
 
 print("""A restoration target is often a change in the water: less run-off,
 less resuspension. Moving one type along the coastal scale, at the 11
@@ -134,7 +174,7 @@ print("""
   by the slope, so a metre of depth limit can be a long strip of meadow.""")
 
 # --------------------------------------------------------------------------
-rule("3. One attenuation coefficient for PAR is not one number")
+rule("4. One attenuation coefficient for PAR is not one number")
 
 print("""The depth limit is often estimated from a single Kd(PAR), measured
 near the surface, as ln(1 / threshold) / Kd(PAR). But the red is gone in
@@ -163,7 +203,9 @@ print("""
 rule("Before you use any of this")
 
 print("""  - The light requirements are quoted from the literature, not
-    derived. Use the one measured for your species and site.
+    derived, and the papers' own attenuation coefficients are mostly
+    estimated from Secchi depths. Use the requirement measured for your
+    species and site.
   - This is planar PAR, from Ed: the light on a flat surface facing up,
     which is what a flat quantum sensor on the bottom reads, and roughly
     what a meadow's canopy receives.

@@ -531,3 +531,19 @@ def test_figures_for_the_isolumes_example():
     assert BAND[np.argmax(photons)] == 550.0
     t23 = jerlov.descend("II", 23.0, BAND).transmittance
     assert BAND[np.argmax(photons * t23)] == 475.0
+
+
+def test_figures_for_the_turbid_seagrass_section():
+    """Kd(PAR) to the 11 percent depth is above 0.27 1/m from 3C on and
+    below it to 1C; there 33.3 percent puts the limit 2.1 to 2.2 times
+    shallower than 11 percent."""
+    kd_column, ratio = {}, {}
+    for t in ("II", "III", "1C", "3C", "5C", "7C", "9C"):
+        z11 = _layered_limit(t, 0.11)
+        kd_column[t] = math.log(1 / 0.11) / z11
+        if kd_column[t] > 0.27:
+            ratio[t] = z11 / _layered_limit(t, 0.333)
+    assert set(ratio) == {"3C", "5C", "7C", "9C"}
+    assert kd_column["1C"] < 0.27
+    assert (round(min(ratio.values()), 1), round(max(ratio.values()), 1)) \
+        == (2.1, 2.2)

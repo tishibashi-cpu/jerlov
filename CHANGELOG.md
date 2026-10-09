@@ -18,10 +18,12 @@ shipped value changed.
   receiver gains from scattered light is stated and not computed.
 - `seagrass_depth_limit.py`, for coastal ecology and restoration: the depth
   at which the bottom receives 25, 11 or 5 percent of the surface PAR, the
-  depth lost per step along the coastal scale, and why a Kd(PAR) from the
-  top metre puts the limit too shallow. The light requirements are quoted
-  from Duarte (1991) and, through two reviews, from Kenworthy & Haunert
-  (1991), Dennison et al. (1993) and Duarte et al. (2007); not checked here.
+  higher requirement Duarte et al. (2007) found in turbid water, the depth
+  lost per step along the coastal scale, and why a Kd(PAR) from the top
+  metre puts the limit too shallow. The light requirements are quoted from
+  the four primary papers, with pages and DOIs: Duarte (1991), Dennison et
+  al. (1993), Kenworthy & Haunert (1991) and Duarte et al. (2007). They are
+  not checked here.
 - `isolumes.py`, for vertical migration: where light levels from 1e-1 to
   1e-5 of the surface lie, how far each moves for a tenfold dimming, the
   colour of the light there, and oceanic against coastal water.

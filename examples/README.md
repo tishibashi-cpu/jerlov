@@ -129,10 +129,13 @@ at 532 nm by up to a factor of **2.9**, in Jerlov III. Petzold's eight
 measured waters, and the depth a narrow-beam lidar reaches.
 
 **`seagrass_depth_limit.py`** — the depth at which the bottom still gets
-25, 11 or 5 percent of the surface PAR, the light requirements reported for
-seagrasses (Duarte 1991; others, as cited by Ralph et al. 2007). At 11 percent the limit runs
-from 13.4 m in Jerlov III to 2.7 m in 9C; one step from 1C to 3C costs 3.3
-m of depth. A Kd(PAR) measured in the top metre puts the limit in III at
+25, 11 or 5 percent of the surface PAR, spanning the light requirements
+reported for seagrasses (Duarte 1991; Dennison et al. 1993; Kenworthy &
+Haunert 1991). At 11 percent the limit runs from 13.4 m in Jerlov III to
+2.7 m in 9C; one step from 1C to 3C costs 3.3 m of depth. In 3C and more
+turbid water, Duarte et al. (2007) find seagrasses need more light, and
+their 33.3 percent puts the limit 2.1 to 2.2 times shallower than 11
+percent does. A Kd(PAR) measured in the top metre puts the limit in III at
 9.4 m rather than 13.4, because PAR attenuates fastest near the surface.
 
 **`isolumes.py`** — the depth of light levels from a tenth to a
