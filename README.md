@@ -255,6 +255,9 @@ scene = jerlov.Scene.at_depth(jerlov.water("II"), 45.0, surface, wl, kd=d)
 
 It refuses to go through a layer the paper declared nothing for, rather than
 carrying the last type on: 3C stops at 70 m, 9C at 10 m.
+`jerlov.profile_depth("3C")` says how far a descent can go, and
+`d.transmittance_at(z)` gives any depth above the descent's bottom without
+descending again.
 
 ## Light for photosynthesis
 
@@ -285,7 +288,9 @@ r.beyond          # "clearer" or "more turbid" than every type, or None
 
 It ranks the types of one edition; it draws no boundaries, since those differ
 between editions. A single wavelength is accepted, and ranks oceanic and
-coastal types less well apart than a spectrum does.
+coastal types less well apart than a spectrum does. `types=` compares with
+some of the types only, which keeps the wavelengths where only the others
+have gaps.
 
 ## Other entry points
 

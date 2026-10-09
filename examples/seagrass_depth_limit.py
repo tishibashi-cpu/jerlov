@@ -77,13 +77,8 @@ def profile(water_type):
     5C and 7C at 20 m. Below that this falls back to the surface type's Kd
     all the way down, and says so.
     """
-    for depth in np.arange(200.0, 0.0, -10.0):
-        try:
-            d = jerlov.descend(water_type, depth, BAND)
-        except jerlov.MissingQuantityError:
-            continue
-        return jerlov.par_profile(SURFACE, BAND, 0.0, kd=d, unit="energy"), d
-    return None, None
+    d = jerlov.descend(water_type, jerlov.profile_depth(water_type), BAND)
+    return jerlov.par_profile(SURFACE, BAND, 0.0, kd=d, unit="energy"), d
 
 
 def depth_limit(water_type, threshold):

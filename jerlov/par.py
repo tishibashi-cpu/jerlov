@@ -30,7 +30,7 @@ from __future__ import annotations
 import numpy as np
 
 from . import _data
-from .water import Descent, MissingQuantityError, Water, _require_number, water
+from .water import Descent, MissingQuantityError, Water, _require_number
 
 #: Planck constant (J s), speed of light (m/s) and Avogadro constant (1/mol),
 #: exact by the 2019 definition of the SI.
@@ -241,18 +241,20 @@ def par_profile(surface_downwelling, wavelengths, depths_m, *, kd,
                 f"the descent stops at {deepest:g} m, above the deepest depth "
                 f"asked for ({depths.max():g} m)"
             )
-        layers = [(top, bottom, water(t, kd.source).kd(sub_wl))
-                  for top, bottom, t in kd.layers]
+        if len(kd._kd) != len(kd.layers):
+            raise MissingQuantityError(
+                "this Descent was not made by descend(), so it does not "
+                "carry the Kd of its layers"
+            )
         kd_from = (f"a descent from Jerlov {kd.surface_water_type} "
                    f"({kd.source})")
+        descent = kd
 
         def optical_depth(z):
-            total = np.zeros_like(sub_wl)
-            for top, bottom, values in layers:
-                total += values * min(max(z - top, 0.0), bottom - top)
-            return total
+            # The descent's own layers, on the samples PAR rests on only.
+            return descent._optical_depth(z, near)
 
-        kd_values = (np.vstack([v for _, _, v in layers]) if layers
+        kd_values = (np.vstack([v[near] for v in kd._kd]) if kd._kd
                      else np.zeros_like(sub_wl))
     else:
         if isinstance(kd, Water):

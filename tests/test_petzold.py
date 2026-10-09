@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import csv
 import re
+from importlib import resources
 import warnings
 from pathlib import Path
 
@@ -18,7 +19,9 @@ ROOT = Path(__file__).resolve().parent.parent
 
 
 def _table(station):
-    path = ROOT / "jerlov" / "data" / "petzold1972_vsf.csv"
+    # The installed package's own copy, not the source tree's: the suite is
+    # also run against the wheel, where there is no source tree to read.
+    path = resources.files("jerlov.data").joinpath("petzold1972_vsf.csv")
     with path.open(encoding="utf-8") as handle:
         return [r for r in csv.DictReader(handle) if r["station"] == station]
 

@@ -46,11 +46,7 @@ OCEANIC = ("I", "IA", "IB", "II", "III")
 
 def deepest_descent(water_type):
     """The descent to the bottom of the typical profile for this type."""
-    for depth in np.arange(200.0, 0.0, -10.0):
-        try:
-            return jerlov.descend(water_type, depth, BAND)
-        except jerlov.MissingQuantityError:
-            continue
+    return jerlov.descend(water_type, jerlov.profile_depth(water_type), BAND)
 
 
 def isolume(profile, level):
@@ -117,12 +113,13 @@ rule("3. The colour of the light at each isolume")
 print("""Below the first few tens of metres almost nothing but blue is left.
 The wavelength carrying the most photons, at each level, in Jerlov II:""")
 
+d = deepest_descent("II")
 photons = SURFACE * BAND          # proportional to photons, per nm
 print(f"\n  {'level':>7} {'depth':>8} {'peak':>8}")
 for level, z in zip(LEVELS, depths["II"]):
     if z is None:
         continue
-    t = jerlov.descend("II", round(z, 6), BAND).transmittance
+    t = d.transmittance_at(z)
     print(f"  {level:>7.0e} {z:>6.0f} m {BAND[np.argmax(photons * t)]:>6.0f} nm")
 print(f"  {'surface':>7} {0:>6.0f} m {BAND[np.argmax(photons)]:>6.0f} nm")
 
