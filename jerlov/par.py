@@ -27,10 +27,19 @@ Three things are stated rather than hidden:
 
 from __future__ import annotations
 
+import warnings
+from dataclasses import dataclass
+
 import numpy as np
 
 from . import _data
-from .water import Descent, MissingQuantityError, Water, _require_number
+from .water import (
+    Descent,
+    MissingQuantityError,
+    ProvenanceWarning,
+    Water,
+    _require_number,
+)
 
 #: Planck constant (J s), speed of light (m/s) and Avogadro constant (1/mol),
 #: exact by the 2019 definition of the SI.
@@ -293,3 +302,111 @@ def par_profile(surface_downwelling, wavelengths, depths_m, *, kd,
         return np.interp(band, sub_wl, optical_depth(z))
 
     return ParProfile(depths, band, surface_q, tau, deepest, kd_from)
+
+
+QUANTA_BAND_NM = (350.0, 700.0)
+"""The waveband of Jerlov's quanta meters, nm. Not that of PAR."""
+
+
+@dataclass(frozen=True, eq=False, repr=False)
+class QuantaLevels:
+    """Jerlov's measured profiles of quanta irradiance for one water type.
+
+    Built by :func:`jerlov1977_quanta`. Every depth is in m, every
+    coefficient in 1/m, and the band is 350-700 nm, :data:`QUANTA_BAND_NM`,
+    not the 400-700 nm of :func:`par_profile`.
+    """
+
+    water_type: str
+    level_percent: tuple[float, ...]
+    """30, 10, 3 and 1: the levels of Table 2."""
+    level_depth_m: np.ndarray
+    """The depth of each level, Table 2."""
+    profile_depth_m: np.ndarray
+    """Table 3's depths, as far as the table goes for this type."""
+    profile_percent: np.ndarray
+    """Percent of surface quanta at :attr:`profile_depth_m`, Table 3."""
+    layer_m: tuple[tuple[float, float], ...]
+    """``(top, bottom)`` of each layer of Table 5."""
+    layer_kd: np.ndarray
+    """Kd for quanta in each layer, Table 5."""
+    suspect: tuple[str, ...]
+    """The layers of :attr:`layer_kd` whose printed Kd does not follow from
+    Table 3, even allowing for rounding; DATA.md section 22."""
+
+    def __repr__(self) -> str:
+        levels = ", ".join(f"{p:g}% {z:g} m" for p, z in
+                           zip(self.level_percent, self.level_depth_m))
+        flag = f"; {len(self.suspect)} suspect" if self.suspect else ""
+        return f"<QuantaLevels {self.water_type}: {levels}{flag}>"
+
+
+def jerlov1977_quanta(water_type: str) -> QuantaLevels:
+    """Jerlov's measured quanta irradiance, 350-700 nm, by water type.
+
+    From profiles measured with quanta meters in fourteen regions, Jerlov
+    tabulated the depth at which 30, 10, 3 and 1 percent of the surface
+    quanta remain (Table 2), the percentage at depth (Table 3) and Kd for
+    quanta layer by layer (Table 5), for types I, IA, IB, II, III, 1C and 3C.
+    They are measurements, so they are what to compare :func:`par_profile`
+    against; DATA.md section 22 does, and finds agreement within 2 m at
+    every level from II to 3C, and a 1 percent depth 33 percent too deep
+    for IB.
+
+    Jerlov, N. G., "Classification of sea water in terms of quanta
+    irradiance", J. Cons. int. Explor. Mer 37(3), 281-287.
+
+    Notes
+    -----
+    The band is 350-700 nm, wider than PAR's. The profiles are of real
+    water at real stations, so they include whatever changed with depth
+    there; Jerlov says so himself (p. 286). Three of the Kd values in Table
+    5 do not follow from Table 3, even allowing for rounding: for IA, II
+    and 1C, one layer each. They are listed in :attr:`QuantaLevels.suspect`,
+    and asking for those types warns. Table 2's normalised column and Table
+    4, which have five more such values, are in the shipped table
+    ``jerlov1977_quanta.csv`` but not returned here, since both follow from
+    the depths that are.
+    """
+    rows = [r for r in _data._rows("jerlov1977_quanta.csv")
+            if r["water_type"] == water_type]
+    if not rows:
+        known = []
+        for r in _data._rows("jerlov1977_quanta.csv"):
+            if r["water_type"] not in known:
+                known.append(r["water_type"])
+        raise KeyError(f"Jerlov's quanta tables have no water type "
+                       f"{water_type!r} (known: {', '.join(known)})")
+
+    def table(name):
+        return [r for r in rows if r["table"] == name]
+
+    layers = table("5")
+    suspect = tuple(
+        f"Kd {r['value']} 1/m at {r['depth_top_m']}-{r['depth_bottom_m']} m"
+        for r in layers if r["status"] in _data.QUESTIONABLE
+    )
+    if suspect:
+        warnings.warn(
+            f"Jerlov's Table 5 for {water_type} prints a Kd that does not "
+            f"follow from his Table 3: " + "; ".join(suspect)
+            + ". See DATA.md section 22.",
+            ProvenanceWarning,
+            stacklevel=_data.caller_stacklevel(),
+        )
+    levels = table("2")
+    profile = table("3")
+    return QuantaLevels(
+        water_type=water_type,
+        level_percent=tuple(float(r["percent_top"]) for r in levels),
+        level_depth_m=_data._frozen(np.array([float(r["value"])
+                                              for r in levels])),
+        profile_depth_m=_data._frozen(np.array([float(r["depth_top_m"])
+                                                for r in profile])),
+        profile_percent=_data._frozen(np.array([float(r["value"])
+                                                for r in profile])),
+        layer_m=tuple((float(r["depth_top_m"]), float(r["depth_bottom_m"]))
+                      for r in layers),
+        layer_kd=_data._frozen(np.array([float(r["value"]) for r in layers])),
+        suspect=suspect,
+    )

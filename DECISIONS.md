@@ -700,3 +700,27 @@ coefficient", "photosynthetically available radiation" and "euphotic zone".
 "underwater imaging" stays, since `Scene` and the colour functions are
 for exactly that.
 
+## 31. Checking against published measurements is in scope
+
+Section 21 rules out experimental validation: no tank, no instruments, and a
+validation done badly would put an indefensible number on the accuracy.
+That stands.
+
+Comparing the package with measurements someone else made and published is
+a different thing, and it is in scope. It is the same kind of work as
+checking a coefficient table against the paper that printed it: the
+measurements have a provenance, the comparison can be repeated by anyone,
+and it says something definite about one part of the package without
+claiming anything about the rest.
+
+Jerlov's quanta tables (DATA.md section 22) were the first chance. They
+were transcribed with the same care as any coefficient table, checked
+against each other, and the comparison is a test. What it showed is
+recorded as it came out, including where the package is a third too deep:
+a check that only reports agreement is not a check.
+
+What it does not license: describing the package as validated. It agrees
+with Jerlov's measurements of quanta irradiance with depth, for the types
+he measured, with D65 standing in for his skies. That is all the
+comparison says, and all the README says about it.
+

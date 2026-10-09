@@ -23,7 +23,14 @@ from .colour import (
     spectrum_to_xyz,
     xyz_to_srgb,
 )
-from .par import PAR_RANGE_NM, ParProfile, par_profile
+from .par import (
+    PAR_RANGE_NM,
+    QUANTA_BAND_NM,
+    ParProfile,
+    QuantaLevels,
+    jerlov1977_quanta,
+    par_profile,
+)
 from .petzold import PETZOLD_STATIONS, ScatteringFunction, petzold_scattering
 from .scene import (
     AttenuationCoefficients,
@@ -83,6 +90,9 @@ __all__ = [
     "par_profile",
     "ParProfile",
     "PAR_RANGE_NM",
+    "jerlov1977_quanta",
+    "QuantaLevels",
+    "QUANTA_BAND_NM",
     "pure_water_absorption",
     "petzold_scattering",
     "PETZOLD_STATIONS",
@@ -106,4 +116,4 @@ __all__ = [
     "MissingQuantityError",
 ]
 
-__version__ = "0.9.3"
+__version__ = "0.9.4"

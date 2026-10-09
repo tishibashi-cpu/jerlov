@@ -277,6 +277,18 @@ default, because PAR counts photons and an energy spectrum read as photons is
 weighted wrongly with no sign of it. This is planar PAR, from Ed; PAR on
 scalar irradiance is larger by a factor this package cannot supply.
 
+Jerlov measured quanta irradiance, 350-700 nm, by water type, and his
+tables are shipped for checking against:
+
+```python
+jerlov.jerlov1977_quanta("II")   # <QuantaLevels II: 30% 10.5 m, 10% 24 m, 3% 39 m, 1% 52 m; ...>
+```
+
+From II to 3C the package agrees with them within 2 m at every level. For
+Jerlov I it agrees only through `descend`; for IB it puts the 1 percent
+level a third too deep, because Jerlov's IB water grew more turbid below
+15 m. DATA.md section 22.
+
 ## Which type is my water nearest?
 
 ```python
@@ -364,8 +376,8 @@ made.
 ## Provenance and design
 
 `DATA.md` records, for every shipped table, where it came from, what was
-verified, and what is known to be wrong with it. Twenty-one entries are
-documented there: eight confirmed defects in the source literature, three
+verified, and what is known to be wrong with it. Twenty-two entries are
+documented there: nine confirmed defects in the source literature, three
 questions the first edition of Jerlov settled, and the rest notes.
 
 `DECISIONS.md` records why the package is shaped the way it is, including the
