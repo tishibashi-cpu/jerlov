@@ -3,7 +3,7 @@
 What every shipped table is, where it came from, what was verified, and what
 is known to be wrong with it.
 
-Twenty-one entries are recorded below. Eight are confirmed defects, three were
+Twenty-two entries are recorded below. Nine are confirmed defects, three were
 open questions that the first edition of Jerlov settled, and the rest are
 notes rather than defects. None of them is repaired silently: values that
 could be recovered carry `status = reconstructed` and say how, values that
@@ -30,6 +30,7 @@ could not are `missing`, and values that are used but doubtful are `suspect`.
 | `petzold1972_vsf.csv` | Volume scattering function at 55 angles, 0.1-180 deg, 530 nm, 8 stations | 440 |
 | `petzold1972_stations.csv` | c, b, a, B/S, slope and median angle of each station | 8 |
 | `williamson2022_aw.csv` | Pure water absorption that Williamson & Hollins (2022) built their a on. 1 nm, 300-800 nm | 501 |
+| `jerlov1977_quanta.csv` | Jerlov's measured quanta irradiance, 350-700 nm: depths of 30, 10, 3 and 1 percent, percent by depth, Kd by level and by layer. 7 types | 202 |
 
 The four tables drawn from the two Dstl datasets (`williamson2022_iop`,
 `williamson2022_measured`, `solonenko2015_iop` and `williamson2023_depth`)
@@ -716,7 +717,9 @@ new here:
 - Jerlov, N. G. (1977), "Classification of sea water in terms of quanta
   irradiance", *J. Cons. int. Explor. Mer*.
 
-Neither obtained. **Before comparing any Jerlov table against this package,
+Neither obtained. (The second has since been obtained and is section 22. Its
+pages print no year; 1977 is Woźniak & Pelevin's, and the latest
+observations it uses are from June 1976, which does not contradict it.) **Before comparing any Jerlov table against this package,
 establish which edition it came from.** Section 2 is what happens when that is
 not done.
 
@@ -1019,3 +1022,89 @@ The phase function Solonenko & Mobley (2015) used with HydroLight (section
 19) they describe as the average of Petzold's coastal, harbor and ocean
 phase functions. That average is not in this report, which stations and
 what processing went into it is not stated there, and it is not shipped.
+
+## 22. Jerlov's measured quanta irradiance, and the package against it (confirmed)
+
+`jerlov1977_quanta.csv` is transcribed from Jerlov, N. G., "Classification
+of sea water in terms of quanta irradiance", *J. Cons. int. Explor. Mer*
+37(3), 281-287, by `tools/build_jerlov1977.py`. From profiles measured with
+quanta meters at stations in fourteen regions, Jerlov tabulated, for types
+I, IA, IB, II, III and coastal 1 and 3:
+
+- Table 2: the depths at which 30, 10, 3 and 1 percent of the surface quanta
+  remain, and the same divided by the 10 percent depth;
+- Table 3: the percentage remaining at 0 to 100 m;
+- Table 4: Kd between those levels;
+- Table 5: Kd for quanta layer by layer.
+
+The band is 350-700 nm, that of the Danish and French quanta meters, not the
+400-700 nm of PAR. The coastal types are printed "1" and "3"; they are
+written 1C and 3C here, as everywhere else. `jerlov1977_quanta()` returns
+Tables 2, 3 and 5.
+
+**The transcription.** The publisher's scan has a text layer that reads
+decimal points as hyphens ("17-5" for 17.5) and drops some of them ("16 5"),
+so every table was read from the page images and the text layer used only
+to cross-check.
+
+**The tables against each other (confirmed).** Table 4 should follow from
+Table 2's depths, Table 5 from Table 3's percentages, and Table 2's
+normalised column from its own depths. The build script recomputes all
+three, allowing for the rounding of every printed value, and eight values
+fall outside:
+
+| Table | Type | Where | Printed | Recomputed |
+|---|---|---|---|---|
+| 2, normalised | I | 3 % level | 1.65 | 1.59-1.64 |
+| 2, normalised | I | 1 % level | 2.15 | 2.07-2.13 |
+| 2, normalised | IA | 3 % level | 1.66 | 1.58-1.64 |
+| 4 | IA | 30-10 % | 0.043 | 0.0439-0.0459 |
+| 4 | IB | 30-10 % | 0.053 | 0.0549-0.0610 |
+| 5 | IA | 20-30 m | 0.046 | 0.0436-0.0446 |
+| 5 | II | 5-10 m | **0.099** | **0.0759-0.0863** |
+| 5 | 1C | 10-15 m | 0.154 | 0.1568-0.1616 |
+
+All but one are near misses. II at 5-10 m is not: Table 3 has 48 percent at
+5 m and 32 at 10, which cannot give 0.099. Integrating Table 5 down from the
+surface would put 10 m at 29 percent, not 32.
+
+The paper does not say which table is right. Jerlov formed the tables from
+means over water masses (his Figs. 4 and 5), and a mean of ratios is not the
+ratio of means, which may explain the near misses; it cannot explain II.
+The values are shipped as printed, marked `suspect`, and the three in Table
+5, the only ones `jerlov1977_quanta()` returns, warn. Table 3 then puts
+every level of Table 2 within 0.4 m, so the two are consistent with each
+other.
+
+**The package against the measurements.** These are the first published
+measurements in the package that `par_profile` and `descend` can be
+checked against. `tests/test_quanta.py` computes the four levels from
+Jerlov's (1976) Kd, with D65 standing in for the surface spectrum,
+integrated over 350-700 nm:
+
+- From II to 3C, one Kd all the way down agrees with Table 2 within 2 m at
+  every level.
+- For I, one Kd puts the 1 percent level at 165 m; Jerlov measured 103.
+  Through the depth profile of Williamson & Hollins (2023), in which I
+  typically turns IA and then IB below 20 m, it is 106 m, and the 10
+  percent level 49 m against 49. That is independent support for `descend`.
+- IA and IB stay too deep: layer by layer, 100 m against 87 and 93 m
+  against 70, 15 and 33 percent.
+
+For IB the reason can be seen in Table 5. Above 10 m, the depth on which the
+classification is defined, Kd for quanta from Jerlov (1976) agrees with the
+measured one within 0.004 1/m. Below 15 m the computed Kd keeps falling,
+from 0.051 to 0.041, as the light narrows to the blue; the measured one
+rises, from 0.056 to 0.069. The water Jerlov counted as IB became more
+turbid with depth, and the profile of Williamson & Hollins keeps IB as IB to
+200 m. Using Jerlov (1968) instead gives the same picture, so it is not the
+edition.
+
+**Unresolved.** Why the IB stations became more turbid with depth is not
+stated. Jerlov's discussion (p. 286) notes that "ocean water is not
+optically homogenous as particle accumulations occur at different levels";
+a deep chlorophyll maximum would do it, but the paper does not say, and
+nothing is assumed here. The comparison uses D65 for the sky; the
+agreement in the top 10 m suggests that matters little for the levels, but
+it has not been tested.
+

@@ -4,6 +4,43 @@ Every release is archived on Zenodo under the concept DOI
 [10.5281/zenodo.22321312](https://doi.org/10.5281/zenodo.22321312), which
 always resolves to the latest version.
 
+## 0.9.4 — 2026-10-09
+
+Jerlov's measured quanta irradiance, shipped and used as a check on the
+package. No existing shipped value changed.
+
+**Added.**
+
+- `jerlov1977_quanta(water_type)` and `QuantaLevels`: Jerlov's tables of
+  quanta irradiance, 350-700 nm, measured at stations in fourteen regions,
+  for types I, IA, IB, II, III, 1C and 3C. Table 2, the depths of 30, 10, 3
+  and 1 percent of the surface quanta; Table 3, the percentage at depth;
+  Table 5, Kd for quanta layer by layer. `QUANTA_BAND_NM` is the band.
+- `jerlov1977_quanta.csv`, all four of the paper's tables, transcribed by
+  `tools/build_jerlov1977.py` from the page images, since the scan's text
+  layer reads decimal points as hyphens.
+
+**Found.** DATA.md section 22.
+
+- The tables do not all follow from each other. Allowing for the rounding
+  of every printed value, eight values fall outside what the tables they
+  derive from give. Seven are near misses. Table 5's Kd for II at 5-10 m,
+  0.099, cannot come from Table 3, which gives 0.076 to 0.086. All eight
+  are shipped as printed and marked `suspect`; the three that
+  `jerlov1977_quanta` returns warn.
+- Against the measurements, the package agrees within 2 m at every level
+  from II to 3C. For Jerlov I one Kd puts the 1 percent level at 165 m
+  against a measured 103; through `descend` it is 106, which is independent
+  support for the depth profile. IA and IB stay 15 and 33 percent too deep:
+  Jerlov's own IB water grew more turbid below 15 m, which the profile of
+  Williamson & Hollins (2023) does not show. Why is unresolved.
+
+**Docs.** DATA.md section 16 no longer says this paper was not obtained,
+and records that its pages print no year. DECISIONS.md section 31 says why
+checking against a published measurement is in scope when experimental
+validation is not. The Zenodo description now counts twenty-two entries,
+nine of them confirmed defects, and mentions the quanta tables.
+
 ## 0.9.3 — 2026-10-09
 
 Small additions that the examples were working around, and checks on
