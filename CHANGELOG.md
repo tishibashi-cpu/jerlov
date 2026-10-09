@@ -4,6 +4,48 @@ Every release is archived on Zenodo under the concept DOI
 [10.5281/zenodo.22321312](https://doi.org/10.5281/zenodo.22321312), which
 always resolves to the latest version.
 
+## 0.9.3 — 2026-10-09
+
+Small additions that the examples were working around, and checks on
+publishing. No shipped value changed.
+
+**Added.**
+
+- `profile_depth(water_type)`: how deep `descend` can go below a surface
+  type, the top of the first layer Williamson & Hollins (2023) declared no
+  type for, or 200 m. Three examples found this by trying `descend` every
+  10 m.
+- `Descent.transmittance_at(z)`: `Ed(z) / Ed(0)` at any depth down to the
+  descent's own, from the layers already crossed, for one depth or an
+  array of them. `par_profile` now uses the same layers rather than
+  looking each type's Kd up again. A `Descent` built by hand, which
+  carries no layer Kd, is refused by both rather than treated as clear
+  water.
+- `classify_kd(..., types=...)`: compare with some of a source's types
+  only. A wavelength is left out wherever any compared type has no Kd, so
+  leaving out Solonenko & Mobley's 3C and 5C keeps 600-700 nm for an
+  oceanic measurement.
+
+**Fixed.** `tests/test_petzold.py` read Petzold's table from the source
+tree rather than from the installed package, so it failed against a wheel.
+It reads it through `importlib.resources`, and a test refuses the pattern.
+
+**Packaging.**
+
+- Publishing now stops if the tag is not the version in `pyproject.toml`.
+- Publishing runs the whole test suite against the installed wheel, from a
+  directory with no source tree beside it, before uploading. Doing that
+  for the first time found the test above.
+
+**Metadata.** The keywords in `.zenodo.json` and `CITATION.cff` drop
+"underwater visibility", which the README says this package does not
+predict, and add "diffuse attenuation coefficient", "photosynthetically
+available radiation" and "euphotic zone". DECISIONS.md section 30.
+
+**Examples.** `light_at_depth.py`, `seagrass_depth_limit.py` and
+`isolumes.py` use `profile_depth` and `transmittance_at`. Their output is
+unchanged.
+
 ## 0.9.2 — 2026-10-09
 
 Three examples, each for a field the others did not reach. No code or

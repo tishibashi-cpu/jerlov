@@ -389,3 +389,29 @@ def test_the_READMEs_count_the_examples():
         for script in (ROOT / "examples").glob("*.py"):
             assert script.name in readme.read_text(), (
                 f"{readme.relative_to(ROOT)} never mentions {script.name}")
+
+
+@source_tree
+def test_the_tests_read_the_installed_tables_not_the_source_tree():
+    """The suite is also run against the wheel, where there is no
+    jerlov/data/ beside the tests. test_petzold.py read it from there, and
+    the first run against a wheel failed."""
+    offenders = []
+    for path in (ROOT / "tests").glob("test_*.py"):
+        if path.name == "test_packaging.py":
+            continue
+        if re.search(r'"jerlov"\s*/\s*"data"', path.read_text()):
+            offenders.append(path.name)
+    assert not offenders, (
+        f"{offenders} read tables from the source tree; use "
+        "importlib.resources.files('jerlov.data')"
+    )
+
+
+@source_tree
+def test_publishing_checks_the_tag_and_runs_the_suite_on_the_wheel():
+    workflow = (ROOT / ".github" / "workflows" / "publish.yml").read_text()
+    assert "GITHUB_REF_NAME" in workflow and "pyproject.toml" in workflow, (
+        "publish.yml no longer compares the tag with the version")
+    assert "pytest wheel-tests" in workflow, (
+        "publish.yml no longer runs the tests against the installed wheel")

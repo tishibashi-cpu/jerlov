@@ -50,6 +50,7 @@ from .water import (
     descend,
     kd_spectrum,
     measured_points,
+    profile_depth,
     pure_water_absorption,
     water,
     water_type_at_depth,
@@ -75,6 +76,7 @@ __all__ = [
     "water",
     "water_type_at_depth",
     "descend",
+    "profile_depth",
     "Descent",
     "classify_kd",
     "KdClassification",
@@ -104,4 +106,4 @@ __all__ = [
     "MissingQuantityError",
 ]
 
-__version__ = "0.9.2"
+__version__ = "0.9.3"

@@ -89,3 +89,33 @@ def test_what_cannot_be_compared_is_refused():
         jerlov.classify_kd(WL, [0.05])
     with pytest.raises(jerlov.MissingQuantityError, match="no wavelength"):
         jerlov.classify_kd([500.0], [np.nan])
+
+
+def test_types_narrows_the_comparison_and_keeps_more_wavelengths():
+    """Solonenko & Mobley's 3C and 5C have no Kd from 600 nm on, which
+    took those wavelengths out of every comparison."""
+    wl = np.arange(400.0, 701.0, 25.0)
+    oceanic = ("I", "IA", "IB", "II", "III")
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", jerlov.ProvenanceWarning)
+        kd = jerlov.water("II", source="solonenko2015").kd(wl)
+        every = jerlov.classify_kd(wl, kd, source="solonenko2015")
+        some = jerlov.classify_kd(wl, kd, source="solonenko2015",
+                                  types=oceanic)
+    assert every.excluded_nm == (600.0, 625.0, 650.0, 675.0, 700.0)
+    assert some.excluded_nm == ()
+    assert some.water_type == "II"
+    assert {t for t, _ in some.distances} == set(oceanic)
+
+
+def test_types_must_be_types_of_the_source():
+    with pytest.raises(KeyError, match="does not cover Jerlov '3C'"):
+        jerlov.classify_kd(WL, _kd("II"), source="austin1986",
+                           types=("II", "IA", "3C"))
+    with pytest.raises(ValueError, match="at least one"):
+        jerlov.classify_kd(WL, _kd("II"), types=())
+    with pytest.raises(ValueError, match="more than once"):
+        jerlov.classify_kd(WL, _kd("II"), types=("II", "II"))
+    # A string is one type, not a sequence of letters.
+    alone = jerlov.classify_kd(WL, _kd("III"), types="III")
+    assert alone.distances == (("III", 0.0),)

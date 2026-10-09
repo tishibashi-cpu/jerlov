@@ -130,13 +130,8 @@ par_depths = {}
 for surface_type in ("I", "IB", "II", "III", "1C", "3C", "5C", "7C", "9C"):
     w = jerlov.water(surface_type, source="jerlov1976")
     flat = jerlov.par_profile(d65, band, 0.0, kd=w, unit="energy")
-    # As deep as the profile goes for this type, in 10 m steps.
-    for depth in np.arange(200.0, 0.0, -10.0):
-        try:
-            d = jerlov.descend(surface_type, depth, band)
-            break
-        except jerlov.MissingQuantityError:
-            continue
+    # As deep as the profile goes for this type.
+    d = jerlov.descend(surface_type, jerlov.profile_depth(surface_type), band)
     layered = jerlov.par_profile(d65, band, 0.0, kd=d, unit="energy")
     par_depths[surface_type] = (flat.depth_of_fraction(),
                                 layered.depth_of_fraction())

@@ -9,7 +9,7 @@ same path.
 from __future__ import annotations
 
 import warnings
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 import numpy as np
 
@@ -579,8 +579,8 @@ class KdClassification:
         )
 
 
-def classify_kd(wavelengths, kd, *, source: str = "jerlov1976"
-                ) -> KdClassification:
+def classify_kd(wavelengths, kd, *, source: str = "jerlov1976",
+                types=None) -> KdClassification:
     """Find the Jerlov type whose Kd spectrum a measured one is closest to.
 
     Every type of ``source`` is compared with the measurement at the given
@@ -600,6 +600,12 @@ def classify_kd(wavelengths, kd, *, source: str = "jerlov1976"
     source:
         A source carrying Kd: ``"jerlov1976"`` (the default, all ten types),
         ``"jerlov1968"``, ``"austin1986"`` or ``"solonenko2015"``.
+    types:
+        The types to compare with, if not all of ``source``'s; the oceanic
+        ones, say, for a measurement made offshore. A wavelength is left
+        out wherever any compared type has no Kd, so leaving out types with
+        gaps keeps more wavelengths: Solonenko & Mobley's 3C and 5C have
+        none from 600 nm on.
 
     Notes
     -----
@@ -625,7 +631,24 @@ def classify_kd(wavelengths, kd, *, source: str = "jerlov1976"
         # were a gap, leaving the other wavelengths to decide alone.
         raise ValueError("Kd must be positive and finite (NaN marks a gap)")
 
-    waters = {t: water(t, source) for t in src.water_types}
+    if types is None:
+        compared = src.water_types
+    else:
+        # One type given as a string is one type: tuple("III") would be
+        # three of type "I".
+        compared = (types,) if isinstance(types, str) else tuple(types)
+        unknown = [t for t in compared if t not in src.water_types]
+        if unknown:
+            raise KeyError(
+                f"source {source!r} does not cover Jerlov "
+                f"{', '.join(map(repr, unknown))} "
+                f"(available: {', '.join(src.water_types)})"
+            )
+        if not compared:
+            raise ValueError("types must name at least one water type")
+        if len(set(compared)) != len(compared):
+            raise ValueError("types names a water type more than once")
+    waters = {t: water(t, source) for t in compared}
     # Raises for a wavelength outside the source's range. The flags are
     # checked below, once, on the wavelengths actually compared: ten
     # warnings for one comparison would bury the one that matters.
@@ -637,7 +660,7 @@ def classify_kd(wavelengths, kd, *, source: str = "jerlov1976"
     if not usable.any():
         raise MissingQuantityError(
             "no wavelength has both a measured Kd and a Kd for every type "
-            f"of {source!r}"
+            f"compared from {source!r}"
         )
     by_flags: dict[str, list[str]] = {}
     for water_type, w in waters.items():
@@ -699,6 +722,58 @@ class Descent:
     last stops at ``depth_m``."""
     transmittance: np.ndarray
     """``Ed(depth) / Ed(0)``: ``exp(-sum(Kd_i * thickness_i))``."""
+    _kd: tuple[np.ndarray, ...] = field(default=(), repr=False)
+    """The Kd of each layer in :attr:`layers`, on :attr:`wavelengths`."""
+
+    def _optical_depth(self, depth: float, columns=slice(None)) -> np.ndarray:
+        """``sum(Kd_i * thickness_i)`` from the surface to ``depth``.
+
+        ``columns`` picks wavelengths, so that a caller using only some of
+        them, as PAR does, never touches the rest.
+        """
+        total = np.zeros(np.size(self.wavelengths))[columns]
+        for (top, bottom, _), values in zip(self.layers, self._kd):
+            total = total + values[columns] * min(max(depth - top, 0.0),
+                                                  bottom - top)
+        return total
+
+    def transmittance_at(self, depth_m):
+        """``Ed(z) / Ed(0)`` at any depth from the surface to :attr:`depth_m`.
+
+        Uses the layers already crossed, so it is what :func:`descend` to
+        that depth would give, without calling it again. A single depth
+        gives an array on :attr:`wavelengths` (a float if the descent was
+        asked for at one wavelength); an array of depths gives one row per
+        depth.
+
+        Raises
+        ------
+        MissingQuantityError
+            Below :attr:`depth_m`. Descend further, if the profile allows:
+            see :func:`profile_depth`.
+        """
+        if len(self._kd) != len(self.layers):
+            # Only descend() records the Kd of each layer; without it every
+            # depth would come back as 1, looking like perfectly clear water.
+            raise MissingQuantityError(
+                "this Descent was not made by descend(), so it does not "
+                "carry the Kd of its layers"
+            )
+        depths = np.asarray(depth_m, dtype=float)
+        if not np.all(np.isfinite(depths)):
+            raise ValueError(f"depth_m must be finite numbers, not {depth_m!r}")
+        if np.any(depths < 0):
+            raise ValueError("depth_m cannot be negative")
+        if np.any(depths > self.depth_m):
+            raise MissingQuantityError(
+                f"this descent stops at {self.depth_m:g} m, above "
+                f"{depths.max():g} m; descend further to go deeper"
+            )
+        out = np.array([np.exp(-self._optical_depth(float(z)))
+                        for z in depths.ravel()])
+        if depths.ndim == 0:
+            return _like_input(out[0], self.transmittance)
+        return out.reshape(depths.shape + (np.size(self.wavelengths),))
 
     def __repr__(self) -> str:
         # Adjacent 10 m layers of one type are shown as one span.
@@ -808,7 +883,38 @@ def descend(surface_water_type: str, depth_m: float, wavelengths, *,
         wavelengths=query,
         layers=tuple(layers),
         transmittance=_like_input(np.exp(-optical_depth), wavelengths),
+        _kd=tuple(_frozen_copy(kd[t]) for _, _, t in layers),
     )
+
+
+def _frozen_copy(values: np.ndarray) -> np.ndarray:
+    out = np.array(values, dtype=float)
+    out.setflags(write=False)
+    return out
+
+
+def profile_depth(surface_water_type: str) -> float:
+    """How deep :func:`descend` can go below ``surface_water_type``, in m.
+
+    The top of the first layer for which Williamson & Hollins (2023)
+    declared no type, or 200 m, where their profile ends. Coastal types run
+    out early: 9C at 10 m, 5C and 7C at 20 m, 3C at 70 m.
+
+    ::
+
+        d = jerlov.descend("3C", jerlov.profile_depth("3C"), wl)   # to 70 m
+    """
+    rows = sorted(
+        (r for r in _data._rows("williamson2023_depth.csv")
+         if r["surface_water_type"] == surface_water_type),
+        key=lambda r: float(r["depth_min_m"]),
+    )
+    if not rows:
+        water_type_at_depth(surface_water_type, 0.0)   # raises, naming types
+    for row in rows:
+        if not row["water_type"]:
+            return float(row["depth_min_m"])
+    return float(rows[-1]["depth_max_m"])
 
 
 #: Why each source without a pure water absorption has none.

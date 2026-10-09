@@ -686,3 +686,17 @@ continuum, and a fractional type would be a quantity nobody defined.
 author's reading of one edition, and the edition they read, Jerlov (1978),
 was not obtained (DATA.md section 2).
 
+## 30. Keywords are claims too
+
+The Zenodo record and `CITATION.cff` listed "underwater visibility" as a
+keyword. The README says the package does not predict what a camera will
+record underwater, and no function computes a visibility range: the
+examples leave that out on purpose (section 17). A keyword is how a search
+finds the package, so it is a claim about what the package does, the same
+kind of claim as the extra in section 28. It was removed in 0.9.3.
+
+Three were added for what the package now does: "diffuse attenuation
+coefficient", "photosynthetically available radiation" and "euphotic zone".
+"underwater imaging" stays, since `Scene` and the colour functions are
+for exactly that.
+

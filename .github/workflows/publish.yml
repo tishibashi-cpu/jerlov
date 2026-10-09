@@ -16,6 +16,18 @@ jobs:
         with:
           python-version: "3.12"
 
+      - name: The tag must be the version being built
+        # Three files carry the version and a test keeps them equal, but
+        # nothing compared them with the tag that triggers this workflow.
+        run: |
+          tag="${GITHUB_REF_NAME#v}"
+          version=$(python -c "import re, pathlib; print(re.search(r'^version = \"(.+?)\"', pathlib.Path('pyproject.toml').read_text(), re.M).group(1))")
+          echo "tag $GITHUB_REF_NAME, pyproject.toml $version"
+          if [ "$tag" != "$version" ]; then
+            echo "::error::tag $GITHUB_REF_NAME does not match version $version in pyproject.toml"
+            exit 1
+          fi
+
       - name: Build sdist and wheel
         run: |
           python -m pip install --upgrade build twine
@@ -56,6 +68,17 @@ jobs:
           print(w, "a(550) =", w.a(550))
           assert jerlov.__version__
           EOF
+
+      - name: The test suite must pass against the installed wheel
+        # The tests skip what only a source tree has (pyproject.toml, the
+        # README), so they can be run from a copy next to nothing else and
+        # import the wheel rather than the checkout.
+        run: |
+          python -m pip install pytest
+          cp -r tests "$RUNNER_TEMP/wheel-tests"
+          cd "$RUNNER_TEMP"
+          python -c "import jerlov; print('testing', jerlov.__file__)"
+          python -m pytest wheel-tests -q -p no:cacheprovider
 
       - uses: actions/upload-artifact@v4
         with:

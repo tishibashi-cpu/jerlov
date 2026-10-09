@@ -190,3 +190,50 @@ def test_a_descent_prints_its_path_not_its_arrays():
                     "Kd from jerlov1976; 301 wavelengths>")
     assert repr(jerlov.descend("II", 0.0, 500.0)).startswith(
         "<Descent II to 0 m: no layer crossed;")
+
+
+def test_profile_depth_is_where_descend_stops():
+    """Three examples searched for this by trying descend() every 10 m."""
+    expected = {"I": 200.0, "IB": 200.0, "III": 170.0, "1C": 110.0,
+                "3C": 70.0, "5C": 20.0, "7C": 20.0, "9C": 10.0}
+    for water_type, depth in expected.items():
+        assert jerlov.profile_depth(water_type) == depth
+        jerlov.descend(water_type, depth, 500.0)         # reaches it
+        with pytest.raises(jerlov.MissingQuantityError):
+            jerlov.descend(water_type, depth + 0.1, 500.0)
+    with pytest.raises(KeyError, match="known"):
+        jerlov.profile_depth("XI")
+
+
+def test_transmittance_at_is_a_shorter_descent():
+    wl = np.arange(400.0, 701.0, 10.0)
+    d = jerlov.descend("1C", 45.0, wl)
+    for z in (0.0, 7.5, 10.0, 20.0, 33.3, 45.0):
+        assert d.transmittance_at(z) == pytest.approx(
+            jerlov.descend("1C", z, wl).transmittance, rel=1e-12)
+    rows = d.transmittance_at([[0.0, 10.0], [20.0, 45.0]])
+    assert rows.shape == (2, 2, wl.size)
+    assert rows[1, 1] == pytest.approx(d.transmittance)
+    one = jerlov.descend("II", 30.0, 500.0)
+    assert isinstance(one.transmittance_at(12.0), float)
+    assert one.transmittance_at(12.0) == jerlov.descend("II", 12.0, 500.0).transmittance
+
+
+def test_transmittance_at_refuses_what_the_descent_does_not_cover():
+    d = jerlov.descend("I", 30.0, [450.0, 550.0])
+    with pytest.raises(jerlov.MissingQuantityError, match="stops at 30 m"):
+        d.transmittance_at(31.0)
+    for bad in (-1.0, float("nan"), float("inf")):
+        with pytest.raises(ValueError):
+            d.transmittance_at(bad)
+    # A Descent built by hand has no layer Kd; it must not look clear.
+    hand = jerlov.Descent("I", 30.0, "jerlov1976", d.wavelengths, d.layers,
+                          d.transmittance)
+    with pytest.raises(jerlov.MissingQuantityError, match="descend"):
+        hand.transmittance_at(10.0)
+    with pytest.raises(jerlov.MissingQuantityError, match="descend"):
+        jerlov.par_profile(np.ones(301), np.arange(400.0, 701.0), 0.0,
+                           kd=jerlov.Descent("I", 30.0, "jerlov1976",
+                                             np.arange(400.0, 701.0),
+                                             d.layers, np.ones(301)),
+                           unit="photons")
