@@ -253,26 +253,43 @@ print(f"""
 # --------------------------------------------------------------------------
 rule("6. Which published type is your water closest to?")
 
-print("""There is no classify() here, deliberately: a single Kd does not pin a
-water type, and the boundaries differ between editions of the classification.
-What you can do is compare.""")
+print("""`classify_kd` ranks every type of one edition by how far its Kd
+spectrum is from yours: the root mean square of ln(yours / theirs). It does
+not draw boundaries, which differ between the editions of the
+classification; it says which edition it compared with.""")
 
-print(f"\n  Your Kd(490) = {measured_kd:.3f} 1/m against the published types\n")
-print(f"  {'type':>5} {'Kd(490) 1976':>14} {'ratio':>8}")
 with warnings.catch_warnings():
     warnings.simplefilter("ignore", jerlov.ProvenanceWarning)
-    for water_type in ("I", "IA", "IB", "II", "III", "1C"):
-        published = jerlov.water(water_type, source="jerlov1976").kd(490.0)
-        print(f"  {water_type:>5} {published:>14.4f} {measured_kd/published:>7.2f}x")
+    one = jerlov.classify_kd(at_nm, measured_kd)
+    band = np.arange(400.0, 651.0, 10.0)
+    whole = jerlov.classify_kd(band, jerlov.kd_spectrum(measured_kd, at_nm, band))
+
+print(f"\n  Kd({at_nm}) alone:            {one!r}")
+print(f"  the reconstructed spectrum: {whole!r}")
+print(f"\n  {'type':>5} {'one wavelength':>15} {'400-650 nm':>11}")
+far = dict(whole.distances)
+for water_type, distance in one.distances[:5]:
+    print(f"  {water_type:>5} {distance:>15.3f} {far[water_type]:>11.3f}")
+
+with warnings.catch_warnings():
+    warnings.simplefilter("ignore", jerlov.ProvenanceWarning)
+    iii, c1 = (jerlov.water(t, source="jerlov1976") for t in ("III", "1C"))
+    at_490 = c1.kd(490.0) / iii.kd(490.0)
+    at_440 = c1.kd(440.0) / iii.kd(440.0)
+print(f"""
+  Closest is not the same as equal. One wavelength ranks the types, but it
+  sees only one dimension of them: the Kd of 1C is {at_490:.2f} times that of
+  III at 490 nm, and {at_440:.2f} times at 440 nm, where the coastal type's
+  yellow substance absorbs. A spectrum separates them by its shape. Look at
+  the gap to the runner-up, and at `beyond`, before calling the water a
+  type.""")
 
 print("""
-  Closest is not the same as equal, and a match at one wavelength is not a
-  match. Two waters with the same Kd(490) can differ severalfold in
-  backscattering, which is why the classification says nothing about it.
-
-  Aas et al. (2013) give K(475) boundaries for assigning a type, and note
-  that Jerlov's own boundaries changed between the 1968, 1976 and 1978
-  editions. If you need a type, use their table and say which one you used.""")
+  Two waters with the same Kd can differ severalfold in backscattering,
+  which is why the classification says nothing about it. And the editions
+  differ: compare with source="jerlov1968" or "austin1986" and say which
+  one you used. Jerlov (1976) type I falls below pure sea water at 9 of 15
+  wavelengths (DATA.md section 3); Austin & Petzold (1986) replace it.""")
 
 # --------------------------------------------------------------------------
 rule("What each of these assumed")

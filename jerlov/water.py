@@ -541,6 +541,146 @@ def water_type_at_depth(surface_water_type: str, depth_m):
     return out
 
 
+@dataclass(frozen=True, eq=False, repr=False)
+class KdClassification:
+    """How close a measured Kd spectrum is to each Jerlov type.
+
+    Built by :func:`classify_kd`. The distance to a type is the root mean
+    square of ``ln(Kd_measured / Kd_type)`` over :attr:`wavelengths`: 0.1
+    means the measurement differs from that type by about 10 percent, in
+    one direction or the other, on average.
+    """
+
+    water_type: str
+    """The nearest type. Read :attr:`distances` before relying on it."""
+    source: str
+    """Whose Kd spectra the measurement was compared with."""
+    distances: tuple[tuple[str, float], ...]
+    """``(type, distance)`` for every type, nearest first."""
+    wavelengths: np.ndarray
+    """The wavelengths compared, nm."""
+    excluded_nm: tuple[float, ...]
+    """Wavelengths given but not compared: a gap in the measurement, or in
+    the Kd of some type, which would make the distances incomparable."""
+    beyond: str | None
+    """``"clearer"`` if the measurement is below the Kd of the clearest
+    type at every wavelength compared, ``"more turbid"`` if above the most
+    turbid one, else ``None``. The nearest type is then only an end of the
+    classification, not a match."""
+
+    def __repr__(self) -> str:
+        (first, d1), *rest = self.distances
+        runner = f", then {rest[0][0]} {rest[0][1]:.3f}" if rest else ""
+        beyond = f"; {self.beyond} than every type" if self.beyond else ""
+        n = self.wavelengths.size
+        return (
+            f"<KdClassification {first} {d1:.3f}{runner} ({self.source}, "
+            f"{n} wavelength{'s' if n != 1 else ''}){beyond}>"
+        )
+
+
+def classify_kd(wavelengths, kd, *, source: str = "jerlov1976"
+                ) -> KdClassification:
+    """Find the Jerlov type whose Kd spectrum a measured one is closest to.
+
+    Every type of ``source`` is compared with the measurement at the given
+    wavelengths, and ranked by the root mean square of
+    ``ln(Kd_measured / Kd_type)``. Logarithms, so that a 10 percent
+    difference counts the same in clear blue water as in the red.
+
+    Parameters
+    ----------
+    wavelengths:
+        nm, inside the range of ``source``. A single wavelength is allowed,
+        Kd(490) for instance, but then oceanic and coastal types with a
+        similar Kd there cannot be told apart, and the ranking will show it.
+    kd:
+        Measured Kd in 1/m, on ``wavelengths``. NaN marks a gap; it is left
+        out and recorded in :attr:`~KdClassification.excluded_nm`.
+    source:
+        A source carrying Kd: ``"jerlov1976"`` (the default, all ten types),
+        ``"jerlov1968"``, ``"austin1986"`` or ``"solonenko2015"``.
+
+    Notes
+    -----
+    The types are points, not a continuum, and Jerlov defined them on the
+    upper 10 m. A measurement half-way between II and III is reported as
+    one of them, with both distances; deeper down, compare
+    :func:`water_type_at_depth`. Nothing here says the measurement *is* a
+    Jerlov type, only which one it is nearest. Check
+    :attr:`~KdClassification.beyond` and the gap to the runner-up.
+    """
+    src = get_source(source)
+    if "Kd" not in src.quantities:
+        raise MissingQuantityError(
+            f"source {source!r} carries no Kd to compare with "
+            f"(it has {', '.join(src.quantities)})"
+        )
+    wl = np.array(wavelengths, dtype=float, ndmin=1)
+    measured = np.array(kd, dtype=float, ndmin=1)
+    if wl.ndim != 1 or measured.shape != wl.shape:
+        raise ValueError("kd must be one value per wavelength")
+    if np.any(measured <= 0):
+        raise ValueError("Kd must be positive (NaN marks a gap)")
+
+    waters = {t: water(t, source) for t in src.water_types}
+    # Raises for a wavelength outside the source's range. The flags are
+    # checked below, once, on the wavelengths actually compared: ten
+    # warnings for one comparison would bury the one that matters.
+    references = {t: _as_array(w._interp("Kd", wl, warn=False))
+                  for t, w in waters.items()}
+    usable = np.isfinite(measured)
+    for values in references.values():
+        usable &= np.isfinite(values)
+    if not usable.any():
+        raise MissingQuantityError(
+            "no wavelength has both a measured Kd and a Kd for every type "
+            f"of {source!r}"
+        )
+    by_flags: dict[str, list[str]] = {}
+    for water_type, w in waters.items():
+        hit = w._flag_hits("Kd", _support(w.wavelengths, wl[usable]))
+        if hit:
+            by_flags.setdefault("; ".join(sorted(hit)), []).append(water_type)
+    if by_flags:
+        warnings.warn(
+            "the comparison rests on flagged Kd values: "
+            + ", ".join(f"{hit} for {', '.join(types)}"
+                        for hit, types in by_flags.items())
+            + ". See DATA.md for what is known about them.",
+            ProvenanceWarning,
+            stacklevel=_data.caller_stacklevel(),
+        )
+
+    log_measured = np.log(measured[usable])
+    distances = []
+    logs = {}
+    for water_type, values in references.items():
+        logs[water_type] = np.log(values[usable])
+        difference = log_measured - logs[water_type]
+        distances.append((water_type, float(np.sqrt(np.mean(difference ** 2)))))
+    distances.sort(key=lambda pair: pair[1])
+
+    clearest = min(logs, key=lambda t: logs[t].mean())
+    murkiest = max(logs, key=lambda t: logs[t].mean())
+    beyond = None
+    if np.all(log_measured < logs[clearest]):
+        beyond = "clearer"
+    elif np.all(log_measured > logs[murkiest]):
+        beyond = "more turbid"
+
+    used = wl[usable]
+    used.setflags(write=False)
+    return KdClassification(
+        water_type=distances[0][0],
+        source=source,
+        distances=tuple(distances),
+        wavelengths=used,
+        excluded_nm=tuple(float(w) for w in wl[~usable]),
+        beyond=beyond,
+    )
+
+
 # == on arrays has no single answer; the generated repr printed every array.
 @dataclass(frozen=True, eq=False, repr=False)
 class Descent:

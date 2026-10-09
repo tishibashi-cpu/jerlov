@@ -361,3 +361,16 @@ def test_a_scene_does_not_follow_later_changes_to_the_callers_arrays():
     wl[0], ed[0] = 999.0, -1.0
     assert s.wavelengths[0] == WL[0]
     assert s.downwelling[0] == 1.0
+
+
+def test_at_depth_takes_a_descent_as_it_comes():
+    wl = np.arange(420.0, 701.0, 10.0)   # Williamson's model edge is 412 nm
+    surface = np.ones_like(wl)
+    d = jerlov.descend("1C", 45.0, wl)
+    scene = Scene.at_depth(jerlov.water("II"), 45.0, surface, wl, kd=d)
+    assert scene.downwelling == pytest.approx(surface * d.transmittance)
+    assert scene.depth_m == 45.0
+    with pytest.raises(ValueError, match="goes to 45 m, but the scene is at 40"):
+        Scene.at_depth(jerlov.water("II"), 40.0, surface, wl, kd=d)
+    with pytest.raises(ValueError, match="other wavelengths"):
+        Scene.at_depth(jerlov.water("II"), 45.0, surface[1:], wl[1:], kd=d)
