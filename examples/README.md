@@ -1,6 +1,6 @@
 # Examples
 
-Nine scripts. Each runs against the installed package and needs nothing beyond
+Twelve scripts. Each runs against the installed package and needs nothing beyond
 NumPy.
 
 ```
@@ -13,6 +13,9 @@ python examples/light_at_depth.py
 python examples/measured_scattering.py
 python examples/what_is_in_the_water.py
 python examples/euphotic_zone.py
+python examples/optical_link.py
+python examples/seagrass_depth_limit.py
+python examples/isolumes.py
 ```
 
 CI runs all of them on every push, so an example that has stopped working is a
@@ -36,6 +39,9 @@ copy of the package silently wins over the working tree. In a clone, run
 | need a backscatter ratio and have no instrument | `measured_scattering.py` |
 | work with absorption, or with phytoplankton and CDOM | `what_is_in_the_water.py` |
 | need the depth of the euphotic zone, or the light phytoplankton get | `euphotic_zone.py` |
+| design an underwater optical link or a lidar | `optical_link.py` |
+| work on seagrass, or on restoring a meadow | `seagrass_depth_limit.py` |
+| study vertical migration, or where animals sit in the light | `isolumes.py` |
 
 ## What each shows
 
@@ -114,6 +120,28 @@ puts the 1 percent level at **154 m**; PAR, layer by layer, at **101 m**. At
 that depth 87 percent of what is left is violet-blue and the red band of
 chlorophyll a gets almost nothing. Three editions of the classification are
 compared, and agree here; at Kd(490) = 0.045 they do not.
+
+**`optical_link.py`** — beam attenuation at common laser lines, and the
+range a loss budget buys: each attenuation length costs 4.34 dB, so 40 dB
+is 9.2 of them in any water. The clearest wavelength moves from 494 nm in
+IB to 564 nm in 5C, and the two published IOP sets disagree on the range
+at 532 nm by up to a factor of **2.9**, in Jerlov III. Petzold's eight
+measured waters, and the depth a narrow-beam lidar reaches.
+
+**`seagrass_depth_limit.py`** — the depth at which the bottom still gets
+25, 11 or 5 percent of the surface PAR, the light requirements reported for
+seagrasses (Duarte 1991, and later studies). At 11 percent the limit runs
+from 13.4 m in Jerlov III to 2.7 m in 9C; one step from 1C to 3C costs 3.3
+m of depth. A Kd(PAR) measured in the top metre puts the limit in III at
+9.4 m rather than 13.4, because PAR attenuates fastest near the surface.
+
+**`isolumes.py`** — the depth of light levels from a tenth to a
+hundred-thousandth of the surface PAR, and how far each moves for a tenfold
+dimming at dusk. The steps grow with depth as the spectrum narrows to the
+blue. In Jerlov I they are 58 and 61 m; with I's own Kd all the way down
+they would be 106 and 114 m, so the typical turn to IB below 40 m roughly
+halves them. A thousandth of the surface light lies 9 times shallower in 9C
+than in II.
 
 ## What they do not show
 
