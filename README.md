@@ -236,6 +236,7 @@ coastal water clears as you go down.
 jerlov.water_type_at_depth("I", 60.0)     # 'IB'
 jerlov.water_type_at_depth("3C", 45.0)    # 'II'
 jerlov.water_type_at_depth("9C", 15.0)    # None: the paper declined to say
+jerlov.water_type_at_depth("I", [0, 30, 60])   # array(['I', 'IA', 'IB'], dtype=object)
 ```
 
 `None` means fewer than ten measurement campaigns supported a declaration, so

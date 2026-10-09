@@ -338,6 +338,15 @@ def test_flags_must_cover_every_wavelength():
         Water([400.0, 500.0, 600.0], a=[0.1, 0.2, 0.3], flags={"a": ("ok",)})
 
 
+def test_flags_for_a_quantity_the_water_lacks_are_refused():
+    """They used to be kept and never consulted, so the doubt they recorded
+    was lost without a word; "kd" for "Kd" was lost the same way."""
+    with pytest.raises(ValueError, match="flags given for 'b'.*it has a"):
+        Water([400.0, 500.0], a=[0.1, 0.2], flags={"b": ("suspect", "ok")})
+    with pytest.raises(ValueError, match="flags given for 'kd'"):
+        Water([400.0, 500.0], kd=[0.1, 0.2], flags={"kd": ("suspect", "ok")})
+
+
 def test_b_from_c_warns_when_c_is_below_pure_water():
     """b came out negative without a word; kd_spectrum already warned in the
     same situation."""

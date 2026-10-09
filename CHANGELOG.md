@@ -4,6 +4,40 @@ Every release is archived on Zenodo under the concept DOI
 [10.5281/zenodo.22321312](https://doi.org/10.5281/zenodo.22321312), which
 always resolves to the latest version.
 
+## 0.8.0 — 2026-10-09
+
+Fixes from the review that followed 0.7.3. No shipped value changed.
+
+**Changed.**
+
+- The `plot` extra is gone. It installed matplotlib, which nothing in the
+  package, its tests or its examples imports. `pip install "jerlov[plot]"`
+  now installs plain `jerlov`, with a warning from pip that the extra does
+  not exist. A test now fails if an extra installs something nothing
+  imports.
+- `Water` refuses flags for a quantity it does not carry. They used to be
+  kept and never consulted, so `flags={"b": ...}` on a water with no b, or
+  `"kd"` for `"Kd"`, dropped the caller's doubt without a word.
+  `from_measurements` already refused this; the constructor now does too,
+  as it already did for `uncertainty`.
+
+**Added.**
+
+- `water_type_at_depth` accepts an array of depths and returns an object
+  array of the same shape, `None` where the paper declared no type. A
+  single depth still gives a string or `None`. One NaN or negative depth
+  refuses the whole array.
+
+**Fixed.**
+
+- The repr of a `Descent` printed every wavelength and transmittance. It
+  now shows the path: `<Descent 1C to 45 m: 1C 0-20, III 20-40, II 40-45 m;
+  Kd from jerlov1976; 301 wavelengths>`.
+
+**Packaging.** The PyPI classifiers said "Pre-Alpha" and named no Python
+version. They now say Beta, list Python 3.10 to 3.13, and mark the package
+as typed. A test keeps the listed versions equal to the ones CI runs.
+
 ## 0.7.3 — 2026-10-07
 
 **Fixed.** `ShortwaveParameters.fraction_at`, and so `solar_fraction`,

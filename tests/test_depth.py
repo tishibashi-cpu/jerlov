@@ -161,3 +161,32 @@ def test_descent_to_the_surface_is_no_attenuation():
     d = jerlov.descend("II", 0.0, [450.0, 550.0])
     assert np.all(d.transmittance == 1.0)
     assert d.layers == ()
+
+
+def test_an_array_of_depths_gives_one_type_per_depth():
+    depths = np.array([[0.0, 30.0], [60.0, 250.0]])
+    types = jerlov.water_type_at_depth("I", depths)
+    assert types.shape == depths.shape
+    assert types.tolist() == [["I", "IA"], ["IB", None]]
+    for depth, got in zip(depths.ravel(), types.ravel()):
+        assert got == jerlov.water_type_at_depth("I", float(depth))
+    # A list is an array too; a scalar is still a plain string.
+    assert list(jerlov.water_type_at_depth("9C", [5, 15])) == ["9C", None]
+    assert isinstance(jerlov.water_type_at_depth("I", np.float64(5)), str)
+
+
+def test_one_bad_depth_in_an_array_refuses_the_whole_array():
+    with pytest.raises(ValueError, match="finite"):
+        jerlov.water_type_at_depth("I", [10.0, float("nan")])
+    with pytest.raises(ValueError, match="cannot be negative"):
+        jerlov.water_type_at_depth("I", [10.0, -1.0])
+
+
+def test_a_descent_prints_its_path_not_its_arrays():
+    """The generated repr printed every wavelength and transmittance."""
+    d = jerlov.descend("1C", 45.0, np.arange(400.0, 701.0, 1.0))
+    text = repr(d)
+    assert text == ("<Descent 1C to 45 m: 1C 0-20, III 20-40, II 40-45 m; "
+                    "Kd from jerlov1976; 301 wavelengths>")
+    assert repr(jerlov.descend("II", 0.0, 500.0)).startswith(
+        "<Descent II to 0 m: no layer crossed;")
