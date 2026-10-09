@@ -620,8 +620,10 @@ def classify_kd(wavelengths, kd, *, source: str = "jerlov1976"
     measured = np.array(kd, dtype=float, ndmin=1)
     if wl.ndim != 1 or measured.shape != wl.shape:
         raise ValueError("kd must be one value per wavelength")
-    if np.any(measured <= 0):
-        raise ValueError("Kd must be positive (NaN marks a gap)")
+    if np.any(measured <= 0) or np.any(np.isinf(measured)):
+        # inf would otherwise fail isfinite below and be dropped as if it
+        # were a gap, leaving the other wavelengths to decide alone.
+        raise ValueError("Kd must be positive and finite (NaN marks a gap)")
 
     waters = {t: water(t, source) for t in src.water_types}
     # Raises for a wavelength outside the source's range. The flags are

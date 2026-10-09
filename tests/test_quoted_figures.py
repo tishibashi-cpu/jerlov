@@ -411,3 +411,39 @@ def test_README_figures_for_classify_kd():
         warnings.simplefilter("ignore", jerlov.ProvenanceWarning)
         result = jerlov.classify_kd(band, jerlov.kd_spectrum(0.060, 490, band))
     assert repr(result) == quoted
+
+
+def test_figures_for_the_euphotic_zone_example():
+    """examples/README.md: IA with IB close behind; 154 m by the shortcut,
+    101 m layer by layer; 87 percent violet-blue there; the editions agree
+    at Kd(490) = 0.030 and not at 0.045."""
+    band = np.arange(400.0, 701.0, 5.0)
+    surface = np.interp(band, *jerlov.d65())
+    measured = jerlov.kd_spectrum(0.030, 490.0, band)
+    r = jerlov.classify_kd(band, measured)
+    assert [t for t, _ in r.distances[:2]] == ["IA", "IB"]
+    assert round(math.log(100) / 0.030) == 154
+    d = jerlov.descend("IA", 200.0, band)
+    assert d.layers[3][2] == "IB" and d.layers[2][2] == "IA"
+    layered = jerlov.par_profile(surface, band, 0.0, kd=d, unit="energy")
+    z1 = layered.depth_of_fraction()
+    assert round(z1) == 101
+    one_kd = jerlov.par_profile(surface, band, 0.0, unit="energy",
+                                kd=jerlov.water("IA", source="jerlov1976"))
+    spectral = jerlov.par_profile(surface, band, 0.0, kd=measured,
+                                  unit="energy")
+    # "The shortcut is the deepest."
+    assert math.log(100) / 0.030 > max(one_kd.depth_of_fraction(),
+                                       spectral.depth_of_fraction(), z1)
+    blue = jerlov.par_profile(surface * (band < 500), band, [0.0, z1],
+                              kd=d, unit="energy").par
+    total = jerlov.par_profile(surface, band, [0.0, z1], kd=d,
+                               unit="energy").par
+    assert round(100 * blue[1] / total[1]) == 87
+    editions = {s: jerlov.classify_kd(band, measured, source=s).water_type
+                for s in ("jerlov1976", "jerlov1968", "austin1986")}
+    assert set(editions.values()) == {"IA"}
+    other = jerlov.kd_spectrum(0.045, 490.0, band)
+    assert (jerlov.classify_kd(band, other).water_type,
+            jerlov.classify_kd(band, other, source="jerlov1968").water_type
+            ) == ("IB", "II")

@@ -345,9 +345,10 @@ python examples/what_an_eye_sees.py            any spectral sensitivity
 python examples/light_at_depth.py              light through the depth profile
 python examples/measured_scattering.py         Petzold's measured bb/b
 python examples/what_is_in_the_water.py        absorption without the water
+python examples/euphotic_zone.py               PAR and the 1 percent depth
 ```
 
-Eight scripts, each aimed at a different reader; `examples/README.md` says
+Nine scripts, each aimed at a different reader; `examples/README.md` says
 which to start with. CI runs all of them on every push, so an example that has
 stopped working is a failed build. Every one ends with the assumptions it
 made.

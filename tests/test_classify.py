@@ -83,6 +83,8 @@ def test_what_cannot_be_compared_is_refused():
         jerlov.classify_kd([250.0, 500.0], [1.0, 0.05])
     with pytest.raises(ValueError, match="positive"):
         jerlov.classify_kd([450.0, 500.0], [0.0, 0.05])
+    with pytest.raises(ValueError, match="finite"):
+        jerlov.classify_kd([450.0, 500.0], [np.inf, 0.05])
     with pytest.raises(ValueError, match="one value per wavelength"):
         jerlov.classify_kd(WL, [0.05])
     with pytest.raises(jerlov.MissingQuantityError, match="no wavelength"):

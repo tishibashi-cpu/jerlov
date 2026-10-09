@@ -1,6 +1,6 @@
 # Examples
 
-Eight scripts. Each runs against the installed package and needs nothing beyond
+Nine scripts. Each runs against the installed package and needs nothing beyond
 NumPy.
 
 ```
@@ -12,6 +12,7 @@ python examples/what_an_eye_sees.py
 python examples/light_at_depth.py
 python examples/measured_scattering.py
 python examples/what_is_in_the_water.py
+python examples/euphotic_zone.py
 ```
 
 CI runs all of them on every push, so an example that has stopped working is a
@@ -34,6 +35,7 @@ copy of the package silently wins over the working tree. In a clone, run
 | need the light at depth, below the top 10 m | `light_at_depth.py` |
 | need a backscatter ratio and have no instrument | `measured_scattering.py` |
 | work with absorption, or with phytoplankton and CDOM | `what_is_in_the_water.py` |
+| need the depth of the euphotic zone, or the light phytoplankton get | `euphotic_zone.py` |
 
 ## What each shows
 
@@ -103,6 +105,15 @@ of 5C absorb twelve times what those of IB do; at 600 nm pure water is 78
 to 98 percent of every type's absorption. At
 715 nm the measured averages lie 14 to 16 percent above a fit that gives
 the contents nothing there.
+
+**`euphotic_zone.py`** — from one Kd(490) reading to the depth of the
+euphotic zone: `classify_kd` finds the nearest type (IA, with IB close
+behind), `descend` follows it as it turns IB below 30 m, and `par_profile`
+attenuates PAR wavelength by wavelength. The usual shortcut, 4.6 / Kd(490),
+puts the 1 percent level at **154 m**; PAR, layer by layer, at **101 m**. At
+that depth 87 percent of what is left is violet-blue and the red band of
+chlorophyll a gets almost nothing. Three editions of the classification are
+compared, and agree here; at Kd(490) = 0.045 they do not.
 
 ## What they do not show
 

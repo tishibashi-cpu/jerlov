@@ -88,8 +88,11 @@ class ParProfile:
 
     @property
     def fraction(self) -> np.ndarray:
-        """``PAR(z) / PAR(0)``, 0 to 1."""
-        return self.par / self.surface_par
+        """``PAR(z) / PAR(0)``, 0 to 1. NaN if there is no light at the
+        surface."""
+        return np.divide(self.par, self.surface_par,
+                         out=np.full_like(self.par, np.nan),
+                         where=self.surface_par != 0)
 
     def depth_of_fraction(self, fraction: float = 0.01) -> float:
         """The depth, in m, at which PAR falls to ``fraction`` of its surface value.
@@ -205,8 +208,19 @@ def par_profile(surface_downwelling, wavelengths, depths_m, *, kd,
     if surface.shape != wl.shape:
         raise ValueError(
             "surface_downwelling must have the same shape as wavelengths")
-    if np.any(surface < 0):
-        raise ValueError("downwelling irradiance cannot be negative")
+    if np.any(surface < 0) or np.any(np.isinf(surface)):
+        # NaN, a gap, passes here and is refused below only if PAR rests on it.
+        raise ValueError(
+            "downwelling irradiance must be finite and not negative")
+
+    # Only the samples that PAR rests on: those inside 400-700 nm and the
+    # one either side of each end. Kd is evaluated on these alone, so that
+    # a spectrum running past the Kd table, or a flagged Kd beyond 700 nm,
+    # neither refuses nor warns about light that PAR does not count.
+    near = np.zeros(wl.shape, dtype=bool)
+    near[np.searchsorted(wl, lo, side="right") - 1:
+         np.searchsorted(wl, hi, side="left") + 1] = True
+    sub_wl = wl[near]
 
     depths = np.array(depths_m, dtype=float)
     if not np.all(np.isfinite(depths)):
@@ -227,21 +241,22 @@ def par_profile(surface_downwelling, wavelengths, depths_m, *, kd,
                 f"the descent stops at {deepest:g} m, above the deepest depth "
                 f"asked for ({depths.max():g} m)"
             )
-        layers = [(top, bottom, water(t, kd.source).kd(wl))
+        layers = [(top, bottom, water(t, kd.source).kd(sub_wl))
                   for top, bottom, t in kd.layers]
         kd_from = (f"a descent from Jerlov {kd.surface_water_type} "
                    f"({kd.source})")
 
         def optical_depth(z):
-            total = np.zeros_like(wl)
+            total = np.zeros_like(sub_wl)
             for top, bottom, values in layers:
                 total += values * min(max(z - top, 0.0), bottom - top)
             return total
 
-        kd_values = np.vstack([v for _, _, v in layers]) if layers else wl * 0
+        kd_values = (np.vstack([v for _, _, v in layers]) if layers
+                     else np.zeros_like(sub_wl))
     else:
         if isinstance(kd, Water):
-            kd_values = np.asarray(kd.kd(wl), dtype=float)
+            kd_values = np.asarray(kd.kd(sub_wl), dtype=float)
             kd_from = f"Jerlov {kd.name}" if kd.name else "the given water"
             if kd.source is not None:
                 kd_from += f" ({kd.source.key})"
@@ -250,8 +265,11 @@ def par_profile(surface_downwelling, wavelengths, depths_m, *, kd,
             kd_from = "the given Kd"
             if kd_values.shape != wl.shape:
                 raise ValueError("kd must have the same shape as wavelengths")
-        if np.any(kd_values < 0):
-            raise ValueError("kd cannot be negative")
+            kd_values = kd_values[near]
+        if np.any(kd_values < 0) or np.any(np.isinf(kd_values)):
+            # inf times a depth of 0 is NaN, so PAR at the surface came out
+            # NaN with only a NumPy RuntimeWarning.
+            raise ValueError("kd must be finite and not negative")
 
         def optical_depth(z):
             return kd_values * z
@@ -259,18 +277,17 @@ def par_profile(surface_downwelling, wavelengths, depths_m, *, kd,
     # The band: every sample inside 400-700 nm, plus the two ends.
     inside = (wl > lo) & (wl < hi)
     band = np.concatenate(([lo], wl[inside], [hi]))
-    near = np.zeros(wl.shape, dtype=bool)
-    near[np.searchsorted(wl, lo, side="right") - 1:
-         np.searchsorted(wl, hi, side="left") + 1] = True
-    for name, values in (("surface_downwelling", surface), ("Kd", kd_values)):
-        if np.any(np.isnan(np.atleast_2d(values)[:, near])):
+    for name, values in (("surface_downwelling", surface[near]),
+                         ("Kd", kd_values)):
+        if np.any(np.isnan(values)):
             raise MissingQuantityError(
                 f"{name} has a gap between {lo:g} and {hi:g} nm, so PAR, "
                 "which integrates over all of it, is not determined"
             )
-    surface_q = np.interp(band, wl, _photons(surface, wl, unit))
+    surface_q = np.interp(band, sub_wl,
+                          _photons(surface[near], sub_wl, unit))
 
     def tau(z):
-        return np.interp(band, wl, optical_depth(z))
+        return np.interp(band, sub_wl, optical_depth(z))
 
     return ParProfile(depths, band, surface_q, tau, deepest, kd_from)
