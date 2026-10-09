@@ -175,17 +175,32 @@ for name, finish in FINISHES.items():
 # --------------------------------------------------------------------------
 rule("2. What it looks like")
 
-print("""White-balanced to the light reaching that depth, as a camera set
-there would be. Each block is the lure at that range; the last column is
-the open water behind it.""")
+print(f"""The first column is the paint in air: lit by daylight, and
+white-balanced to daylight, as a camera on the bank would record it. The
+others are white-balanced to the light reaching {DEPTH_M:g} m, as a camera set there
+would be, and show the lure at each range; the last is the open water
+behind it. Underwater the lure's side receives only {SIDE_LIGHT:g} of the light that
+sets the white (part 1), so part of the darkening against the air column
+is that stated geometry, not the water.""")
+
+
+def in_air(name):
+    """The paint under daylight, balanced to daylight."""
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", jerlov.CoverageWarning)
+        warnings.simplefilter("ignore", jerlov.GamutWarning)
+        return jerlov.spectrum_to_srgb(FINISHES[name](WAVELENGTHS) * daylight,
+                                       WAVELENGTHS, white=daylight)
+
 
 image_rows = []
 for water_type in ("II", "1C", "5C"):
     white = light_at_depth(water_type) / np.pi
-    print(f"\n  Jerlov {water_type:<4}" + " " * 4
+    print(f"\n  Jerlov {water_type:<4}" + " " * 3 + "  in air"
           + "".join(f"{d:>7g} m" for d in RANGES_M) + "    water")
     for name in FINISHES:
-        cells, row = [], []
+        air = in_air(name)
+        cells, row = [swatch(air)], [air]
         for distance in RANGES_M:
             seen, water = look(water_type, name, distance,
                                side_light=SIDE_LIGHT, ratio=RATIO)
@@ -278,8 +293,8 @@ if "--png" in sys.argv:
                        block, axis=1)
     write_png(path, pixels)
     print(f"\n  wrote {path}: rows are the finishes for II, 1C and 5C in turn,")
-    print(f"  columns the ranges {', '.join(f'{d:g}' for d in RANGES_M)} m "
-          f"and then the water")
+    print(f"  columns the paint in air, the ranges "
+          f"{', '.join(f'{d:g}' for d in RANGES_M)} m, and then the water")
 
 # --------------------------------------------------------------------------
 rule("Before you use any of this")

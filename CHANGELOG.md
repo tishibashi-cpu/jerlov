@@ -12,8 +12,9 @@ value changed.
 **Examples.** `lure_colours.py`, for designing or testing painted fishing
 lures and other gear: six finishes seen horizontally through 0.5 to 5 m of
 water, as colour swatches and luminance contrast against the open water.
-`--png PATH` also writes the swatches as an image, with nothing beyond the
-standard library and NumPy.
+The first column of swatches is the paint in air, under daylight, for
+reference. `--png PATH` also writes the swatches as an image, with nothing
+beyond the standard library and NumPy.
 
 It separates what the water decides from what it does not. At each
 wavelength the contrast left at range r is exp(-c r), whatever the lure and

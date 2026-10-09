@@ -149,8 +149,9 @@ halves them. A thousandth of the surface light lies 9 times shallower in 9C
 than in II.
 
 **`lure_colours.py`** — six painted finishes seen horizontally through 0.5
-to 5 m of water, as colour swatches (and, with `--png`, an image) and as
-luminance contrast against the open water behind them. What the water
+to 5 m of water, as colour swatches beside the paint in air (and, with
+`--png`, an image) and as luminance contrast against the open water behind
+them. What the water
 decides is exact: at each wavelength the contrast left at range r is
 exp(-c r), so in Jerlov 1C 22 to 35 percent of it is left at 2 m,
 depending on wavelength. What it does not decide is where the contrast
