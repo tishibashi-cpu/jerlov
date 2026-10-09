@@ -366,9 +366,10 @@ python examples/euphotic_zone.py               PAR and the 1 percent depth
 python examples/optical_link.py                laser range for links and lidar
 python examples/seagrass_depth_limit.py        light at the bottom, by requirement
 python examples/isolumes.py                    light levels and vertical migration
+python examples/lure_colours.py                painted lures: colour and contrast
 ```
 
-Twelve scripts, each aimed at a different reader; `examples/README.md` says
+Thirteen scripts, each aimed at a different reader; `examples/README.md` says
 which to start with. CI runs all of them on every push, so an example that has
 stopped working is a failed build. Every one ends with the assumptions it
 made.

@@ -4,6 +4,31 @@ Every release is archived on Zenodo under the concept DOI
 [10.5281/zenodo.22321312](https://doi.org/10.5281/zenodo.22321312), which
 always resolves to the latest version.
 
+## 0.9.5 — 2026-10-09
+
+An example for painted gear, and a DOI that was missing. No code or shipped
+value changed.
+
+**Examples.** `lure_colours.py`, for designing or testing painted fishing
+lures and other gear: six finishes seen horizontally through 0.5 to 5 m of
+water, as colour swatches and luminance contrast against the open water.
+`--png PATH` also writes the swatches as an image, with nothing beyond the
+standard library and NumPy.
+
+It separates what the water decides from what it does not. At each
+wavelength the contrast left at range r is exp(-c r), whatever the lure and
+whatever the water's glow. Where the contrast starts is another matter: it
+rests on the light falling on the lure's visible side and on the water's
+backscatter ratio, neither of which the Jerlov type fixes. Across three
+guesses at the first and two at the second, the same finish in Jerlov 1C
+starts anywhere across a factor of 124, and three finishes change sign. The
+example shows that table rather than ranking finishes by one guess.
+
+**Metadata.** Jerlov's "Classification of sea water in terms of quanta
+irradiance", the source of `jerlov1977_quanta.csv` since 0.9.4, is now in
+the Zenodo record's related identifiers, doi:10.1093/icesjms/37.3.281, and
+the DOI is in DATA.md section 22, the build script and the docstring.
+
 ## 0.9.4 — 2026-10-09
 
 Jerlov's measured quanta irradiance, shipped and used as a check on the

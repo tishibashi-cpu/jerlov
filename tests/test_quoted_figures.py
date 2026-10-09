@@ -547,3 +547,50 @@ def test_figures_for_the_turbid_seagrass_section():
     assert kd_column["1C"] < 0.27
     assert (round(min(ratio.values()), 1), round(max(ratio.values()), 1)) \
         == (2.1, 2.2)
+
+
+def test_figures_for_the_lure_example():
+    """examples/README.md: 22 to 35 percent of the contrast is left at 2 m
+    in Jerlov 1C; the start spans a factor of 124 across the six guesses, and
+    red, blue and black change sign."""
+    wl = np.arange(412.0, 701.0, 2.0)
+    kept = np.exp(-jerlov.water("1C").c(np.array([450.0, 500.0, 550.0,
+                                                  600.0, 650.0])) * 2.0)
+    assert (round(100 * kept.min()), round(100 * kept.max())) == (22, 35)
+
+    def sigmoid(w, edge, width):
+        return 1.0 / (1.0 + np.exp(-(w - edge) / width))
+
+    finishes = {
+        "white": np.full_like(wl, 0.80),
+        "chartreuse": 0.06 + 0.78 * sigmoid(wl, 500, 12)
+        * (1 - 0.35 * sigmoid(wl, 625, 18)),
+        "orange": 0.05 + 0.75 * sigmoid(wl, 580, 14),
+        "red": 0.04 + 0.70 * sigmoid(wl, 610, 12),
+        "blue": 0.05 + 0.45 * np.exp(-0.5 * ((wl - 460) / 35) ** 2),
+        "black": np.full_like(wl, 0.04),
+    }
+    iops = jerlov.water("1C")
+    ed = (np.interp(wl, *jerlov.d65())
+          * np.exp(-jerlov.water("1C", source="jerlov1976").kd(wl) * 3.0))
+
+    def y(spectrum):
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", jerlov.CoverageWarning)
+            return jerlov.spectrum_to_xyz(spectrum, wl)[1]
+
+    start = {}
+    for name, rho in finishes.items():
+        values = []
+        for side in (1.0, 0.25, 0.05):
+            for ratio in (0.01, 0.02):
+                water = jerlov.veiling_radiance_estimate(
+                    iops, ed, wl, backscatter_ratio=ratio)
+                seen = jerlov.Scene(iops, side * ed, wl).observe(
+                    rho, 0.5, veiling_radiance=water)
+                values.append((y(seen.radiance) - y(water)) / y(water))
+        start[name] = values
+    flips = {n for n, v in start.items() if min(v) < 0 < max(v)}
+    assert flips == {"red", "blue", "black"}
+    spread = max(max(v) / min(v) for v in start.values() if min(v) > 0)
+    assert round(spread) == 124
