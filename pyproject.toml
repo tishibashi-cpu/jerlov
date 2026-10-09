@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "jerlov"
-version = "0.7.3"
+version = "0.8.0"
 description = "Inherent optical properties of Jerlov water types, with provenance"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -14,14 +14,20 @@ license-files = ["LICENSE", "NOTICE"]
 authors = [{name = "T. Ishibashi"}]
 keywords = ["ocean optics", "Jerlov water types", "inherent optical properties"]
 classifiers = [
-  "Development Status :: 2 - Pre-Alpha",
+  "Development Status :: 4 - Beta",
   "Intended Audience :: Science/Research",
+  "Operating System :: OS Independent",
   "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3 :: Only",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
   "Topic :: Scientific/Engineering :: Physics",
+  "Typing :: Typed",
 ]
 
 [project.optional-dependencies]
-plot = ["matplotlib"]
 test = ["pytest"]
 build = ["openpyxl", "colour-science"]
 

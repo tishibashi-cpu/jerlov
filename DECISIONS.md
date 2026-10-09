@@ -608,3 +608,22 @@ bb/b, with the water it came from attached, not as the ratio of a type.
 0.169 degree was usable, and the 0.1 to 0.158 degree values there follow the
 printed power law exactly. They are shipped, since the report prints them and
 counts them in s, but as `extrapolated`, and `vsf_at` warns on them.
+
+## 28. An extra is a claim too
+
+Section 10 said `matplotlib` was needed "only by the optional `plot` extra".
+Nothing needed it: no module, test or example has ever imported it. The extra
+was declared in anticipation of plotting helpers that were never written, and
+an extra that installs something unused tells the reader a feature exists.
+It was removed in 0.8.0, and `tests/test_packaging.py` now fails if any extra
+installs a distribution that nothing in the repository imports.
+
+The classifiers are the same kind of claim and were wrong the other way:
+"Pre-Alpha" and no Python version, on a package with a tested lower bound and
+a four-version CI matrix. They now list exactly the versions CI runs, and a
+test keeps them so, for the reason in section 15.
+
+**Rejected:** keeping `plot` as an empty extra so that existing
+`pip install "jerlov[plot]"` commands stay silent. pip already installs the
+package and only warns, and a silent no-op extra is the same false claim.
+

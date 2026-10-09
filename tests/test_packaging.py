@@ -322,3 +322,50 @@ def test_examples_use_only_the_public_api():
     offenders = [p.name for p in ROOT.glob("examples/*.py")
                  if "_data" in p.read_text()]
     assert not offenders, f"examples reaching into jerlov._data: {offenders}"
+
+
+@source_tree
+def test_the_python_classifiers_are_the_versions_CI_runs():
+    """PyPI shows these. A version listed but never tested is a claim, as
+    section 15 of DECISIONS.md found for numpy; one tested but not listed
+    is support nobody can see."""
+    toml = (ROOT / "pyproject.toml").read_text()
+    listed = set(re.findall(
+        r'"Programming Language :: Python :: (3\.\d+)"', toml))
+    ci = (ROOT / ".github" / "workflows" / "test.yml").read_text()
+    matrix = re.search(r"python-version: \[(.+?)\]", ci).group(1)
+    tested = set(re.findall(r'"(3\.\d+)"', matrix))
+    assert listed == tested, (
+        f"pyproject.toml lists Python {sorted(listed)}, CI tests {sorted(tested)}"
+    )
+    floor = re.search(r'^requires-python = ">=(3\.\d+)"', toml, re.M).group(1)
+    assert floor == min(tested, key=lambda v: int(v.split(".")[1])), (
+        f"requires-python says >={floor}, but CI's oldest is {min(tested)}"
+    )
+
+
+#: Import name of each distribution an extra installs.
+_IMPORTED_AS = {"pytest": "pytest", "openpyxl": "openpyxl",
+                "colour-science": "colour"}
+
+
+@source_tree
+def test_every_optional_extra_is_used_by_something():
+    """The `plot` extra installed matplotlib, which nothing imported."""
+    toml = (ROOT / "pyproject.toml").read_text()
+    block = re.search(
+        r"^\[project\.optional-dependencies\]\n(.*?)(?=^\[)", toml,
+        re.M | re.S).group(1)
+    code = "\n".join(p.read_text() for d in ("jerlov", "tests", "tools",
+                                             "examples")
+                     for p in (ROOT / d).rglob("*.py"))
+    for extra, spec in re.findall(r"^(\w+) = \[(.*)\]$", block, re.M):
+        for dist in re.findall(r'"([A-Za-z0-9_.-]+)', spec):
+            assert dist in _IMPORTED_AS, (
+                f"extra {extra!r} installs {dist}; add its import name to "
+                "_IMPORTED_AS"
+            )
+            name = _IMPORTED_AS[dist]
+            assert re.search(rf"^\s*(import|from) {name}\b", code, re.M), (
+                f"extra {extra!r} installs {dist}, which nothing imports"
+            )

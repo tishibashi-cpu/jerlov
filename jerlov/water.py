@@ -148,6 +148,14 @@ class Water:
         self.source = source
         self._flags = dict(flags or {})
         for key, statuses in self._flags.items():
+            if key not in self._series:
+                # Ignoring it would drop the caller's doubt without a word,
+                # which is what flags exist to prevent; a misspelt key such
+                # as "kd" for "Kd" would never warn.
+                raise ValueError(
+                    f"flags given for {key!r}, which this water does not "
+                    f"carry (it has {', '.join(sorted(self._series))})"
+                )
             if len(statuses) != self.wavelengths.size:
                 raise ValueError(
                     f"flags[{key!r}] has {len(statuses)} entries; it needs one "
@@ -467,7 +475,7 @@ def water(water_type: str, source: str = "williamson2022") -> Water:
     )
 
 
-def water_type_at_depth(surface_water_type: str, depth_m: float) -> str | None:
+def water_type_at_depth(surface_water_type: str, depth_m):
     """The Jerlov type that typically applies at ``depth_m``.
 
     The classification is defined on the top 10 m, but clarity changes with
@@ -480,6 +488,11 @@ def water_type_at_depth(surface_water_type: str, depth_m: float) -> str | None:
     wherever fewer than ten campaigns supported one. Coastal types run out
     quickly: 3C is declared only to 70 m, and 9C not at all below 10 m.
 
+    ``depth_m`` may be a single depth, which gives a string or ``None``, or
+    an array of depths, which gives an object array of the same shape::
+
+        jerlov.water_type_at_depth("I", [0, 30, 60])   # ['I', 'IA', 'IB']
+
     This is a lookup, not a correction applied on your behalf. To use it::
 
         deeper = jerlov.water_type_at_depth("I", 60.0)      # "IB"
@@ -491,12 +504,12 @@ def water_type_at_depth(surface_water_type: str, depth_m: float) -> str | None:
     any particular place or season. The paper says so explicitly, and gives
     per-cell cruise and month counts for anyone who needs to judge that.
     """
-    depth_m = float(depth_m)
-    if not np.isfinite(depth_m):
+    depths = np.asarray(depth_m, dtype=float)
+    if not np.all(np.isfinite(depths)):
         # NaN fails every comparison below, so it would otherwise fall
         # through to "no statement" and look like a deliberate answer.
-        raise ValueError(f"depth_m must be a finite number, not {depth_m!r}")
-    if depth_m < 0:
+        raise ValueError(f"depth_m must be finite numbers, not {depth_m!r}")
+    if np.any(depths < 0):
         raise ValueError("depth_m cannot be negative")
     rows = _data._rows("williamson2023_depth.csv")
     known = {r["surface_water_type"] for r in rows}
@@ -505,20 +518,31 @@ def water_type_at_depth(surface_water_type: str, depth_m: float) -> str | None:
             f"unknown water type {surface_water_type!r} "
             f"(known: {', '.join(sorted(known))})"
         )
-    own = [r for r in rows if r["surface_water_type"] == surface_water_type]
-    deepest = max(float(r["depth_max_m"]) for r in own)
-    for row in own:
-        top, bottom = float(row["depth_min_m"]), float(row["depth_max_m"])
-        # A boundary belongs to the layer below it, except at the bottom of
-        # the deepest layer, which has no layer below: 200 m is still
-        # inside the paper's profile.
-        if top <= depth_m < bottom or depth_m == bottom == deepest:
-            return row["water_type"] or None
-    # Beyond 200 m the paper makes no statement at all.
-    return None
+    own = [(float(r["depth_min_m"]), float(r["depth_max_m"]),
+            r["water_type"] or None)
+           for r in rows if r["surface_water_type"] == surface_water_type]
+    deepest = max(bottom for _, bottom, _ in own)
+
+    def at(depth: float) -> str | None:
+        for top, bottom, water_type in own:
+            # A boundary belongs to the layer below it, except at the bottom
+            # of the deepest layer, which has no layer below: 200 m is still
+            # inside the paper's profile.
+            if top <= depth < bottom or depth == bottom == deepest:
+                return water_type
+        # Beyond 200 m the paper makes no statement at all.
+        return None
+
+    if depths.ndim == 0:
+        return at(float(depths))
+    out = np.empty(depths.shape, dtype=object)
+    for index, depth in np.ndenumerate(depths):
+        out[index] = at(float(depth))
+    return out
 
 
-@dataclass(frozen=True, eq=False)   # == on arrays has no single answer
+# == on arrays has no single answer; the generated repr printed every array.
+@dataclass(frozen=True, eq=False, repr=False)
 class Descent:
     """Downwelling irradiance carried down through changing water types."""
 
@@ -533,6 +557,23 @@ class Descent:
     last stops at ``depth_m``."""
     transmittance: np.ndarray
     """``Ed(depth) / Ed(0)``: ``exp(-sum(Kd_i * thickness_i))``."""
+
+    def __repr__(self) -> str:
+        # Adjacent 10 m layers of one type are shown as one span.
+        spans: list[list] = []
+        for top, bottom, water_type in self.layers:
+            if spans and spans[-1][2] == water_type:
+                spans[-1][1] = bottom
+            else:
+                spans.append([top, bottom, water_type])
+        path = ", ".join(f"{t} {lo:g}-{hi:g}" for lo, hi, t in spans)
+        path = f"{path} m" if path else "no layer crossed"
+        n = np.size(self.wavelengths)
+        return (
+            f"<Descent {self.surface_water_type} to {self.depth_m:g} m: "
+            f"{path}; Kd from {self.source}; "
+            f"{n} wavelength{'s' if n != 1 else ''}>"
+        )
 
 
 def descend(surface_water_type: str, depth_m: float, wavelengths, *,
