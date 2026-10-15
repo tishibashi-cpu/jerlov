@@ -4,6 +4,31 @@ Every release is archived on Zenodo under the concept DOI
 [10.5281/zenodo.22321312](https://doi.org/10.5281/zenodo.22321312), which
 always resolves to the latest version.
 
+## 0.14.1 — 2026-10-15
+
+An example that counted energy where it should have counted photons, and
+three figures in it that were not tested. No code or shipped value changed.
+
+**Fixed.** `what_an_eye_sees.py`:
+
+- Photoreceptors absorb photons and camera pixels count them, but the
+  example integrated its receptor and camera curves against the energy
+  spectrum. It now converts to photons first. This changes the figures in
+  parts 2 and 3: the S cone's surface catch is 46 percent of the largest,
+  not 57, and the L and M cones now tie at the surface, within 0.1 percent,
+  where counted as energy the M cone led. The 480 nm rod is still ahead at
+  20 and 50 m. Part 2 now shows the energy figure beside the photon one.
+- The red-to-blue ratio of the camera was said to change "by two orders of
+  magnitude" over 50 m. It falls by a factor of 25 counted as energy and 29
+  counted as photons.
+- "By 50 m almost everything left is between 450 and 550 nm": it is 76
+  percent of the photons.
+- The example said the reversal with depth "is why deep-sea fish rod
+  pigments cluster near 480 nm". That is a claim about evolution the
+  package does not test, and it is removed.
+- Every figure the example prints is now computed in the text and
+  recomputed in `tests/test_quoted_figures.py`; none of them was before.
+
 ## 0.14.0 — 2026-10-15
 
 A weight for each photon, for PUR, visual pigments and sensors. No shipped

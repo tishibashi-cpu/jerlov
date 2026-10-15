@@ -88,9 +88,12 @@ they imply, and where they fail: **46 percent off their own source at 1 m**,
 because two exponentials cannot follow the near-surface decay.
 
 **`what_an_eye_sees.py`** — `integrate_response` against any spectral
-sensitivity. Six photoreceptors and a three-channel camera, at four depths.
-The ordering of the receptors reverses with depth, which is the reason
-deep-sea rod pigments cluster near 480 nm.
+sensitivity. Six photoreceptors and a three-channel camera, at four depths,
+counting photons. At the surface the L and M cones catch the most; by 20 m
+in Jerlov II the 480 nm rod is ahead. Counted as energy instead, the S
+cone's surface catch would be 57 percent of the largest rather than 46: the
+basis of the curve has to be that of the spectrum. The camera's red-to-blue
+ratio falls by a factor of 29 over 50 m.
 
 **`light_at_depth.py`** — `descend` carries the downwelling irradiance
 down through the typical depth profile of Williamson & Hollins (2023), each

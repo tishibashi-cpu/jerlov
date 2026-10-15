@@ -730,3 +730,49 @@ def test_figures_for_the_isolumes_example_by_eye():
                                kd=jerlov.descend(t, jerlov.profile_depth(t),
                                                  BAND))
         assert p.wavelengths_nm[np.argmax(p.spectrum_at(z[t, None]))] == nm
+
+
+def test_figures_for_the_eye_example():
+    """examples/what_an_eye_sees.py, counting photons: 76 percent of them
+    between 450 and 550 nm at 50 m in II; the L and M cones within 0.1
+    percent at the surface and the 480 nm rod ahead at 20 and 50 m; the S
+    cone at 46 percent of the largest catch, 57 counted as energy; the
+    camera's red-to-blue ratio falls by a factor of 29 over 50 m."""
+    wl = np.arange(350.0, 701.0, 2.0)
+    iops = jerlov.water("II")
+    kd = jerlov.water("II", source="austin1986")
+    day = np.interp(wl, *jerlov.d65(), left=0.0, right=0.0)
+
+    def gauss(peak, width):
+        return np.exp(-0.5 * ((wl - peak) / width) ** 2)
+
+    def ed(z):
+        with quiet():
+            warnings.simplefilter("ignore", jerlov.ProvenanceWarning)
+            return jerlov.Scene.at_depth(iops, z, day, wl, kd=kd).downwelling
+
+    def flux(band, z):
+        return jerlov.par_profile(day, wl, z, kd=kd, unit="energy",
+                                  band=band).par
+    assert round(100 * flux((450, 550), 50.0) / flux((350, 700), 50.0)) == 76
+    receptors = {"L": (564, 45), "M": (534, 45), "S": (420, 30),
+                 "r480": (480, 40), "r500": (500, 40), "r530": (530, 40)}
+
+    def catch(spectrum):
+        return {n: float(jerlov.integrate_response(spectrum, wl, gauss(*pw),
+                                                   wl)[0])
+                for n, pw in receptors.items()}
+    surface = catch(ed(0.0) * wl)
+    assert sorted(surface, key=surface.get)[-2:] in (["M", "L"], ["L", "M"])
+    assert round(100 * abs(1 - surface["M"] / surface["L"]), 1) == 0.1
+    for z in (20.0, 50.0):
+        at = catch(ed(z) * wl)
+        assert max(at, key=at.get) == "r480"
+    energy = catch(ed(0.0))
+    assert round(100 * surface["S"] / max(surface.values())) == 46
+    assert round(100 * energy["S"] / max(energy.values())) == 57
+    camera = np.stack([gauss(c, 35.0) for c in (450, 550, 620)], axis=1)
+    rb = {z: (lambda ch: ch[2] / ch[0])(
+        jerlov.integrate_response(ed(z) * wl, wl, camera, wl, name="camera"))
+        for z in (0.0, 50.0)}
+    assert round(rb[0.0] / rb[50.0]) == 29
