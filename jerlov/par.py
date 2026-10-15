@@ -80,11 +80,15 @@ class ParProfile:
     """
 
     __slots__ = ("depths_m", "par", "surface_par", "kd_from", "band_nm",
-                 "wavelengths_nm", "_grid", "_surface_q", "_tau", "_deepest")
+                 "weighted", "wavelengths_nm", "_grid", "_surface_q",
+                 "_weight", "_tau", "_deepest")
 
     def __init__(self, depths_m, band_nm, grid, surface_q, tau, deepest,
-                 kd_from):
+                 kd_from, weight=None):
         self.band_nm = band_nm
+        self.weighted = weight is not None
+        """True if ``par`` was integrated against a ``photon_weight``."""
+        self._weight = np.ones_like(grid) if weight is None else weight
         """``(lo, hi)``, nm: the band integrated over."""
         self._grid = grid
         self.wavelengths_nm = grid.copy()
@@ -108,7 +112,8 @@ class ParProfile:
 
     def _par_at(self, depth: float) -> float:
         return float(_data.trapezoid(
-            self._surface_q * np.exp(-self._tau(depth)), self._grid))
+            self._weight * self._surface_q * np.exp(-self._tau(depth)),
+            self._grid))
 
     def _depth(self, depth_m, name: str) -> float:
         """One depth, checked against what the profile can answer."""
@@ -132,7 +137,9 @@ class ParProfile:
         Photons whatever unit the surface spectrum was given in, since that
         is what :attr:`par` integrates. A single depth gives one spectrum;
         an array of depths gives one row per depth. ``par`` at a depth is
-        the trapezoid integral of this over :attr:`wavelengths_nm`.
+        the trapezoid integral of this over :attr:`wavelengths_nm`, times
+        the ``photon_weight`` if one was given; the spectrum itself is not
+        weighted.
 
         Raises
         ------
@@ -236,6 +243,8 @@ class ParProfile:
     def __repr__(self) -> str:
         lo, hi = self.band_nm
         band = "" if self.band_nm == PAR_RANGE_NM else f" over {lo:g}-{hi:g} nm"
+        if self.weighted:
+            band += ", weighted"
         return (
             f"<ParProfile surface {self.surface_par:.4g} umol m-2 s-1{band}, "
             f"{self.depths_m.size} depth{'s' if self.depths_m.size != 1 else ''}; "
@@ -244,7 +253,8 @@ class ParProfile:
 
 
 def par_profile(surface_downwelling, wavelengths, depths_m, *, kd,
-                unit: str, band=PAR_RANGE_NM) -> ParProfile:
+                unit: str, band=PAR_RANGE_NM,
+                photon_weight=None) -> ParProfile:
     """PAR at ``depths_m`` below a surface downwelling spectrum.
 
     Parameters
@@ -274,6 +284,17 @@ def par_profile(surface_downwelling, wavelengths, depths_m, *, kd,
         in it: :data:`QUANTA_BAND_NM` for Jerlov's quanta meters, or part
         of PAR for the share of one colour. Nothing outside it counts,
         so the spectrum and Kd may have gaps there.
+    photon_weight:
+        Optional, on ``wavelengths``: a weight for each photon by its
+        wavelength, such as the absorption spectrum of a pigment or the
+        quantum sensitivity of a photoreceptor. ``par`` is then the
+        integral of the photon spectrum times the weight, in the weight's
+        units times umol m-2 s-1, and :meth:`ParProfile.depth_of_fraction`
+        and :meth:`ParProfile.kd_par` follow it. Finite and not negative
+        inside the band; its scale cancels from every fraction. A response
+        per unit energy, as a thermopile's, is not a photon weight: divide
+        it by the wavelength first, since a photon of wavelength l carries
+        an energy proportional to 1 / l.
 
     Example
     -------
@@ -388,12 +409,28 @@ def par_profile(surface_downwelling, wavelengths, depths_m, *, kd,
             )
     surface_q = np.interp(grid, sub_wl,
                           _photons(surface[near], sub_wl, unit))
+    weight = None
+    if photon_weight is not None:
+        values = np.array(photon_weight, dtype=float)
+        if values.shape != wl.shape:
+            raise ValueError(
+                "photon_weight must have the same shape as wavelengths")
+        values = values[near]
+        if np.any(np.isnan(values)):
+            raise MissingQuantityError(
+                f"photon_weight has a gap between {lo:g} and {hi:g} nm, so "
+                "the weighted flux, which integrates over all of it, is not "
+                "determined"
+            )
+        if np.any(np.isinf(values)) or np.any(values < 0):
+            raise ValueError("photon_weight must be finite and not negative")
+        weight = np.interp(grid, sub_wl, values)
 
     def tau(z):
         return np.interp(grid, sub_wl, optical_depth(z))
 
     return ParProfile(depths, band_nm, grid, surface_q, tau, deepest,
-                      kd_from)
+                      kd_from, weight)
 
 
 def _band(band) -> tuple[float, float]:

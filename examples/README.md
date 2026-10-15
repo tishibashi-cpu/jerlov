@@ -152,7 +152,8 @@ dimming at dusk. The steps grow with depth as the spectrum narrows to the
 blue. In Jerlov I they are 58 and 61 m; with I's own Kd all the way down
 they would be 106 and 114 m, so the typical turn to IB below 40 m roughly
 halves them. A thousandth of the surface light lies 9 times shallower in 9C
-than in II.
+than in II. For an eye rather than PAR, with `photon_weight=`, a 480 nm rod's
+isolume lies 26 m below PAR's in I and 13 m in II.
 
 **`lure_colours.py`** — six painted finishes seen horizontally through 0.5
 to 5 m of water, as colour swatches beside the paint in air (and, with
