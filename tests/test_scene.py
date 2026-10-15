@@ -425,14 +425,17 @@ def test_the_face_ratio_can_be_spectral_and_can_exceed_one():
     assert np.all(dark.direct == 0) and np.all(dark.veiling_fraction == 1)
 
 
-def test_leaving_the_face_ratio_out_warns_and_takes_one():
+def test_the_face_ratio_has_no_default():
+    """0.11.0 took it as 1 with a FutureWarning; from 0.12.0 it is refused,
+    and the message says what to pass."""
     s = scene()
-    with pytest.warns(FutureWarning, match="face_irradiance_ratio") as caught:
-        seen = s.observe(flat(), 3.0, veiling_radiance=flat(0.2))
-    assert caught[0].filename == __file__
-    stated = s.observe(flat(), 3.0, veiling_radiance=flat(0.2),
-                       face_irradiance_ratio=1.0)
-    assert np.array_equal(seen.radiance, stated.radiance)
+    with pytest.raises(MissingQuantityError,
+                       match="face_irradiance_ratio has no default") as e:
+        s.observe(flat(), 3.0, veiling_radiance=flat(0.2))
+    assert "Pass 1.0 for a face turned straight up" in str(e.value)
+    with pytest.raises(MissingQuantityError):
+        s.observe(flat(), 3.0, veiling_radiance=flat(0.2),
+                  face_irradiance_ratio=None)
     with warnings.catch_warnings():
         warnings.simplefilter("error")
         s.observe(flat(), 3.0, veiling_radiance=flat(0.2),

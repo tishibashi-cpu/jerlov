@@ -794,3 +794,31 @@ phase function (section 13).
 uses. It would be no less a guess, and would change every existing result
 without a warning.
 
+## 34. The face irradiance ratio is required
+
+Section 33 added `face_irradiance_ratio` in 0.11.0 and, so that existing
+code would not stop without notice, took it as 1 with a `FutureWarning`
+when it was left out. From 0.12.0 it has no default, and leaving it out
+raises `MissingQuantityError`.
+
+What decided it is what the default does when it is wrong. In the setting
+of `lure_colours.py`, Jerlov 1C at 3 m, a target 0.5 m away, the
+single-scattering veiling light and bb/b = 0.02, a red, a blue and a black
+finish come out brighter than the water behind them with a ratio of 1 and
+darker with 0.05. A default of 1 therefore gives the wrong sign of the
+contrast for a face that receives little light, with nothing to show it.
+That is the kind of answer `bb` (section 4) and the veiling radiance
+(section 13) have no default to avoid.
+
+The cost was weighed: one more keyword, in a method that already requires
+`veiling_radiance`, a quantity harder to choose. A caller who does not know
+the ratio can still pass 1.0, and then the assumption is in their own code,
+where they and their readers can see it. The error says so, and names 1.0
+as what earlier releases assumed.
+
+**Rejected:** keeping 1 as a documented default without a warning. It would
+leave every result that rests on it unmarked, which is what section 33 set
+out to end. **Rejected:** keeping the `FutureWarning` indefinitely. It
+announces a change; never making the change would make it false, and code
+that silences warnings never sees it.
+

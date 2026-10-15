@@ -4,6 +4,20 @@ Every release is archived on Zenodo under the concept DOI
 [10.5281/zenodo.22321312](https://doi.org/10.5281/zenodo.22321312), which
 always resolves to the latest version.
 
+## 0.12.0 — 2026-10-15
+
+`face_irradiance_ratio` is required. No shipped value changed, and no
+example's output changed.
+
+**Changed.**
+
+- `Scene.observe` raises `MissingQuantityError` when `face_irradiance_ratio`
+  is left out, instead of taking it as 1 with a `FutureWarning` as 0.11.0
+  did. The message says what the ratio is and that 1.0 is what earlier
+  releases assumed. Code that passed it in 0.11.0 is unaffected; code that
+  relied on the warning's default must now pass 1.0 to get the same
+  results. DECISIONS.md section 34.
+
 ## 0.11.0 — 2026-10-15
 
 The light falling on a target's visible face is stated rather than assumed.

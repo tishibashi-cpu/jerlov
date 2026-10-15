@@ -626,3 +626,37 @@ def test_figures_for_the_lure_example():
     assert flips == {"red", "blue", "black"}
     spread = max(max(v) / min(v) for v in start.values() if min(v) > 0)
     assert round(spread) == 124
+
+
+def test_DECISIONS_figures_for_requiring_the_face_ratio():
+    """DECISIONS.md section 34: in lure_colours.py's setting, Jerlov 1C at
+    3 m, 0.5 m away, bb/b = 0.02, the red, blue and black finishes are
+    brighter than the water with a ratio of 1 and darker with 0.05."""
+    wl = np.arange(412.0, 701.0, 2.0)
+
+    def sigmoid(w, edge, width):
+        return 1.0 / (1.0 + np.exp(-(w - edge) / width))
+
+    finishes = {
+        "red": 0.04 + 0.70 * sigmoid(wl, 610, 12),
+        "blue": 0.05 + 0.45 * np.exp(-0.5 * ((wl - 460) / 35) ** 2),
+        "black": np.full_like(wl, 0.04),
+    }
+    iops = jerlov.water("1C")
+    ed = (np.interp(wl, *jerlov.d65())
+          * np.exp(-jerlov.water("1C", source="jerlov1976").kd(wl) * 3.0))
+    water = jerlov.veiling_radiance_estimate(iops, ed, wl,
+                                             backscatter_ratio=0.02)
+
+    def y(spectrum):
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", jerlov.CoverageWarning)
+            return jerlov.spectrum_to_xyz(spectrum, wl)[1]
+
+    for rho in finishes.values():
+        def start(ratio):
+            seen = jerlov.Scene(iops, ed, wl).observe(
+                rho, 0.5, veiling_radiance=water,
+                face_irradiance_ratio=ratio)
+            return y(seen.radiance) - y(water)
+        assert start(1.0) > 0 > start(0.05)
