@@ -4,6 +4,19 @@ Every release is archived on Zenodo under the concept DOI
 [10.5281/zenodo.22321312](https://doi.org/10.5281/zenodo.22321312), which
 always resolves to the latest version.
 
+## 0.14.2 — 2026-10-15
+
+An example that silenced a warning it had no need to raise. No code,
+shipped value or printed figure changed.
+
+**Fixed.** `what_an_eye_sees.py` built a `Scene` at each depth only to read
+its downwelling irradiance. `Scene` evaluates the beam attenuation c of the
+default IOPs, which for Jerlov II is extrapolated by their model at 350 to
+410 nm and raises a `ProvenanceWarning`; the example caught and ignored
+it, though it never uses c. It now computes `Ed(0) exp(-Kd z)` from Austin &
+Petzold's (1986) Kd directly, which raises nothing, and no longer catches
+any `ProvenanceWarning`. Its output is the same, character for character.
+
 ## 0.14.1 — 2026-10-15
 
 An example that counted energy where it should have counted photons, and

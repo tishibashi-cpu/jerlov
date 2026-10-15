@@ -68,22 +68,20 @@ RECEPTORS = {
 rule("1. The light at depth")
 
 water_type = "II"
-iops = jerlov.water(water_type)
 kd = jerlov.water(water_type, source="austin1986")
 daylight = np.interp(WL, *jerlov.d65(), left=0.0, right=0.0)
+# Only the downwelling irradiance is needed, so Kd alone is enough. A Scene
+# would also evaluate the beam attenuation c of the default IOPs, which is
+# extrapolated by their model at 350-410 nm and warns, for a quantity this
+# example never uses.
+downwelling = {depth: daylight * np.exp(-kd.kd(WL) * depth)
+               for depth in (0.0, 5.0, 20.0, 50.0)}
 
 print(f"  water {water_type}, illuminated by CIE D65 at the surface\n")
 print(f"  {'depth':>7} {'400 nm':>9} {'480 nm':>9} {'550 nm':>9} {'650 nm':>9}")
-scenes = {}
-for depth in (0.0, 5.0, 20.0, 50.0):
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore", jerlov.ProvenanceWarning)
-        scene = jerlov.Scene.at_depth(iops, depth, daylight, WL, kd=kd)
-    scenes[depth] = scene
-    cells = "".join(
-        f"{scene.downwelling[int(np.argmin(np.abs(WL - nm)))]:>9.2f}"
-        for nm in (400, 480, 550, 650)
-    )
+for depth, ed in downwelling.items():
+    cells = "".join(f"{ed[int(np.argmin(np.abs(WL - nm)))]:>9.2f}"
+                    for nm in (400, 480, 550, 650))
     print(f"  {depth:>5.0f} m {cells}")
 
 
@@ -112,7 +110,7 @@ sensitivities = {name: gaussian(WL, peak, width)
 def photons(depth):
     """The downwelling spectrum at ``depth`` as a count of photons, up to a
     constant: a photon of wavelength l carries energy h c / l."""
-    return scenes[depth].downwelling * WL
+    return downwelling[depth] * WL
 
 
 def catches(spectrum):
@@ -132,7 +130,7 @@ for depth in (0.0, 20.0, 50.0):
     print()
 
 surface = catches(photons(0.0))
-energy = catches(scenes[0.0].downwelling)
+energy = catches(downwelling[0.0])
 first, second = sorted(surface, key=surface.get, reverse=True)[:2]
 blue = "human S cone (420 nm)"
 print(f"""  At the surface the {first.split(" (")[0]} and {second.split(" (")[0]} catch the most, within
