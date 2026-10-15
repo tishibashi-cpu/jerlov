@@ -80,13 +80,17 @@ class ParProfile:
     """
 
     __slots__ = ("depths_m", "par", "surface_par", "kd_from", "band_nm",
-                 "_grid", "_surface_q", "_tau", "_deepest")
+                 "wavelengths_nm", "_grid", "_surface_q", "_tau", "_deepest")
 
     def __init__(self, depths_m, band_nm, grid, surface_q, tau, deepest,
                  kd_from):
         self.band_nm = band_nm
         """``(lo, hi)``, nm: the band integrated over."""
         self._grid = grid
+        self.wavelengths_nm = grid.copy()
+        """The wavelengths integrated over, nm: every sample inside
+        :attr:`band_nm` and its two ends. :meth:`spectrum_at` is on these."""
+        self.wavelengths_nm.setflags(write=False)
         self._surface_q = surface_q
         self._tau = tau
         self._deepest = deepest
@@ -105,6 +109,69 @@ class ParProfile:
     def _par_at(self, depth: float) -> float:
         return float(_data.trapezoid(
             self._surface_q * np.exp(-self._tau(depth)), self._grid))
+
+    def _depth(self, depth_m, name: str) -> float:
+        """One depth, checked against what the profile can answer."""
+        _require_number(depth_m, name)
+        depth = float(depth_m)
+        if not np.isfinite(depth):
+            raise ValueError(f"{name} must be finite, not {depth_m!r}")
+        if depth < 0:
+            raise ValueError(f"{name} cannot be negative")
+        if self._deepest is not None and depth > self._deepest:
+            raise MissingQuantityError(
+                f"the descent stops at {self._deepest:g} m, above {name} "
+                f"= {depth:g} m; descend further to go deeper"
+            )
+        return depth
+
+    def spectrum_at(self, depth_m) -> np.ndarray:
+        """The downwelling spectrum at ``depth_m``, in umol photons m-2 s-1
+        nm-1, on :attr:`wavelengths_nm`.
+
+        Photons whatever unit the surface spectrum was given in, since that
+        is what :attr:`par` integrates. A single depth gives one spectrum;
+        an array of depths gives one row per depth. ``par`` at a depth is
+        the trapezoid integral of this over :attr:`wavelengths_nm`.
+
+        Raises
+        ------
+        MissingQuantityError
+            Below the bottom of a :class:`~jerlov.Descent`.
+        """
+        depths = np.asarray(depth_m, dtype=float)
+        if depths.ndim > 1:
+            raise ValueError("depth_m must be a depth or a 1-D array of depths")
+        rows = [self._surface_q * np.exp(-self._tau(self._depth(z, "depth_m")))
+                for z in np.atleast_1d(depths)]
+        return rows[0] if depths.ndim == 0 else np.array(rows)
+
+    def kd_par(self, z1_m, z2_m) -> float:
+        """The effective Kd of PAR between two depths, 1/m:
+        ``ln(PAR(z1) / PAR(z2)) / (z2 - z1)``.
+
+        PAR does not fall off with one coefficient, so this depends on the
+        two depths, not only on the water: near the surface it is larger,
+        while the red is still being removed. Over a band other than
+        400-700 nm it is the same quantity for that band.
+
+        Raises
+        ------
+        ValueError
+            Unless ``z1_m < z2_m``, or if there is no light at either depth.
+        MissingQuantityError
+            Below the bottom of a :class:`~jerlov.Descent`.
+        """
+        z1, z2 = self._depth(z1_m, "z1_m"), self._depth(z2_m, "z2_m")
+        if not z1 < z2:
+            raise ValueError(f"z1_m must be above z2_m, not {z1:g} and {z2:g} m")
+        top, bottom = self._par_at(z1), self._par_at(z2)
+        if top <= 0 or bottom <= 0:
+            raise ValueError(
+                f"there is no light at {z1 if top <= 0 else z2:g} m to take "
+                "a ratio of"
+            )
+        return float(np.log(top / bottom) / (z2 - z1))
 
     @property
     def fraction(self) -> np.ndarray:

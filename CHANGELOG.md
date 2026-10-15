@@ -4,6 +4,30 @@ Every release is archived on Zenodo under the concept DOI
 [10.5281/zenodo.22321312](https://doi.org/10.5281/zenodo.22321312), which
 always resolves to the latest version.
 
+## 0.13.0 — 2026-10-15
+
+The spectrum at any depth, and Kd(PAR) between two depths. No shipped value
+changed, and no example's output changed.
+
+**Added.**
+
+- `ParProfile.kd_par(z1, z2)`: the effective Kd of PAR between two depths,
+  `ln(PAR(z1) / PAR(z2)) / (z2 - z1)`, in 1/m; over another band, the same
+  for that band.
+- `ParProfile.spectrum_at(z)`: the downwelling spectrum at a depth, or one
+  row per depth, in umol photons m-2 s-1 nm-1, on the new
+  `ParProfile.wavelengths_nm`, the grid PAR is integrated over. Integrating
+  it gives `par`.
+- Both refuse a depth below the bottom of a descent, a negative one, NaN
+  and inf; `kd_par` also refuses `z1 >= z2` and a depth with no light.
+
+**Changed.** `seagrass_depth_limit.py` takes its top-metre and whole-column
+Kd(PAR) from `kd_par`, and `isolumes.py` the colour of the light at each
+isolume from `spectrum_at`, instead of computing them by hand. Their output
+is the same.
+
+**Docs.** DECISIONS.md section 35; the README shows both.
+
 ## 0.12.1 — 2026-10-15
 
 An example for ultraviolet light under water. No code or shipped value
