@@ -85,10 +85,8 @@ the measured coastal and harbor waters.""")
 wl = np.arange(450.0, 651.0, 50.0)
 w = jerlov.water("1C")
 surface = np.interp(wl, *jerlov.d65())
-with warnings.catch_warnings():
-    warnings.simplefilter("ignore", jerlov.ProvenanceWarning)
-    scene = jerlov.Scene.at_depth(w, 10.0, surface, wl,
-                                  kd=jerlov.water("1C", source="austin1986"))
+scene = jerlov.Scene.at_depth(w, 10.0, surface, wl,
+                              kd=jerlov.water("1C", source="austin1986"))
 grey = np.full(wl.size, 0.3)
 
 

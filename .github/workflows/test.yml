@@ -33,11 +33,13 @@ jobs:
         run: pip install "numpy==1.22.*"
       - run: python -c "import numpy; print('numpy', numpy.__version__)"
       - run: python -m pytest tests/ -v
-      - name: The examples must still run
+      - name: The examples must still run, without resting on flagged values
         # An example that has stopped working should be a failed build, not
-        # something a reader discovers.
+        # something a reader discovers. So should one that comes to rest on a
+        # flagged value without saying so. `-W error::...` cannot name a
+        # jerlov class before jerlov is imported, hence the filter in code.
         run: |
           for f in examples/*.py; do
             echo "--- $f"
-            python "$f" > /dev/null
+            python -c "import runpy, sys, warnings, jerlov; warnings.simplefilter('error', jerlov.ProvenanceWarning); runpy.run_path(sys.argv[1], run_name='__main__')" "$f" > /dev/null
           done
