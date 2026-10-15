@@ -120,9 +120,8 @@ for callers with nothing better, but it has to be asked for.
 `face_irradiance_ratio` is the light on the face of the target the observer
 sees, as a fraction of the downwelling irradiance: 1 for a face turned
 straight up, less for one turned towards a horizontal line of sight. The
-water type does not fix it either. Until 0.10.0 it was taken as 1 without
-saying so; leaving it out now does the same with a `FutureWarning`, and a
-later release will require it.
+water type does not fix it either, so it has no default; pass 1.0 for what
+releases before 0.12.0 assumed.
 
 Deliberate limits, all recorded in `DECISIONS.md`:
 

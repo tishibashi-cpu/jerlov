@@ -27,20 +27,16 @@ The observer looks horizontally, so that face is usually vertical and
 receives only part of the downwelling irradiance Ed; how much depends on
 the light field and on how the target is turned, and the water type does
 not fix it. :meth:`Scene.observe` takes it as ``face_irradiance_ratio``,
-the irradiance on the face divided by Ed. Until 0.10.0 it was taken as 1
-without saying so; leaving it out now still does that, with a
-``FutureWarning``, and a later release will require it (DECISIONS.md
-section 33).
+the irradiance on the face divided by Ed, and has no default
+(DECISIONS.md sections 33 and 34).
 """
 
 from __future__ import annotations
 
-import warnings
 from dataclasses import dataclass
 
 import numpy as np
 
-from . import _data
 from .water import (
     Descent,
     MissingQuantityError,
@@ -380,9 +376,10 @@ class Scene:
             and not negative. It can exceed 1, for a face turned towards
             the sun. The water type does not determine it.
 
-            Leaving it out takes it as 1, as every release up to 0.10.0 did
-            without saying so, and warns with ``FutureWarning``: a later
-            release will require it. See DECISIONS.md section 33.
+            Required: there is no default, for the reason ``bb`` has none.
+            Releases up to 0.10.0 took it as 1 without saying so, and 0.11.0
+            did so with a ``FutureWarning``. See DECISIONS.md sections 33
+            and 34.
         """
         rho = np.asarray(reflectance, dtype=float)
         if rho.shape != self.wavelengths.shape:
@@ -405,17 +402,16 @@ class Scene:
         if np.any(b_inf < 0):
             raise ValueError("veiling_radiance cannot be negative")
         if face_irradiance_ratio is None:
-            warnings.warn(
-                "Scene.observe() was called without face_irradiance_ratio, "
-                "so the target's visible face is taken to receive all of the "
-                "downwelling irradiance, which is right only for a face "
-                "turned straight up. Pass the ratio of the irradiance on the "
-                "face to the downwelling irradiance; a later release will "
-                "require it. See DECISIONS.md section 33.",
-                FutureWarning,
-                stacklevel=_data.caller_stacklevel(),
+            raise MissingQuantityError(
+                "face_irradiance_ratio has no default: it is the irradiance "
+                "on the face of the target the observer sees, divided by the "
+                "downwelling irradiance, and the water type does not fix it. "
+                "Pass 1.0 for a face turned straight up, which is what "
+                "releases before 0.12.0 assumed; a face turned towards a "
+                "horizontal line of sight receives less, and how much less "
+                "can change the sign of the contrast. See DECISIONS.md "
+                "section 34."
             )
-            face_irradiance_ratio = 1.0
         ratio = _face_ratio(face_irradiance_ratio, self.wavelengths.shape)
 
         target = rho * ratio * self.downwelling / np.pi
