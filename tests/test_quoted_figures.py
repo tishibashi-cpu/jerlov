@@ -705,3 +705,28 @@ def test_figures_for_the_ultraviolet_example():
     assert (round(ratio["III"], 1), round(ratio["1C"], 1)) == (1.6, 4.2)
     assert round(min(left[t] for t in oceanic)
                  / max(left[t] for t in coastal)) == 67
+
+
+def test_figures_for_the_isolumes_example_by_eye():
+    """examples/isolumes.py part 5, a thousandth of each eye's surface
+    catch: the 480 nm rod's isolume is the deepest in I and II, 26 and 13 m
+    below PAR's; in 1C the 500 and 530 nm rods are within 0.02 m and both
+    below the 480 nm one; the light at PAR's isolume peaks at 530 nm in 1C
+    and 475 nm in II."""
+    def depth(t, peak):
+        d = jerlov.descend(t, jerlov.profile_depth(t), BAND)
+        w = None if peak is None else np.exp(-0.5 * ((BAND - peak) / 40.0) ** 2)
+        return jerlov.par_profile(_d65(), BAND, 0.0, kd=d, unit="energy",
+                                  photon_weight=w).depth_of_fraction(1e-3)
+    z = {(t, k): depth(t, k) for t in ("I", "II", "1C")
+         for k in (None, 480.0, 500.0, 530.0)}
+    for t, below in (("I", 26), ("II", 13)):
+        assert max((480.0, 500.0, 530.0), key=lambda k: z[t, k]) == 480.0
+        assert round(z[t, 480.0] - z[t, None]) == below
+    assert round(abs(z["1C", 500.0] - z["1C", 530.0]), 2) == 0.02
+    assert min(z["1C", 500.0], z["1C", 530.0]) > z["1C", 480.0]
+    for t, nm in (("1C", 530.0), ("II", 475.0)):
+        p = jerlov.par_profile(_d65(), BAND, 0.0, unit="energy",
+                               kd=jerlov.descend(t, jerlov.profile_depth(t),
+                                                 BAND))
+        assert p.wavelengths_nm[np.argmax(p.spectrum_at(z[t, None]))] == nm

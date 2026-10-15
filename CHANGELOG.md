@@ -4,6 +4,30 @@ Every release is archived on Zenodo under the concept DOI
 [10.5281/zenodo.22321312](https://doi.org/10.5281/zenodo.22321312), which
 always resolves to the latest version.
 
+## 0.14.0 — 2026-10-15
+
+A weight for each photon, for PUR, visual pigments and sensors. No shipped
+value changed, and no existing figure in an example changed.
+
+**Added.**
+
+- `par_profile(..., photon_weight=...)`: weights each photon by its
+  wavelength, on the given wavelengths, before integrating. `par`, the
+  fractions, `depth_of_fraction` and `kd_par` then follow the weighted flux;
+  `spectrum_at` stays the unweighted light. A weight of 1 is PAR. The
+  weight must be finite and not negative inside the band, and a gap there
+  raises `MissingQuantityError`; outside the band it is not read.
+  `ParProfile.weighted` says whether one was given, and the repr says so.
+
+**Examples.** `isolumes.py` has a new part 5: isolumes for three rods
+rather than for PAR, as Gaussians at the peaks `what_an_eye_sees.py` uses.
+A thousandth of the 480 nm rod's surface catch lies 26 m below PAR's in
+Jerlov I and 13 m in II. In 1C the 500 and 530 nm rods are within 0.02 m of
+each other and both below the 480 nm one, where the light left peaks at
+530 nm rather than 475 nm.
+
+**Docs.** DECISIONS.md section 36; the README mentions the argument.
+
 ## 0.13.0 — 2026-10-15
 
 The spectrum at any depth, and Kd(PAR) between two depths. No shipped value

@@ -848,3 +848,35 @@ both refuse, as `depth_of_fraction` does (section 29).
 depths `kd_par` gives it to any accuracy wanted, and a second method would
 be a second name for the same thing.
 
+## 36. A weight for each photon
+
+PAR counts every photon from 400 to 700 nm alike. Nothing that uses light
+does: a pigment absorbs some wavelengths more than others (PUR, the
+photosynthetically usable radiation, weights PAR by the absorption of the
+algae), an eye by its pigment's sensitivity, a sensor by its own response.
+`integrate_response` integrated one spectrum against such a
+curve, but the depth profile, the depth of a fraction and Kd between two
+depths were PAR's alone. In 0.14.0 `par_profile` takes `photon_weight=`,
+and every one of them follows the weighted flux. PAR is the weight 1.
+
+**It weights photons, and says so in its name.** PUR and a visual
+pigment's catch are both counts of absorbed photons, so the photon spectrum
+is the one to weight. A response per unit energy, as a thermopile's, is a
+different curve: as a photon weight it must first be divided by the
+wavelength. Section 29 refused to guess the unit of the spectrum because the
+two choices reweight the blue against the red; naming the weight's basis in
+the argument is the same refusal, without a second argument to pass.
+
+**`spectrum_at` stays unweighted.** It is the light in the water, which
+does not depend on who is counting it.
+
+**Rejected:** a separate function, such as `irradiance_profile(weight=)`,
+with PAR as its special case. It would be `par_profile` under another name,
+and the band, the weight and the result's name would then be spread over
+two functions (section 32).
+
+**Rejected:** shipping an absorption spectrum for phytoplankton, for PUR.
+Which spectrum applies is a property of the algae, not of the water type,
+so the type cannot choose it, for the same reason it cannot choose `bb`
+(section 4). A caller with a measured spectrum passes it.
+

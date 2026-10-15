@@ -129,8 +129,7 @@ print("""
   From the first isolume down, the light that is left peaks in the blue,
   where at the surface it peaked in the green. An animal does not count
   photons the way PAR does, and one whose eye is tuned away from the blue
-  sees its own isolumes at other depths; `what_an_eye_sees.py` shows how
-  to integrate against a receptor's sensitivity instead.""")
+  sees its own isolumes at other depths; part 5 shows by how much.""")
 
 # --------------------------------------------------------------------------
 rule("4. Oceanic against coastal")
@@ -154,11 +153,51 @@ print(f"""
   part 1: there the water typically clears below the surface layer.)""")
 
 # --------------------------------------------------------------------------
+rule("5. Isolumes for an eye rather than for PAR")
+
+print("""An eye counts photons weighted by its pigment's sensitivity, not every
+photon from 400 to 700 nm alike. `par_profile(..., photon_weight=)` takes
+that weight, and the levels are then fractions of what the same eye would
+catch at the surface. Three rods, as Gaussians at the peaks
+`what_an_eye_sees.py` uses, against PAR, for a thousandth of the surface:""")
+
+RODS = {"deep-sea 480 nm": 480.0, "shallow 500 nm": 500.0,
+        "red-shifted 530 nm": 530.0}
+eye_types = ("I", "II", "1C")
+print(f"\n  {'':>19}" + "".join(f"{t:>9}" for t in eye_types))
+eye = {}
+for name, peak in [("PAR", None)] + list(RODS.items()):
+    weight = None if peak is None else np.exp(-0.5 * ((BAND - peak) / 40.0) ** 2)
+    eye[name] = {t: jerlov.par_profile(SURFACE, BAND, 0.0, unit="energy",
+                                       kd=deepest_descent(t),
+                                       photon_weight=weight
+                                       ).depth_of_fraction(1e-3)
+                 for t in eye_types}
+    print(f"  {name:>19}" + "".join(f"{eye[name][t]:>7.0f} m"
+                                    for t in eye_types))
+
+deepest_rod = {t: max(RODS, key=lambda n: eye[n][t]) for t in eye_types}
+peak_nm = {}
+for t in ("II", "1C"):
+    light = jerlov.par_profile(SURFACE, BAND, 0.0, unit="energy",
+                               kd=deepest_descent(t))
+    spectrum = light.spectrum_at(eye["PAR"][t])
+    peak_nm[t] = light.wavelengths_nm[np.argmax(spectrum)]
+tie = abs(eye["shallow 500 nm"]["1C"] - eye["red-shifted 530 nm"]["1C"])
+print(f"""
+  In I and II the {deepest_rod["I"]} rod's isolume is the deepest, {eye[deepest_rod["I"]]["I"] - eye["PAR"]["I"]:.0f} and
+  {eye[deepest_rod["II"]]["II"] - eye["PAR"]["II"]:.0f} m below PAR's. In 1C the 500 and 530 nm rods are within {tie:.2f} m of
+  each other and both below the 480 nm one: there the light left at PAR's
+  isolume peaks at {peak_nm["1C"]:g} nm, against {peak_nm["II"]:g} nm in II. These are fractions of
+  each eye's own surface catch: they say where an animal tracking a fixed
+  share of its surface light would sit, not which eye sees best at depth.""")
+
+# --------------------------------------------------------------------------
 rule("Before you use any of this")
 
-print("""  - PAR stands in for the animal's own sensitivity. Use
-    `integrate_response` with a measured spectral sensitivity if you have
-    one.
+print("""  - Parts 1 to 4 use PAR for the animal's own sensitivity, and part 5's
+    rods are Gaussians at plausible peaks, not measured curves. Pass a
+    measured spectral sensitivity, per photon, as photon_weight.
   - The levels are fractions of the surface PAR. Twilight and moonlight
     have spectra of their own, which D65 does not represent, and the
     absolute threshold an animal responds to is a biological measurement.

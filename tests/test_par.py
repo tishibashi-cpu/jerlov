@@ -317,3 +317,79 @@ def test_depths_the_profile_cannot_answer_are_refused():
     dark = jerlov.par_profile(FLAT * 0, WL, 0.0, kd=FLAT, unit="photons")
     with pytest.raises(ValueError, match="no light"):
         dark.kd_par(0.0, 1.0)
+
+
+# -- a weight for each photon ------------------------------------------------
+
+
+def test_a_photon_weight_weights_the_integral_and_nothing_else():
+    d = jerlov.descend("II", 100.0, WL)
+    surface = np.interp(WL, *jerlov.d65())
+    weight = np.exp(-0.5 * ((WL - 480.0) / 40.0) ** 2)
+    plain = jerlov.par_profile(surface, WL, [0.0, 30.0], kd=d, unit="energy")
+    w = jerlov.par_profile(surface, WL, [0.0, 30.0], kd=d, unit="energy",
+                           photon_weight=weight)
+    for z, value in zip(w.depths_m, w.par):
+        assert value == pytest.approx(_data.trapezoid(
+            plain.spectrum_at(z) * weight, WL), rel=1e-12)
+        assert np.array_equal(w.spectrum_at(z), plain.spectrum_at(z))
+    assert w.weighted and not plain.weighted
+    assert "weighted" in repr(w) and "weighted" not in repr(plain)
+    # Its scale cancels from every fraction.
+    w10 = jerlov.par_profile(surface, WL, 0.0, kd=d, unit="energy",
+                             photon_weight=10 * weight)
+    assert w10.depth_of_fraction(0.01) == pytest.approx(
+        jerlov.par_profile(surface, WL, 0.0, kd=d, unit="energy",
+                           photon_weight=weight).depth_of_fraction(0.01),
+        rel=1e-9)
+
+
+def test_a_weight_of_one_is_par():
+    surface = np.interp(WL, *jerlov.d65())
+    kd = jerlov.water("III", source="jerlov1976")
+    p = jerlov.par_profile(surface, WL, [0.0, 10.0], kd=kd, unit="energy")
+    q = jerlov.par_profile(surface, WL, [0.0, 10.0], kd=kd, unit="energy",
+                           photon_weight=np.ones_like(WL))
+    assert np.allclose(p.par, q.par, rtol=1e-12)
+    assert p.kd_par(0.0, 10.0) == pytest.approx(q.kd_par(0.0, 10.0))
+
+
+def test_a_blue_weight_goes_deeper_than_a_red_one_in_clear_water():
+    surface = np.interp(WL, *jerlov.d65())
+    d = jerlov.descend("I", 200.0, WL)
+    blue, red = (np.exp(-0.5 * ((WL - peak) / 30.0) ** 2)
+                 for peak in (470.0, 600.0))
+    depth = {name: jerlov.par_profile(surface, WL, 0.0, kd=d, unit="energy",
+                                      photon_weight=w).depth_of_fraction()
+             for name, w in (("blue", blue), ("red", red))}
+    assert depth["blue"] > 2 * depth["red"]
+
+
+def test_a_weight_that_is_not_one_is_refused():
+    for bad in (np.full_like(WL, -1.0), np.full_like(WL, np.inf),
+                np.ones(WL.size + 1)):
+        with pytest.raises(ValueError, match="photon_weight"):
+            jerlov.par_profile(FLAT, WL, 0.0, kd=FLAT, unit="photons",
+                               photon_weight=bad)
+    gap = np.ones_like(WL)
+    gap[50] = np.nan
+    with pytest.raises(jerlov.MissingQuantityError, match="photon_weight"):
+        jerlov.par_profile(FLAT, WL, 0.0, kd=FLAT, unit="photons",
+                           photon_weight=gap)
+    # Outside the band a gap does not matter.
+    p = jerlov.par_profile(FLAT, WL, 1.0, kd=np.full_like(WL, 0.1),
+                           unit="photons", band=(400, 500),
+                           photon_weight=np.where(WL > 520, np.nan, 1.0))
+    assert p.fraction == pytest.approx(np.exp(-0.1))
+    zero = jerlov.par_profile(FLAT, WL, 0.0, kd=FLAT, unit="photons",
+                              photon_weight=np.zeros_like(WL))
+    with pytest.raises(ValueError, match="no PAR at the surface"):
+        zero.depth_of_fraction()
+
+
+def test_the_weight_given_is_not_changed():
+    weight = np.ones_like(WL)
+    p = jerlov.par_profile(FLAT, WL, 0.0, kd=FLAT, unit="photons",
+                           photon_weight=weight)
+    weight[:] = 0.0
+    assert p.surface_par == pytest.approx(300.0)

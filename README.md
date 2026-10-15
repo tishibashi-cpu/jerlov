@@ -286,7 +286,9 @@ weighted wrongly with no sign of it. This is planar PAR, from Ed; PAR on
 scalar irradiance is larger by a factor this package cannot supply.
 `band=(lo, hi)` integrates over another band instead, such as part of PAR
 for the share of one colour; outside 400-700 nm the result is a photon flux
-in that band, not PAR, and `p.band_nm` says which.
+in that band, not PAR, and `p.band_nm` says which. `photon_weight=` weights
+each photon by its wavelength, for a pigment's absorption or a receptor's
+sensitivity, and the depths and Kd then follow the weighted flux.
 
 Jerlov measured quanta irradiance, 350-700 nm, by water type, and his
 tables are shipped for checking against, with
