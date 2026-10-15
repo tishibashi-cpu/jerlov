@@ -9,6 +9,11 @@ spectral sensitivity.
 
 The receptor curves below are Gaussians at plausible peak wavelengths, not
 measured absorbances. Substitute real ones; that is the point of the function.
+
+A photoreceptor absorbs photons, and a camera's pixels count them, so every
+spectrum is converted to photons before it is integrated. Until 0.14.1 this
+example integrated the energy spectrum instead; part 2 shows what that
+changes.
 """
 
 import warnings
@@ -81,9 +86,18 @@ for depth in (0.0, 5.0, 20.0, 50.0):
     )
     print(f"  {depth:>5.0f} m {cells}")
 
-print("""
-  The spectrum does not just dim, it narrows. By 50 m almost everything left
-  is between 450 and 550 nm.""")
+
+def photon_share(lo, hi, depth):
+    """Share of the photons at ``depth`` that are between lo and hi nm."""
+    def flux(band):
+        return jerlov.par_profile(daylight, WL, depth, kd=kd, unit="energy",
+                                  band=band).par
+    return float(flux((lo, hi)) / flux((WL[0], WL[-1])))
+
+
+print(f"""
+  The spectrum does not just dim, it narrows. By 50 m {photon_share(450.0, 550.0, 50.0):.0%} of the photons
+  left are between 450 and 550 nm.""")
 
 # --------------------------------------------------------------------------
 rule("2. What each receptor absorbs")
@@ -94,31 +108,42 @@ normalised so the largest response at the surface is 1.
 sensitivities = {name: gaussian(WL, peak, width)
                  for name, (peak, width) in RECEPTORS.items()}
 
-surface = {
-    name: float(jerlov.integrate_response(
-        scenes[0.0].downwelling, WL, curve, WL, name=name)[0])
-    for name, curve in sensitivities.items()
-}
-reference = max(surface.values())
 
+def photons(depth):
+    """The downwelling spectrum at ``depth`` as a count of photons, up to a
+    constant: a photon of wavelength l carries energy h c / l."""
+    return scenes[depth].downwelling * WL
+
+
+def catches(spectrum):
+    return {name: float(jerlov.integrate_response(
+                spectrum, WL, curve, WL, name=name)[0])
+            for name, curve in sensitivities.items()}
+
+
+reference = max(catches(photons(0.0)).values())
+leader = {}
 for depth in (0.0, 20.0, 50.0):
     print(f"  at {depth:.0f} m")
-    responses = {
-        name: float(jerlov.integrate_response(
-            scenes[depth].downwelling, WL, curve, WL, name=name)[0])
-        for name, curve in sensitivities.items()
-    }
+    responses = catches(photons(depth))
+    leader[depth] = max(responses, key=responses.get)
     for name, value in responses.items():
         print(f"    {name:>24} {bar(value, reference)} {value / reference:>6.1%}")
     print()
 
-print("""  At the surface the long-wavelength receptors do best, because daylight
-  has more energy there. By 50 m the order has reversed and the 480 nm
-  receptor is ahead: the water has thrown away the wavelengths the others
-  were built for.
+surface = catches(photons(0.0))
+energy = catches(scenes[0.0].downwelling)
+first, second = sorted(surface, key=surface.get, reverse=True)[:2]
+blue = "human S cone (420 nm)"
+print(f"""  At the surface the {first.split(" (")[0]} and {second.split(" (")[0]} catch the most, within
+  {100 * (1 - surface[second] / surface[first]):.1f} percent of each other. By 20 m the {leader[20.0]} is
+  ahead, and still at 50 m: the water has removed most of the light at the
+  wavelengths the others peak at.
 
-  This is why deep-sea fish rod pigments cluster near 480 nm. The package
-  does not know that; it falls out of the coefficients.""")
+  Counted as energy instead of photons, the S cone's surface catch would
+  be {energy[blue] / max(energy.values()):.0%} of the largest rather than {surface[blue] / max(surface.values()):.0%}. A blue photon carries more energy
+  than a red one, so energy weights the blue up; the basis of the curve
+  has to be the basis of the spectrum.""")
 
 # --------------------------------------------------------------------------
 rule("3. A three-channel camera")
@@ -129,17 +154,18 @@ centres = (450.0, 550.0, 620.0)
 camera = np.stack([gaussian(WL, c, 35.0) for c in centres], axis=1)
 
 print(f"  {'depth':>7} {'blue':>10} {'green':>10} {'red':>10}   {'R/B ratio':>10}")
+ratios = {}
 for depth in (0.0, 5.0, 20.0, 50.0):
     channels = jerlov.integrate_response(
-        scenes[depth].downwelling, WL, camera, WL, name="camera")
+        photons(depth), WL, camera, WL, name="camera")
     normalised = channels / channels.max()
-    ratio = channels[2] / channels[0]
+    ratios[depth] = channels[2] / channels[0]
     print(f"  {depth:>5.0f} m " + "".join(f"{v:>10.3f}" for v in normalised)
-          + f"   {ratio:>10.4f}")
+          + f"   {ratios[depth]:>10.4f}")
 
-print("""
+print(f"""
   The red-to-blue ratio is what an underwater white balance has to undo, and
-  it changes by two orders of magnitude over 50 m. A fixed white balance is
+  it falls by a factor of {ratios[0.0] / ratios[50.0]:.0f} over 50 m. A fixed white balance is
   correct at exactly one depth.""")
 
 # --------------------------------------------------------------------------
@@ -165,6 +191,8 @@ rule("What this assumed")
 
 print("""  - The receptor and camera curves are Gaussians at plausible peaks, not
     measurements. Real absorbances are asymmetric and depend on the pigment.
+  - The curves are taken as sensitivities per photon. A camera's curve
+    published per unit energy must be divided by the wavelength first.
   - The surface spectrum is CIE D65, a daylight phase, not a measurement of
     the light above any particular sea.
   - Only the downwelling irradiance is used. A real eye sees a target at some
