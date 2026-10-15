@@ -12,11 +12,13 @@ This goes the long way round, with every step stated:
 
     python examples/euphotic_zone.py
 
-Nothing here has been compared with a measured PAR profile. The output is
-what the published coefficients imply.
+The output is what the published coefficients imply. Section 4 sets it
+beside the quanta irradiance Jerlov measured at sea, in water of the same
+type, and they do not agree all the way down.
 """
 
 import math
+import warnings
 
 import numpy as np
 
@@ -40,8 +42,9 @@ def _banner():
 
 _banner()
 
-# Nothing below rests on a flagged value, so nothing warns. If you change
-# the reading or the band and something does, the warning is left to show.
+# Nothing below rests on a flagged value, so nothing warns, except the one
+# warning section 4 catches and prints. If you change the reading or the
+# band and something else does, the warning is left to show.
 BAND = np.arange(400.0, 701.0, 5.0)
 SURFACE = np.interp(BAND, *jerlov.d65())    # stands in for the real sky
 KD_490 = 0.030                               # the reading, 1/m
@@ -125,7 +128,61 @@ print(f"""
   spectrum in W m-2 nm-1 and it is umol photons m-2 s-1.""")
 
 # --------------------------------------------------------------------------
-rule("4. What colour is the light at the bottom?")
+rule("4. Against what Jerlov measured")
+
+print(f"""Jerlov (1977) arranged profiles of quanta irradiance, measured with
+quanta meters at stations in fourteen regions, by water type, and tabulated
+the percentage left at depth. `jerlov1977_quanta` returns his tables; here
+they are set beside the profile above, for his {TYPE}.""")
+
+with warnings.catch_warnings(record=True) as caught:
+    warnings.simplefilter("always", jerlov.ProvenanceWarning)
+    measured_q = jerlov.jerlov1977_quanta(TYPE)
+for w in caught:
+    print(f"\n  It warns: {w.message}")
+if caught:
+    print("""  That is a coefficient of his Table 5, which is not used below; the
+  percentages and the depths of each level are.""")
+
+shown = measured_q.profile_depth_m[measured_q.profile_depth_m > 0]
+computed = jerlov.par_profile(SURFACE, BAND, shown, kd=descent,
+                              unit="energy").fraction
+print(f"\n  {'depth':>7} {'Jerlov':>8} {'here':>8}")
+for z, m, c in zip(shown, measured_q.profile_percent[1:], 100 * computed):
+    print(f"  {z:>5.0f} m {m:>7.1f}% {c:>7.1f}%")
+
+print(f"\n  {'level':>7} {'Jerlov':>8} {'here':>8}")
+level_here = []
+for level, z_m in zip(measured_q.level_percent, measured_q.level_depth_m):
+    z_c = layered.depth_of_fraction(level / 100)
+    level_here.append(z_c)
+    print(f"  {level:>6g}% {z_m:>6.1f} m {z_c:>6.1f} m")
+
+top = shown <= 10
+gap_top = np.max(np.abs(measured_q.profile_percent[1:][top]
+                        - 100 * computed[top]))
+deepest_shown = shown[-1]
+ratio_deep = 100 * computed[-1] / measured_q.profile_percent[-1]
+z1_jerlov = measured_q.level_depth_m[-1]
+first_other = next(lo for lo, _, t in descent.layers if t != TYPE)
+print(f"""
+  Down to 10 m the two agree within {gap_top:.1f} percentage points. Below,
+  the computed profile keeps more of the light, {ratio_deep:.1f} times as much as Jerlov
+  measured at {deepest_shown:.0f} m, and puts the 1 percent level at {level_here[-1]:.0f} m against his
+  {z1_jerlov:.0f}, {100 * (level_here[-1] / z1_jerlov - 1):.0f} percent deeper. That is with the type already turning less
+  clear below {first_other:g} m; with {TYPE} all the way down it is {rows[2][1]:.0f} m.
+
+  His meters counted 350-700 nm, not PAR's 400-700. DATA.md section 22
+  makes the same comparison over his band, for every type he measured, and
+  gets a 1 percent depth about a metre shallower than this one. It finds the
+  computed profile too deep for IA and IB, and does not know why.
+
+  His percentages are means over stations, and this water was put in {TYPE}
+  from one reading, so neither column is your station. But his column is
+  a measurement and the other is not.""")
+
+# --------------------------------------------------------------------------
+rule("5. What colour is the light at the bottom?")
 
 print("""Photosynthetic pigments do not absorb all of PAR equally, so the
 colour of what is left matters as much as how much. Passing the surface
@@ -154,7 +211,7 @@ print(f"""
   can miss 100 percent by a rounding.)""")
 
 # --------------------------------------------------------------------------
-rule("5. Which edition of the classification?")
+rule("6. Which edition of the classification?")
 
 print("""The editions of the classification differ, and Jerlov's (1976) Kd
 for type I falls below that of pure sea water at 9 of the 15 wavelengths
@@ -193,6 +250,9 @@ print("""  - The Kd spectrum is reconstructed from one reading by a model good t
   - Each layer's Kd is its type's surface Kd, and the profile is what was
     typical across more than 2500 campaigns, not what holds at your
     station in your season.
+  - Jerlov's percentages in section 4 are means over the stations he
+    measured in his water of that type, over 350-700 nm and under his
+    skies, not D65.
   - The 1 percent depth is a convention. Phytoplankton grow below it.
 
   Every one of these is a choice you can replace with a measurement.

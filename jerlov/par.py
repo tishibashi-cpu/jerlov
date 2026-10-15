@@ -353,7 +353,7 @@ def jerlov1977_quanta(water_type: str) -> QuantaLevels:
     every level from II to 3C, and a 1 percent depth 33 percent too deep
     for IB.
 
-    Jerlov, N. G., "Classification of sea water in terms of quanta
+    Jerlov, N. G. (1977), "Classification of sea water in terms of quanta
     irradiance", J. Cons. int. Explor. Mer 37(3), 281-287,
     doi:10.1093/icesjms/37.3.281.
 

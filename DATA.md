@@ -718,8 +718,10 @@ new here:
   irradiance", *J. Cons. int. Explor. Mer*.
 
 Neither obtained. (The second has since been obtained and is section 22. Its
-pages print no year; 1977 is Woźniak & Pelevin's, and the latest
-observations it uses are from June 1976, which does not contradict it.) **Before comparing any Jerlov table against this package,
+pages print no year, and until 0.9.6 this said the 1977 was Woźniak &
+Pelevin's. The publisher's record settles it: *Journal du Conseil* 37(3),
+September 1977, doi:10.1093/icesjms/37.3.281. The latest observations it
+uses are from June 1976.) **Before comparing any Jerlov table against this package,
 establish which edition it came from.** Section 2 is what happens when that is
 not done.
 
@@ -1025,9 +1027,9 @@ what processing went into it is not stated there, and it is not shipped.
 
 ## 22. Jerlov's measured quanta irradiance, and the package against it (confirmed)
 
-`jerlov1977_quanta.csv` is transcribed from Jerlov, N. G., "Classification
-of sea water in terms of quanta irradiance", *J. Cons. int. Explor. Mer*
-37(3), 281-287, doi:10.1093/icesjms/37.3.281, by
+`jerlov1977_quanta.csv` is transcribed from Jerlov, N. G. (1977),
+"Classification of sea water in terms of quanta irradiance", *J. Cons. int.
+Explor. Mer* 37(3), 281-287, doi:10.1093/icesjms/37.3.281, by
 `tools/build_jerlov1977.py`. From profiles measured with quanta meters at
 stations in fourteen regions, Jerlov tabulated, for types
 I, IA, IB, II, III and coastal 1 and 3:

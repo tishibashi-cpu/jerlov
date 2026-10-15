@@ -4,6 +4,29 @@ Every release is archived on Zenodo under the concept DOI
 [10.5281/zenodo.22321312](https://doi.org/10.5281/zenodo.22321312), which
 always resolves to the latest version.
 
+## 0.9.6 — 2026-10-15
+
+The euphotic-zone example checked against a measurement, and the year of
+Jerlov's quanta paper settled. No code or shipped value changed.
+
+**Examples.** `euphotic_zone.py` has a new section 4, which sets its PAR
+profile beside the quanta irradiance Jerlov measured in water of the same
+type, IA, using `jerlov1977_quanta`. Down to 10 m they agree within 3.1
+percentage points; below, the computed profile keeps more of the light,
+1.6 times as much at 80 m, and puts the 1 percent level at 101 m against
+the measured 87. The example used to say that nothing in it had been
+compared with a measured profile. The one `ProvenanceWarning` that IA
+raises, for a Table 5 coefficient the example does not use, is caught and
+printed rather than left to the caller.
+
+**Docs.** 0.9.4 recorded that the pages of Jerlov's "Classification of sea
+water in terms of quanta irradiance" print no year, and DATA.md section 16
+gave 1977 as Woźniak & Pelevin's. The publisher's record settles it:
+*Journal du Conseil* 37(3), September 1977, doi:10.1093/icesjms/37.3.281.
+DATA.md sections 16 and 22, the docstring of `jerlov1977_quanta` and
+`tools/build_jerlov1977.py` now say so. Rerunning every build script leaves
+the shipped tables byte for byte as they were.
+
 ## 0.9.5 — 2026-10-09
 
 An example for painted gear, and a DOI that was missing. No code or shipped
