@@ -276,9 +276,13 @@ p.depth_of_fraction(0.01)  # m
 default, because PAR counts photons and an energy spectrum read as photons is
 weighted wrongly with no sign of it. This is planar PAR, from Ed; PAR on
 scalar irradiance is larger by a factor this package cannot supply.
+`band=(lo, hi)` integrates over another band instead, such as part of PAR
+for the share of one colour; outside 400-700 nm the result is a photon flux
+in that band, not PAR, and `p.band_nm` says which.
 
 Jerlov measured quanta irradiance, 350-700 nm, by water type, and his
-tables are shipped for checking against:
+tables are shipped for checking against, with
+`band=jerlov.QUANTA_BAND_NM` to integrate over his band:
 
 ```python
 jerlov.jerlov1977_quanta("II")   # <QuantaLevels II: 30% 10.5 m, 10% 24 m, 3% 39 m, 1% 52 m; ...>

@@ -15,11 +15,10 @@ import numpy as np
 import pytest
 
 import jerlov
-from jerlov._data import trapezoid
 
 TYPES = ("I", "IA", "IB", "II", "III", "1C", "3C")
 BAND = np.arange(350.0, 701.0, 5.0)          # Jerlov's quanta band
-PHOTONS = np.interp(BAND, *jerlov.d65()) * BAND
+SURFACE = np.interp(BAND, *jerlov.d65())
 
 
 def _quanta(water_type):
@@ -28,37 +27,30 @@ def _quanta(water_type):
         return jerlov.jerlov1977_quanta(water_type)
 
 
-def _level_depths(transmittance_at, deepest):
+def _quanta_profile(kd):
+    return jerlov.par_profile(SURFACE, BAND, 0.0, kd=kd, unit="energy",
+                              band=jerlov.QUANTA_BAND_NM)
+
+
+def _level_depths(profile):
     """Depths of 30, 10, 3 and 1 percent of surface quanta, 350-700 nm."""
-    surface = trapezoid(PHOTONS, BAND)
-
-    def fraction(z):
-        return trapezoid(PHOTONS * transmittance_at(z), BAND) / surface
-
     out = []
     for level in (0.30, 0.10, 0.03, 0.01):
-        low, high = 0.0, deepest
-        if fraction(high) > level:
+        try:
+            out.append(profile.depth_of_fraction(level))
+        except jerlov.MissingQuantityError:
             out.append(None)
-            continue
-        for _ in range(60):
-            middle = 0.5 * (low + high)
-            if fraction(middle) > level:
-                low = middle
-            else:
-                high = middle
-        out.append(0.5 * (low + high))
     return out
 
 
 def _one_kd(water_type):
-    kd = jerlov.water(water_type, source="jerlov1976").kd(BAND)
-    return _level_depths(lambda z: np.exp(-kd * z), 1000.0)
+    return _level_depths(_quanta_profile(
+        jerlov.water(water_type, source="jerlov1976")))
 
 
 def _layered(water_type):
-    d = jerlov.descend(water_type, jerlov.profile_depth(water_type), BAND)
-    return _level_depths(d.transmittance_at, d.depth_m)
+    return _level_depths(_quanta_profile(jerlov.descend(
+        water_type, jerlov.profile_depth(water_type), BAND)))
 
 
 # -- the tables as printed ---------------------------------------------------
@@ -134,14 +126,12 @@ def test_IB_agrees_in_its_own_10_m_and_departs_below():
     """Kd for quanta in IB, Jerlov (1976) against Table 5: within 0.004 1/m
     above 10 m; below 15 m one falls from 0.051 to 0.041, the other rises
     from 0.056 to 0.069."""
-    kd = jerlov.water("IB", source="jerlov1976").kd(BAND)
-
-    def quanta(z):
-        return trapezoid(PHOTONS * np.exp(-kd * z), BAND)
-
     q = _quanta("IB")
-    model = np.array([math.log(quanta(a) / quanta(b)) / (b - a)
-                      for a, b in q.layer_m])
+    edges = np.array(q.layer_m)
+    quanta = jerlov.par_profile(SURFACE, BAND, edges, unit="energy",
+                                kd=jerlov.water("IB", source="jerlov1976"),
+                                band=jerlov.QUANTA_BAND_NM).par
+    model = np.log(quanta[:, 0] / quanta[:, 1]) / (edges[:, 1] - edges[:, 0])
     top = [i for i, (a, b) in enumerate(q.layer_m) if b <= 10]
     deep = [i for i, (a, b) in enumerate(q.layer_m) if a >= 15]
     assert np.max(np.abs(model[top] - q.layer_kd[top])) < 0.004

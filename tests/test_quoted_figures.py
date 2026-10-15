@@ -415,7 +415,7 @@ def test_README_figures_for_classify_kd():
 
 def test_figures_for_the_euphotic_zone_example():
     """examples/README.md: IA with IB close behind; 154 m by the shortcut,
-    101 m layer by layer; 87 percent violet-blue there; the editions agree
+    101 m layer by layer; 88 percent violet-blue there; the editions agree
     at Kd(490) = 0.030 and not at 0.045."""
     band = np.arange(400.0, 701.0, 5.0)
     surface = np.interp(band, *jerlov.d65())
@@ -435,11 +435,11 @@ def test_figures_for_the_euphotic_zone_example():
     # "The shortcut is the deepest."
     assert math.log(100) / 0.030 > max(one_kd.depth_of_fraction(),
                                        spectral.depth_of_fraction(), z1)
-    blue = jerlov.par_profile(surface * (band < 500), band, [0.0, z1],
-                              kd=d, unit="energy").par
+    blue = jerlov.par_profile(surface, band, [0.0, z1], kd=d,
+                              unit="energy", band=(400, 500)).par
     total = jerlov.par_profile(surface, band, [0.0, z1], kd=d,
                                unit="energy").par
-    assert round(100 * blue[1] / total[1]) == 87
+    assert round(100 * blue[1] / total[1]) == 88
     editions = {s: jerlov.classify_kd(band, measured, source=s).water_type
                 for s in ("jerlov1976", "jerlov1968", "austin1986")}
     assert set(editions.values()) == {"IA"}
@@ -451,47 +451,33 @@ def test_figures_for_the_euphotic_zone_example():
 
 
 def test_figures_for_the_euphotic_zone_example_against_jerlov():
-    """examples/euphotic_zone.py section 4: within 3.1 points down to 10 m;
-    1.6 times Jerlov's light at 80 m; 1 percent at 101 m against 87, 17
-    percent deeper; 125 m with IA all the way down; over 350-700 nm the
-    1 percent depth is about a metre shallower than the 400-700 nm one."""
-    from jerlov._data import trapezoid
-    band = np.arange(400.0, 701.0, 5.0)
-    surface = np.interp(band, *jerlov.d65())
-    d = jerlov.descend("IA", 200.0, band)
+    """examples/euphotic_zone.py section 4, over Jerlov's 350-700 nm: within
+    1.8 points down to 10 m; 1.5 times his light at 80 m; 1 percent at
+    100 m against 87, 15 percent deeper; IB below 30 m; over PAR's band
+    101 m."""
+    wide = np.arange(350.0, 701.0, 5.0)
+    d = jerlov.descend("IA", 200.0, wide)
     with quiet():
         warnings.simplefilter("ignore", jerlov.ProvenanceWarning)
         q = jerlov.jerlov1977_quanta("IA")
     z = q.profile_depth_m[1:]
-    here = 100 * jerlov.par_profile(surface, band, z, kd=d,
-                                    unit="energy").fraction
+    p = jerlov.par_profile(np.interp(wide, *jerlov.d65()), wide, z, kd=d,
+                           unit="energy", band=jerlov.QUANTA_BAND_NM)
+    here = 100 * p.fraction
     top = z <= 10
     assert round(np.max(np.abs(q.profile_percent[1:][top] - here[top])),
-                 1) == 3.1
-    assert z[-1] == 80 and round(here[-1] / q.profile_percent[-1], 1) == 1.6
-    layered = jerlov.par_profile(surface, band, 0.0, kd=d, unit="energy")
-    z1 = layered.depth_of_fraction(0.01)
-    assert (round(z1), q.level_depth_m[-1]) == (101, 87)
-    assert round(100 * (z1 / 87 - 1)) == 17
+                 1) == 1.8
+    assert np.all(here[z >= 15] > q.profile_percent[1:][z >= 15])
+    assert z[-1] == 80 and round(here[-1] / q.profile_percent[-1], 1) == 1.5
+    z1 = p.depth_of_fraction(0.01)
+    assert (round(z1), q.level_depth_m[-1]) == (100, 87)
+    assert round(100 * (z1 / 87 - 1)) == 15
     assert next(lo for lo, _, t in d.layers if t != "IA") == 30
-    one_kd = jerlov.par_profile(surface, band, 0.0, unit="energy",
-                                kd=jerlov.water("IA", source="jerlov1976"))
-    assert round(one_kd.depth_of_fraction()) == 125
-    # The same over Jerlov's 350-700 nm, as DATA.md section 22 computes it.
-    wide = np.arange(350.0, 701.0, 5.0)
-    photons = np.interp(wide, *jerlov.d65()) * wide
-    dw = jerlov.descend("IA", 200.0, wide)
-
-    def fraction(depth):
-        return (trapezoid(photons * dw.transmittance_at(depth), wide)
-                / trapezoid(photons, wide))
-    low, high = 50.0, 200.0
-    for _ in range(60):
-        middle = 0.5 * (low + high)
-        low, high = (middle, high) if fraction(middle) > 0.01 else \
-            (low, middle)
-    assert low < z1 and round(z1 - low) == 1
-
+    band = np.arange(400.0, 701.0, 5.0)
+    par = jerlov.par_profile(np.interp(band, *jerlov.d65()), band, 0.0,
+                             kd=jerlov.descend("IA", 200.0, band),
+                             unit="energy")
+    assert round(par.depth_of_fraction()) == 101
 
 BAND = np.arange(400.0, 701.0, 5.0)
 
