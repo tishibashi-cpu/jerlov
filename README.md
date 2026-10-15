@@ -276,6 +276,8 @@ p = jerlov.par_profile(surface, wl, [0, 25, 50], kd=d, unit="energy")
 p.par                      # umol photons m-2 s-1 at each depth
 p.fraction                 # PAR(z) / PAR(0)
 p.depth_of_fraction(0.01)  # m
+p.kd_par(0, 1)             # effective Kd(PAR) over the top metre, 1/m
+p.spectrum_at(25)          # photons per nm at 25 m, on p.wavelengths_nm
 ```
 
 `kd` is a `Water` carrying Kd, an array, or a `Descent`. `unit` has no

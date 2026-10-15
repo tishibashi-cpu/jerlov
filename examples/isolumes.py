@@ -113,15 +113,17 @@ rule("3. The colour of the light at each isolume")
 print("""Below the first few tens of metres almost nothing but blue is left.
 The wavelength carrying the most photons, at each level, in Jerlov II:""")
 
-d = deepest_descent("II")
-photons = SURFACE * BAND          # proportional to photons, per nm
+light = jerlov.par_profile(SURFACE, BAND, 0.0, kd=deepest_descent("II"),
+                           unit="energy")
 print(f"\n  {'level':>7} {'depth':>8} {'peak':>8}")
 for level, z in zip(LEVELS, depths["II"]):
     if z is None:
         continue
-    t = d.transmittance_at(z)
-    print(f"  {level:>7.0e} {z:>6.0f} m {BAND[np.argmax(photons * t)]:>6.0f} nm")
-print(f"  {'surface':>7} {0:>6.0f} m {BAND[np.argmax(photons)]:>6.0f} nm")
+    spectrum = light.spectrum_at(z)
+    print(f"  {level:>7.0e} {z:>6.0f} m "
+          f"{light.wavelengths_nm[np.argmax(spectrum)]:>6.0f} nm")
+print(f"  {'surface':>7} {0:>6.0f} m "
+      f"{light.wavelengths_nm[np.argmax(light.spectrum_at(0.0))]:>6.0f} nm")
 
 print("""
   From the first isolume down, the light that is left peaks in the blue,

@@ -251,3 +251,69 @@ def test_the_band_given_is_not_changed():
                            band=band)
     band[0] = 450.0
     assert p.band_nm == (400.0, 500.0)
+
+
+# -- the spectrum at depth, and Kd between two depths -------------------------
+
+
+def test_the_spectrum_at_depth_integrates_to_par():
+    d = jerlov.descend("IB", 100.0, WL)
+    surface = np.interp(WL, *jerlov.d65())
+    p = jerlov.par_profile(surface, WL, [0.0, 20.0, 60.0], kd=d,
+                           unit="energy")
+    for z, par in zip(p.depths_m, p.par):
+        assert _data.trapezoid(p.spectrum_at(z), p.wavelengths_nm) == \
+            pytest.approx(par, rel=1e-12)
+    rows = p.spectrum_at([0.0, 20.0])
+    assert rows.shape == (2, p.wavelengths_nm.size)
+    assert np.allclose(rows[1], surface * WL * 1e-9 / (6.62607015e-34
+                       * 299792458.0) / 6.02214076e23 * 1e6
+                       * d.transmittance_at(20.0))
+    with pytest.raises(ValueError):
+        p.wavelengths_nm[0] = 0.0
+
+
+def test_the_spectrum_is_on_the_band_with_its_ends():
+    wide = np.arange(390.0, 711.0, 20.0)
+    p = jerlov.par_profile(np.ones_like(wide), wide, 0.0, unit="photons",
+                           kd=np.full_like(wide, 0.1), band=(400, 500))
+    assert p.wavelengths_nm.tolist() == [400.0, 410.0, 430.0, 450.0, 470.0,
+                                         490.0, 500.0]
+    assert np.allclose(p.spectrum_at(10.0), np.exp(-1.0))
+
+
+def test_kd_between_two_depths():
+    """With one Kd at every wavelength, the effective Kd is that Kd; with a
+    real spectrum it falls with depth as the red is removed."""
+    flat = jerlov.par_profile(FLAT, WL, 0.0, kd=np.full_like(WL, 0.08),
+                              unit="photons")
+    assert flat.kd_par(0.0, 10.0) == pytest.approx(0.08, rel=1e-12)
+    assert flat.kd_par(3.0, 3.5) == pytest.approx(0.08, rel=1e-12)
+    p = jerlov.par_profile(np.interp(WL, *jerlov.d65()), WL, 0.0,
+                           kd=jerlov.water("1C", source="jerlov1976"),
+                           unit="energy")
+    assert p.kd_par(0.0, 1.0) > p.kd_par(1.0, 5.0) > p.kd_par(5.0, 20.0)
+    z1 = p.depth_of_fraction(0.01)
+    assert p.kd_par(0.0, z1) == pytest.approx(np.log(100) / z1, rel=1e-9)
+
+
+def test_depths_the_profile_cannot_answer_are_refused():
+    p = jerlov.par_profile(FLAT, WL, 0.0, unit="photons",
+                           kd=jerlov.descend("II", 50.0, WL))
+    for bad in (-1.0, np.nan, np.inf):
+        with pytest.raises(ValueError):
+            p.spectrum_at(bad)
+        with pytest.raises(ValueError):
+            p.kd_par(0.0, bad)
+    with pytest.raises(jerlov.MissingQuantityError, match="stops at 50 m"):
+        p.spectrum_at(60.0)
+    with pytest.raises(jerlov.MissingQuantityError, match="stops at 50 m"):
+        p.kd_par(10.0, 60.0)
+    for z1, z2 in ((10.0, 10.0), (20.0, 10.0)):
+        with pytest.raises(ValueError, match="above"):
+            p.kd_par(z1, z2)
+    with pytest.raises(ValueError):
+        p.spectrum_at(np.zeros((2, 2)))
+    dark = jerlov.par_profile(FLAT * 0, WL, 0.0, kd=FLAT, unit="photons")
+    with pytest.raises(ValueError, match="no light"):
+        dark.kd_par(0.0, 1.0)

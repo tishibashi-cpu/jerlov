@@ -822,3 +822,29 @@ out to end. **Rejected:** keeping the `FutureWarning` indefinitely. It
 announces a change; never making the change would make it false, and code
 that silences warnings never sees it.
 
+## 35. The spectrum at depth, and Kd between two depths
+
+`ParProfile` gave PAR at depths and the depth of a fraction. Two examples
+needed more and computed it themselves: `seagrass_depth_limit.py` took the
+effective Kd(PAR) over the top metre as `-ln(fraction)`, and `isolumes.py`
+multiplied the surface spectrum by `Descent.transmittance_at` to find where
+the light peaks. In 0.13.0 the profile answers both.
+
+**`kd_par(z1, z2)` is `ln(PAR(z1) / PAR(z2)) / (z2 - z1)`**, the quantity
+two PAR readings at two depths give. It takes the two depths
+rather than one, because PAR has no single coefficient: near the surface,
+while the red is still being removed, it is larger than further down, and
+a Kd(PAR) quoted without its depths is not one number. The name keeps
+"par" over another band too, for the reason in section 32.
+
+**`spectrum_at(z)` is in photons, on `wavelengths_nm`**, the grid
+`par` is integrated over: the samples inside the band and its two
+interpolated ends. Photons whatever the surface spectrum was given in,
+since that is what `par` counts, and on that grid rather than the caller's
+wavelengths, so that integrating it gives `par` exactly. Below a descent
+both refuse, as `depth_of_fraction` does (section 29).
+
+**Rejected:** a Kd(PAR) at one depth, the derivative. Between two close
+depths `kd_par` gives it to any accuracy wanted, and a second method would
+be a second name for the same thing.
+

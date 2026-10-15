@@ -181,10 +181,8 @@ print(f"\n  {'type':>5} {'top 1 m':>9} {'to limit':>9} {'estimate':>9} {'actual'
 for t in ("III", "1C", "3C", "5C"):
     layered, _ = profile(t)
     z_limit = limits[t, 0.11]
-    k_top = -math.log(jerlov.par_profile(SURFACE, BAND, 1.0, unit="energy",
-                                         kd=jerlov.water(t, source="jerlov1976"))
-                      .fraction)
-    k_column = math.log(1 / 0.11) / z_limit
+    k_top = layered.kd_par(0.0, 1.0)
+    k_column = layered.kd_par(0.0, z_limit)
     estimate = math.log(1 / 0.11) / k_top
     print(f"  {t:>5} {k_top:>9.3f} {k_column:>9.3f} {estimate:>7.1f} m "
           f"{z_limit:>6.1f} m")
