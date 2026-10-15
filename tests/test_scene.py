@@ -47,7 +47,8 @@ def test_negative_distance_is_refused():
 
 def test_at_zero_distance_only_the_target_is_seen():
     s = scene()
-    obs = s.observe(flat(), 0.0, veiling_radiance=flat(0.01))
+    obs = s.observe(flat(), 0.0, veiling_radiance=flat(0.01),
+                    face_irradiance_ratio=1.0)
     assert np.allclose(obs.veiling, 0.0)
     assert np.allclose(obs.radiance, 0.5 * s.downwelling / np.pi)
 
@@ -55,14 +56,16 @@ def test_at_zero_distance_only_the_target_is_seen():
 def test_far_away_only_the_water_is_seen():
     s = scene()
     b_inf = flat(0.01)
-    obs = s.observe(flat(), 500.0, veiling_radiance=b_inf)
+    obs = s.observe(flat(), 500.0, veiling_radiance=b_inf,
+                    face_irradiance_ratio=1.0)
     assert np.allclose(obs.radiance, b_inf, rtol=1e-9)
     assert np.allclose(obs.veiling_fraction, 1.0)
 
 
 def test_components_sum_to_the_total():
     s = scene()
-    obs = s.observe(flat(0.8), 4.0, veiling_radiance=flat(0.02))
+    obs = s.observe(flat(0.8), 4.0, veiling_radiance=flat(0.02),
+                    face_irradiance_ratio=1.0)
     assert np.allclose(obs.direct + obs.veiling, obs.radiance)
 
 
@@ -70,7 +73,8 @@ def test_veiling_fraction_grows_with_distance():
     s = scene()
     previous = -1.0
     for r in (0.5, 1.0, 2.0, 5.0, 10.0):
-        obs = s.observe(flat(), r, veiling_radiance=flat(0.01))
+        obs = s.observe(flat(), r, veiling_radiance=flat(0.01),
+                        face_irradiance_ratio=1.0)
         current = float(np.mean(obs.veiling_fraction))
         assert current > previous
         previous = current
@@ -81,7 +85,8 @@ def test_contrast_decays_with_distance():
     bright, dark = flat(0.8), flat(0.1)
     contrasts = []
     for r in (0.5, 2.0, 8.0, 30.0):
-        obs = s.observe(bright, r, veiling_radiance=flat(0.02))
+        obs = s.observe(bright, r, veiling_radiance=flat(0.02),
+                        face_irradiance_ratio=1.0)
         background = dark * s.downwelling / np.pi
         contrasts.append(float(np.mean(np.abs(obs.contrast(background)))))
     assert contrasts == sorted(contrasts, reverse=True)
@@ -100,26 +105,33 @@ def test_contrast_follows_the_formula_in_its_docstring():
     veil = flat(0.02)
     for r in (0.5, 2.0, 8.0):
         t = s.transmittance(r)
-        obs = s.observe(flat(0.8), r, veiling_radiance=veil)
+        obs = s.observe(flat(0.8), r, veiling_radiance=veil,
+                        face_irradiance_ratio=1.0)
         expected = inherent * background * t / (background * t + veil * (1 - t))
         assert np.allclose(obs.contrast(background), expected)
         # No veiling light: dimming target and background alike leaves the
         # contrast where it was.
-        bare = s.observe(flat(0.8), r, veiling_radiance=flat(0.0))
+        bare = s.observe(flat(0.8), r, veiling_radiance=flat(0.0),
+                         face_irradiance_ratio=1.0)
         assert np.allclose(bare.contrast(background), inherent)
         # A background that is the water itself gives the classic C_0 * t.
-        water = s.observe(flat(0.8), r, veiling_radiance=background)
+        water = s.observe(flat(0.8), r, veiling_radiance=background,
+                          face_irradiance_ratio=1.0)
         assert np.allclose(water.contrast(background), inherent * t)
         # Darker than the water, it falls faster than that; brighter, slower.
-        assert np.all(np.abs(s.observe(flat(0.8), r, veiling_radiance=2 * background)
+        assert np.all(np.abs(s.observe(flat(0.8), r, veiling_radiance=2 * background,
+                                       face_irradiance_ratio=1.0)
                              .contrast(background)) < np.abs(inherent * t))
-        assert np.all(np.abs(s.observe(flat(0.8), r, veiling_radiance=background / 2)
+        assert np.all(np.abs(s.observe(flat(0.8), r, veiling_radiance=background / 2,
+                                       face_irradiance_ratio=1.0)
                              .contrast(background)) > np.abs(inherent * t))
 
 
 def test_turbid_water_veils_faster_than_clear():
-    clear = scene("IB").observe(flat(), 3.0, veiling_radiance=flat(0.01))
-    turbid = scene("5C").observe(flat(), 3.0, veiling_radiance=flat(0.01))
+    clear = scene("IB").observe(flat(), 3.0, veiling_radiance=flat(0.01),
+                                face_irradiance_ratio=1.0)
+    turbid = scene("5C").observe(flat(), 3.0, veiling_radiance=flat(0.01),
+                                 face_irradiance_ratio=1.0)
     assert np.mean(turbid.veiling_fraction) > np.mean(clear.veiling_fraction)
 
 
@@ -129,12 +141,13 @@ def test_turbid_water_veils_faster_than_clear():
 def test_veiling_radiance_has_no_default():
     s = scene()
     with pytest.raises(MissingQuantityError, match="no default"):
-        s.observe(flat(), 3.0, veiling_radiance=None)
+        s.observe(flat(), 3.0, veiling_radiance=None,
+                  face_irradiance_ratio=1.0)
 
 
 def test_observe_requires_the_keyword():
     with pytest.raises(TypeError):
-        scene().observe(flat(), 3.0)
+        scene().observe(flat(), 3.0, face_irradiance_ratio=1.0)
 
 
 def test_estimate_requires_a_backscatter_ratio():
@@ -172,15 +185,18 @@ def test_reflectance_must_be_physical():
     s = scene()
     for bad in (-0.1, 1.5):
         with pytest.raises(ValueError, match="between 0 and 1"):
-            s.observe(flat(bad), 1.0, veiling_radiance=flat(0.01))
+            s.observe(flat(bad), 1.0, veiling_radiance=flat(0.01),
+                      face_irradiance_ratio=1.0)
 
 
 def test_shapes_must_agree():
     s = scene()
     with pytest.raises(ValueError, match="same shape"):
-        s.observe(np.ones(3), 1.0, veiling_radiance=flat(0.01))
+        s.observe(np.ones(3), 1.0, veiling_radiance=flat(0.01),
+                  face_irradiance_ratio=1.0)
     with pytest.raises(ValueError, match="same shape"):
-        s.observe(flat(), 1.0, veiling_radiance=np.ones(3))
+        s.observe(flat(), 1.0, veiling_radiance=np.ones(3),
+                  face_irradiance_ratio=1.0)
 
 
 def test_negative_downwelling_is_refused():
@@ -244,7 +260,8 @@ def test_sound_water_does_not_warn():
     with warnings.catch_warnings():
         warnings.simplefilter("error")
         s = scene("III")
-        s.observe(flat(), 2.0, veiling_radiance=flat(0.01))
+        s.observe(flat(), 2.0, veiling_radiance=flat(0.01),
+                  face_irradiance_ratio=1.0)
 
 
 # -- Akkaynak-Treibitz coefficients --------------------------------------
@@ -292,7 +309,8 @@ def test_the_coefficients_reproduce_observe():
     s = scene()
     b_inf = flat(0.02)
     r = 3.0
-    obs = s.observe(flat(0.8), r, veiling_radiance=b_inf)
+    obs = s.observe(flat(0.8), r, veiling_radiance=b_inf,
+                    face_irradiance_ratio=1.0)
     p = s.attenuation_coefficients((0.0, 10.0), veiling_radiance=b_inf)
 
     target = 0.8 * s.downwelling / np.pi
@@ -320,7 +338,8 @@ def test_a_distance_or_depth_that_is_nan_is_refused():
     with pytest.raises(ValueError, match="not NaN"):
         s.transmittance(nan)
     with pytest.raises(ValueError, match="not NaN"):
-        s.observe(flat(0.5), nan, veiling_radiance=flat(0.02))
+        s.observe(flat(0.5), nan, veiling_radiance=flat(0.02),
+                  face_irradiance_ratio=1.0)
     with pytest.raises(ValueError, match="not NaN"):
         s.attenuation_coefficients((nan, 5.0))
     with pytest.raises(ValueError, match="not NaN"):
@@ -332,7 +351,8 @@ def test_negative_veiling_radiance_is_refused():
     negative radiance just the same."""
     s = scene()
     with pytest.raises(ValueError, match="cannot be negative"):
-        s.observe(flat(0.5), 2.0, veiling_radiance=flat(-0.02))
+        s.observe(flat(0.5), 2.0, veiling_radiance=flat(-0.02),
+                  face_irradiance_ratio=1.0)
     with pytest.raises(ValueError, match="cannot be negative"):
         s.attenuation_coefficients((1.0, 5.0), veiling_radiance=flat(-0.02))
     with pytest.raises(ValueError, match="cannot be negative"):
@@ -349,7 +369,8 @@ def test_a_surface_spectrum_of_the_wrong_length_is_named():
 def test_an_observation_with_no_light_has_a_quiet_repr():
     s = Scene(jerlov.water("II"), np.zeros(WL.size), WL)
     o = s.observe(np.full(WL.size, 0.5), 5.0,
-                  veiling_radiance=np.zeros(WL.size))
+                  veiling_radiance=np.zeros(WL.size),
+                  face_irradiance_ratio=1.0)
     with warnings.catch_warnings():
         warnings.simplefilter("error")
         assert "veiling undefined" in repr(o)
@@ -374,3 +395,54 @@ def test_at_depth_takes_a_descent_as_it_comes():
         Scene.at_depth(jerlov.water("II"), 40.0, surface, wl, kd=d)
     with pytest.raises(ValueError, match="other wavelengths"):
         Scene.at_depth(jerlov.water("II"), 45.0, surface[1:], wl[1:], kd=d)
+
+
+# -- the light on the target's visible face: DECISIONS.md section 33 -------
+
+
+def test_the_face_ratio_scales_the_target_and_nothing_else():
+    s = scene()
+    veil = flat(0.2)
+    up = s.observe(flat(), 3.0, veiling_radiance=veil,
+                   face_irradiance_ratio=1.0)
+    side = s.observe(flat(), 3.0, veiling_radiance=veil,
+                     face_irradiance_ratio=0.25)
+    assert np.allclose(side.direct, 0.25 * up.direct)
+    assert np.array_equal(side.veiling, up.veiling)
+    assert np.array_equal(side.transmittance, up.transmittance)
+    assert np.allclose(up.direct, 0.5 * s.downwelling / np.pi
+                       * s.transmittance(3.0))
+
+
+def test_the_face_ratio_can_be_spectral_and_can_exceed_one():
+    s = scene()
+    ratio = np.linspace(0.2, 1.4, WL.size)
+    seen = s.observe(flat(), 0.0, veiling_radiance=flat(0.0),
+                     face_irradiance_ratio=ratio)
+    assert np.allclose(seen.direct, 0.5 * ratio * s.downwelling / np.pi)
+    dark = s.observe(flat(), 2.0, veiling_radiance=flat(0.1),
+                     face_irradiance_ratio=0.0)
+    assert np.all(dark.direct == 0) and np.all(dark.veiling_fraction == 1)
+
+
+def test_leaving_the_face_ratio_out_warns_and_takes_one():
+    s = scene()
+    with pytest.warns(FutureWarning, match="face_irradiance_ratio") as caught:
+        seen = s.observe(flat(), 3.0, veiling_radiance=flat(0.2))
+    assert caught[0].filename == __file__
+    stated = s.observe(flat(), 3.0, veiling_radiance=flat(0.2),
+                       face_irradiance_ratio=1.0)
+    assert np.array_equal(seen.radiance, stated.radiance)
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        s.observe(flat(), 3.0, veiling_radiance=flat(0.2),
+                  face_irradiance_ratio=1.0)
+
+
+def test_a_face_ratio_that_is_not_one_is_refused():
+    s = scene()
+    for bad in (-0.1, np.nan, np.inf, "half", np.ones(WL.size + 1),
+                np.full(WL.size, -1.0)):
+        with pytest.raises(ValueError, match="face_irradiance_ratio"):
+            s.observe(flat(), 3.0, veiling_radiance=flat(0.2),
+                      face_irradiance_ratio=bad)

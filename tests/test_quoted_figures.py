@@ -183,7 +183,8 @@ def test_the_guess_overstates_contrast_by_the_stated_amount():
             b_inf = jerlov.veiling_radiance_estimate(
                 water, scene.downwelling, wl, backscatter_ratio=value)
             observed = scene.observe(np.full_like(wl, 0.5), 5.0,
-                                     veiling_radiance=b_inf)
+                                     veiling_radiance=b_inf,
+                                     face_irradiance_ratio=1.0)
             contrasts[label] = float(
                 np.mean(np.abs(observed.contrast(0.1 * white))))
     overstatement = contrasts["guess"] / contrasts["measured"] - 1
@@ -367,7 +368,7 @@ def test_examples_README_figure_for_measured_backscatter_ratios():
         b_inf = jerlov.veiling_radiance_estimate(
             w, scene.downwelling, wl, backscatter_ratio=ratio)
         seen = scene.observe(np.full(wl.size, 0.3), 5.0,
-                             veiling_radiance=b_inf)
+                             veiling_radiance=b_inf, face_irradiance_ratio=1.0)
         contrasts.append(seen.contrast(b_inf)[2])
     assert (round(max(contrasts), 1), round(min(contrasts), 1)) == (4.0, 2.6)
 
@@ -616,8 +617,9 @@ def test_figures_for_the_lure_example():
             for ratio in (0.01, 0.02):
                 water = jerlov.veiling_radiance_estimate(
                     iops, ed, wl, backscatter_ratio=ratio)
-                seen = jerlov.Scene(iops, side * ed, wl).observe(
-                    rho, 0.5, veiling_radiance=water)
+                seen = jerlov.Scene(iops, ed, wl).observe(
+                    rho, 0.5, veiling_radiance=water,
+                    face_irradiance_ratio=side)
                 values.append((y(seen.radiance) - y(water)) / y(water))
         start[name] = values
     flips = {n for n, v in start.items() if min(v) < 0 < max(v)}

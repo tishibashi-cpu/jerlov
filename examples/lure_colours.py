@@ -129,10 +129,10 @@ def look(water_type, finish, distance, *, side_light, ratio):
     ed = light_at_depth(water_type)
     water = jerlov.veiling_radiance_estimate(iops, ed, WAVELENGTHS,
                                              backscatter_ratio=ratio)
-    scene = jerlov.Scene(iops, side_light * ed, WAVELENGTHS,
-                         depth_m=DEPTH_M)
+    scene = jerlov.Scene(iops, ed, WAVELENGTHS, depth_m=DEPTH_M)
     seen = scene.observe(FINISHES[finish](WAVELENGTHS), distance,
-                         veiling_radiance=water)
+                         veiling_radiance=water,
+                         face_irradiance_ratio=side_light)
     return seen, water
 
 
