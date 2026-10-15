@@ -724,3 +724,35 @@ with Jerlov's measurements of quanta irradiance with depth, for the types
 he measured, with D65 standing in for his skies. That is all the
 comparison says, and all the README says about it.
 
+## 32. PAR over another band
+
+`par_profile` integrated over 400-700 nm and nothing else. Two things
+needed another band, and both worked around it: the check against Jerlov's
+quanta meters, which counted 350-700 nm, integrated by hand in the tests,
+and `euphotic_zone.py` took the share of each colour by zeroing the
+surface spectrum outside it. The second was wrong by a rounding: the light
+between the last sample of one colour and the first of the next was
+divided between them by a ramp rather than at the boundary, and the
+example printed 87 percent violet-blue where the integral over 400-500 nm
+gives 88. In 0.10.0 `band=(lo, hi)` does
+both, with the ends interpolated as 400 and 700 nm always were.
+
+**The band has a default, though the unit has none.** Section 29 refuses to
+guess the unit because either guess is wrong for the other kind of
+spectrum, silently. 400-700 nm is not a guess: it is what PAR means, and
+the function is named for it. A caller who wants another band says so.
+
+**The attribute is still `par`.** Over 350-700 nm the result is not PAR,
+and a second name for the same number would make every caller choose
+between two. `ParProfile.band_nm` records the band, and the repr names it
+whenever it is not 400-700 nm, so a flux over another band does not pass
+for PAR when printed.
+
+**Nothing outside the band is required.** As for PAR since 0.9.1, only the
+samples inside the band and the one either side of each end are read, so a
+gap or a flagged Kd outside it neither refuses nor warns.
+
+**Rejected:** a separate function for the quanta band. It would be the
+same integral with another pair of numbers, and a shortcut for one
+instrument's band would invite one for each.
+

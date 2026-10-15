@@ -12,6 +12,12 @@ the blue-green survives and the red does not, PAR does not fall off
 exponentially with any single coefficient, and the depth at which it reaches
 1 percent of its surface value is not ``ln(100) / Kd`` at any one wavelength.
 
+The band is 400-700 nm unless the caller names another with ``band=``:
+Jerlov's quanta meters counted 350-700 nm (:data:`QUANTA_BAND_NM`), and a
+share of PAR is the same integral over part of it. Outside 400-700 nm the
+result is a photon flux over that band, not PAR, though the attribute
+keeps the name ``par``.
+
 Three things are stated rather than hidden:
 
 - **This is planar PAR.** It integrates the downwelling *planar* irradiance
@@ -68,14 +74,19 @@ class ParProfile:
     """PAR at a set of depths, and the depth at which it falls to a fraction.
 
     Built by :func:`par_profile`. ``par`` is in umol photons m-2 s-1, whatever
-    unit the surface spectrum was given in.
+    unit the surface spectrum was given in, integrated over
+    :attr:`band_nm`: PAR when that is 400-700 nm, the photon flux in that
+    band otherwise.
     """
 
-    __slots__ = ("depths_m", "par", "surface_par", "kd_from", "_band",
-                 "_surface_q", "_tau", "_deepest")
+    __slots__ = ("depths_m", "par", "surface_par", "kd_from", "band_nm",
+                 "_grid", "_surface_q", "_tau", "_deepest")
 
-    def __init__(self, depths_m, band, surface_q, tau, deepest, kd_from):
-        self._band = band
+    def __init__(self, depths_m, band_nm, grid, surface_q, tau, deepest,
+                 kd_from):
+        self.band_nm = band_nm
+        """``(lo, hi)``, nm: the band integrated over."""
+        self._grid = grid
         self._surface_q = surface_q
         self._tau = tau
         self._deepest = deepest
@@ -93,7 +104,7 @@ class ParProfile:
 
     def _par_at(self, depth: float) -> float:
         return float(_data.trapezoid(
-            self._surface_q * np.exp(-self._tau(depth)), self._band))
+            self._surface_q * np.exp(-self._tau(depth)), self._grid))
 
     @property
     def fraction(self) -> np.ndarray:
@@ -141,7 +152,8 @@ class ParProfile:
                 if high > 1e6:
                     raise ValueError(
                         f"PAR does not fall to {fraction:.2%} within 1000 km; "
-                        "Kd is zero or close to it throughout 400-700 nm"
+                        "Kd is zero or close to it throughout "
+                        f"{self.band_nm[0]:g}-{self.band_nm[1]:g} nm"
                     )
         # PAR falls monotonically with depth, so bisection cannot miss.
         for _ in range(100):
@@ -155,15 +167,17 @@ class ParProfile:
         return 0.5 * (low + high)
 
     def __repr__(self) -> str:
+        lo, hi = self.band_nm
+        band = "" if self.band_nm == PAR_RANGE_NM else f" over {lo:g}-{hi:g} nm"
         return (
-            f"<ParProfile surface {self.surface_par:.4g} umol m-2 s-1, "
+            f"<ParProfile surface {self.surface_par:.4g} umol m-2 s-1{band}, "
             f"{self.depths_m.size} depth{'s' if self.depths_m.size != 1 else ''}; "
             f"Kd from {self.kd_from}>"
         )
 
 
 def par_profile(surface_downwelling, wavelengths, depths_m, *, kd,
-                unit: str) -> ParProfile:
+                unit: str, band=PAR_RANGE_NM) -> ParProfile:
     """PAR at ``depths_m`` below a surface downwelling spectrum.
 
     Parameters
@@ -172,8 +186,8 @@ def par_profile(surface_downwelling, wavelengths, depths_m, *, kd,
         Downwelling planar irradiance just below the surface, on
         ``wavelengths``.
     wavelengths:
-        nm, ascending, covering at least 400 to 700 nm. Values between the
-        samples are interpolated linearly at 400 and 700 nm.
+        nm, ascending, covering at least ``band``. Values between the
+        samples are interpolated linearly at its two ends.
     depths_m:
         A depth or an array of depths, in m.
     kd:
@@ -187,6 +201,12 @@ def par_profile(surface_downwelling, wavelengths, depths_m, *, kd,
         is in umol m-2 s-1 nm-1. There is no default: PAR counts photons,
         and an energy spectrum read as photons would weight the blue and
         the red wrongly without any sign that it had.
+    band:
+        ``(lo, hi)``, nm, the band to integrate over. 400-700 nm, the
+        definition of PAR, by default. Another band gives the photon flux
+        in it: :data:`QUANTA_BAND_NM` for Jerlov's quanta meters, or part
+        of PAR for the share of one colour. Nothing outside it counts,
+        so the spectrum and Kd may have gaps there.
 
     Example
     -------
@@ -204,28 +224,31 @@ def par_profile(surface_downwelling, wavelengths, depths_m, *, kd,
             f"unit must be one of {', '.join(map(repr, sorted(_UNITS)))} "
             f"({'; '.join(f'{k}: {v}' for k, v in sorted(_UNITS.items()))})"
         )
+    band_nm = _band(band)
     wl = np.array(wavelengths, dtype=float, ndmin=1)
     if wl.ndim != 1 or not np.all(np.isfinite(wl)) or np.any(np.diff(wl) <= 0):
         raise ValueError("wavelengths must be finite and strictly ascending")
-    lo, hi = PAR_RANGE_NM
+    lo, hi = band_nm
     if wl[0] > lo or wl[-1] < hi:
+        what = "PAR" if band_nm == PAR_RANGE_NM else "the band"
         raise ValueError(
-            f"wavelengths cover {wl[0]:g}-{wl[-1]:g} nm; PAR needs "
-            f"{lo:g}-{hi:g} nm, and the rest of the band is not extrapolated"
+            f"wavelengths cover {wl[0]:g}-{wl[-1]:g} nm; {what} needs "
+            f"{lo:g}-{hi:g} nm, and what is missing is not extrapolated"
         )
     surface = np.array(surface_downwelling, dtype=float)
     if surface.shape != wl.shape:
         raise ValueError(
             "surface_downwelling must have the same shape as wavelengths")
     if np.any(surface < 0) or np.any(np.isinf(surface)):
-        # NaN, a gap, passes here and is refused below only if PAR rests on it.
+        # NaN, a gap, passes here and is refused below only if the band
+        # rests on it.
         raise ValueError(
             "downwelling irradiance must be finite and not negative")
 
-    # Only the samples that PAR rests on: those inside 400-700 nm and the
-    # one either side of each end. Kd is evaluated on these alone, so that
-    # a spectrum running past the Kd table, or a flagged Kd beyond 700 nm,
-    # neither refuses nor warns about light that PAR does not count.
+    # Only the samples the band rests on: those inside it and the one
+    # either side of each end. Kd is evaluated on these alone, so that a
+    # spectrum running past the Kd table, or a flagged Kd beyond the band,
+    # neither refuses nor warns about light that is not counted.
     near = np.zeros(wl.shape, dtype=bool)
     near[np.searchsorted(wl, lo, side="right") - 1:
          np.searchsorted(wl, hi, side="left") + 1] = True
@@ -260,7 +283,7 @@ def par_profile(surface_downwelling, wavelengths, depths_m, *, kd,
         descent = kd
 
         def optical_depth(z):
-            # The descent's own layers, on the samples PAR rests on only.
+            # The descent's own layers, on the samples the band rests on only.
             return descent._optical_depth(z, near)
 
         kd_values = (np.vstack([v[near] for v in kd._kd]) if kd._kd
@@ -285,23 +308,42 @@ def par_profile(surface_downwelling, wavelengths, depths_m, *, kd,
         def optical_depth(z):
             return kd_values * z
 
-    # The band: every sample inside 400-700 nm, plus the two ends.
+    # The grid: every sample inside the band, plus its two ends.
     inside = (wl > lo) & (wl < hi)
-    band = np.concatenate(([lo], wl[inside], [hi]))
+    grid = np.concatenate(([lo], wl[inside], [hi]))
     for name, values in (("surface_downwelling", surface[near]),
                          ("Kd", kd_values)):
         if np.any(np.isnan(values)):
             raise MissingQuantityError(
-                f"{name} has a gap between {lo:g} and {hi:g} nm, so PAR, "
-                "which integrates over all of it, is not determined"
+                f"{name} has a gap between {lo:g} and {hi:g} nm, so the "
+                "photon flux, which integrates over all of it, is not "
+                "determined"
             )
-    surface_q = np.interp(band, sub_wl,
+    surface_q = np.interp(grid, sub_wl,
                           _photons(surface[near], sub_wl, unit))
 
     def tau(z):
-        return np.interp(band, sub_wl, optical_depth(z))
+        return np.interp(grid, sub_wl, optical_depth(z))
 
-    return ParProfile(depths, band, surface_q, tau, deepest, kd_from)
+    return ParProfile(depths, band_nm, grid, surface_q, tau, deepest,
+                      kd_from)
+
+
+def _band(band) -> tuple[float, float]:
+    """``(lo, hi)`` as two floats, lo below hi, both finite and positive."""
+    try:
+        values = np.array(band, dtype=float)
+    except (TypeError, ValueError):
+        raise ValueError(
+            f"band must be (lo, hi) in nm, not {band!r}") from None
+    if values.shape != (2,):
+        raise ValueError(f"band must be (lo, hi) in nm, not {band!r}")
+    _require_number(values, "band")
+    lo, hi = float(values[0]), float(values[1])
+    if not (np.isfinite(lo) and np.isfinite(hi)) or lo <= 0 or hi <= lo:
+        raise ValueError(
+            f"band must be (lo, hi) with 0 < lo < hi, finite, not {band!r}")
+    return lo, hi
 
 
 QUANTA_BAND_NM = (350.0, 700.0)
@@ -314,7 +356,8 @@ class QuantaLevels:
 
     Built by :func:`jerlov1977_quanta`. Every depth is in m, every
     coefficient in 1/m, and the band is 350-700 nm, :data:`QUANTA_BAND_NM`,
-    not the 400-700 nm of :func:`par_profile`.
+    not the 400-700 nm of PAR. To compare, pass ``band=QUANTA_BAND_NM`` to
+    :func:`par_profile`.
     """
 
     water_type: str

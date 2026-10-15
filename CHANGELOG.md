@@ -4,6 +4,40 @@ Every release is archived on Zenodo under the concept DOI
 [10.5281/zenodo.22321312](https://doi.org/10.5281/zenodo.22321312), which
 always resolves to the latest version.
 
+## 0.10.0 — 2026-10-15
+
+PAR over another band. No shipped value changed; one figure an example
+printed was off by a rounding, and is corrected.
+
+**Added.**
+
+- `par_profile(..., band=(lo, hi))`: the photon flux over any band, not
+  only PAR's 400-700 nm, which stays the default. The ends are
+  interpolated, and nothing outside the band is read, as before.
+  `ParProfile.band_nm` records the band, and the repr names it when it is
+  not 400-700 nm. `band=jerlov.QUANTA_BAND_NM` integrates over the band of
+  Jerlov's quanta meters.
+
+**Fixed.**
+
+- `euphotic_zone.py` took the share of each colour of PAR by zeroing the
+  surface spectrum outside it, which divided the light near each boundary
+  between the two colours by a ramp rather than at the boundary. With
+  `band=` each share is the integral over its colour, and violet-blue at
+  the 1 percent depth is 88 percent, not 87.
+
+**Changed.**
+
+- `euphotic_zone.py` section 4 now compares with Jerlov's quanta tables
+  over his own band, 350-700 nm, rather than over PAR's: within 1.8
+  percentage points down to 10 m, and the 1 percent level at 100 m
+  against his 87, 15 percent deeper, as DATA.md section 22 has it. Over
+  PAR's band it was 101 m; the band is not what separates them.
+- `tests/test_quanta.py` uses `band=` instead of integrating by hand.
+
+**Docs.** DECISIONS.md section 32: why the band has a default when the
+unit has none, and why the result is still called `par`.
+
 ## 0.9.6 — 2026-10-15
 
 The euphotic-zone example checked against a measurement, and the year of

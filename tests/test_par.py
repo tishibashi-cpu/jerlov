@@ -165,3 +165,89 @@ def test_light_outside_the_band_neither_refuses_nor_warns():
                               unit="photons").par == pytest.approx(
         jerlov.par_profile(np.ones_like(wide), wide, 1.0, kd=kd,
                            unit="photons").par)
+
+
+# -- other bands -------------------------------------------------------------
+
+WIDE = np.arange(300.0, 801.0, 5.0)
+
+
+def test_the_default_band_is_par():
+    assert jerlov.PAR_RANGE_NM == (400.0, 700.0)
+    p = jerlov.par_profile(FLAT, WL, 0.0, kd=FLAT, unit="photons")
+    q = jerlov.par_profile(FLAT, WL, 0.0, kd=FLAT, unit="photons",
+                           band=(400, 700))
+    assert p.band_nm == q.band_nm == (400.0, 700.0)
+    assert p.par == q.par and repr(p) == repr(q)
+    assert " over " not in repr(p)
+
+
+def test_another_band_is_the_same_integral_over_it():
+    """350-700 nm, Jerlov's quanta band, is the photon flux there,
+    integrated by hand here; the band's ends are interpolated."""
+    wl = np.arange(300.0, 711.0, 5.0)
+    surface = np.interp(wl, *jerlov.d65())
+    kd = jerlov.water("II", source="jerlov1976").kd(wl)
+    p = jerlov.par_profile(surface, wl, [0.0, 10.0], kd=kd,
+                           unit="photons", band=jerlov.QUANTA_BAND_NM)
+    inside = (wl >= 350) & (wl <= 700)
+    by_hand = [_data.trapezoid((surface * np.exp(-kd * z))[inside],
+                               wl[inside]) for z in (0.0, 10.0)]
+    assert p.par == pytest.approx(by_hand, rel=1e-12)
+    assert p.band_nm == (350.0, 700.0)
+    assert repr(p).startswith("<ParProfile surface") and \
+        " over 350-700 nm, 2 depths" in repr(p)
+    flat = jerlov.par_profile(np.ones_like(WIDE), WIDE, 0.0, unit="photons",
+                              kd=np.zeros_like(WIDE), band=(402.5, 497.5))
+    assert flat.surface_par == pytest.approx(95.0)
+    narrow = jerlov.par_profile(FLAT, WL, [0.0, 10.0], unit="photons",
+                                kd=np.full_like(WL, 0.1), band=(400.2, 400.7))
+    assert narrow.surface_par == pytest.approx(0.5)
+    assert narrow.fraction[1] == pytest.approx(np.exp(-1.0))
+
+
+def test_the_colours_of_par_add_up_to_par():
+    d = jerlov.descend("IA", 100.0, WL)
+    surface = np.interp(WL, *jerlov.d65())
+    whole = jerlov.par_profile(surface, WL, [0.0, 50.0, 100.0], kd=d,
+                               unit="energy")
+    parts = [jerlov.par_profile(surface, WL, [0.0, 50.0, 100.0], kd=d,
+                                unit="energy", band=b).par
+             for b in ((400, 500), (500, 600), (600, 700))]
+    assert sum(parts) == pytest.approx(whole.par, rel=1e-12)
+
+
+def test_only_the_band_needs_data():
+    """Kd missing below 380 nm and above 520 nm, and a flagged one past
+    them, do not matter to 400-500 nm."""
+    kd = np.full_like(WIDE, 0.05)
+    kd[(WIDE < 380) | (WIDE > 520)] = np.nan
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        p = jerlov.par_profile(np.ones_like(WIDE), WIDE, 10.0, kd=kd,
+                               unit="photons", band=(400, 500))
+    assert p.fraction == pytest.approx(np.exp(-0.5))
+    with pytest.raises(jerlov.MissingQuantityError,
+                       match="gap between 400 and 600 nm"):
+        jerlov.par_profile(np.ones_like(WIDE), WIDE, 10.0, kd=kd,
+                           unit="photons", band=(400, 600))
+    with pytest.raises(ValueError, match="the band needs 350-700"):
+        jerlov.par_profile(FLAT, WL, 0.0, kd=FLAT, unit="photons",
+                           band=jerlov.QUANTA_BAND_NM)
+
+
+def test_a_band_that_is_not_one_is_refused():
+    for bad in ((700, 400), (400, 400), (0, 700), (-1, 700), (np.inf, 700),
+                (400, np.nan), (400,), (400, 500, 600), "400-700", None,
+                ((1, 2), (3, 4))):
+        with pytest.raises(ValueError, match="band"):
+            jerlov.par_profile(FLAT, WL, 0.0, kd=FLAT, unit="photons",
+                               band=bad)
+
+
+def test_the_band_given_is_not_changed():
+    band = np.array([400.0, 500.0])
+    p = jerlov.par_profile(FLAT, WL, 0.0, kd=FLAT, unit="photons",
+                           band=band)
+    band[0] = 450.0
+    assert p.band_nm == (400.0, 500.0)

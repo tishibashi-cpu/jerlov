@@ -133,7 +133,9 @@ rule("4. Against what Jerlov measured")
 print(f"""Jerlov (1977) arranged profiles of quanta irradiance, measured with
 quanta meters at stations in fourteen regions, by water type, and tabulated
 the percentage left at depth. `jerlov1977_quanta` returns his tables; here
-they are set beside the profile above, for his {TYPE}.""")
+they are set beside the same descent, for his {TYPE}. His meters counted
+350-700 nm, not PAR's 400-700, so the computed column is integrated over
+his band, with `band=jerlov.QUANTA_BAND_NM`.""")
 
 with warnings.catch_warnings(record=True) as caught:
     warnings.simplefilter("always", jerlov.ProvenanceWarning)
@@ -144,9 +146,13 @@ if caught:
     print("""  That is a coefficient of his Table 5, which is not used below; the
   percentages and the depths of each level are.""")
 
+WIDE = np.arange(350.0, 701.0, 5.0)
+descent_q = jerlov.descend(TYPE, 200.0, WIDE)
 shown = measured_q.profile_depth_m[measured_q.profile_depth_m > 0]
-computed = jerlov.par_profile(SURFACE, BAND, shown, kd=descent,
-                              unit="energy").fraction
+quanta = jerlov.par_profile(np.interp(WIDE, *jerlov.d65()), WIDE, shown,
+                            kd=descent_q, unit="energy",
+                            band=jerlov.QUANTA_BAND_NM)
+computed = quanta.fraction
 print(f"\n  {'depth':>7} {'Jerlov':>8} {'here':>8}")
 for z, m, c in zip(shown, measured_q.profile_percent[1:], 100 * computed):
     print(f"  {z:>5.0f} m {m:>7.1f}% {c:>7.1f}%")
@@ -154,7 +160,7 @@ for z, m, c in zip(shown, measured_q.profile_percent[1:], 100 * computed):
 print(f"\n  {'level':>7} {'Jerlov':>8} {'here':>8}")
 level_here = []
 for level, z_m in zip(measured_q.level_percent, measured_q.level_depth_m):
-    z_c = layered.depth_of_fraction(level / 100)
+    z_c = quanta.depth_of_fraction(level / 100)
     level_here.append(z_c)
     print(f"  {level:>6g}% {z_m:>6.1f} m {z_c:>6.1f} m")
 
@@ -164,18 +170,18 @@ gap_top = np.max(np.abs(measured_q.profile_percent[1:][top]
 deepest_shown = shown[-1]
 ratio_deep = 100 * computed[-1] / measured_q.profile_percent[-1]
 z1_jerlov = measured_q.level_depth_m[-1]
-first_other = next(lo for lo, _, t in descent.layers if t != TYPE)
+first_other = next(lo for lo, _, t in descent_q.layers if t != TYPE)
 print(f"""
   Down to 10 m the two agree within {gap_top:.1f} percentage points. Below,
   the computed profile keeps more of the light, {ratio_deep:.1f} times as much as Jerlov
   measured at {deepest_shown:.0f} m, and puts the 1 percent level at {level_here[-1]:.0f} m against his
   {z1_jerlov:.0f}, {100 * (level_here[-1] / z1_jerlov - 1):.0f} percent deeper. That is with the type already turning less
-  clear below {first_other:g} m; with {TYPE} all the way down it is {rows[2][1]:.0f} m.
+  clear below {first_other:g} m. Over PAR's band the 1 percent depth is the
+  {rows[3][1]:.0f} m of section 2, so the band is not what separates them.
 
-  His meters counted 350-700 nm, not PAR's 400-700. DATA.md section 22
-  makes the same comparison over his band, for every type he measured, and
-  gets a 1 percent depth about a metre shallower than this one. It finds the
-  computed profile too deep for IA and IB, and does not know why.
+  DATA.md section 22 makes this comparison for every type Jerlov measured.
+  It finds the computed profile too deep for IA and IB, and does not know
+  why.
 
   His percentages are means over stations, and this water was put in {TYPE}
   from one reading, so neither column is your station. But his column is
@@ -185,8 +191,8 @@ print(f"""
 rule("5. What colour is the light at the bottom?")
 
 print("""Photosynthetic pigments do not absorb all of PAR equally, so the
-colour of what is left matters as much as how much. Passing the surface
-spectrum through one band at a time gives each band's share.""")
+colour of what is left matters as much as how much. `band=` integrates over
+part of PAR, which gives each colour's share.""")
 
 z1 = layered.depth_of_fraction()
 bands = (("violet-blue", 400.0, 500.0), ("green", 500.0, 600.0),
@@ -196,9 +202,8 @@ total = jerlov.par_profile(SURFACE, BAND, [0.0, z1], kd=descent,
                            unit="energy").par
 shares = {}
 for name, lo, hi in bands:
-    mask = (BAND >= lo) & ((BAND < hi) if hi < 700 else True)
-    part = jerlov.par_profile(SURFACE * mask, BAND, [0.0, z1], kd=descent,
-                              unit="energy").par
+    part = jerlov.par_profile(SURFACE, BAND, [0.0, z1], kd=descent,
+                              unit="energy", band=(lo, hi)).par
     shares[name] = part / total
     print(f"  {name:>12} {shares[name][0]:>8.0%} {shares[name][1]:>9.0%}")
 
@@ -206,9 +211,7 @@ print(f"""
   At the surface the three bands are comparable. At the bottom of the
   euphotic zone {shares["violet-blue"][1]:.0%} of what is left is violet-blue and the orange-red
   is gone, so the red absorption band of chlorophyll a, near 675 nm,
-  receives almost none; only its blue band, near 440 nm, has light to use.
-  (Each band's edge samples are shared by the trapezoid rule, so a column
-  can miss 100 percent by a rounding.)""")
+  receives almost none; only its blue band, near 440 nm, has light to use.""")
 
 # --------------------------------------------------------------------------
 rule("6. Which edition of the classification?")
