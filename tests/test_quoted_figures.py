@@ -660,3 +660,48 @@ def test_DECISIONS_figures_for_requiring_the_face_ratio():
                 face_irradiance_ratio=ratio)
             return y(seen.radiance) - y(water)
         assert start(1.0) > 0 > start(0.05)
+
+
+def test_figures_for_the_ultraviolet_example():
+    """examples/README.md: 8 of 10 types covered, 7C and 9C not; UV-A
+    reaches 0.61-0.76 of PAR's 1 percent depth in the oceanic types and
+    0.22-0.25 in the coastal; at PAR's 10 percent depth 3.3-7.0 percent of
+    the UV-A is left against 0.04-0.05; the step is between III and 1C,
+    where the clearest UV-A goes from 1.6 to 4.2 times the clearest PAR."""
+    wl = np.arange(310.0, 701.0, 5.0)
+    surface = np.interp(wl, *jerlov.d65())
+    share, left, gaps = {}, {}, []
+    for t in ("I", "IA", "IB", "II", "III", "1C", "3C", "5C", "7C", "9C"):
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", jerlov.ProvenanceWarning)
+            d = jerlov.descend(t, jerlov.profile_depth(t), wl)
+            try:
+                uva = jerlov.par_profile(surface, wl, 0.0, kd=d,
+                                         unit="energy", band=(315, 400))
+            except jerlov.MissingQuantityError:
+                gaps.append(t)
+                continue
+        par = jerlov.par_profile(surface, wl, 0.0, kd=d, unit="energy")
+        share[t] = uva.depth_of_fraction(0.01) / par.depth_of_fraction(0.01)
+        z = par.depth_of_fraction(0.1)
+        left[t] = jerlov.par_profile(surface, wl, [0.0, z], kd=d,
+                                     unit="energy",
+                                     band=(315, 400)).fraction[1]
+    assert gaps == ["7C", "9C"] and len(share) == 8
+    oceanic, coastal = ("I", "IA", "IB", "II", "III"), ("1C", "3C", "5C")
+
+    def span(values, digits):
+        return (round(min(values), digits), round(max(values), digits))
+    assert span([share[t] for t in oceanic], 2) == (0.61, 0.76)
+    assert span([share[t] for t in coastal], 2) == (0.22, 0.25)
+    assert span([100 * left[t] for t in oceanic], 1) == (3.3, 7.0)
+    assert span([100 * left[t] for t in coastal], 2) == (0.04, 0.05)
+    names = list(share)
+    steps = [share[a] - share[b] for a, b in zip(names, names[1:])]
+    assert names[int(np.argmax(steps))] == "III"
+    uv, vis = (wl >= 315) & (wl <= 400), (wl >= 400) & (wl <= 700)
+    ratio = {t: (lambda k: k[uv].min() / k[vis].min())(
+        jerlov.water(t, source="jerlov1976").kd(wl)) for t in ("III", "1C")}
+    assert (round(ratio["III"], 1), round(ratio["1C"], 1)) == (1.6, 4.2)
+    assert round(min(left[t] for t in oceanic)
+                 / max(left[t] for t in coastal)) == 67

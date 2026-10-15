@@ -1,6 +1,6 @@
 # Examples
 
-Thirteen scripts. Each runs against the installed package and needs nothing beyond
+Fourteen scripts. Each runs against the installed package and needs nothing beyond
 NumPy.
 
 ```
@@ -17,6 +17,7 @@ python examples/optical_link.py
 python examples/seagrass_depth_limit.py
 python examples/isolumes.py
 python examples/lure_colours.py
+python examples/ultraviolet.py
 ```
 
 CI runs all of them on every push, so an example that has stopped working is a
@@ -44,6 +45,7 @@ copy of the package silently wins over the working tree. In a clone, run
 | work on seagrass, or on restoring a meadow | `seagrass_depth_limit.py` |
 | study vertical migration, or where animals sit in the light | `isolumes.py` |
 | design or test painted fishing lures or other gear | `lure_colours.py` |
+| study ultraviolet exposure under water, of reefs, plankton or chemistry | `ultraviolet.py` |
 
 ## What each shows
 
@@ -163,6 +165,15 @@ starts: with the light on the lure's side and the water's backscatter
 ratio as guesses, the same finish starts anywhere across a factor of
 **124**, and red, blue and black change sign. It says so, and suggests
 measuring the start instead.
+
+**`ultraviolet.py`** — how deep UV-A (315-400 nm) goes against PAR in each
+Jerlov type, with `par_profile(..., band=)` and the depth profile of
+`descend`. Jerlov's (1976) Kd covers UV-A for 8 of the 10 types; 7C and 9C
+have none below 350 nm and are left out. UV-A reaches **0.61 to 0.76** of
+PAR's 1 percent depth in the oceanic types and **0.22 to 0.25** in the
+coastal ones, and where PAR is down to 10 percent, 3.3 to 7.0 percent of
+the surface UV-A is left in the open ocean against 0.04 to 0.05 percent on
+the coast.
 
 ## What they do not show
 

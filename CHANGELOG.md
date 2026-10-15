@@ -4,6 +4,29 @@ Every release is archived on Zenodo under the concept DOI
 [10.5281/zenodo.22321312](https://doi.org/10.5281/zenodo.22321312), which
 always resolves to the latest version.
 
+## 0.12.1 — 2026-10-15
+
+An example for ultraviolet light under water. No code or shipped value
+changed.
+
+**Examples.** `ultraviolet.py`, for work on ultraviolet exposure under
+water: reefs, plankton and larvae near the surface, photochemistry. It
+integrates UV-A, 315-400 nm as the CIE defines it, and PAR with
+`par_profile(..., band=)`, layer by layer through `descend`.
+
+- Jerlov's (1976) Kd covers UV-A for 8 of the 10 types. 7C and 9C have no
+  Kd below 350 nm, and are left out rather than filled in. UV-B is not
+  covered for any type.
+- UV-A reaches 0.61 to 0.76 of PAR's 1 percent depth in the oceanic types
+  and 0.22 to 0.25 in the coastal ones. The step is between III and 1C:
+  the clearest UV-A is 1.6 times as attenuated as the clearest PAR in III,
+  and 4.2 times in 1C.
+- Where PAR is down to 10 percent, 3.3 to 7.0 percent of the surface UV-A
+  is left in the oceanic types, and 0.04 to 0.05 percent in the coastal
+  ones.
+
+The READMEs count fourteen examples; the figures quoted are tested.
+
 ## 0.12.0 — 2026-10-15
 
 `face_irradiance_ratio` is required. No shipped value changed, and no
