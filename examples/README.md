@@ -120,8 +120,11 @@ behind), `descend` follows it as it turns IB below 30 m, and `par_profile`
 attenuates PAR wavelength by wavelength. The usual shortcut, 4.6 / Kd(490),
 puts the 1 percent level at **154 m**; PAR, layer by layer, at **101 m**. At
 that depth 87 percent of what is left is violet-blue and the red band of
-chlorophyll a gets almost nothing. Three editions of the classification are
-compared, and agree here; at Kd(490) = 0.045 they do not.
+chlorophyll a gets almost nothing. Set beside the quanta irradiance Jerlov
+measured in IA water (`jerlov1977_quanta`), the profile agrees within 3.1
+percentage points down to 10 m and then keeps too much light: its 1 percent
+level is **101 m** against his **87 m**. Three editions of the classification
+are compared, and agree here; at Kd(490) = 0.045 they do not.
 
 **`optical_link.py`** — beam attenuation at common laser lines, and the
 range a loss budget buys: each attenuation length costs 4.34 dB, so 40 dB
