@@ -211,7 +211,8 @@ def test_water_reddens_nothing_and_blues_everything():
     b_inf = jerlov.veiling_radiance_estimate(
         iops, scene.downwelling, wl, backscatter_ratio=0.015
     )
-    obs = scene.observe(np.full_like(wl, 0.5), 3.0, veiling_radiance=b_inf)
+    obs = scene.observe(np.full_like(wl, 0.5), 3.0, veiling_radiance=b_inf,
+                        face_irradiance_ratio=1.0)
 
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")

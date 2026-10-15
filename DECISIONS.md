@@ -756,3 +756,41 @@ gap or a flagged Kd outside it neither refuses nor warns.
 same integral with another pair of numbers, and a shortcut for one
 instrument's band would invite one for each.
 
+## 33. The light on the target's face is the caller's
+
+`Scene.observe` gave the radiance leaving a target as
+`reflectance * Ed / pi`: the face the observer sees was taken to receive
+the whole downwelling irradiance. That is true of a face turned straight
+up. The observer looks horizontally, so the face is usually vertical, and
+receives only part of Ed, how much depending on the light field and on how
+the target is turned. `lure_colours.py` (0.9.5) found that this share and
+the backscatter ratio together move where a finish's contrast starts by up
+to a factor of 124 among the finishes that keep their sign, and change the
+sign for three of the six. It worked
+around the assumption by scaling Ed before building the scene.
+
+**It is now an argument, `face_irradiance_ratio`**: the irradiance on the
+face divided by Ed. A ratio rather than an irradiance, so that Ed stays
+what `Scene.at_depth`, `descend` and `veiling_radiance_estimate` mean by it,
+and the veiling light is not dimmed along with the target, which is the
+mistake scaling Ed invites. It may be an array on the scene's wavelengths,
+since the shares of direct and diffuse light change with wavelength. It has
+no upper bound: a face turned towards the sun receives more than a
+horizontal one.
+
+**It will have no default, as `bb` has none (section 4)**, but not yet.
+Every release up to 0.10.0 took it as 1 without saying so, and code
+written against them should not stop without notice. Leaving it out still
+takes it as 1, with a `FutureWarning` naming the argument; a later release
+will make it required. The examples now pass it, 1.0 where they had relied
+on the old behaviour, and say so among their assumptions.
+
+**Rejected:** an angle instead of a ratio. Turning the orientation of a
+face into the light it receives needs the radiance distribution, which
+nothing here determines, for the same reason the veiling light needs a
+phase function (section 13).
+
+**Rejected:** a default other than 1, such as the 0.25 `lure_colours.py`
+uses. It would be no less a guess, and would change every existing result
+without a warning.
+

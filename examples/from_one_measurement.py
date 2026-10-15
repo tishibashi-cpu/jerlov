@@ -234,7 +234,8 @@ for label, ratio in (("guessed 0.015", 0.015),
         veiling, contrast = [], []
         for distance in (2.0, 5.0, 10.0):
             observed = scene.observe(np.full_like(wl, 0.5), distance,
-                                     veiling_radiance=b_inf)
+                                     veiling_radiance=b_inf,
+                                     face_irradiance_ratio=1.0)
             veiling.append(np.mean(observed.veiling_fraction))
             contrast.append(np.mean(np.abs(observed.contrast(0.1 * white))))
     at_five[label] = contrast[1]
@@ -308,4 +309,9 @@ print("""  - The Kd reconstruction is a two-parameter model fitted to Pacific an
   - Measuring bb tells you about the water you were in. It still gives no bb
     for a Jerlov water type, because a water type is defined by Kd and Kd
     barely depends on bb. DATA.md sections 10 and 18.
+  - In part 5 the target's visible face receives all of the downwelling
+    irradiance, face_irradiance_ratio=1.0, as a face turned straight up
+    would. One turned towards a horizontal line of sight receives less, by
+    an amount the water type does not fix; lure_colours.py shows how much
+    rests on it.
 """)

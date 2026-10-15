@@ -4,6 +4,34 @@ Every release is archived on Zenodo under the concept DOI
 [10.5281/zenodo.22321312](https://doi.org/10.5281/zenodo.22321312), which
 always resolves to the latest version.
 
+## 0.11.0 — 2026-10-15
+
+The light falling on a target's visible face is stated rather than assumed.
+No shipped value changed, and no example's output changed.
+
+**Added.**
+
+- `Scene.observe(..., face_irradiance_ratio=...)`: the irradiance on the
+  face of the target the observer sees, divided by the downwelling
+  irradiance, as a number or an array on the scene's wavelengths. It scales
+  the target's radiance and nothing else; the veiling light is unchanged.
+
+**Changed.**
+
+- Leaving `face_irradiance_ratio` out takes it as 1, a face turned
+  straight up, as every earlier release did without saying so, and now
+  warns with `FutureWarning`. A later release will require it. DECISIONS.md
+  section 33.
+- `lure_colours.py` passes its share of the light on the lure's side as
+  `face_irradiance_ratio` instead of scaling the downwelling irradiance
+  before building the scene; the output is the same.
+- `from_one_measurement.py`, `measured_scattering.py` and
+  `synthetic_underwater_images.py` pass 1.0, which keeps their output, and
+  list it among their assumptions.
+
+**Docs.** DECISIONS.md section 33; the README and the `jerlov.scene`
+docstring describe the argument.
+
 ## 0.10.0 — 2026-10-15
 
 PAR over another band. No shipped value changed; one figure an example

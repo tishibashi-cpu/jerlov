@@ -95,7 +95,8 @@ grey = np.full(wl.size, 0.3)
 def contrast_at(ratio):
     b_inf = jerlov.veiling_radiance_estimate(
         w, scene.downwelling, wl, backscatter_ratio=ratio)
-    seen = scene.observe(grey, 5.0, veiling_radiance=b_inf)
+    seen = scene.observe(grey, 5.0, veiling_radiance=b_inf,
+                         face_irradiance_ratio=1.0)
     i = int(np.argmin(np.abs(wl - 550.0)))
     return seen.veiling_fraction[i], seen.contrast(b_inf)[i]
 
@@ -142,6 +143,10 @@ print("""  - These are eight waters on eight days in 1971. A measured ratio from
   - None of the stations is a Jerlov type, and none is mapped to one.
   - The veiling light still comes from the single-scattering estimate,
     whose flat backward half section 2 shows is not.
+  - The target's visible face receives all of the downwelling irradiance,
+    face_irradiance_ratio=1.0, as a face turned straight up would. One
+    turned towards a horizontal line of sight receives less, by an amount
+    the water type does not fix; lure_colours.py shows how much rests on it.
 
   Every one of these is a choice you can replace with a measurement.
 """)

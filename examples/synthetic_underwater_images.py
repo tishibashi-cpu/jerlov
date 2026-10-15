@@ -122,7 +122,8 @@ for name, reflectance in PATCHES.items():
     for distance in distances:
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
-            observed = scene.observe(rho, distance, veiling_radiance=veiling)
+            observed = scene.observe(rho, distance, veiling_radiance=veiling,
+                                     face_irradiance_ratio=1.0)
             cells.append(swatch(jerlov.spectrum_to_srgb(
                 observed.radiance, WAVELENGTHS, white=surface_white)))
     print(f"  {name:>12}  " + "  ".join(cells))
@@ -140,7 +141,8 @@ for name, reflectance in PATCHES.items():
     for distance in distances:
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
-            observed = scene.observe(rho, distance, veiling_radiance=veiling)
+            observed = scene.observe(rho, distance, veiling_radiance=veiling,
+                                     face_irradiance_ratio=1.0)
             cells.append(swatch(jerlov.spectrum_to_srgb(
                 observed.radiance, WAVELENGTHS, white=local_white)))
     print(f"  {name:>12}  " + "  ".join(cells))
@@ -154,7 +156,8 @@ dark = 0.10 * scene.downwelling / np.pi
 for distance in distances[1:]:
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
-        observed = scene.observe(rho, distance, veiling_radiance=veiling)
+        observed = scene.observe(rho, distance, veiling_radiance=veiling,
+                                 face_irradiance_ratio=1.0)
     print(f"  {distance:>6.0f} m {np.mean(observed.veiling_fraction):>14.1%} "
           f"{np.mean(np.abs(observed.contrast(dark))):>22.3f}")
 
@@ -192,6 +195,10 @@ print("""  This computes what the published coefficients imply. It has not been
   - The path is horizontal, the target Lambertian, and there is no
     forward-scatter blur. This is the radiance of one point, not the
     sharpness of an image.
+  - The target's visible face receives all of the downwelling irradiance,
+    face_irradiance_ratio=1.0, as a face turned straight up would. One
+    turned towards a horizontal line of sight receives less, by an amount
+    the water type does not fix; lure_colours.py shows how much rests on it.
   - The surface spectrum is CIE D65. The real one depends on solar elevation,
     atmosphere and the state of the surface.
   - The reflectance spectra above are smooth inventions. Use measured ones.
