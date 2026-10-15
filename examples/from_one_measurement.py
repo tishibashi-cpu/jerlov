@@ -214,9 +214,7 @@ print("""
 
 surface = np.interp(wl, *jerlov.d65(), left=0.0, right=0.0)
 kd_source = jerlov.water("II", source="austin1986")
-with warnings.catch_warnings():
-    warnings.simplefilter("ignore", jerlov.ProvenanceWarning)
-    scene = jerlov.Scene.at_depth(mine, 8.0, surface, wl, kd=kd_source)
+scene = jerlov.Scene.at_depth(mine, 8.0, surface, wl, kd=kd_source)
 white = scene.downwelling / np.pi
 
 print("""
@@ -227,17 +225,15 @@ print(f"  {'':>18}" + "".join(f"{d:>10.0f} m" for d in (2.0, 5.0, 10.0)))
 at_five = {}
 for label, ratio in (("guessed 0.015", 0.015),
                      (f"measured {bb_over_b:.3f}", bb_over_b)):
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore")
-        b_inf = jerlov.veiling_radiance_estimate(
-            mine, scene.downwelling, wl, backscatter_ratio=ratio)
-        veiling, contrast = [], []
-        for distance in (2.0, 5.0, 10.0):
-            observed = scene.observe(np.full_like(wl, 0.5), distance,
-                                     veiling_radiance=b_inf,
-                                     face_irradiance_ratio=1.0)
-            veiling.append(np.mean(observed.veiling_fraction))
-            contrast.append(np.mean(np.abs(observed.contrast(0.1 * white))))
+    b_inf = jerlov.veiling_radiance_estimate(
+        mine, scene.downwelling, wl, backscatter_ratio=ratio)
+    veiling, contrast = [], []
+    for distance in (2.0, 5.0, 10.0):
+        observed = scene.observe(np.full_like(wl, 0.5), distance,
+                                 veiling_radiance=b_inf,
+                                 face_irradiance_ratio=1.0)
+        veiling.append(np.mean(observed.veiling_fraction))
+        contrast.append(np.mean(np.abs(observed.contrast(0.1 * white))))
     at_five[label] = contrast[1]
     print(f"  {label:>16}  " + "".join(f"{v:>11.1%}" for v in veiling)
           + "   veiling")
@@ -259,11 +255,9 @@ spectrum is from yours: the root mean square of ln(yours / theirs). It does
 not draw boundaries, which differ between the editions of the
 classification; it says which edition it compared with.""")
 
-with warnings.catch_warnings():
-    warnings.simplefilter("ignore", jerlov.ProvenanceWarning)
-    one = jerlov.classify_kd(at_nm, measured_kd)
-    band = np.arange(400.0, 651.0, 10.0)
-    whole = jerlov.classify_kd(band, jerlov.kd_spectrum(measured_kd, at_nm, band))
+one = jerlov.classify_kd(at_nm, measured_kd)
+band = np.arange(400.0, 651.0, 10.0)
+whole = jerlov.classify_kd(band, jerlov.kd_spectrum(measured_kd, at_nm, band))
 
 print(f"\n  Kd({at_nm}) alone:            {one!r}")
 print(f"  the reconstructed spectrum: {whole!r}")
@@ -272,11 +266,9 @@ far = dict(whole.distances)
 for water_type, distance in one.distances[:5]:
     print(f"  {water_type:>5} {distance:>15.3f} {far[water_type]:>11.3f}")
 
-with warnings.catch_warnings():
-    warnings.simplefilter("ignore", jerlov.ProvenanceWarning)
-    iii, c1 = (jerlov.water(t, source="jerlov1976") for t in ("III", "1C"))
-    at_490 = c1.kd(490.0) / iii.kd(490.0)
-    at_440 = c1.kd(440.0) / iii.kd(440.0)
+iii, c1 = (jerlov.water(t, source="jerlov1976") for t in ("III", "1C"))
+at_490 = c1.kd(490.0) / iii.kd(490.0)
+at_440 = c1.kd(440.0) / iii.kd(440.0)
 print(f"""
   Closest is not the same as equal. One wavelength ranks the types, but it
   sees only one dimension of them: the Kd of 1C is {at_490:.2f} times that of

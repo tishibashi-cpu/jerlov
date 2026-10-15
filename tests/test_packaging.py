@@ -326,6 +326,26 @@ def test_examples_use_only_the_public_api():
 
 
 @source_tree
+def test_examples_do_not_silence_every_warning():
+    """Up to 0.14.2 four places in two examples ignored every warning, and
+    six more ignored ProvenanceWarning where nothing raised one. A warning
+    an example expects is caught by its category and said in its text; one
+    it does not expect should reach the reader. DECISIONS.md section 37."""
+    offenders = []
+    for path in sorted(ROOT.glob("examples/*.py")):
+        for number, line in enumerate(path.read_text().splitlines(), 1):
+            if re.search(r"simplefilter\(\s*[\"']ignore[\"']\s*\)", line):
+                offenders.append(f"{path.name}:{number}")
+    assert not offenders, f"examples ignoring every warning: {offenders}"
+
+
+@source_tree
+def test_CI_runs_the_examples_with_provenance_warnings_as_errors():
+    workflow = (ROOT / ".github" / "workflows" / "test.yml").read_text()
+    assert "simplefilter('error', jerlov.ProvenanceWarning)" in workflow
+
+
+@source_tree
 def test_the_python_classifiers_are_the_versions_CI_runs():
     """PyPI shows these. A version listed but never tested is a claim, as
     section 15 of DECISIONS.md found for numpy; one tested but not listed

@@ -880,3 +880,29 @@ Which spectrum applies is a property of the algae, not of the water type,
 so the type cannot choose it, for the same reason it cannot choose `bb`
 (section 4). A caller with a measured spectrum passes it.
 
+## 37. An example does not silence a warning it does not explain
+
+The package warns rather than refuses when a value rests on a flagged
+datum (section 5), on a partly covered sensitivity, or on a colour outside
+sRGB. Those warnings are the provenance made visible, and an example that
+hides them shows the opposite habit. 0.14.2 found one doing so for a
+quantity it never used. Running every example with each `ignore` filter
+turned into a log, in 0.14.3, found the rest:
+
+- Six places in four examples ignored `ProvenanceWarning` where nothing
+  raised one. They hid nothing, but would have hidden whatever came next.
+  They are removed.
+- Four places in two examples ignored every warning. In
+  `synthetic_underwater_images.py` that hid a `CoverageWarning` on every
+  swatch, since the spectra stop at 412 nm, and a `GamutWarning` on 25 of
+  the 30 surface-balanced ones, and the text said neither. It now counts
+  them and says so under each table, as `lure_colours.py` already did. The
+  other two places, one in each example, hid nothing and are removed.
+
+What stays: catching a warning by its category and saying in the text what
+it was (`lure_colours.py`, `ultraviolet.py`, `euphotic_zone.py`), and
+turning one into an error to show it is not raised (`light_at_depth.py`,
+`from_one_measurement.py`). A test now refuses `simplefilter("ignore")`
+without a category in an example, and CI runs every example with
+`ProvenanceWarning` as an error, as the local checks already did.
+

@@ -14,6 +14,7 @@ Read the limits before using this for anything. They are listed at the end,
 and they are not small.
 """
 
+import textwrap
 import warnings
 
 import numpy as np
@@ -94,12 +95,45 @@ else:
           f"swapping to {deeper}\n  is one line, and that is the caller's "
           f"decision to make.")
 
-with warnings.catch_warnings():
-    warnings.simplefilter("ignore", jerlov.ProvenanceWarning)
-    scene = jerlov.Scene.at_depth(iops, depth_m, daylight, WAVELENGTHS, kd=kd)
-    veiling = jerlov.veiling_radiance_estimate(
-        iops, scene.downwelling, WAVELENGTHS, backscatter_ratio=backscatter_ratio
-    )
+scene = jerlov.Scene.at_depth(iops, depth_m, daylight, WAVELENGTHS, kd=kd)
+veiling = jerlov.veiling_radiance_estimate(
+    iops, scene.downwelling, WAVELENGTHS, backscatter_ratio=backscatter_ratio
+)
+
+# The spectra stop at 412 nm, where the CIE observer's blue channel still has
+# a little weight, and some underwater colours fall outside sRGB. Both warn
+# on every swatch; they are counted here and reported once below each table,
+# rather than repeated or hidden.
+seen_warnings = {"coverage": None, "clipped": 0, "swatches": 0}
+
+
+def srgb_swatch(radiance, white):
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always", jerlov.CoverageWarning)
+        warnings.simplefilter("always", jerlov.GamutWarning)
+        cell = swatch(jerlov.spectrum_to_srgb(radiance, WAVELENGTHS,
+                                              white=white))
+    seen_warnings["swatches"] += 1
+    for w in caught:
+        if issubclass(w.category, jerlov.CoverageWarning):
+            seen_warnings["coverage"] = str(w.message).split(". The integral")[0]
+        elif issubclass(w.category, jerlov.GamutWarning):
+            seen_warnings["clipped"] += 1
+        else:
+            warnings.warn_explicit(w.message, w.category, w.filename,
+                                   w.lineno)
+    return cell
+
+
+def report_swatches():
+    print()
+    if seen_warnings["coverage"]:
+        note = seen_warnings["coverage"]
+        print(textwrap.fill(f"{note[0].upper() + note[1:]}.", width=76,
+                            initial_indent="  ", subsequent_indent="  "))
+    print(f"  {seen_warnings['clipped']} of {seen_warnings['swatches']} "
+          "swatches lie outside sRGB and are clipped.")
+    seen_warnings.update(coverage=None, clipped=0, swatches=0)
 
 # --------------------------------------------------------------------------
 rule("How the target's light is lost with range")
@@ -120,13 +154,11 @@ for name, reflectance in PATCHES.items():
     rho = reflectance(WAVELENGTHS)
     cells = []
     for distance in distances:
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore")
-            observed = scene.observe(rho, distance, veiling_radiance=veiling,
-                                     face_irradiance_ratio=1.0)
-            cells.append(swatch(jerlov.spectrum_to_srgb(
-                observed.radiance, WAVELENGTHS, white=surface_white)))
+        observed = scene.observe(rho, distance, veiling_radiance=veiling,
+                                 face_irradiance_ratio=1.0)
+        cells.append(srgb_swatch(observed.radiance, surface_white))
     print(f"  {name:>12}  " + "  ".join(cells))
+report_swatches()
 
 # --------------------------------------------------------------------------
 rule("What a camera white-balanced at depth would record")
@@ -139,13 +171,11 @@ for name, reflectance in PATCHES.items():
     rho = reflectance(WAVELENGTHS)
     cells = []
     for distance in distances:
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore")
-            observed = scene.observe(rho, distance, veiling_radiance=veiling,
-                                     face_irradiance_ratio=1.0)
-            cells.append(swatch(jerlov.spectrum_to_srgb(
-                observed.radiance, WAVELENGTHS, white=local_white)))
+        observed = scene.observe(rho, distance, veiling_radiance=veiling,
+                                 face_irradiance_ratio=1.0)
+        cells.append(srgb_swatch(observed.radiance, local_white))
     print(f"  {name:>12}  " + "  ".join(cells))
+report_swatches()
 
 # --------------------------------------------------------------------------
 rule("How much of what you see is just water")
@@ -154,10 +184,8 @@ rho = PATCHES["neutral 50%"](WAVELENGTHS)
 print(f"  {'range':>8} {'veiling share':>15} {'contrast vs 10% grey':>22}")
 dark = 0.10 * scene.downwelling / np.pi
 for distance in distances[1:]:
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore")
-        observed = scene.observe(rho, distance, veiling_radiance=veiling,
-                                 face_irradiance_ratio=1.0)
+    observed = scene.observe(rho, distance, veiling_radiance=veiling,
+                             face_irradiance_ratio=1.0)
     print(f"  {distance:>6.0f} m {np.mean(observed.veiling_fraction):>14.1%} "
           f"{np.mean(np.abs(observed.contrast(dark))):>22.3f}")
 

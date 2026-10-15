@@ -4,6 +4,33 @@ Every release is archived on Zenodo under the concept DOI
 [10.5281/zenodo.22321312](https://doi.org/10.5281/zenodo.22321312), which
 always resolves to the latest version.
 
+## 0.14.3 — 2026-10-15
+
+The examples no longer silence warnings they do not explain. No code or
+shipped value changed; one example prints two more lines under each of two
+tables.
+
+**Fixed.**
+
+- `synthetic_underwater_images.py` ignored every warning around its colour
+  swatches. That hid a `CoverageWarning` on each of them, since the spectra
+  stop at 412 nm where the CIE observer's blue channel still has 2 percent
+  of its weight, and a `GamutWarning` on 25 of the 30 swatches balanced to
+  the surface. It now catches only those two, by category, and says under
+  each table how much of the observer was covered and how many swatches
+  were clipped.
+- `from_one_measurement.py`, `measured_scattering.py`, `sources_disagree.py`
+  and `synthetic_underwater_images.py` ignored `ProvenanceWarning` in six
+  places, and `from_one_measurement.py` every warning in one more, where
+  nothing raised one. They are removed, so a flag added later reaches the
+  reader. These examples' output is unchanged.
+
+**Packaging.** CI now runs every example with `ProvenanceWarning` as an
+error, as the local pre-push checks did. A test refuses an example that
+ignores every warning.
+
+**Docs.** DECISIONS.md section 37.
+
 ## 0.14.2 — 2026-10-15
 
 An example that silenced a warning it had no need to raise. No code,

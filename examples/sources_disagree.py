@@ -45,10 +45,8 @@ water types under the same names.""")
 print(f"\nScattering coefficient b at 510 nm, 1/m\n")
 print(f"{'type':>6} {'measured':>10} {'inverted':>10} {'ratio':>8}")
 for water_type in SHARED:
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore", jerlov.ProvenanceWarning)
-        measured = float(jerlov.water(water_type).b(510))
-        inverted = float(jerlov.water(water_type, source="solonenko2015").b(510))
+    measured = float(jerlov.water(water_type).b(510))
+    inverted = float(jerlov.water(water_type, source="solonenko2015").b(510))
     print(f"{water_type:>6} {measured:>10.4f} {inverted:>10.4f} "
           f"{inverted / measured:>7.2f}x")
 
