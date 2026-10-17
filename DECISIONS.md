@@ -1073,3 +1073,41 @@ larger b would do; these figures do not separate the two, and the report
 gives no phase function for the lake. Section 39's choice of the station
 nearest in b is not a good guide to the phase function, which is worth
 knowing wherever it is used, section 38 included.
+
+## 41. An example may turn a face any way
+
+Section 33 refused an angle for the target's face, because turning an
+orientation into the light a face receives needs the radiance
+distribution, which the package does not determine. That stands for the
+package. `radiance_distribution.py` (section 38) now computes a radiance
+distribution in user code, so an example can do what section 33 refused,
+on the same terms: in the example, with its choices stated.
+
+`painted_sphere.py` (0.15.2) lights a sphere with it: every face receives
+the radiance from the half of the directions it faces, and the sunbeam if
+it faces the sun, and is seen from above, from below, and horizontally
+towards and away from the sun. Looking horizontally it does what
+`Scene.observe` does, with `face_irradiance_ratio` for each face computed
+rather than passed; looking up or down, the eye and the sphere are at
+different depths, and the water between adds the background's radiance at
+the eye less its radiance at the sphere thinned by exp(-c r), both taken
+from the Monte Carlo.
+
+Its check is the one the package's own convention makes possible: a face
+turned straight up must receive Ed, and the irradiance it computes from
+the binned radiance and the sunbeam agrees with the Ed the Monte Carlo
+counts directly within 2 percent.
+
+The Monte Carlo is copied from `radiance_distribution.py` rather than
+imported, so that each example runs alone, as every other does; a test
+holds the two copies identical.
+
+What section 40 found applies here: the phase function moves the result,
+and the station nearest in b is not a guide to it. The example shows
+the next nearest station alongside, and the sphere's luminance against
+the water seen from above and with the sun behind moves by a quarter to a
+third.
+
+**Rejected:** a function in the package that lights an oriented face.
+It would rest on the Monte Carlo's choices, the phase function above all,
+and would answer them with a default (section 4).
