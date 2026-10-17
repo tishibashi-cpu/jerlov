@@ -996,3 +996,80 @@ tuning one away.
 **Rejected:** fitting a, b or the phase function to the tables. A model
 fitted to the measurement agrees with it by construction and tests
 nothing.
+
+## 40. Looking for the cause of the difference from Tyler
+
+Section 39 recorded that the Monte Carlo example's light field in Tyler's
+lake is gathered closer about the vertical than the one he measured, and
+left the cause open. This is what was done about it, written down before
+the lake was run again.
+
+First, the engine, since an error there would explain anything. Two
+checks that need no measurement, run before this section was written:
+
+- Isotropic scattering in deep water has an exact asymptotic light field:
+  K = k c, where k solves (w / 2k) ln((1 + k) / (1 - k)) = 1 for the
+  single-scattering albedo w, the mean cosine is (1 - w) / k, and the
+  radiance goes as 1 / (1 - k mu). The engine, given an isotropic phase
+  function, reproduces K, the mean cosine, Eu / Ed and E0 / Ed within
+  3 percent at w = 0.72, the albedo nearest the lake's, and at 0.9; at
+  0.5, within 6 percent, the largest difference being Eu / Ed at the
+  deepest depth. That tests the path lengths, the
+  weights, the roulette and the estimators.
+- The turning of a direction by a scattering angle was checked on its
+  own. It was exact everywhere except for a direction exactly straight up
+  or down, where the test for that case could never be true and the
+  photon kept its direction. No photon in the example starts exactly
+  vertical, and a scattering lands exactly on the vertical only by a
+  floating-point coincidence, so no figure was expected to change, and
+  none did; it is corrected all the same.
+
+Then the lake, changing one thing at a time from section 39, with the
+sun alone (part 6 shows the two skies giving the same light field at
+these depths):
+
+- c at depth. The beam transmittance rose with depth, to give c = 0.377
+  1/m at 61 m against 0.396 at the surface; with the deeper value b falls
+  to 0.265.
+- Every one of Petzold's eight phase functions, not only the two nearest
+  in b. This is not a choice of the best: section 39's comparison stands
+  with HAOCE 5 and HAOCE 11, and the eight give the range the phase
+  function alone can move the result.
+- The b at which the model's mean cosine, averaged over the three depths,
+  equals Tyler's, with a and the phase function (HAOCE 5) held, found by
+  bisection. This fits one number to one measured figure; it is a
+  diagnosis, not a model of the lake. What it tests is whether the other
+  figures, Eu / Ed, E0 / Ed and the radiance near the horizontal, then
+  follow without being fitted, and what c = a + b that b implies.
+
+Not run, and why:
+
+- The band. Tyler's light spans 430 to 546 nm, and the model uses one
+  wavelength. Spreading it over the band needs the lake's a at each
+  wavelength, which the report does not give and which would have to be
+  invented.
+- Petzold's extension of his curves below his first measured angle, in
+  place of taking that scattering as straight on. It moves directions by
+  less than 0.2 degree, against cells 10 degrees wide.
+- The surface: waves, and the barge's shadow. At these depths two skies
+  as different as the sun alone and a uniform overcast give the same
+  mean cosine (part 6), so the light field no longer remembers how the
+  light entered.
+
+Whatever comes out is recorded as it comes out, below, and section 39's
+comparison is not changed by it.
+
+What came out (part 7 of the example). c at depth moves the model further
+from Tyler, to a mean cosine of 0.773. The eight phase functions span
+mean cosines of 0.710 to 0.767, and HAOCE 11 and HAOCE 5, the two section
+39 chose for being nearest in b, have the two lowest backscatter ratios
+and the two highest mean cosines of the eight. With AUTEC 8, NUC 2200 or
+NUC 2040 the model comes within 0.002 of Tyler's mean cosine and within
+0.007 of his E0 / Ed, its Eu / Ed 1.11 to 1.14 times his. Holding HAOCE 5,
+the model reaches his mean cosine at b = 0.48 1/m, c = 0.60, 1.5 times
+the report's, and its Eu / Ed, E0 / Ed and horizontal radiance then come
+close to his without being fitted. Either a different phase function or a
+larger b would do; these figures do not separate the two, and the report
+gives no phase function for the lake. Section 39's choice of the station
+nearest in b is not a good guide to the phase function, which is worth
+knowing wherever it is used, section 38 included.

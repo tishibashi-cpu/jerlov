@@ -781,7 +781,7 @@ def test_figures_for_the_eye_example():
 @pytest.fixture(scope="module")
 def radiance_example():
     """examples/radiance_distribution.py, run once: its figures as returned
-    by main(). About a minute."""
+    by main(). About two minutes."""
     import contextlib
     import io
     import runpy
@@ -911,3 +911,99 @@ def test_the_tyler_tables_give_back_what_the_example_says():
     # the trapezoid rule on a 10 degree grid is within 2 percent
     assert abs(e["e0"] / (4 * np.pi) - 1) < 0.02
     assert abs(e["ed"] / np.pi - 1) < 0.02
+
+
+@pytest.fixture(scope="module")
+def radiance_module():
+    import runpy
+    return runpy.run_path(str(ROOT / "examples" / "radiance_distribution.py"),
+                          run_name="radiance_distribution")
+
+
+@source_tree
+def test_the_radiance_engine_turns_by_the_angle_asked(radiance_module):
+    """DECISIONS.md section 40: the turn is exact, straight up and down
+    included, and its azimuth is uniform."""
+    turn = radiance_module["turn"]
+    rng = np.random.default_rng(1)
+    v = rng.normal(size=(3, 20000))
+    v /= np.linalg.norm(v, axis=0)
+    v[:, :5] = [[0.0], [0.0], [1.0]]
+    v[:, 5:10] = [[0.0], [0.0], [-1.0]]
+    cos_t = rng.uniform(-1, 1, v.shape[1])
+    new = np.array(turn(*v, cos_t, rng))
+    assert np.allclose(np.sum(new * v, axis=0), cos_t, atol=1e-9)
+    assert np.allclose(np.linalg.norm(new, axis=0), 1.0)
+    old = np.array([0.3, -0.5, 0.81]) / np.linalg.norm([0.3, -0.5, 0.81])
+    n = 200_000
+    new = np.array(turn(*(np.full(n, x) for x in old), np.full(n, 0.5), rng))
+    # uniform azimuth: the mean new direction is cos_t times the old one
+    assert np.allclose(new.mean(axis=1), 0.5 * old, atol=0.005)
+
+
+@source_tree
+@pytest.mark.parametrize("w, depths, rtol", [
+    (0.5, (4.0, 6.0, 8.0), 0.06),
+    (0.72, (4.0, 6.0, 8.0), 0.03),
+    (0.9, (8.0, 11.0, 14.0), 0.03)])
+def test_the_radiance_engine_against_isotropic_scattering(
+        radiance_module, w, depths, rtol):
+    """DECISIONS.md section 40: with isotropic scattering, deep water has an
+    exact asymptotic light field; the engine reproduces its K, mean cosine,
+    Eu / Ed and E0 / Ed within 3 percent at w = 0.72 and 0.9, and within 6
+    at 0.5."""
+    m = radiance_module
+    lo, hi = 1e-9, 1 - 1e-12
+    for _ in range(200):
+        k = 0.5 * (lo + hi)
+        if w / (2 * k) * np.log((1 + k) / (1 - k)) < 1:
+            lo = k
+        else:
+            hi = k
+    mu = np.linspace(0.0, 1.0, 100_001)
+    ed = m["trapezoid"](mu / (1 - k * mu), mu)
+    eu = m["trapezoid"](mu / (1 + k * mu), mu)
+    e0 = m["trapezoid"](1 / (1 - k * mu) + 1 / (1 + k * mu), mu)
+    iso = dict(cdf=np.linspace(0, 1, 2001), cos=np.linspace(1, -1, 2001),
+               straight=0.0)
+    depths = np.array(depths)
+    runs = [m["simulate"](1 - w, w, 0.0, iso, iso, None, seed=seed,
+                          photons=200_000, depths=depths, half_slab=0.25)
+            for seed in range(4)]
+    f = m["summary"](runs, depths)
+    assert np.allclose(f["kd"], k, rtol=rtol)
+    assert np.allclose(f["mu"], (1 - w) / k, rtol=rtol)
+    assert np.allclose(f["R"], eu / ed, rtol=rtol)
+    assert np.allclose(f["ratio"], e0 / ed, rtol=rtol)
+
+
+@source_tree
+def test_the_radiance_example_looking_for_the_cause(radiance_example):
+    """Part 7, as printed: the phase function moves the mean cosine from
+    0.710 to 0.767; AUTEC 8, NUC 2200 and NUC 2040 within 0.002 of Tyler's;
+    HAOCE 11 and HAOCE 5 the lowest bb/b and the highest mean cosines; c at
+    depth 0.773; b = 0.48 needed, c = 0.60, 1.5 times; then Eu / Ed 0.0238,
+    E0 / Ed 1.380, side 1.01; AUTEC 9 backscatters more than NUC 2200 and
+    has the higher mean cosine."""
+    r = radiance_example["cause"]
+    st = r["stations"]
+    assert (round(r["span"]["mu"][0], 3), round(r["span"]["mu"][1], 3)) \
+        == (0.710, 0.767)
+    assert r["closest"] == ["AUTEC 8", "NUC 2200", "NUC 2040"]
+    assert round(r["gap"], 3) <= 0.002
+    assert r["lowest"] == ["HAOCE 11", "HAOCE 5"]
+    assert set(r["order"][-2:]) == {"HAOCE 11", "HAOCE 5"}
+    assert round(r["deep"]["mu"], 3) == 0.773
+    assert round(r["b_needed"], 2) == 0.48
+    lake = radiance_example["lake"]
+    assert round(lake["a"] + r["b_needed"], 2) == 0.60
+    # examples/README.md: "a b about 1.7 times larger"
+    assert round(r["b_needed"] / lake["b"], 1) == 1.7
+    assert round((lake["a"] + r["b_needed"]) / 0.396, 1) == 1.5
+    f = r["fitted"]
+    assert (round(f["R"], 4), round(f["ratio"], 3), round(f["side"], 2)) \
+        == (0.0238, 1.380, 1.01)
+    bb = {s: jerlov.petzold_scattering(s).backscatter_ratio
+          for s in ("AUTEC 9", "NUC 2200")}
+    assert bb["AUTEC 9"] > bb["NUC 2200"]
+    assert st["AUTEC 9"]["mu"] > st["NUC 2200"]["mu"]

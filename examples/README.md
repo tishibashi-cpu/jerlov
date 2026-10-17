@@ -193,8 +193,10 @@ about half. Then the same model in Lake Pend Oreille against the radiance
 Tyler (1958) measured there, with a taken from his light by Gershun's law:
 the model's mean cosine is 0.76 to 0.77 against his 0.70 to 0.72, its Eu / Ed
 0.56 to 0.80 of his, and its radiance 65 and 85 degrees from the zenith too
-low, under either sky and with either phase function run. Takes about a
-minute.
+low, under either sky and with either phase function run. Changing one
+thing at a time, any of three other Petzold phase functions, or a b about
+1.7 times larger, brings it within 0.002 of his mean cosine; the figures
+compared do not tell which. Takes about two minutes.
 
 ## What they do not show
 

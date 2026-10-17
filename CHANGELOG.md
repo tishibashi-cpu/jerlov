@@ -4,6 +4,38 @@ Every release is archived on Zenodo under the concept DOI
 [10.5281/zenodo.22321312](https://doi.org/10.5281/zenodo.22321312), which
 always resolves to the latest version.
 
+## 0.15.1 — 2026-10-18
+
+The search for why the Monte Carlo example differs from Tyler's lake, and
+one correction to the example's engine. No code or shipped value changed.
+
+**Fixed.** In `radiance_distribution.py`, turning a direction exactly
+straight up or down by a scattering angle left it unturned: the test for
+that case could never be true. No photon in the example starts exactly
+vertical, and no printed figure changed.
+
+**Examples.** `radiance_distribution.py` part 7 changes one thing at a time
+from part 6, as set down before the runs (DECISIONS.md section 40):
+
+- c at depth, 0.377 1/m, moves the model's mean cosine further from
+  Tyler's, to 0.773.
+- Petzold's eight phase functions give mean cosines of 0.710 to 0.767.
+  HAOCE 11 and HAOCE 5, chosen in part 6 for being nearest in b, have the
+  two lowest backscatter ratios and the two highest mean cosines; with
+  AUTEC 8, NUC 2200 or NUC 2040 the model comes within 0.002 of Tyler's
+  mean cosine and 0.007 of his E0 / Ed.
+- Holding HAOCE 5, b = 0.48 1/m (c = 0.60, 1.5 times the report's) gives
+  Tyler's mean cosine, and Eu / Ed, E0 / Ed and the radiance near the
+  horizontal then come close to his without being fitted.
+- The figures compared do not tell a different phase function from a
+  larger b. The example now takes about two minutes.
+
+**Tests.** The engine against the exact asymptotic light field of
+isotropic scattering, within 3 percent at single-scattering albedos 0.72
+and 0.9 and 6 percent at 0.5; the turn, at every direction.
+
+**Docs.** DECISIONS.md section 40.
+
 ## 0.15.0 — 2026-10-17
 
 Tyler's (1958) measured radiance distribution, shipped, and the Monte

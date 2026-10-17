@@ -13,7 +13,7 @@ coefficients the package carries:
     checked against jerlov.water("II", source="jerlov1976").kd
     and against jerlov.tyler1958_radiance, Tyler (1958), measured in a lake
 
-    python examples/radiance_distribution.py      # about a minute
+    python examples/radiance_distribution.py      # about two minutes
 
 The method. Photons enter through a flat surface, refracted and thinned
 by Fresnel transmission. Each travels a free path drawn from exp(-c s),
@@ -29,7 +29,8 @@ irradiance is the weight crossing the depth.
 
 Part 6 compares the model with the radiance Tyler measured in Lake Pend
 Oreille, with every choice made before the model was run (DECISIONS.md
-section 39).
+section 39), and part 7 changes one thing at a time to look for the cause
+of the difference (section 40).
 """
 
 from types import SimpleNamespace
@@ -129,7 +130,7 @@ def turn(ux, uy, uz, cos_t, rng):
     sin_t = np.sqrt(np.maximum(0.0, 1 - cos_t ** 2))
     cp, sp = np.cos(phi), np.sin(phi)
     perp = np.sqrt(np.maximum(1e-12, 1 - uz * uz))
-    pole = perp < 1e-6
+    pole = np.abs(uz) > 1 - 1e-12
     nx = np.where(pole, sin_t * cp,
                   sin_t * (ux * uz * cp - uy * sp) / perp + ux * cos_t)
     ny = np.where(pole, sin_t * sp,
@@ -248,6 +249,8 @@ LAKE_DEPTHS = (41.3, 53.7, 66.1)    # his three deepest tables
 LAKE_N = 1.333              # fresh water against air, in the visible
 LAKE_WAVELENGTH = 488.0     # the middle of his band, 430 to 546 nm
 LAKE_PHOTONS = 100_000
+SWEEP_PHOTONS = 50_000
+BISECTIONS = 7
 VIEWS = (5, 25, 45, 65, 85)
 
 
@@ -300,8 +303,11 @@ def summary(runs, depths):
                                                            keepdims=True)
                 for r in runs]
     out["radiance"] = np.mean([r["radiance"] for r in runs], axis=0)
-    out["relative_se"] = (np.std(radiance, axis=0, ddof=1)
-                          / np.sqrt(len(runs)) / np.mean(radiance, axis=0))
+    mean = np.mean(radiance, axis=0)
+    # a cell no photon reached has no relative error: left as nan
+    out["relative_se"] = np.divide(
+        np.std(radiance, axis=0, ddof=1) / np.sqrt(len(runs)), mean,
+        out=np.full_like(mean, np.nan), where=mean > 0)
     return out
 
 
@@ -597,6 +603,91 @@ across each cell. {near}'s phase function.""")
   a flat surface; and no sky but the two bracketing ones.""")
 
     # ----------------------------------------------------------------------
+    rule("7. Looking for the cause")
+
+    print(f"""Changing one thing at a time from part 6, with the sun alone, which part 6
+shows giving the same light field as the overcast at these depths; each
+run is {BATCHES} batches of {SWEEP_PHOTONS:,} photons. All three were set down before they
+were run (DECISIONS.md section 40). Before them the engine was checked
+against the exact solution for isotropic scattering, and passed; the
+check is in tests/test_quoted_figures.py.""")
+
+    cells = {d: measured_cells(tables[d]) for d in LAKE_DEPTHS}
+    low = [int(v // D_ZENITH) for v in VIEWS if v >= 60]
+
+    def sweep(b, phase):
+        runs = [simulate(a_lake, b, bw, phase, fresh, sun_zenith, seed=seed,
+                         photons=SWEEP_PHOTONS, depths=depths,
+                         n_water=LAKE_N) for seed in range(BATCHES)]
+        f = summary(runs, depths)
+        side = [f["radiance"][k, i, col] / f["radiance"][k, 0, :].mean()
+                / (cells[d][i, col] / cells[d][0, :].mean())
+                for k, d in enumerate(LAKE_DEPTHS) for i in low
+                for col in (0, -1)]
+        return dict(mu=float(f["mu"].mean()), R=float(f["R"].mean()),
+                    ratio=float(f["ratio"].mean()), side=float(np.mean(side)))
+
+    measured_mu = float(tyler["mu"].mean())
+    c_deep = -np.log(0.686)
+    phase_near = (PARTICLES[near] if near in PARTICLES
+                  else particle_phase(near))
+    deep = sweep(c_deep - a_lake, phase_near)
+    stations = {s: sweep(b_lake, particle_phase(s))
+                for s in jerlov.PETZOLD_STATIONS}
+    lo, hi = b_lake, 1.5
+    for _ in range(BISECTIONS):
+        mid = 0.5 * (lo + hi)
+        fitted = sweep(mid, phase_near)
+        lo, hi = (mid, hi) if fitted["mu"] > measured_mu else (lo, mid)
+    b_needed = mid
+
+    head = f"  {'':>24} {'bb/b':>6} {'mu':>7} {'Eu/Ed':>7} {'E0/Ed':>7} {'side':>6}"
+    print("\n" + head)
+    print(f"  {'Tyler':>24} {'':>6} {measured_mu:>7.3f} {tyler['R'].mean():>7.4f}"
+          f" {tyler['ratio'].mean():>7.3f} {1:>6.2f}")
+    order = sorted(stations, key=lambda s: stations[s]["mu"])
+    for s in order:
+        f = stations[s]
+        print(f"  {s:>24} {jerlov.petzold_scattering(s).backscatter_ratio:>6.3f}"
+              f" {f['mu']:>7.3f} {f['R']:>7.4f} {f['ratio']:>7.3f}"
+              f" {f['side']:>6.2f}")
+    for label, f in ((f"{near}, c = {c_deep:.3f}", deep),
+                     (f"{near}, b = {b_needed:.2f}", fitted)):
+        print(f"  {label:>24} {'':>6} {f['mu']:>7.3f} {f['R']:>7.4f}"
+              f" {f['ratio']:>7.3f} {f['side']:>6.2f}")
+    span = {k: (min(f[k] for f in stations.values()),
+                max(f[k] for f in stations.values()))
+            for k in ("mu", "R", "ratio", "side")}
+    closest = order[:3]
+    gap = max(abs(stations[s]["mu"] - measured_mu) for s in closest)
+    lowest = sorted(stations, key=lambda s:
+                    jerlov.petzold_scattering(s).backscatter_ratio)[:2]
+    print(f"""
+  The figures are means over the three depths; side is the model's
+  radiance {" and ".join(str(v) for v in VIEWS if v >= 60)} degrees from the zenith, relative to overhead, over
+  Tyler's, on both sides of the sun's plane. The phase function alone
+  moves the mean cosine from {span["mu"][0]:.3f} to {span["mu"][1]:.3f}, Eu / Ed from {span["R"][0]:.4f} to {span["R"][1]:.4f}
+  and side from {span["side"][0]:.2f} to {span["side"][1]:.2f}. With {", ".join(closest[:-1])} or {closest[-1]} the mean
+  cosine comes within {gap:.3f} of Tyler's, E0 / Ed within {max(abs(stations[s]["ratio"] - tyler["ratio"].mean()) for s in closest):.3f}, and side is
+  {min(stations[s]["side"] for s in closest):.2f} to {max(stations[s]["side"] for s in closest):.2f}; Eu / Ed is {min(stations[s]["R"] for s in closest) / tyler["R"].mean():.2f} to {max(stations[s]["R"] for s in closest) / tyler["R"].mean():.2f} times his. {" and ".join(lowest)},
+  the two nearest the lake in b, have the two lowest backscatter ratios
+  of the eight and the two highest mean cosines: the choice of part 6 put
+  the model at the edge of what Petzold's waters span.
+
+  c at depth moves the model the other way, to a mean cosine of {deep["mu"]:.3f}.
+  With {near}'s phase function the model reaches Tyler's mean cosine at
+  b = {b_needed:.2f} 1/m, which would make c = {a_lake + b_needed:.2f}, {(a_lake + b_needed) / c_lake:.1f} times what the report
+  gives. Eu / Ed, E0 / Ed and side then come to {fitted["R"]:.4f}, {fitted["ratio"]:.3f} and {fitted["side"]:.2f},
+  against Tyler's {tyler["R"].mean():.4f}, {tyler["ratio"].mean():.3f} and 1, without being fitted.
+
+  So either another of Petzold's phase functions or a larger b brings the
+  model close to Tyler's figures, and the figures compared here do not
+  tell which, or whether it is something not tried. The backscatter ratio
+  alone does not order the eight: AUTEC 9 backscatters more than NUC 2200
+  and has the higher mean cosine. Which phase function the lake had, the
+  report does not say.""")
+
+    # ----------------------------------------------------------------------
     rule("Before you use any of this")
 
     print(f"""  - The water is the same at every depth and has no bottom; its a and b
@@ -608,6 +699,9 @@ across each cell. {near}'s phase function.""")
     near the surface.
   - The sky is either a sun alone or a uniformly bright overcast. A clear
     sky lies between, in proportions this package does not determine.
+  - Choosing the Petzold station nearest in b picked, in the lake, the two
+    with the highest mean cosine of the eight (part 7); the phase function
+    matters more than that choice suggests.
   - Part 6 takes the lake's a from Tyler's own light, by the law part 2
     checks, so it is not an independent check of a; its c is the surface
     value measured the day after. His tables are integrated on their own
@@ -628,7 +722,11 @@ across each cell. {near}'s phase function.""")
                           fields=lake, rows=rows, between=between,
                           above=[VIEWS[i] for i in above], side=side,
                           cell_se=cell_se, noise=noise,
-                          grid_error=grid_error))
+                          grid_error=grid_error),
+                cause=dict(deep=deep, stations=stations, b_needed=b_needed,
+                           fitted=fitted, span=span, closest=closest,
+                           gap=gap, lowest=lowest, order=order,
+                           measured_mu=measured_mu))
 
 
 if __name__ == "__main__":
