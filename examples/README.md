@@ -1,6 +1,6 @@
 # Examples
 
-Fourteen scripts. Each runs against the installed package and needs nothing beyond
+Fifteen scripts. Each runs against the installed package and needs nothing beyond
 NumPy.
 
 ```
@@ -18,6 +18,7 @@ python examples/seagrass_depth_limit.py
 python examples/isolumes.py
 python examples/lure_colours.py
 python examples/ultraviolet.py
+python examples/radiance_distribution.py
 ```
 
 CI runs all of them on every push, so an example that has stopped working is a
@@ -46,6 +47,7 @@ copy of the package silently wins over the working tree. In a clone, run
 | study vertical migration, or where animals sit in the light | `isolumes.py` |
 | design or test painted fishing lures or other gear | `lure_colours.py` |
 | study ultraviolet exposure under water, of reefs, plankton or chemistry | `ultraviolet.py` |
+| need the radiance distribution, the mean cosine or scalar irradiance | `radiance_distribution.py` |
 
 ## What each shows
 
@@ -178,6 +180,16 @@ PAR's 1 percent depth in the oceanic types and **0.22 to 0.25** in the
 coastal ones, and where PAR is down to 10 percent, 3.3 to 7.0 percent of
 the surface UV-A is left in the open ocean against 0.04 to 0.05 percent on
 the coast.
+
+**`radiance_distribution.py`** — the light arriving from each direction at
+depth in Jerlov II, by a Monte Carlo solution of the radiative transfer
+equation written in the example itself, from the package's a and b, a
+Petzold phase function and pure water's. The package does not solve it
+(DECISIONS.md section 38). Gershun's law recovers the a put in to within 2
+percent; Kd is within 6 percent of Jerlov's (1976) at 500 and 550 nm and 20
+to 24 percent above at 450. Scalar irradiance exceeds planar by 1.24 to
+1.37, and the next nearest of Petzold's stations changes Eu / Ed at 10 m by
+about half. Takes about half a minute.
 
 ## What they do not show
 

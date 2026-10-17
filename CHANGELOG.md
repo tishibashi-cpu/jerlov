@@ -4,6 +4,35 @@ Every release is archived on Zenodo under the concept DOI
 [10.5281/zenodo.22321312](https://doi.org/10.5281/zenodo.22321312), which
 always resolves to the latest version.
 
+## 0.14.4 — 2026-10-17
+
+An example that solves for the radiance distribution. No code or shipped
+value changed.
+
+**Examples.** `radiance_distribution.py`, for work that needs the light
+arriving from each direction: a Monte Carlo solution of the radiative
+transfer equation in about 150 lines of NumPy, in the example, from
+the package's coefficients. The package still does not solve it
+(DECISIONS.md section 38).
+
+- Jerlov II, with Williamson & Hollins's (2022) a and b at 450, 500 and
+  550 nm; the phase function of HAOCE 11, the Petzold station whose b is
+  nearest II's at 530 nm, from his first measured angle, the 18 percent of
+  the particles' scattering below it taken as unscattered; pure water's
+  from `pure_water_vsf`. A sun 40 degrees from the zenith, and a uniform
+  overcast.
+- Gershun's law recovers the a put in to within 2 percent. Kd from 2 to 10
+  m is within 6 percent of Jerlov's (1976) at 500 and 550 nm, and 20 to 24
+  percent above it at 450.
+- The radiance in the plane of the sun at four depths; the mean cosine;
+  E0 / Ed, 1.24 to 1.37, the factor `par_profile` does not supply; Eu / Ed,
+  which the next nearest station, AUTEC 7, raises by 48 percent at 10 m.
+- It takes about half a minute, and its figures are recomputed in the
+  tests.
+
+**Docs.** DECISIONS.md section 38: why an example may solve what the
+package does not.
+
 ## 0.14.3 — 2026-10-15
 
 The examples no longer silence warnings they do not explain. No code or
