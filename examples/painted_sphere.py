@@ -12,7 +12,8 @@ script stands alone, and lights a sphere with it (section 41).
     python examples/painted_sphere.py --png painted_sphere.png    # and an image
 
 The image is written only when asked for, with nothing beyond the standard
-library and NumPy: four colours down, four directions across.
+library and NumPy: four paints down; across, each paint in air under
+daylight, then the sphere seen from the four directions.
 
 The method. The Monte Carlo gives the radiance arriving from each
 direction at three depths, at twelve wavelengths, interpolated between
@@ -85,7 +86,9 @@ PHOTONS, BATCHES = 50_000, 4
 MC_WAVELENGTHS = np.array([412.0, 440, 470, 500, 530, 560, 590, 610, 630,
                            650, 675, 700])
 WAVELENGTHS = np.arange(412.0, 701.0, 4.0)
-PIXELS = 48                 # across one sphere in the image
+PIXELS = 160                # across one sphere's square in the image
+FILL = 0.85                 # the sphere's diameter, as a share of the square
+SUBSAMPLES = 4              # per side of a pixel, to smooth the sphere's edge
 
 #: Smooth stand-in paints, as in synthetic_underwater_images.py; real work
 #: should use measured reflectance spectra.
@@ -289,12 +292,13 @@ def light_field(station):
                 station=station)
 
 
-def cell_weights(normals, sub=6):
-    """For faces with these outward normals, the cosine-weighted solid angle
-    of each radiance cell that shines on them: (faces, cells), the cells
-    of the folded half mirrored to give the whole sphere of directions."""
+def cell_directions(sub=6):
+    """Directions filling every radiance cell of the whole sphere of
+    directions, ``sub`` by ``sub`` to a cell and in cell order; their solid
+    angles; and for each cell, the cell of the folded half (azimuth 0 to
+    180) that the Monte Carlo counted it in."""
     n_th, n_ph = int(180 / D_ZENITH), int(180 / D_AZIMUTH)
-    dirs, owner, d_omega = [], [], []
+    dirs, d_omega, folded = [], [], []
     for i in range(n_th):
         edges = np.radians(D_ZENITH * (i + np.arange(sub + 1) / sub))
         th = 0.5 * (edges[1:] + edges[:-1])
@@ -305,15 +309,28 @@ def cell_weights(normals, sub=6):
             t, p = np.meshgrid(th, ph, indexing="ij")
             dirs.append(np.stack([np.sin(t) * np.cos(p), np.sin(t) * np.sin(p),
                                   np.cos(t)], axis=-1).reshape(-1, 3))
-            folded = j if j < n_ph else 2 * n_ph - 1 - j
-            owner.append(np.full(sub * sub, i * n_ph + folded))
             d_omega.append(np.repeat(band, sub))
-    dirs, owner = np.concatenate(dirs), np.concatenate(owner)
-    # light travelling along d reaches a face whose normal points against it
-    cosine = np.maximum(0.0, -(normals @ dirs.T)) * np.concatenate(d_omega)
-    gather = np.zeros((owner.size, n_th * n_ph))
-    gather[np.arange(owner.size), owner] = 1.0
-    return cosine @ gather
+            folded.append(i * n_ph + (j if j < n_ph else 2 * n_ph - 1 - j))
+    return (np.concatenate(dirs), np.concatenate(d_omega), np.array(folded),
+            sub * sub)
+
+
+CELLS = cell_directions()
+
+
+def cell_weights(normals, chunk=1000):
+    """For faces with these outward normals, the cosine-weighted solid angle
+    of each cell of the whole sphere of directions that shines on them:
+    (faces, cells)."""
+    dirs, d_omega, _, per_cell = CELLS
+    out = []
+    for start in range(0, len(normals), chunk):
+        n = normals[start:start + chunk]
+        # light travelling along d reaches a face whose normal points
+        # against it
+        cosine = np.maximum(0.0, -(n @ dirs.T)) * d_omega
+        out.append(cosine.reshape(len(n), -1, per_cell).sum(axis=-1))
+    return np.concatenate(out)
 
 
 def sunbeam():
@@ -329,8 +346,8 @@ def sunbeam():
 def face_irradiance(field, normals, k):
     """Irradiance on faces with these outward normals at DEPTHS[k], at
     MC_WAVELENGTHS: (faces, wavelengths)."""
-    scattered = cell_weights(normals) @ \
-        field["radiance"][:, k].reshape(MC_WAVELENGTHS.size, -1).T
+    cells = field["radiance"][:, k].reshape(MC_WAVELENGTHS.size, -1)
+    scattered = cell_weights(normals) @ cells[:, CELLS[2]].T
     s, square = sunbeam()
     direct = square * np.exp(-field["c"] * DEPTHS[k] / s[2])
     return scattered + np.maximum(0.0, -(normals @ s))[:, None] * direct
@@ -360,22 +377,40 @@ def on_grid(values):
                      for v in values])
 
 
+def disc():
+    """The sphere on a PIXELS-square: where each pixel centre falls, in
+    units of the sphere's radius, and the share of the pixel the sphere
+    covers, from SUBSAMPLES by SUBSAMPLES points in it."""
+    side = ((np.arange(PIXELS) + 0.5) / PIXELS * 2 - 1) / FILL
+    x, y = np.meshgrid(side, -side)
+    offsets = ((np.arange(SUBSAMPLES) + 0.5) / SUBSAMPLES - 0.5) \
+        * (side[1] - side[0])
+    cover = np.zeros_like(x)
+    for dx in offsets:
+        for dy in offsets:
+            cover += (x + dx) ** 2 + (y + dy) ** 2 < 1
+    return x, y, cover / SUBSAMPLES ** 2
+
+
 def picture(field, look, up, k_eye):
-    """For one direction: the normals of the visible faces on a PIXELS-wide
-    disc, the radiance the eye receives from each face per unit reflectance
-    and from the water behind, and the mask of the disc."""
-    u = (np.arange(PIXELS) + 0.5) / PIXELS * 2 - 1
-    x, y = np.meshgrid(u, -u)
-    disc = x * x + y * y < 1
+    """For one direction: the radiance the eye receives from each face of
+    the sphere it sees, per unit reflectance, and from the water past it,
+    with the pixels that show the sphere and how much of each."""
+    x, y, cover = disc()
+    shown = cover > 0
+    # a pixel the edge crosses takes the face at the edge
+    r = np.hypot(x[shown], y[shown])
+    scale = np.minimum(1.0, 0.999 / np.maximum(r, 1e-12))
+    xs, ys = x[shown] * scale, y[shown] * scale
     right = np.cross(up, look)
-    normals = (x[disc, None] * right + y[disc, None] * up
-               - np.sqrt(1 - x[disc] ** 2 - y[disc] ** 2)[:, None] * look)
+    normals = (xs[:, None] * right + ys[:, None] * up
+               - np.sqrt(1 - xs ** 2 - ys ** 2)[:, None] * look)
     lit = on_grid(face_irradiance(field, normals, 1)) / np.pi
     t = np.exp(-jerlov.water(WATER_TYPE).c(WAVELENGTHS) * DISTANCE)
     behind = on_grid(background(field, look, 1))[0]
     at_eye = on_grid(background(field, look, k_eye))[0]
     return dict(face=lit * t, path=at_eye - behind * t, water=at_eye,
-                disc=disc, normals=normals, t=t)
+                shown=shown, cover=cover[shown], normals=normals, t=t)
 
 
 def luminance(radiance):
@@ -418,13 +453,14 @@ def look_at(field, daylight, to_linear):
     for view, (look, up, k_eye) in VIEWS.items():
         p = picture(field, look, up, k_eye)
         water = p["water"] * daylight
+        w = p["cover"][:, None]
         for paint, reflectance in PAINTS.items():
             seen = (reflectance(WAVELENGTHS) * p["face"] + p["path"]) * daylight
-            mean = seen.mean(axis=0)
+            mean = np.sum(w * seen, axis=0) / np.sum(w)
             out[view, paint] = dict(
-                pixels=colour(seen, to_linear), mean=colour(mean, to_linear),
-                water=colour(water, to_linear),
-                ratio=luminance(mean) / luminance(water), disc=p["disc"])
+                pixels=colour(w * seen + (1 - w) * water, to_linear),
+                mean=colour(mean, to_linear), water=colour(water, to_linear),
+                ratio=luminance(mean) / luminance(water), shown=p["shown"])
     return out
 
 
@@ -457,6 +493,7 @@ at {MC_WAVELENGTHS.size} wavelengths from {MC_WAVELENGTHS[0]:g} to {MC_WAVELENGT
     ed = on_grid(field["ed"][:, 1])[0] * daylight
     white = ed / np.pi
     to_linear = linear_srgb(white)
+    in_air = linear_srgb(daylight)
 
     # ----------------------------------------------------------------------
     rule("2. A check")
@@ -486,6 +523,9 @@ white face turned up at {DEPTH:g} m with no water in front of it, the same for
 every direction, so brightness can be compared across the table.""")
     if coverage_note:
         print(f"  ({coverage_note}.)")
+    print("\n  in air, under daylight and balanced to it: " + "  ".join(
+        f"{paint} {swatch(colour(PAINTS[paint](WAVELENGTHS) * daylight, in_air))}"
+        for paint in PAINTS))
     for view in VIEWS:
         print(f"\n  {view:<12} water {swatch(seen[view, 'grey 50%']['water'])}")
         for paint in PAINTS:
@@ -532,19 +572,24 @@ every direction, so brightness can be compared across the table.""")
   least about (radiance_distribution.py, part 5).""")
 
     if png:
+        _, _, cover = disc()
         tiles = []
         for paint in PAINTS:
-            row = []
+            # in air: the paint lit by daylight and balanced to it, flat,
+            # on a mid-grey card
+            card = 0.18 * daylight
+            flat = PAINTS[paint](WAVELENGTHS) * daylight
+            row = [colour(cover[..., None] * flat
+                          + (1 - cover[..., None]) * card, in_air)]
             for view in VIEWS:
                 s = seen[view, paint]
                 tile = np.tile(s["water"], (PIXELS, PIXELS, 1))
-                tile[s["disc"]] = s["pixels"]
+                tile[s["shown"]] = s["pixels"]
                 row.append(tile)
             tiles.append(np.concatenate(row, axis=1))
-        image = np.concatenate(tiles, axis=0)
-        write_png(png, np.repeat(np.repeat(image, 3, axis=0), 3, axis=1))
-        print(f"\n  Wrote {png}: {', '.join(PAINTS)} down; "
-              f"{', '.join(VIEWS)} across.")
+        write_png(png, np.concatenate(tiles, axis=0))
+        print(f"\n  Wrote {png}: {', '.join(PAINTS)} down; in air, then "
+              f"{', '.join(VIEWS)}, across.")
 
     # ----------------------------------------------------------------------
     rule("Before you use any of this")

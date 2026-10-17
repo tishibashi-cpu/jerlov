@@ -1084,7 +1084,7 @@ def test_figures_for_the_sphere_example(sphere_example):
     """painted_sphere.py as printed and examples/README.md: HAOCE 11 and
     AUTEC 7; a face turned up gets Ed within 2 percent, one turned down 0.1
     to 2.7 percent of it; the grey sphere 14.5 times the water from above,
-    0.42 from below; paints 7.0 apart from above, 1.05 from below; AUTEC 7
+    0.42 from below; paints 7.0 apart from above, 1.06 from below; AUTEC 7
     moves the grey sphere most with the sun behind (-32 percent) and from
     above (-26), backgrounds turned 119 and 151 degrees, against 29 and
     61."""
@@ -1101,7 +1101,7 @@ def test_figures_for_the_sphere_example(sphere_example):
     assert g["from below"] < 1 < g["from above"]
     s = r["spread"]
     assert (round(s["from above"], 1), round(s["from below"], 2)) \
-        == (7.0, 1.05)
+        == (7.0, 1.06)
     assert max(s, key=s.get) == "from above"
     assert min(s, key=s.get) == "from below"
     assert r["moved"] == ["sun behind", "from above"]

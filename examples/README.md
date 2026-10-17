@@ -205,10 +205,10 @@ Jerlov II, seen 2 m away from above, from below, and horizontally towards
 and away from the sun, lit by the same Monte Carlo light field, copied
 into the script. A face turned up receives Ed within 2 percent. The grey
 sphere is 14.5 times as bright as the water seen from above and 0.42 times
-seen from below; the paints are 7.0 times apart from above and 1.05 from
+seen from below; the paints are 7.0 times apart from above and 1.06 from
 below. The next nearest Petzold station moves the grey sphere by a quarter
-to a third from above and with the sun behind. `--png` writes the picture.
-Takes about a minute.
+to a third from above and with the sun behind. `--png` writes the picture,
+with each paint in air beside it. Takes about a minute.
 
 ## What they do not show
 

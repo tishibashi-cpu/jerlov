@@ -1083,7 +1083,7 @@ package. `radiance_distribution.py` (section 38) now computes a radiance
 distribution in user code, so an example can do what section 33 refused,
 on the same terms: in the example, with its choices stated.
 
-`painted_sphere.py` (0.15.2) lights a sphere with it: every face receives
+`painted_sphere.py` (0.15.1) lights a sphere with it: every face receives
 the radiance from the half of the directions it faces, and the sunbeam if
 it faces the sun, and is seen from above, from below, and horizontally
 towards and away from the sun. Looking horizontally it does what
