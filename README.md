@@ -303,6 +303,18 @@ Jerlov I it agrees only through `descend`; for IB it puts the 1 percent
 level a third too deep, because Jerlov's IB water grew more turbid below
 15 m. DATA.md section 22.
 
+Tyler measured the radiance from every direction at seven depths in a deep
+lake, and his tables are shipped too, for checking a radiative transfer
+model against:
+
+```python
+jerlov.tyler1958_radiance(41.3)  # <RadianceDistribution Tyler 1958, 41.3 m, 19 tilts x 10 azimuths>
+```
+
+The package solves no radiative transfer itself; the Monte Carlo model in
+`examples/radiance_distribution.py` is compared with these tables, and does
+not match them. DATA.md section 23.
+
 ## Which type is my water nearest?
 
 ```python
@@ -393,7 +405,7 @@ made.
 ## Provenance and design
 
 `DATA.md` records, for every shipped table, where it came from, what was
-verified, and what is known to be wrong with it. Twenty-two entries are
+verified, and what is known to be wrong with it. Twenty-three entries are
 documented there: nine confirmed defects in the source literature, three
 questions the first edition of Jerlov settled, and the rest notes.
 

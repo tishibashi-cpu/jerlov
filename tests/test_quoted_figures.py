@@ -781,7 +781,7 @@ def test_figures_for_the_eye_example():
 @pytest.fixture(scope="module")
 def radiance_example():
     """examples/radiance_distribution.py, run once: its figures as returned
-    by main(). About half a minute."""
+    by main(). About a minute."""
     import contextlib
     import io
     import runpy
@@ -836,3 +836,78 @@ def test_the_radiance_example_brightest_cell_is_the_sunbeam(radiance_example):
     assert (round(r["peak"][0]), round(r["peak"][-1])) == (57, 11)
     assert (round(100 * r["down"][0]), round(100 * r["down"][-1], 1)) == (15, 2.3)
     assert np.all(np.diff(r["direct_share"]) < 0)
+
+
+@source_tree
+def test_the_radiance_example_against_tyler(radiance_example):
+    """Part 6: a from Tyler's tables by Gershun's law, 0.1149 and 0.1089,
+    mean 0.1119, b 0.2841; HAOCE 5 nearest, HAOCE 11 next; the model's mean
+    cosine 0.762 to 0.774 against 0.704 to 0.715; Eu / Ed 0.0131 to 0.0151
+    against 0.0189 to 0.0233; E0 / Ed 1.27 to 1.29 against 1.37 to 1.39; Kd
+    0.144 to 0.146 against 0.163 and 0.153; Tyler between the two skies at
+    5 and 25 degrees, above both at 65 and 85, where the model gives 0.28 to
+    0.90 of his; standard errors at most 6 and 22 percent."""
+    lake = radiance_example["lake"]
+    assert [round(x, 4) for x in lake["found"]] == [0.1149, 0.1089]
+    assert (round(lake["a"], 4), round(lake["b"], 4)) == (0.1119, 0.2841)
+    assert (lake["near"], lake["second"]) == ("HAOCE 5", "HAOCE 11")
+    assert round(lake["sun_zenith"], 1) == 33.4
+    model = {k: np.concatenate([f[k] for f in lake["fields"].values()])
+             for k in ("mu", "R", "ratio", "kd")}
+    tyler = lake["tyler"]
+    assert (round(model["mu"].min(), 3), round(model["mu"].max(), 3)) \
+        == (0.762, 0.774)
+    assert (round(tyler["mu"].min(), 3), round(tyler["mu"].max(), 3)) \
+        == (0.704, 0.715)
+    assert (round(model["R"].min(), 4), round(model["R"].max(), 4)) \
+        == (0.0131, 0.0151)
+    assert (round(tyler["R"].min(), 4), round(tyler["R"].max(), 4)) \
+        == (0.0189, 0.0233)
+    assert (round(model["ratio"].min(), 2), round(model["ratio"].max(), 2)) \
+        == (1.27, 1.29)
+    assert (round(tyler["ratio"].min(), 2), round(tyler["ratio"].max(), 2)) \
+        == (1.37, 1.39)
+    assert (round(model["kd"].min(), 3), round(model["kd"].max(), 3)) \
+        == (0.144, 0.146)
+    assert [round(x, 3) for x in tyler["kd"]] == [0.163, 0.153]
+    # "a mean cosine too high has to come with a K too low"
+    assert model["mu"].min() > tyler["mu"].max()
+    assert model["kd"].max() < tyler["kd"].min()
+    assert lake["between"] == [5, 25] and lake["above"] == [65, 85]
+    assert (round(lake["side"].min(), 2), round(lake["side"].max(), 2)) \
+        == (0.28, 0.90)
+    assert (round(100 * lake["noise"]), round(100 * lake["cell_se"])) \
+        == (6, 22)
+    assert round(100 * lake["grid_error"], 1) == 1.0
+    # examples/README.md: 0.76 to 0.77 against 0.70 to 0.72; Eu / Ed 0.56
+    # to 0.80 of his
+    assert (round(model["mu"].min(), 2), round(model["mu"].max(), 2)) \
+        == (0.76, 0.77)
+    assert (round(tyler["mu"].min(), 2), round(tyler["mu"].max(), 2)) \
+        == (0.70, 0.72)
+    share = np.array([f["R"] / tyler["R"] for f in lake["fields"].values()])
+    assert (round(share.min(), 2), round(share.max(), 2)) == (0.56, 0.80)
+
+
+@source_tree
+def test_the_tyler_tables_give_back_what_the_example_says():
+    """Part 6's Tyler rows, from the tables directly: the integration is
+    the example's, the numbers are the package's."""
+    import runpy
+    module = runpy.run_path(str(ROOT / "examples" / "radiance_distribution.py"),
+                            run_name="radiance_distribution")
+    m = {d: module["measured_irradiances"](jerlov.tyler1958_radiance(d))
+         for d in (41.3, 53.7, 66.1)}
+    mu = [(x["ed"] - x["eu"]) / x["e0"] for x in m.values()]
+    assert [round(v, 3) for v in mu] == [0.704, 0.708, 0.715]
+    cells = module["measured_cells"](jerlov.tyler1958_radiance(41.3))
+    assert cells.shape == (18, 4)
+    # a uniform table averages to itself
+    flat = type("T", (), dict(tilt_deg=np.arange(0.0, 181, 10),
+                              azimuth_deg=np.arange(0.0, 181, 20),
+                              radiance=np.ones((19, 10))))
+    assert np.allclose(module["measured_cells"](flat), 1.0)
+    e = module["measured_irradiances"](flat)
+    # the trapezoid rule on a 10 degree grid is within 2 percent
+    assert abs(e["e0"] / (4 * np.pi) - 1) < 0.02
+    assert abs(e["ed"] / np.pi - 1) < 0.02

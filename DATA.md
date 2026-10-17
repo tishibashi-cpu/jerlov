@@ -3,7 +3,7 @@
 What every shipped table is, where it came from, what was verified, and what
 is known to be wrong with it.
 
-Twenty-two entries are recorded below. Nine are confirmed defects, three were
+Twenty-three entries are recorded below. Nine are confirmed defects, three were
 open questions that the first edition of Jerlov settled, and the rest are
 notes rather than defects. None of them is repaired silently: values that
 could be recovered carry `status = reconstructed` and say how, values that
@@ -31,6 +31,7 @@ could not are `missing`, and values that are used but doubtful are `suspect`.
 | `petzold1972_stations.csv` | c, b, a, B/S, slope and median angle of each station | 8 |
 | `williamson2022_aw.csv` | Pure water absorption that Williamson & Hollins (2022) built their a on. 1 nm, 300-800 nm | 501 |
 | `jerlov1977_quanta.csv` | Jerlov's measured quanta irradiance, 350-700 nm: depths of 30, 10, 3 and 1 percent, percent by depth, Kd by level and by layer. 7 types | 202 |
+| `tyler1958_radiance.csv` | Tyler's measured radiance distribution in Lake Pend Oreille: 19 tilts by 10 azimuths at 7 depths, 4.24-66.1 m, relative units | 1330 |
 
 The four tables drawn from the two Dstl datasets (`williamson2022_iop`,
 `williamson2022_measured`, `solonenko2015_iop` and `williamson2023_depth`)
@@ -1110,4 +1111,53 @@ a deep chlorophyll maximum would do it, but the paper does not say, and
 nothing is assumed here. The comparison uses D65 for the sky; the
 agreement in the top 10 m suggests that matters little for the levels, but
 it has not been tested.
+
+## 23. Tyler's measured radiance distribution (note)
+
+`tyler1958_radiance.csv` is transcribed from Tyler, J. E. (1958),
+"Radiance distribution as a function of depth in the submarine
+environment", SIO Reference 58-25, Visibility Laboratory, Scripps
+Institution of Oceanography, Tables IV-X, by `tools/build_tyler1958.py`.
+The scan read is eScholarship's, https://escholarship.org/uc/item/6vw86973,
+whose pages 24-30 hold the tables. The report was later published as
+Bull. Scripps Inst. Oceanogr. 7, 363-412 (1960); that version was not
+read.
+
+**The measurement.** Lake Pend Oreille, Idaho, from a barge over 750 ft of
+water, on 28 April 1957 under a sky with no overhead cloud and a lake
+"practically flat calm" (p. 15). A photometer with radiance tubes of 6.6
+degree acceptance (p. 7), behind a Wratten No. 45 filter, measured a band
+whose extreme limits are 430 and 546 nm, half width 64 nm (p. 5). Each
+table gives the radiance at tilts of 0 to 180 degrees by 10, 0 looking
+straight up, and azimuths of 0 to 180 by 20 from the sun, at one of seven
+depths from 4.24 to 66.1 m, every one adjusted to a sun altitude of 56.6
+degrees (pp. 14-15). The unit is relative and, as the tables are
+normalised to one vertical run, shared by all seven; the report does not
+name it. The beam transmittance was 67.3 percent per metre at the surface
+and about 68.6 at 61 m (p. 8), c = 0.396 1/m and 0.377 1/m; the
+transmissometer's band is not given. Bathythermograph, transmittance and
+particle samples showed no stratification (pp. 7-9).
+
+**The transcription.** Every value was read from the page images. The
+text layer reads the thousands separators as decimal points and loses
+whole rows, so it was used only to cross-check: of the 920 values in rows
+it gives cleanly, four disagreed, and the image settled all four in favour
+of the reading here (four were the text layer dropping or misreading a
+digit). The build script checks that straight up and straight down have
+one value at every azimuth, that the radiance never rises away from the
+sun's azimuth at any tilt and depth, and that the zenith radiance falls
+with depth. All hold.
+
+**What is flagged.** Nine cells are `suspect`:
+
+| Where | Why |
+|---|---|
+| Tilts 20 and 30 at azimuth 0, at 4.24, 10.4, 16.6 and 29.0 m | The sun's direction. "The reading obtained in the sun's direction could be low by a factor of 2 in the worst case", from the glitter of the sun on the surface (p. 16); Table XI gives that noise at 4.24 to 28.95 m, from 93.6 down to 10.5 percent of the mean |
+| 4.24 m, tilt 160, azimuth 160 | The last digit is overstruck and reads as 3,230 or 3,290; 3,230, which continues the row, is kept |
+
+**What the tables include that a model may not.** The clear sky's light,
+not only the sun's. The barge's shadow and image, which Tyler read
+around: about 54 degrees of the horizontal sweep were affected (pp. 12-13).
+The depths 10.4, 16.6 and 29.0 m are printed as 10.43, 16.65 and 28.95 in
+Tables III and XI; the radiance tables' labels are used here.
 

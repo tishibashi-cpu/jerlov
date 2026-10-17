@@ -948,3 +948,51 @@ same release. It is in scope (section 31) and planned, but a measured
 water's a is rarely published and would have to be fitted, and which
 phase function is used moves the result; that needs its own care.
 
+
+## 39. Comparing the Monte Carlo example with Tyler's lake
+
+Section 38 put off a comparison with a measured radiance distribution.
+Tyler's (1958) Lake Pend Oreille tables are the one taken here: seven
+depths in water with no definite sign of stratification, a clear sky, a sun
+altitude the tables are all adjusted to, and a full sphere of directions
+(DATA.md section 23). They are shipped, as `tyler1958_radiance`, so the
+comparison can be repeated without the report. As with Jerlov's quanta
+(section 31), what the package carries is the measurement; the model it
+is compared with stays in the example.
+
+The report gives the water's c and not its a, b or phase function, so the
+comparison needs choices, and all of them were fixed before the model was
+run on the lake:
+
+- a from the measurement, by Gershun's law, not fitted to it: K of the net
+  irradiance between two depths times the mean cosine, with Ed, Eu and E0
+  integrated from the tables. The mean of the values from the pairs of
+  depth tables that carry no suspect cell, 41.3-53.7 and 53.7-66.1 m.
+  b = c - a, with c the surface value.
+- The phase function of the Petzold station whose b is nearest that b,
+  and the next nearest, as in section 38; not chosen again after the
+  result.
+- The sun alone and a uniform overcast, to bracket a clear sky, rather
+  than a sky model the package would have to choose.
+- Fresh water for the surface and for pure water's scattering, at the
+  middle of Tyler's band. The comparison is of mean cosine, Eu / Ed,
+  E0 / Ed, Kd, and the radiance in the sun's plane relative to overhead,
+  at the three deepest tables.
+
+One choice was corrected before the run, not after it. The plan first
+used the depth pairs below 28.95 m, the deepest depth at which Table XI
+gives the sun's glitter; but 29.0 m is that depth, its table carries the
+glitter flags, and the pairs were reduced to the two above. a moves from
+0.114 to 0.112 1/m.
+
+What came out is recorded as it came out: the model's mean cosine is
+higher than Tyler's at every depth, its Eu / Ed and E0 / Ed lower, its Kd
+lower, and its radiance 65 and 85 degrees from the zenith 0.28 to 0.90 of
+his relative to overhead. Neither the second phase function nor the
+second sky closes it. Which of the model's simplifications makes the
+difference is not established, and the example says so rather than
+tuning one away.
+
+**Rejected:** fitting a, b or the phase function to the tables. A model
+fitted to the measurement agrees with it by construction and tests
+nothing.
