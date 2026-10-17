@@ -776,3 +776,63 @@ def test_figures_for_the_eye_example():
         jerlov.integrate_response(ed(z) * wl, wl, camera, wl, name="camera"))
         for z in (0.0, 50.0)}
     assert round(rb[0.0] / rb[50.0]) == 29
+
+
+@pytest.fixture(scope="module")
+def radiance_example():
+    """examples/radiance_distribution.py, run once: its figures as returned
+    by main(). About half a minute."""
+    import contextlib
+    import io
+    import runpy
+    path = ROOT / "examples" / "radiance_distribution.py"
+    module = runpy.run_path(str(path), run_name="radiance_distribution")
+    with contextlib.redirect_stdout(io.StringIO()):
+        return module["main"]()
+
+
+@source_tree
+def test_figures_for_the_radiance_example(radiance_example):
+    """examples/README.md: HAOCE 11 nearest II's b; Gershun's law recovers
+    a within 2 percent; Kd within 6 percent of Jerlov (1976) at 500 and 550
+    nm and 20 to 24 percent above at 450; overcast Kd above the sun's at
+    every wavelength; E0 / Ed 1.24 to 1.37; AUTEC 7's phase function raises
+    Eu / Ed at 10 m by about half."""
+    r = radiance_example
+    assert (r["station"], r["other"]) == ("HAOCE 11", "AUTEC 7")
+    assert round(100 * r["straight"]) == 18
+    assert max(abs(g) for g in r["gershun"]) < 0.02
+    for wl in (500.0, 550.0):
+        assert max(abs(x - 1) for x in r["kd_ratio"][wl]) < 0.065
+    low, high = sorted(r["kd_ratio"][450.0])
+    assert (round(100 * (low - 1)), round(100 * (high - 1))) == (20, 24)
+    f = r["fields"]
+    for wl in (450.0, 500.0, 550.0):
+        assert f[wl, None]["kd"] > f[wl, 40.0]["kd"]
+        # "its mean cosine stays lower"
+    sun, sky = f[500.0, 40.0], f[500.0, None]
+    mu = {k: (v["ed"] - v["eu"]) / v["e0"] for k, v in (("sun", sun),
+                                                         ("sky", sky))}
+    assert np.all(mu["sky"] < mu["sun"])
+    assert (round((sun["e0"] / sun["ed"]).min(), 2),
+            round((sky["e0"] / sky["ed"]).max(), 2)) == (1.24, 1.37)
+    other = r["other_field"]
+    change = (other["eu"][2] / other["ed"][2]) / (sun["eu"][2] / sun["ed"][2]) - 1
+    assert round(100 * change) == 48
+
+
+@source_tree
+def test_the_radiance_example_brightest_cell_is_the_sunbeam(radiance_example):
+    """Part 4: the brightest scattered light is in the cell around the
+    refracted sunbeam at every depth; 57 times overhead at 2 m and 11 at
+    20 m; straight down 15 percent of overhead at 2 m, 2.3 at 20 m; the
+    direct share of Ed falls with depth."""
+    r = radiance_example
+    sun = r["fields"][500.0, 40.0]["radiance"]
+    refracted = np.degrees(np.arcsin(np.sin(np.radians(40.0)) / 1.34))
+    cell = int(refracted // 10.0)
+    for k in range(sun.shape[0]):
+        assert np.unravel_index(np.argmax(sun[k]), sun[k].shape) == (cell, 0)
+    assert (round(r["peak"][0]), round(r["peak"][-1])) == (57, 11)
+    assert (round(100 * r["down"][0]), round(100 * r["down"][-1], 1)) == (15, 2.3)
+    assert np.all(np.diff(r["direct_share"]) < 0)

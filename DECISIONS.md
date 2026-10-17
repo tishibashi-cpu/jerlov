@@ -906,3 +906,45 @@ turning one into an error to show it is not raised (`light_at_depth.py`,
 without a category in an example, and CI runs every example with
 `ProvenanceWarning` as an error, as the local checks already did.
 
+## 38. An example may solve what the package does not
+
+Section 12 puts solving the radiative transfer equation out of scope, and
+that stands: the package does not ship a solver, and nothing it returns
+rests on one. But the questions that need the angular light field, the
+radiance from each direction, the mean cosine, the ratio of scalar to
+planar irradiance, keep arriving at what the package does carry: a and b,
+Petzold's phase functions, pure water's, and a Kd to check against.
+Section 33 refused an orientation angle for want of exactly this.
+
+`radiance_distribution.py` (0.14.4) answers them in user code: a Monte
+Carlo solution in about 150 lines of NumPy, in the example, not the
+package. That keeps the line section 12 drew. The package supplies
+coefficients with their provenance; what is done with them, here a
+solver, is the caller's, and the example shows one caller's choices with
+every one of them stated.
+
+What it must do to be worth showing: check itself against something that
+needs no measurement, and against something that does. Gershun's law
+recovers the a put in from the model's own irradiances, to within 2
+percent, which tests the bookkeeping; Jerlov's (1976) Kd tests the result,
+and the example says where it disagrees (a fifth too high at 450 nm),
+since the a and b are Williamson & Hollins's and the phase function
+Petzold's, not Jerlov's own.
+
+Its choices are its own and are stated: one water type; the Petzold
+station whose b is nearest that type's at 530 nm, with the next nearest to
+show what the choice moves; the phase function only from the first angle
+Petzold measured, the rest taken as unscattered, rather than the report's
+extension, which the package flags; and a sun alone or a uniform overcast,
+not a clear sky, whose mix of the two the package does not determine.
+
+**Rejected:** moving the solver into the package. It would make every
+figure it returns rest on choices the Jerlov type does not fix, the phase
+function above all, and would answer them with a default. Section 4 is
+why there is none.
+
+**Rejected:** comparing with a published radiance distribution in the
+same release. It is in scope (section 31) and planned, but a measured
+water's a is rarely published and would have to be fitted, and which
+phase function is used moves the result; that needs its own care.
+
