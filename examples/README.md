@@ -1,6 +1,6 @@
 # Examples
 
-Fifteen scripts. Each runs against the installed package and needs nothing beyond
+Sixteen scripts. Each runs against the installed package and needs nothing beyond
 NumPy.
 
 ```
@@ -19,6 +19,7 @@ python examples/isolumes.py
 python examples/lure_colours.py
 python examples/ultraviolet.py
 python examples/radiance_distribution.py
+python examples/painted_sphere.py
 ```
 
 CI runs all of them on every push, so an example that has stopped working is a
@@ -48,6 +49,7 @@ copy of the package silently wins over the working tree. In a clone, run
 | design or test painted fishing lures or other gear | `lure_colours.py` |
 | study ultraviolet exposure under water, of reefs, plankton or chemistry | `ultraviolet.py` |
 | need the radiance distribution, the mean cosine or scalar irradiance | `radiance_distribution.py` |
+| render or photograph objects under water, from any direction | `painted_sphere.py` |
 
 ## What each shows
 
@@ -197,6 +199,16 @@ low, under either sky and with either phase function run. Changing one
 thing at a time, any of three other Petzold phase functions, or a b about
 1.7 times larger, brings it within 0.002 of his mean cosine; the figures
 compared do not tell which. Takes about two minutes.
+
+**`painted_sphere.py`** — a sphere in four stand-in paints, 10 m deep in
+Jerlov II, seen 2 m away from above, from below, and horizontally towards
+and away from the sun, lit by the same Monte Carlo light field, copied
+into the script. A face turned up receives Ed within 2 percent. The grey
+sphere is 14.5 times as bright as the water seen from above and 0.42 times
+seen from below; the paints are 7.0 times apart from above and 1.06 from
+below. The next nearest Petzold station moves the grey sphere by a quarter
+to a third from above and with the sun behind. `--png` writes the picture,
+with each paint in air beside it. Takes about a minute.
 
 ## What they do not show
 

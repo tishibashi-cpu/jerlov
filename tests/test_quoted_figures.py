@@ -1007,3 +1007,106 @@ def test_the_radiance_example_looking_for_the_cause(radiance_example):
           for s in ("AUTEC 9", "NUC 2200")}
     assert bb["AUTEC 9"] > bb["NUC 2200"]
     assert st["AUTEC 9"]["mu"] > st["NUC 2200"]["mu"]
+
+
+@pytest.fixture(scope="module")
+def sphere_module():
+    import runpy
+    return runpy.run_path(str(ROOT / "examples" / "painted_sphere.py"),
+                          run_name="painted_sphere")
+
+
+@pytest.fixture(scope="module")
+def sphere_example(sphere_module):
+    """examples/painted_sphere.py, run once. About a minute."""
+    import contextlib
+    import io
+    with contextlib.redirect_stdout(io.StringIO()):
+        return sphere_module["main"]()
+
+
+@source_tree
+def test_the_sphere_example_carries_the_same_monte_carlo(sphere_module):
+    """painted_sphere.py copies the engine of radiance_distribution.py so
+    that it stands alone; the copies must not drift apart."""
+    import ast
+    names = ("inverse_cdf", "particle_phase", "water_phase", "coefficients",
+             "fresnel", "turn", "simulate")
+    sources = {}
+    for name in ("radiance_distribution.py", "painted_sphere.py"):
+        text = (ROOT / "examples" / name).read_text()
+        sources[name] = {node.name: ast.get_source_segment(text, node)
+                         for node in ast.parse(text).body
+                         if isinstance(node, ast.FunctionDef)
+                         and node.name in names}
+    assert set(sources["painted_sphere.py"]) == set(names)
+    assert sources["painted_sphere.py"] == sources["radiance_distribution.py"]
+    import runpy
+    other = runpy.run_path(str(ROOT / "examples" / "radiance_distribution.py"),
+                           run_name="radiance_distribution")
+    for constant in ("N_WATER", "D_ZENITH", "D_AZIMUTH", "BATCHES"):
+        assert sphere_module[constant] == other[constant]
+
+
+@source_tree
+def test_the_sphere_example_colours_as_the_package_does(sphere_module):
+    """Its linear shortcut gives what spectrum_to_srgb gives, and looking
+    horizontally its path is Scene.observe's."""
+    import warnings
+    m = sphere_module
+    wl = m["WAVELENGTHS"]
+    rng = np.random.default_rng(3)
+    white = np.interp(wl, *jerlov.d65())
+    spectra = rng.uniform(0.0, 0.6, (5, wl.size)) * white
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", jerlov.CoverageWarning)
+        warnings.simplefilter("ignore", jerlov.GamutWarning)
+        expected = [jerlov.spectrum_to_srgb(s, wl, white=white)
+                    for s in spectra]
+    assert np.allclose(m["colour"](spectra, m["linear_srgb"](white)),
+                       expected, atol=1e-9)
+
+    water = jerlov.water("II")
+    ed = white * 0.4
+    face = rng.uniform(0.1, 0.5, wl.size) * ed / np.pi
+    behind = rng.uniform(0.001, 0.01, wl.size) * ed
+    rho = np.full(wl.size, 0.5)
+    t = np.exp(-water.c(wl) * m["DISTANCE"])
+    ours = rho * face * t + (behind - behind * t)
+    obs = jerlov.Scene(water, ed, wl).observe(
+        rho, m["DISTANCE"], veiling_radiance=behind,
+        face_irradiance_ratio=face * np.pi / ed)
+    assert np.allclose(ours, obs.direct + obs.veiling)
+
+
+@source_tree
+def test_figures_for_the_sphere_example(sphere_example):
+    """painted_sphere.py as printed and examples/README.md: HAOCE 11 and
+    AUTEC 7; a face turned up gets Ed within 2 percent, one turned down 0.1
+    to 2.7 percent of it; the grey sphere 14.5 times the water from above,
+    0.42 from below; paints 7.0 apart from above, 1.06 from below; AUTEC 7
+    moves the grey sphere most with the sun behind (-32 percent) and from
+    above (-26), backgrounds turned 119 and 151 degrees, against 29 and
+    61."""
+    r = sphere_example
+    assert (r["near"], r["other"]) == ("HAOCE 11", "AUTEC 7")
+    assert r["agree"] < 0.0205 and round(100 * r["agree"], 1) == 2.0
+    down = r["faces"][1] / r["faces"][0]
+    assert (round(100 * down.min(), 1), round(100 * down.max(), 1)) \
+        == (0.1, 2.7)
+    g = r["grey"]
+    assert (r["brightest"], r["darkest"]) == ("from above", "from below")
+    assert (round(g["from above"], 1), round(g["from below"], 2)) \
+        == (14.5, 0.42)
+    assert g["from below"] < 1 < g["from above"]
+    s = r["spread"]
+    assert (round(s["from above"], 1), round(s["from below"], 2)) \
+        == (7.0, 1.06)
+    assert max(s, key=s.get) == "from above"
+    assert min(s, key=s.get) == "from below"
+    assert r["moved"] == ["sun behind", "from above"]
+    assert [round(100 * r["change"][v]) for v in r["moved"]] == [-32, -26]
+    assert {v: round(a) for v, a in r["turned"].items()} == {
+        "from above": 151, "towards sun": 61, "sun behind": 119,
+        "from below": 29}
+    assert all(r["turned"][v] > 90 for v in r["moved"])

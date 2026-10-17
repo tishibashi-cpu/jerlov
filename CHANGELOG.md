@@ -6,8 +6,10 @@ always resolves to the latest version.
 
 ## 0.15.1 — 2026-10-18
 
-The search for why the Monte Carlo example differs from Tyler's lake, and
-one correction to the example's engine. No code or shipped value changed.
+The search for why the Monte Carlo example differs from Tyler's lake, one
+correction to that example's engine, and an example that lights a painted
+sphere and looks at it from four directions. No code or shipped value
+changed.
 
 **Fixed.** In `radiance_distribution.py`, turning a direction exactly
 straight up or down by a scattering angle left it unturned: the test for
@@ -30,11 +32,37 @@ from part 6, as set down before the runs (DECISIONS.md section 40):
 - The figures compared do not tell a different phase function from a
   larger b. The example now takes about two minutes.
 
+`painted_sphere.py`, for anyone rendering, photographing or designing
+objects seen under water: a sphere in four stand-in paints, 10 m deep in
+Jerlov II, seen 2 m away from above, from below, and horizontally towards
+and away from the sun (DECISIONS.md section 41).
+
+- Every face receives the radiance from the directions it faces, from the
+  Monte Carlo of `radiance_distribution.py`, copied into the script so
+  that it runs alone, and the sunbeam if it faces the sun. A face turned
+  up receives the Ed the Monte Carlo counts directly within 2 percent.
+- Between the sphere and the eye the water thins its light by exp(-c r)
+  and adds the background's radiance at the eye less its radiance at the
+  sphere, thinned the same way; looking horizontally that is
+  `Scene.observe`, which a test confirms.
+- The grey sphere is 14.5 times as bright as the water seen from above and
+  0.42 times seen from below. The four paints are 7.0 times apart from
+  above and 1.06 from below.
+- AUTEC 7's phase function in place of HAOCE 11's moves the grey sphere by
+  32 percent with the sun behind and 26 percent from above, the two
+  directions whose background is light scattered back.
+- `--png` writes the picture, 160 pixels to a sphere with its edge
+  smoothed, four paints down and, across, each paint in air under daylight
+  followed by the four directions, with nothing beyond the standard
+  library and NumPy. It takes about a minute.
+
 **Tests.** The engine against the exact asymptotic light field of
 isotropic scattering, within 3 percent at single-scattering albedos 0.72
-and 0.9 and 6 percent at 0.5; the turn, at every direction.
+and 0.9 and 6 percent at 0.5; the turn, at every direction. The two
+copies of the Monte Carlo are held identical; the sphere example's colour
+shortcut matches `spectrum_to_srgb`.
 
-**Docs.** DECISIONS.md section 40.
+**Docs.** DECISIONS.md sections 40 and 41.
 
 ## 0.15.0 — 2026-10-17
 
