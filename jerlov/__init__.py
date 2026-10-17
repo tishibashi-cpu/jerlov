@@ -23,6 +23,11 @@ from .colour import (
     spectrum_to_xyz,
     xyz_to_srgb,
 )
+from .radiance import (
+    TYLER1958_DEPTHS,
+    RadianceDistribution,
+    tyler1958_radiance,
+)
 from .par import (
     PAR_RANGE_NM,
     QUANTA_BAND_NM,
@@ -91,6 +96,9 @@ __all__ = [
     "ParProfile",
     "PAR_RANGE_NM",
     "jerlov1977_quanta",
+    "tyler1958_radiance",
+    "RadianceDistribution",
+    "TYLER1958_DEPTHS",
     "QuantaLevels",
     "QUANTA_BAND_NM",
     "pure_water_absorption",
@@ -116,4 +124,4 @@ __all__ = [
     "MissingQuantityError",
 ]
 
-__version__ = "0.14.4"
+__version__ = "0.15.0"

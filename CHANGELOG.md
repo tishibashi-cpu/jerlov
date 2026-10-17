@@ -4,6 +4,44 @@ Every release is archived on Zenodo under the concept DOI
 [10.5281/zenodo.22321312](https://doi.org/10.5281/zenodo.22321312), which
 always resolves to the latest version.
 
+## 0.15.0 — 2026-10-17
+
+Tyler's (1958) measured radiance distribution, shipped, and the Monte
+Carlo example compared with it. No shipped value changed; one data file
+is added.
+
+**Added.** `tyler1958_radiance(depth_m)`, the radiance from every
+direction that Tyler measured in Lake Pend Oreille, Idaho, at seven depths
+from 4.24 to 66.1 m under a clear sky, as a `RadianceDistribution`: tilt
+by 10 degrees, azimuth from the sun by 20, in his relative unit, with the
+sun altitude, band, beam attenuation and acceptance angle the report
+gives. `TYLER1958_DEPTHS` lists the depths; nothing is interpolated
+between them. The nine cells the report gives reason to doubt, the sun's
+direction where Table XI gives its glitter and one overstruck digit, are
+flagged `suspect` and warn. `jerlov/data/tyler1958_radiance.csv` is built
+by `tools/build_tyler1958.py`, which carries the 1330 values as printed
+and checks them against each other.
+
+**Examples.** `radiance_distribution.py` part 6 runs the model on the
+lake, with every choice fixed before the run (DECISIONS.md section 39):
+a = 0.1119 1/m from Tyler's three deepest tables by Gershun's law,
+b = c - a = 0.2841, the phase functions of HAOCE 5 and HAOCE 11, the sun
+alone and a uniform overcast, fresh water.
+
+- The model's mean cosine is 0.762 to 0.774 against Tyler's 0.704 to
+  0.715; Eu / Ed 0.0131 to 0.0151 against 0.0189 to 0.0233; E0 / Ed 1.27
+  to 1.29 against 1.37 to 1.39; Kd 0.144 to 0.146 1/m against 0.163 and
+  0.153.
+- In the sun's plane, relative to overhead, Tyler's radiance lies between
+  the two skies' at 5 and 25 degrees from the zenith and above both at 65
+  and 85, where the model gives 0.28 to 0.90 of it.
+- What causes the difference is not established, and the example lists
+  what was not varied. It now takes about a minute.
+
+**Docs.** DATA.md section 23: the measurement, the transcription and the
+flags. DECISIONS.md section 39: the comparison's choices, including one
+corrected before the run.
+
 ## 0.14.4 — 2026-10-17
 
 An example that solves for the radiance distribution. No code or shipped

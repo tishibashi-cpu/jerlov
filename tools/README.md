@@ -11,7 +11,7 @@ for f in tools/build_*.py; do python "$f" || break; done
 git diff --stat jerlov/data/     # must be empty
 ```
 
-Eight of the scripts read no file and will run immediately: seven carry
+Nine of the scripts read no file and will run immediately: eight carry
 their numbers as literals, and `build_cie.py` takes the CIE tables from
 `colour-science`. The others stop with a message naming the file to fetch
 and its DOI.

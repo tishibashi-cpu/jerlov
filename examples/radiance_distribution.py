@@ -11,8 +11,9 @@ coefficients the package carries:
     particle phase  jerlov.petzold_scattering, Petzold (1972), 530 nm
     water phase     jerlov.pure_water_vsf, Morel's formula (Boss & Pegau)
     checked against jerlov.water("II", source="jerlov1976").kd
+    and against jerlov.tyler1958_radiance, Tyler (1958), measured in a lake
 
-    python examples/radiance_distribution.py      # about half a minute
+    python examples/radiance_distribution.py      # about a minute
 
 The method. Photons enter through a flat surface, refracted and thinned
 by Fresnel transmission. Each travels a free path drawn from exp(-c s),
@@ -26,8 +27,12 @@ the weight. Radiance and scalar irradiance at a depth are the path length
 photons spend in a 1 m slab around it, per unit thickness; planar
 irradiance is the weight crossing the depth.
 
-Nothing here has been compared with a measured radiance distribution.
+Part 6 compares the model with the radiance Tyler measured in Lake Pend
+Oreille, with every choice made before the model was run (DECISIONS.md
+section 39).
 """
+
+from types import SimpleNamespace
 
 import numpy as np
 
@@ -89,10 +94,10 @@ def particle_phase(station):
                 first_deg=float(first), b=p.b)
 
 
-def water_phase(wavelength):
+def water_phase(wavelength, salinity=37.0):
     grid = np.linspace(0.0, 180.0, 1801)
-    cdf, cos_angle, _ = inverse_cdf(grid,
-                                    jerlov.pure_water_vsf(grid, wavelength))
+    cdf, cos_angle, _ = inverse_cdf(
+        grid, jerlov.pure_water_vsf(grid, wavelength, salinity))
     return dict(cdf=cdf, cos=cos_angle)
 
 
@@ -135,7 +140,8 @@ def turn(ux, uy, uz, cos_t, rng):
 
 
 def simulate(a, b, bw, particles, water, sun_zenith, seed,
-             photons=PHOTONS, depths=DEPTHS, half_slab=0.5):
+             photons=PHOTONS, depths=DEPTHS, half_slab=0.5,
+             n_water=N_WATER):
     """One batch. ``sun_zenith`` in degrees, or None for an overcast sky of
     uniform radiance. z is positive downwards; the sun's light travels
     towards +x, so azimuth 0 is the direction away from the sun.
@@ -150,8 +156,8 @@ def simulate(a, b, bw, particles, water, sun_zenith, seed,
     else:
         mu_air = np.full(photons, np.cos(np.radians(sun_zenith)))
         azimuth = np.zeros(photons)
-    weight = 1 - fresnel(mu_air, 1.0, N_WATER)
-    sin_w = np.sqrt(1 - mu_air ** 2) / N_WATER
+    weight = 1 - fresnel(mu_air, 1.0, n_water)
+    sin_w = np.sqrt(1 - mu_air ** 2) / n_water
     ux, uy = sin_w * np.cos(azimuth), sin_w * np.sin(azimuth)
     uz = np.sqrt(1 - sin_w ** 2)
     z = np.zeros(photons)
@@ -191,7 +197,7 @@ def simulate(a, b, bw, particles, water, sun_zenith, seed,
         z[i] = z1
 
         up = i[surfaced]
-        weight[up] *= fresnel(uz[up], N_WATER, 1.0)
+        weight[up] *= fresnel(uz[up], n_water, 1.0)
         uz[up] = -uz[up]
 
         hit = i[~surfaced]
@@ -233,6 +239,69 @@ def light_field(water_type, wavelength, particles, sun_zenith):
     out.update(kd=float(np.mean(kd)),
                kd_se=float(np.std(kd, ddof=1) / np.sqrt(BATCHES)),
                a=a, b=b, bw=bw)
+    return out
+
+
+# -- Tyler's lake -----------------------------------------------------------
+
+LAKE_DEPTHS = (41.3, 53.7, 66.1)    # his three deepest tables
+LAKE_N = 1.333              # fresh water against air, in the visible
+LAKE_WAVELENGTH = 488.0     # the middle of his band, 430 to 546 nm
+LAKE_PHOTONS = 100_000
+VIEWS = (5, 25, 45, 65, 85)
+
+
+def trapezoid(y, x):
+    """The trapezoid rule along the last axis."""
+    return np.sum(0.5 * (y[..., 1:] + y[..., :-1]) * np.diff(x), axis=-1)
+
+
+def measured_irradiances(table):
+    """Ed, Eu and E0 from one of Tyler's tables, by the trapezoid rule over
+    his grid, the other side of the sun's plane mirroring this one."""
+    tilt = np.radians(table.tilt_deg)
+    ring = (2 * trapezoid(table.radiance, np.radians(table.azimuth_deg))
+            * np.sin(tilt))
+    flux = ring * np.cos(tilt)
+    down, up = tilt <= np.pi / 2, tilt >= np.pi / 2
+    return dict(ed=trapezoid(flux[down], tilt[down]),
+                eu=-trapezoid(flux[up], tilt[up]),
+                e0=trapezoid(ring, tilt))
+
+
+def measured_cells(table):
+    """Tyler's radiance averaged over each of the model's cells, his table
+    interpolated linearly to every half degree."""
+    fine = np.arange(0.25, 180.0, 0.5)
+    by_tilt = np.array([np.interp(fine, table.tilt_deg, column)
+                        for column in table.radiance.T]).T
+    grid = np.array([np.interp(fine, table.azimuth_deg, row)
+                     for row in by_tilt])
+    n_th, n_ph = int(180 / D_ZENITH), int(180 / D_AZIMUTH)
+    w = np.sin(np.radians(fine))
+    total = (grid * w[:, None]).reshape(n_th, -1, n_ph, int(2 * D_AZIMUTH))
+    return (total.sum(axis=(1, 3))
+            / (w.reshape(n_th, -1).sum(axis=1)[:, None] * 2 * D_AZIMUTH))
+
+
+def summary(runs, depths):
+    """Mean cosine, Eu / Ed, E0 / Ed and Kd per batch: their means and the
+    standard error of the means. The mean radiance, and the relative
+    standard error of the radiance relative to overhead."""
+    per = {"mu": [(r["ed"] - r["eu"]) / r["e0"] for r in runs],
+           "R": [r["eu"] / r["ed"] for r in runs],
+           "ratio": [r["e0"] / r["ed"] for r in runs],
+           "kd": [np.log(r["ed"][:-1] / r["ed"][1:]) / np.diff(depths)
+                  for r in runs]}
+    out = {k: np.mean(v, axis=0) for k, v in per.items()}
+    out.update({k + "_se": np.std(v, axis=0, ddof=1) / np.sqrt(len(runs))
+                for k, v in per.items()})
+    radiance = [r["radiance"] / r["radiance"][:, :1, :].mean(axis=2,
+                                                           keepdims=True)
+                for r in runs]
+    out["radiance"] = np.mean([r["radiance"] for r in runs], axis=0)
+    out["relative_se"] = (np.std(radiance, axis=0, ddof=1)
+                          / np.sqrt(len(runs)) / np.mean(radiance, axis=0))
     return out
 
 
@@ -380,16 +449,170 @@ scalar irradiance, what a spherical sensor reads, exceeds planar. At
   says least about.""")
 
     # ----------------------------------------------------------------------
+    rule("6. Against a measured radiance distribution")
+
+    tables = {d: jerlov.tyler1958_radiance(d) for d in LAKE_DEPTHS}
+    t = tables[LAKE_DEPTHS[0]]
+    measured = {d: measured_irradiances(tables[d]) for d in LAKE_DEPTHS}
+    found = []
+    for z1, z2 in zip(LAKE_DEPTHS[:-1], LAKE_DEPTHS[1:]):
+        net1 = measured[z1]["ed"] - measured[z1]["eu"]
+        net2 = measured[z2]["ed"] - measured[z2]["eu"]
+        mu = np.sqrt(net1 / measured[z1]["e0"] * net2 / measured[z2]["e0"])
+        found.append(float(np.log(net1 / net2) / (z2 - z1) * mu))
+    a_lake = float(np.mean(found))
+    c_lake = t.beam_attenuation
+    b_lake = c_lake - a_lake
+    by_b = sorted(jerlov.PETZOLD_STATIONS,
+                  key=lambda s: abs(jerlov.petzold_scattering(s).b - b_lake))
+    near, second = by_b[:2]
+    sun_zenith = 90.0 - t.sun_altitude_deg
+    print(f"""Tyler (1958) measured the radiance from every direction at seven
+depths in Lake Pend Oreille, Idaho, a deep lake in which he found no
+definite sign of stratification, under a clear sky with the sun {t.sun_altitude_deg:g}
+degrees high, in a band from {t.band_nm[0]:g} to {t.band_nm[1]:g} nm. Of the water he gives the
+beam attenuation, c = {c_lake:.3f} 1/m at the surface, and not a, b or a phase
+function. What the model is given, all fixed before it was run
+(DECISIONS.md section 39):
+
+  - a from the measurement, by Gershun's law: Ed, Eu and E0 integrated
+    from his tables, and a = K of Ed - Eu times the mean cosine, between
+    {LAKE_DEPTHS[0]:g} and {LAKE_DEPTHS[1]:g} m and between {LAKE_DEPTHS[1]:g} and {LAKE_DEPTHS[2]:g} m: {found[0]:.4f} and {found[1]:.4f} 1/m. Their
+    mean, {a_lake:.4f}, and b = c - a = {b_lake:.4f} 1/m.
+  - the phase function of the Petzold station whose b is nearest that,
+    {near} ({jerlov.petzold_scattering(near).b:.3f} 1/m), and of the next nearest, {second} ({jerlov.petzold_scattering(second).b:.3f}).
+  - the sun alone, {sun_zenith:.1f} degrees from the zenith, and a uniform overcast,
+    taken to bracket a clear sky.
+  - fresh water: a refractive index of {LAKE_N}, and pure water's scattering
+    at salinity 0 and {LAKE_WAVELENGTH:g} nm, the middle of the band.
+  - his three deepest tables only. The four above carry the glitter of the
+    sun on the surface in its direction (DATA.md section 23).""")
+
+    depths = np.array(LAKE_DEPTHS)
+    bw = float(jerlov.pure_water_scattering(LAKE_WAVELENGTH, 0.0))
+    fresh = water_phase(LAKE_WAVELENGTH, 0.0)
+    lake = {}
+    for station, light in ((near, sun_zenith), (near, None),
+                           (second, sun_zenith)):
+        phase = (PARTICLES[station] if station in PARTICLES
+                 else particle_phase(station))
+        runs = [simulate(a_lake, b_lake, bw, phase, fresh, light, seed=seed,
+                         photons=LAKE_PHOTONS, depths=depths, n_water=LAKE_N)
+                for seed in range(BATCHES)]
+        lake[station, light] = summary(runs, depths)
+    tyler = {"mu": [], "R": [], "ratio": []}
+    for d in LAKE_DEPTHS:
+        m = measured[d]
+        tyler["mu"].append((m["ed"] - m["eu"]) / m["e0"])
+        tyler["R"].append(m["eu"] / m["ed"])
+        tyler["ratio"].append(m["e0"] / m["ed"])
+    tyler = {k: np.array(v) for k, v in tyler.items()}
+    uniform = measured_irradiances(SimpleNamespace(
+        tilt_deg=t.tilt_deg, azimuth_deg=t.azimuth_deg,
+        radiance=np.ones_like(t.radiance)))
+    grid_error = max(abs(uniform["e0"] / (4 * np.pi) - 1),
+                     abs(uniform["ed"] / np.pi - 1))
+    tyler["kd"] = (np.log([measured[d]["ed"] for d in LAKE_DEPTHS[:-1]])
+                   - np.log([measured[d]["ed"] for d in LAKE_DEPTHS[1:]])) \
+        / np.diff(depths)
+
+    def name(key):
+        station, light = key
+        return f"{station}, {'overcast' if light is None else 'sun'}"
+
+    print(f"\n  {'':>26}" + "".join(f"{d:>7g} m" for d in LAKE_DEPTHS))
+    for what, label in (("mu", "mean cosine"), ("R", "Eu / Ed"),
+                        ("ratio", "E0 / Ed")):
+        print(f"  {label + ', Tyler':>26}"
+              + "".join(f"{v:>9.3f}" for v in tyler[what]))
+        for key, f in lake.items():
+            print(f"  {name(key):>26}"
+                  + "".join(f"{v:>9.3f}" for v in f[what]))
+    print(f"\n  {'Kd of Ed':>26}" + "".join(
+        f"{f'{z1:g}-{z2:g} m':>12}"
+        for z1, z2 in zip(LAKE_DEPTHS[:-1], LAKE_DEPTHS[1:])))
+    print(f"  {'Tyler':>26}" + "".join(f"{v:>12.4f}" for v in tyler["kd"]))
+    for key, f in lake.items():
+        print(f"  {name(key):>26}" + "".join(f"{v:>12.4f}" for v in f["kd"]))
+    noise = max(float(np.max(f[k + "_se"] / f[k])) for f in lake.values()
+                for k in ("mu", "R", "ratio", "kd"))
+
+    model = {k: np.concatenate([f[k] for f in lake.values()])
+             for k in ("mu", "R", "ratio", "kd")}
+    print(f"""
+  The standard error of the model's figures, over {BATCHES} batches of {LAKE_PHOTONS:,}
+  photons, is at most {100 * noise:.0f} percent. Its mean cosine is {model["mu"].min():.3f} to {model["mu"].max():.3f}, with
+  either phase function and either sky; Tyler's is {tyler["mu"].min():.3f} to {tyler["mu"].max():.3f}. Its Eu / Ed
+  is {model["R"].min():.4f} to {model["R"].max():.4f}, against {tyler["R"].min():.4f} to {tyler["R"].max():.4f}, and its E0 / Ed {model["ratio"].min():.2f} to {model["ratio"].max():.2f},
+  against {tyler["ratio"].min():.2f} to {tyler["ratio"].max():.2f}. Kd is {model["kd"].min():.3f} to {model["kd"].max():.3f} 1/m, against {tyler["kd"][0]:.3f} and {tyler["kd"][1]:.3f}.
+  The model obeys Gershun's law (part 2), and its a was taken from
+  Tyler's light by the same law, so a mean cosine too high has to come
+  with a K too low.""")
+
+    print(f"""
+Radiance in the plane of the sun, averaged over the model's cells,
+relative to the cell overhead; Tyler's table is interpolated linearly
+across each cell. {near}'s phase function.""")
+    print("\n  looking " + "".join(f"{v:>7}°" for v in VIEWS))
+    rows = {}
+    for k, d in enumerate(LAKE_DEPTHS):
+        cells = measured_cells(tables[d])
+        for col, label in ((0, "to sun"), (-1, "away")):
+            rows[d, label] = {}
+            for who, field in (("Tyler", cells),
+                               ("sun", lake[near, sun_zenith]["radiance"][k]),
+                               ("overcast", lake[near, None]["radiance"][k])):
+                values = np.array([field[int(v // D_ZENITH), col]
+                                   / field[0, :].mean() for v in VIEWS])
+                rows[d, label][who] = values
+                print(f"  {f'{d:g} m' if (col, who) == (0, 'Tyler') else '':>6}"
+                      f" {label if who == 'Tyler' else '':>6} {who:>8}"
+                      + "".join(f"{x:>8.3g}" for x in values))
+    between = [v for i, v in enumerate(VIEWS)
+               if all(min(r["sun"][i], r["overcast"][i]) <= r["Tyler"][i]
+                      <= max(r["sun"][i], r["overcast"][i])
+                      for r in rows.values())]
+    above = [i for i, v in enumerate(VIEWS)
+             if all(r["Tyler"][i] > max(r["sun"][i], r["overcast"][i])
+                    for r in rows.values())]
+    side = np.array([[r["sun"][i], r["overcast"][i]] / r["Tyler"][i]
+                     for r in rows.values() for i in above])
+    cell_se = max(float(lake[near, light]["relative_se"][k][
+        int(VIEWS[i] // D_ZENITH), col])
+        for light in (sun_zenith, None) for k in range(len(LAKE_DEPTHS))
+        for col in (0, -1) for i in above)
+    print(f"""
+  At {" and ".join(f"{v}" for v in between)} degrees from the zenith, at every depth and on both sides,
+  Tyler's radiance lies between the two skies'. At {" and ".join(f"{VIEWS[i]}" for i in above)} it is above
+  both, at every depth and on both sides: the model gives {side.min():.2f} to {side.max():.2f} of
+  his there, relative to overhead, with a standard error of at most {100 * cell_se:.0f}
+  percent. The model's light is gathered closer about the vertical than
+  the light Tyler measured.
+
+  What this does not settle is why. The model differs from the lake in
+  ways none of which was varied here: one wavelength for a band {t.band_nm[1] - t.band_nm[0]:g} nm
+  wide; phase functions measured in the sea at 530 nm, and straight on
+  below Petzold's first angle; a c measured at the surface the next day,
+  in a band the report does not give, which fell to {-np.log(0.686):.3f} 1/m at 61 m;
+  a flat surface; and no sky but the two bracketing ones.""")
+
+    # ----------------------------------------------------------------------
     rule("Before you use any of this")
 
     print(f"""  - The water is the same at every depth and has no bottom; its a and b
     are Williamson & Hollins's for {WATER_TYPE}, and the phase function is
     measured at one place and one wavelength, 530 nm, and used at all.
   - Scattering below Petzold's first measured angle goes straight on.
-  - The surface is flat, with a refractive index of {N_WATER}. Waves focus and
-    spread the sunbeam, and roughen the radiance near the surface.
+  - The surface is flat, with a refractive index of {N_WATER} ({LAKE_N} in the
+    lake). Waves focus and spread the sunbeam, and roughen the radiance
+    near the surface.
   - The sky is either a sun alone or a uniformly bright overcast. A clear
     sky lies between, in proportions this package does not determine.
+  - Part 6 takes the lake's a from Tyler's own light, by the law part 2
+    checks, so it is not an independent check of a; its c is the surface
+    value measured the day after. His tables are integrated on their own
+    10 by 20 degree grid, which gets a uniform radiance's E0 and Ed right
+    to within {100 * grid_error:.1f} percent.
   - No inelastic scattering, no polarisation. Radiance is binned in
     {D_ZENITH:g} by {D_AZIMUTH:g} degree cells and averaged over 1 m of depth; cells near
     straight down carry few photons and the most noise.
@@ -399,7 +622,13 @@ scalar irradiance, what a spherical sensor reads, exceeds planar. At
     return dict(station=STATION, other=OTHER, straight=p["straight"],
                 gershun=gershun, kd_ratio=ratio, fields=fields,
                 other_field=other, peak=peak, down=down,
-                direct_share=direct / sun["ed"])
+                direct_share=direct / sun["ed"],
+                lake=dict(found=found, a=a_lake, b=b_lake, near=near,
+                          second=second, sun_zenith=sun_zenith, tyler=tyler,
+                          fields=lake, rows=rows, between=between,
+                          above=[VIEWS[i] for i in above], side=side,
+                          cell_se=cell_se, noise=noise,
+                          grid_error=grid_error))
 
 
 if __name__ == "__main__":

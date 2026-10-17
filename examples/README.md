@@ -189,13 +189,20 @@ Petzold phase function and pure water's. The package does not solve it
 percent; Kd is within 6 percent of Jerlov's (1976) at 500 and 550 nm and 20
 to 24 percent above at 450. Scalar irradiance exceeds planar by 1.24 to
 1.37, and the next nearest of Petzold's stations changes Eu / Ed at 10 m by
-about half. Takes about half a minute.
+about half. Then the same model in Lake Pend Oreille against the radiance
+Tyler (1958) measured there, with a taken from his light by Gershun's law:
+the model's mean cosine is 0.76 to 0.77 against his 0.70 to 0.72, its Eu / Ed
+0.56 to 0.80 of his, and its radiance 65 and 85 degrees from the zenith too
+low, under either sky and with either phase function run. Takes about a
+minute.
 
 ## What they do not show
 
-None of this has been compared against photographs or field radiometry,
-because the measurements needed to do that do not appear to exist. The output
-is what the published coefficients imply.
+Two scripts compare with field measurements: `euphotic_zone.py` with
+Jerlov's quanta irradiance by water type, and `radiance_distribution.py` with
+Tyler's radiance distribution in a lake, which it does not match (part 6).
+Nothing else has been compared against photographs or field radiometry; the
+output is what the published coefficients imply.
 
 **Every script ends with the assumptions it made** — stated backscatter
 ratios, approximate veiling geometry, invented reflectance and receptor
