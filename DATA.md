@@ -3,7 +3,7 @@
 What every shipped table is, where it came from, what was verified, and what
 is known to be wrong with it.
 
-Twenty-three entries are recorded below. Nine are confirmed defects, three were
+Twenty-five entries are recorded below. Nine are confirmed defects, three were
 open questions that the first edition of Jerlov settled, and the rest are
 notes rather than defects. None of them is repaired silently: values that
 could be recovered carry `status = reconstructed` and say how, values that
@@ -32,6 +32,9 @@ could not are `missing`, and values that are used but doubtful are `suspect`.
 | `williamson2022_aw.csv` | Pure water absorption that Williamson & Hollins (2022) built their a on. 1 nm, 300-800 nm | 501 |
 | `jerlov1977_quanta.csv` | Jerlov's measured quanta irradiance, 350-700 nm: depths of 30, 10, 3 and 1 percent, percent by depth, Kd by level and by layer. 7 types | 202 |
 | `tyler1958_radiance.csv` | Tyler's measured radiance distribution in Lake Pend Oreille: 19 tilts by 10 azimuths at 7 depths, 4.24-66.1 m, relative units | 1330 |
+| `darecki2011_irradiance_cv.csv` | Coefficient of variation of Ed under waves, 6 depths 0.86-9.58 m, 443, 532 and 670 nm; **read from a figure** | 18 |
+| `darecki2011_radiance_cv.csv` | Coefficient of variation of radiance at 532 nm, 13 zenith angles in the sun's plane, 3 occasions; **read from a figure** | 39 |
+| `gernez2009_sun_zenith.csv` | Coefficient of variation of Ed at 510 nm, its spread, and the period of the strongest fluctuation, against the sun's zenith angle, clear skies; **read from a figure** | 14 |
 
 The four tables drawn from the two Dstl datasets (`williamson2022_iop`,
 `williamson2022_measured`, `solonenko2015_iop` and `williamson2023_depth`)
@@ -52,6 +55,7 @@ only; see section 16.
 | `model_extrapolation` | Outside the range of the underlying measurements | Usable, but not measured |
 | `interpolated` | Not printed: linearly interpolated between printed values by the dataset the table came through | Usable; no more precise than the printed neighbours |
 | `extrapolated_by_dataset` | Not printed: beyond the printed range, linearly extrapolated by the dataset the table came through | Usable, but rests on nobody's measurement; warns |
+| `read_from_figure` | Not printed as a number: read off a published figure, by the method its section gives | Usable to the reading's stated precision, which the accessor carries |
 
 ## Sources
 
@@ -1160,4 +1164,98 @@ not only the sun's. The barge's shadow and image, which Tyler read
 around: about 54 degrees of the horizontal sweep were affected (pp. 12-13).
 The depths 10.4, 16.6 and 29.0 m are printed as 10.43, 16.65 and 28.95 in
 Tables III and XI; the radiance tables' labels are used here.
+
+## 24. Darecki et al.'s light fluctuations, read from their figures (note)
+
+`darecki2011_irradiance_cv.csv` and `darecki2011_radiance_cv.csv` are read
+from Darecki, M., Stramski, D. and Sokolski, M. (2011), "Measurements of
+high-frequency light fluctuations induced by sea surface waves with an
+Underwater Porcupine Radiometer System", J. Geophys. Res. 116, C00H09,
+doi:10.1029/2011JC007338, Figures 13a (p. 12) and 15 (p. 14), by
+`tools/build_darecki2011.py`. The paper prints no table of either. These
+are the first values in the package read from a figure rather than a
+table (DECISIONS.md section 42).
+
+**How they were read.** Both figures are drawn in the PDF as vector
+graphics, so every marker is a drawing command with exact coordinates.
+They were listed with PyMuPDF's `get_drawings`, and the build script
+carries them, in PDF points, as literals. Each axis is calibrated by a
+least-squares line through its major tick marks; the ticks themselves lie
+within 0.03 pt of that line, which is 0.0001 in the CV of Figure 13a and
+0.001 in Figure 15. The values are kept to four places. Circles and
+squares are placed at the centre of their box. The downward triangles of
+532 nm are placed at their centroid, a third of the way down: the three
+wavelengths were measured at the same depths, and the centroid puts them
+within 0.005 m of each other where the box centre would put 532 nm 0.05 m
+deeper. What cannot be known from the page is how exactly the plotting
+program placed the markers.
+
+**What the build checks.** The three wavelengths share their depths; CV
+falls with depth at every wavelength; it is higher in the red than the
+blue at every depth, as the text says (p. 12). The thirteen radiance
+markers of each panel fall within 0.1 degree of the whole angles of the
+sensors; each panel's largest CV lies between 15 and 40 degrees, around
+the refracted sunbeam (p. 14), and panels b and c exceed 3, "can exceed
+300%" (p. 14).
+
+**The measurements.** Figure 13a: the Santa Barbara Channel, 11 September
+2008, 11:35 to 12:56 local time, sunny, sun 30-33 degrees from the zenith,
+wind 4.1-6.4 m/s, c(555) = 0.68 1/m; irradiance collectors 2.5 mm across,
+sampled at 1 kHz. The depths are 0.86, 1.70, 2.84, 3.78, 6.73 and 9.58 m
+as read. Figure 15: radiance at 532 nm, field of view 4.5 degrees in water
+(p. 4), in the plane of the sun, positive towards it, on three occasions
+the caption gives and `darecki2011_radiance_cv` carries: depth 0.93, 0.59
+and 0.54 m; sun 33, 41 and 35 degrees; refracted sunbeam 24, 29 and 25.
+
+**What they depend on that the package does not know.** The collector's
+size: larger collectors read smaller fluctuations, and "a collector of a
+few millimeters in diameter or smaller is required" near the surface
+(Figures 10-12, paragraph 30, p. 11). The wind, the waves and the sky:
+Figure 13b, which is not read, shows CV at about 1 m changing with the
+wind on five days.
+
+## 25. Gernez & Antoine's light fluctuations, read from their figure (note)
+
+`gernez2009_sun_zenith.csv` is read from Gernez, P. and Antoine, D. (2009),
+"Field characterization of wave-induced underwater light field
+fluctuations", J. Geophys. Res. 114, C06025, doi:10.1029/2008JC005059,
+Figure 8a (p. 9), by `tools/build_gernez2009.py`.
+
+**How it was read.** The figure is a greyscale raster in the PDF, 877 by
+821 pixels at 150 per inch. The build script carries pixel rows and
+columns as literals, read by locating dark pixels (below 150 of 255) and
+checked by overlaying the readings on the image. The axes are calibrated
+on their tick marks: one pixel is 0.115 percent of CV and 0.013 s of
+Tmax.
+
+- CV and its standard deviation: each solid bar is the mean plus and
+  minus one standard deviation, so the mean is its midpoint; the circle
+  drawn there was found within a pixel of it at every angle. Read to one
+  pixel.
+- Tmax: the centre of the square marker, from its vertical sides. At 30,
+  45, 55 and 70 degrees only one side could be told from the dashed bar,
+  and the value is read to two pixels. The `tmax_reading_s` column says
+  which.
+- The standard deviation of Tmax is in the figure but not read: the dashed
+  bars end between dashes, and their ends cannot be placed closer than a
+  dash.
+
+**What the build checks.** The text's own figures for this panel: CV
+"maximal at 25%" at the highest sun, "down to 5%" near the horizon, and
+Tmax rising "from 1s to 3s" (p. 7). Beyond 35 degrees CV only falls and
+Tmax only rises.
+
+**The measurements.** The BOUSSOLE buoy in the Ligurian Sea, from 2003;
+downwelling irradiance at 510 nm, collectors 8 mm across, sampled 6 times
+a second for a minute every 15 minutes, so that fluctuations shorter than
+a third of a second are not resolved (p. 4); nominal depth between 2.7 and
+3.7 m, which changed between deployments (p. 3); clear skies only, the
+above-water irradiance at least 0.85 of a clear-sky model (p. 6).
+
+**Equation (8), not shipped.** The paper fits the change of CV with wind
+speed as CV / CV(0) = a + b sqrt(w) + exp(-(sqrt(w) - c)^2 / 2 s^2) /
+(s sqrt(2 pi)), with a = 0.894, b = -0.014, c = 1.627 and s = 0.752
+(p. 7). The text layer of the PDF drops the minus sign of b; the page
+image has it. As printed, the equation gives 0.945 at w = 0, not the 1
+that CV(0) means. It is recorded here and not shipped.
 

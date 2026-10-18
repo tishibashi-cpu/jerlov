@@ -28,6 +28,15 @@ from .radiance import (
     RadianceDistribution,
     tyler1958_radiance,
 )
+from .fluctuations import (
+    DARECKI2011_PANELS,
+    IrradianceFluctuation,
+    RadianceFluctuation,
+    SunZenithFluctuation,
+    darecki2011_irradiance_cv,
+    darecki2011_radiance_cv,
+    gernez2009_cv_by_sun_zenith,
+)
 from .par import (
     PAR_RANGE_NM,
     QUANTA_BAND_NM,
@@ -99,6 +108,13 @@ __all__ = [
     "tyler1958_radiance",
     "RadianceDistribution",
     "TYLER1958_DEPTHS",
+    "darecki2011_irradiance_cv",
+    "darecki2011_radiance_cv",
+    "gernez2009_cv_by_sun_zenith",
+    "IrradianceFluctuation",
+    "RadianceFluctuation",
+    "SunZenithFluctuation",
+    "DARECKI2011_PANELS",
     "QuantaLevels",
     "QUANTA_BAND_NM",
     "pure_water_absorption",
@@ -124,4 +140,4 @@ __all__ = [
     "MissingQuantityError",
 ]
 
-__version__ = "0.15.2"
+__version__ = "0.16.0"

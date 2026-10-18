@@ -4,6 +4,45 @@ Every release is archived on Zenodo under the concept DOI
 [10.5281/zenodo.22321312](https://doi.org/10.5281/zenodo.22321312), which
 always resolves to the latest version.
 
+## 0.16.0 — 2026-10-18
+
+The fluctuations of the light under a wavy surface, as two field studies
+measured them, read from their figures. No shipped value changed; three
+data files are added.
+
+**Added.**
+
+- `darecki2011_irradiance_cv()`: the coefficient of variation of the
+  downwelling irradiance, sampled at 1 kHz with a 2.5 mm collector, at six
+  depths from 0.86 to 9.58 m and at 443, 532 and 670 nm (Darecki,
+  Stramski & Sokolski 2011, Figure 13a), as an `IrradianceFluctuation`
+  with the conditions the caption gives.
+- `darecki2011_radiance_cv(panel)`: the coefficient of variation of the
+  radiance at 532 nm at thirteen zenith angles in the plane of the sun, on
+  the three occasions of their Figure 15, as a `RadianceFluctuation`;
+  `DARECKI2011_PANELS` names them.
+- `gernez2009_cv_by_sun_zenith()`: under clear skies at about 3 m, the
+  coefficient of variation of the downwelling irradiance at 510 nm, its
+  standard deviation, and the period of the strongest fluctuation, from
+  20 to 85 degrees of sun zenith angle (Gernez & Antoine 2009, Figure 8a),
+  as a `SunZenithFluctuation`.
+- A status, `read_from_figure`, which every value in the three files
+  carries.
+
+**How they were read.** Darecki et al.'s figures are vector graphics, and
+each marker's coordinates were taken from the PDF's drawing commands;
+Gernez & Antoine's is an image, read to the pixel. Both build scripts,
+`tools/build_darecki2011.py` and `tools/build_gernez2009.py`, carry the
+coordinates as literals, calibrate on the axes' tick marks, and check the
+values against what the papers say in words. The accessors carry the
+precision of the reading.
+
+**Docs.** DATA.md sections 24 and 25: the readings, their precision, the
+conditions, and Gernez & Antoine's equation (8), which as printed does not
+give 1 at zero wind and is not shipped. DECISIONS.md section 42: values
+read from figures are allowed under stated conditions, and the package
+ships the measurements, not a model of the fluctuations.
+
 ## 0.15.2 — 2026-10-18
 
 The painted sphere under an overcast, with a gloss coat, and with its

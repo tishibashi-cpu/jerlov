@@ -1,0 +1,19 @@
+depth_m,wavelength_nm,cv,status,note
+9.58,443,0.0481,read_from_figure,read from the figure's drawing commands; DATA.md section 24
+9.58,532,0.0513,read_from_figure,read from the figure's drawing commands; DATA.md section 24
+9.58,670,0.0815,read_from_figure,read from the figure's drawing commands; DATA.md section 24
+6.73,443,0.0658,read_from_figure,read from the figure's drawing commands; DATA.md section 24
+6.73,532,0.0782,read_from_figure,read from the figure's drawing commands; DATA.md section 24
+6.73,670,0.1227,read_from_figure,read from the figure's drawing commands; DATA.md section 24
+3.78,443,0.1381,read_from_figure,read from the figure's drawing commands; DATA.md section 24
+3.78,532,0.1642,read_from_figure,read from the figure's drawing commands; DATA.md section 24
+3.78,670,0.2310,read_from_figure,read from the figure's drawing commands; DATA.md section 24
+2.84,443,0.1919,read_from_figure,read from the figure's drawing commands; DATA.md section 24
+2.84,532,0.2238,read_from_figure,read from the figure's drawing commands; DATA.md section 24
+2.84,670,0.3000,read_from_figure,read from the figure's drawing commands; DATA.md section 24
+1.70,443,0.3272,read_from_figure,read from the figure's drawing commands; DATA.md section 24
+1.70,532,0.3769,read_from_figure,read from the figure's drawing commands; DATA.md section 24
+1.70,670,0.4925,read_from_figure,read from the figure's drawing commands; DATA.md section 24
+0.86,443,0.4954,read_from_figure,read from the figure's drawing commands; DATA.md section 24
+0.86,532,0.5414,read_from_figure,read from the figure's drawing commands; DATA.md section 24
+0.86,670,0.6536,read_from_figure,read from the figure's drawing commands; DATA.md section 24

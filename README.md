@@ -315,6 +315,20 @@ The package solves no radiative transfer itself; the Monte Carlo model in
 `examples/radiance_distribution.py` is compared with these tables, and does
 not match them. DATA.md section 23.
 
+Under a wavy surface the light flickers. Two field studies that give it only
+in figures are shipped as values read off those figures, each with its
+conditions and the precision of the reading:
+
+```python
+jerlov.darecki2011_irradiance_cv()     # CV of Ed, 0.86-9.58 m, 443/532/670 nm
+jerlov.darecki2011_radiance_cv("a")    # CV of radiance, 13 angles in the sun's plane
+jerlov.gernez2009_cv_by_sun_zenith()   # CV of Ed at 510 nm against the sun's zenith angle
+```
+
+They carry `status = read_from_figure`. The package does not model the
+fluctuations, which depend on the wind, the waves and the collector as much
+as on the water. DATA.md sections 24 and 25; DECISIONS.md section 42.
+
 ## Which type is my water nearest?
 
 ```python
@@ -406,7 +420,7 @@ made.
 ## Provenance and design
 
 `DATA.md` records, for every shipped table, where it came from, what was
-verified, and what is known to be wrong with it. Twenty-three entries are
+verified, and what is known to be wrong with it. Twenty-five entries are
 documented there: nine confirmed defects in the source literature, three
 questions the first edition of Jerlov settled, and the rest notes.
 
