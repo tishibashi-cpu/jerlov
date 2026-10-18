@@ -1111,3 +1111,51 @@ third.
 **Rejected:** a function in the package that lights an oriented face.
 It would rest on the Monte Carlo's choices, the phase function above all,
 and would answer them with a default (section 4).
+
+## 42. Values read from figures, and the fluctuations under waves
+
+DATA.md section 20 said that reading numbers off a figure is not done
+here. That was right for what it was said about, a curve averaged from
+three laboratories' pure water that the paper never gave as numbers and
+that the package did not need. It is lifted, under conditions, for
+measurements that exist nowhere else as numbers.
+
+The occasion is the fluctuation of the light under a wavy surface. The
+two field studies at hand, Darecki, Stramski & Sokolski (2011) and Gernez
+& Antoine (2009), give their results only in figures. Without reading
+them the package can say nothing at all about the subject, and a caller
+who reads them for themselves gets no record of how.
+
+**The conditions.** A value read from a figure carries
+`status = read_from_figure`, never `ok`. Its section of DATA.md says how
+it was read and how closely, and its accessor carries that precision.
+The reading is done from the published article, by a method that someone
+else can repeat: from the drawing commands where the figure is vector
+graphics, which gives the markers' coordinates exactly; from the pixels
+where it is an image, to the pixel. The build script carries the
+coordinates as literals, calibrates each axis on its own tick marks,
+and checks the values against whatever the text says about them in
+words. What cannot be read to the stated precision is not shipped:
+Gernez & Antoine's standard deviation of the period, whose dashed bars
+end between dashes, is left out.
+
+**What is shipped, and what is not.** The measurements, with the
+conditions they were made under: the depth, the sun, the wind, the
+water's c, the collector's size and the sampling rate, as each paper
+gives them. Not a model. How strongly the light fluctuates depends on the
+wind, the waves, the sky and the size of the collector, none of which the
+Jerlov type fixes; a function returning a fluctuation for a type and a
+depth would answer them with a default (section 4), and building one from
+these few profiles would be deriving new coefficients from observations
+(section 12). The same holds for Gernez & Antoine's equation (8), the
+change with wind speed: it is a published relation, but as printed it
+does not give 1 at zero wind as its definition requires, and it is
+recorded in DATA.md section 25 rather than shipped.
+
+**The figures are not reproduced.** The package carries numbers read
+from them, cited to the page; it does not carry the images.
+
+**Rejected:** reading the figures less carefully because they are only
+figures. A value read to a stated precision by a stated method is as
+usable as a printed one to that precision, and one read by eye with no
+record is not usable at all.
