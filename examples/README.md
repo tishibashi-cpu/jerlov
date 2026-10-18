@@ -207,8 +207,12 @@ into the script. A face turned up receives Ed within 2 percent. The grey
 sphere is 14.5 times as bright as the water seen from above and 0.42 times
 seen from below; the paints are 7.0 times apart from above and 1.06 from
 below. The next nearest Petzold station moves the grey sphere by a quarter
-to a third from above and with the sun behind. `--png` writes the picture,
-with each paint in air beside it. Takes about a minute.
+to a third from above and with the sun behind. Under a uniform overcast the
+two horizontal views come together, 2.17 and 2.19 times the water. A clear
+coat reflects 0.32 percent from water against 4.0 from air, and changes the
+grey sphere by at most 8.9 percent; the sphere's shadow, at most 0.4. `--png`
+writes the picture, sun and overcast, with each paint in air beside it.
+Takes about two minutes.
 
 ## What they do not show
 

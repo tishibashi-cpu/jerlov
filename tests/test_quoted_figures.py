@@ -1018,7 +1018,7 @@ def sphere_module():
 
 @pytest.fixture(scope="module")
 def sphere_example(sphere_module):
-    """examples/painted_sphere.py, run once. About a minute."""
+    """examples/painted_sphere.py, run once. About two minutes."""
     import contextlib
     import io
     with contextlib.redirect_stdout(io.StringIO()):
@@ -1110,3 +1110,37 @@ def test_figures_for_the_sphere_example(sphere_example):
         "from above": 151, "towards sun": 61, "sun behind": 119,
         "from below": 29}
     assert all(r["turned"][v] > 90 for v in r["moved"])
+
+
+
+@source_tree
+def test_figures_for_the_sphere_example_extended(sphere_example):
+    """Parts 5 to 7: under the overcast the horizontal views come together,
+    2.17 and 2.19 against 0.92 and 6.46 with the sun, 11.9 from above and
+    0.34 from below; a coat reflects 0.32 percent from water and 4.0 from
+    air, changes the grey sphere by at most 8.9 percent, from below, and
+    1.2 to 1.8 from the others, its brightest point mirroring light within
+    9 degrees of the sunbeam, near the rim from below; the shadow darkens
+    the water at most 0.4 percent, from above, and the sphere 0.3."""
+    r = sphere_example
+    sky, sun = r["sky_grey"], r["grey"]
+    assert [round(sky[v], 2) for v in ("towards sun", "sun behind")] \
+        == [2.17, 2.19]
+    assert [round(sun[v], 2) for v in ("towards sun", "sun behind")] \
+        == [0.92, 6.46]
+    assert (round(sky["from above"], 1), round(sky["from below"], 2)) \
+        == (11.9, 0.34)
+    assert sky["from below"] < 1 < sky["from above"]
+    assert (round(100 * r["in_water"], 2), round(100 * r["in_air_coat"], 1)) \
+        == (0.32, 4.0)
+    g = {v: abs(x) for v, x in r["glossed"].items()}
+    assert r["most_gloss"] == "from below"
+    assert round(100 * g["from below"], 1) == 8.9
+    others = sorted(x for v, x in g.items() if v != "from below")
+    assert (round(100 * others[0], 1), round(100 * others[-1], 1)) \
+        == (1.2, 1.8)
+    assert round(max(r["glint"].values())) == 9
+    assert r["glint_cos"]["from below"] < 0.3
+    assert r["deepest"] == "from above"
+    assert round(100 * r["darkest_water"]["from above"], 1) == 0.4
+    assert round(100 * max(abs(v) for v in r["shade"].values()), 1) == 0.3

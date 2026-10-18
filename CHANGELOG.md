@@ -4,6 +4,30 @@ Every release is archived on Zenodo under the concept DOI
 [10.5281/zenodo.22321312](https://doi.org/10.5281/zenodo.22321312), which
 always resolves to the latest version.
 
+## 0.15.2 — 2026-10-18
+
+The painted sphere under an overcast, with a gloss coat, and with its
+shadow. No code or shipped value changed.
+
+**Examples.** `painted_sphere.py` gains three parts.
+
+- An overcast sky: the same Monte Carlo with a uniformly bright sky in
+  place of the sun. The two horizontal views come together, the grey
+  sphere 2.17 and 2.19 times the water against 0.92 and 6.46 under the
+  sun; it is still 11.9 times the water from above and 0.34 from below.
+- Gloss: a clear coat of refractive index 1.5, reflecting by Fresnel's
+  equations the scattered light it mirrors, interpolated between the
+  Monte Carlo's cells. It reflects 0.32 percent looking straight at it
+  from water, against 4.0 from air, and changes the grey sphere's mean
+  luminance by at most 8.9 percent, seen from below; its brightest point
+  mirrors light within 9 degrees of the sunbeam from every direction.
+- The shadow: a sphere 0.2 m across keeps the sunbeam from the water
+  behind it, and the light that beam would have scattered once towards
+  the eye is taken away. From none of the four directions does it show:
+  the water in it is at most 0.4 percent darker.
+- The picture holds the sun and the overcast, with the coat and, under
+  the sun, the shadow. It takes about two minutes.
+
 ## 0.15.1 — 2026-10-18
 
 The search for why the Monte Carlo example differs from Tyler's lake, one

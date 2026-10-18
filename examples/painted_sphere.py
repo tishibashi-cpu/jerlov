@@ -8,12 +8,13 @@ turned straight up, and refuses to guess any other (DECISIONS.md section
 Carlo solution of `radiance_distribution.py`, copied here so that the
 script stands alone, and lights a sphere with it (section 41).
 
-    python examples/painted_sphere.py                        # about a minute
+    python examples/painted_sphere.py                   # about two minutes
     python examples/painted_sphere.py --png painted_sphere.png    # and an image
 
 The image is written only when asked for, with nothing beyond the standard
-library and NumPy: four paints down; across, each paint in air under
-daylight, then the sphere seen from the four directions.
+library and NumPy: four paints down, under the sun and then under an
+overcast; across, each paint in air under daylight, then the sphere seen
+from the four directions, with a gloss coat and, under the sun, its shadow.
 
 The method. The Monte Carlo gives the radiance arriving from each
 direction at three depths, at twelve wavelengths, interpolated between
@@ -86,6 +87,8 @@ PHOTONS, BATCHES = 50_000, 4
 MC_WAVELENGTHS = np.array([412.0, 440, 470, 500, 530, 560, 590, 610, 630,
                            650, 675, 700])
 WAVELENGTHS = np.arange(412.0, 701.0, 4.0)
+RADIUS = 0.1                # the sphere's, m; only its shadow depends on it
+COAT = 1.5                  # refractive index of a clear gloss coat
 PIXELS = 160                # across one sphere's square in the image
 FILL = 0.85                 # the sphere's diameter, as a share of the square
 SUBSAMPLES = 4              # per side of a pixel, to smooth the sphere's edge
@@ -276,20 +279,22 @@ def simulate(a, b, bw, particles, water, sun_zenith, seed,
 
 # -- the light on a sphere ---------------------------------------------------
 
-def light_field(station):
-    """The scattered radiance in every cell, Ed and c, at MC_WAVELENGTHS and
-    DEPTHS, with one of Petzold's phase functions for the particles."""
+def light_field(station, sun_zenith=SUN_ZENITH):
+    """The scattered radiance in every cell, Ed, a, b and pure water's b at
+    MC_WAVELENGTHS and DEPTHS, with one of Petzold's phase functions for
+    the particles; ``sun_zenith`` None for a uniform overcast."""
     particles = particle_phase(station)
-    radiance, ed, c = [], [], []
+    radiance, ed, iops = [], [], []
     for wl in MC_WAVELENGTHS:
         a, b, bw = coefficients(WATER_TYPE, wl)
-        runs = [simulate(a, b, bw, particles, water_phase(wl), SUN_ZENITH,
+        runs = [simulate(a, b, bw, particles, water_phase(wl), sun_zenith,
                          seed=seed, depths=DEPTHS) for seed in range(BATCHES)]
         radiance.append(np.mean([r["radiance"] for r in runs], axis=0))
         ed.append(np.mean([r["ed"] for r in runs], axis=0))
-        c.append(a + b)
-    return dict(radiance=np.array(radiance), ed=np.array(ed), c=np.array(c),
-                station=station)
+        iops.append((a, b, bw))
+    a, b, bw = np.array(iops).T
+    return dict(radiance=np.array(radiance), ed=np.array(ed), c=a + b, b=b,
+                bw=bw, station=station, sun_zenith=sun_zenith)
 
 
 def cell_directions(sub=6):
@@ -348,9 +353,91 @@ def face_irradiance(field, normals, k):
     MC_WAVELENGTHS: (faces, wavelengths)."""
     cells = field["radiance"][:, k].reshape(MC_WAVELENGTHS.size, -1)
     scattered = cell_weights(normals) @ cells[:, CELLS[2]].T
+    if field["sun_zenith"] is None:
+        return scattered
     s, square = sunbeam()
     direct = square * np.exp(-field["c"] * DEPTHS[k] / s[2])
     return scattered + np.maximum(0.0, -(normals @ s))[:, None] * direct
+
+
+def cell_radiance(field, travel, k):
+    """The scattered radiance travelling along each of these directions at
+    DEPTHS[k], interpolated linearly between the centres of the cells, and
+    to their mean round the vertical straight up and down: (directions,
+    wavelengths)."""
+    cells = field["radiance"][:, k]
+    n_th, n_ph = cells.shape[1], cells.shape[2]
+    # nodes: the poles, then cell centres; azimuth mirrored at 0 and 180
+    grid = np.concatenate([cells[:, :1].mean(axis=2, keepdims=True)
+                           .repeat(n_ph, axis=2), cells,
+                           cells[:, -1:].mean(axis=2, keepdims=True)
+                           .repeat(n_ph, axis=2)], axis=1)
+    grid = np.concatenate([grid[:, :, :1], grid, grid[:, :, -1:]], axis=2)
+    th_nodes = np.concatenate([[0.0], (np.arange(n_th) + 0.5) * D_ZENITH,
+                               [180.0]])
+    ph_nodes = np.concatenate([[0.0], (np.arange(n_ph) + 0.5) * D_AZIMUTH,
+                               [180.0]])
+    zenith = np.degrees(np.arccos(np.clip(travel[:, 2], -1, 1)))
+    azimuth = np.abs(np.degrees(np.arctan2(travel[:, 1], travel[:, 0])))
+    i = np.clip(np.searchsorted(th_nodes, zenith) - 1, 0, th_nodes.size - 2)
+    j = np.clip(np.searchsorted(ph_nodes, azimuth) - 1, 0, ph_nodes.size - 2)
+    u = ((zenith - th_nodes[i]) / (th_nodes[i + 1] - th_nodes[i]))[None, :]
+    v = ((azimuth - ph_nodes[j]) / (ph_nodes[j + 1] - ph_nodes[j]))[None, :]
+    return ((1 - u) * (1 - v) * grid[:, i, j] + u * (1 - v) * grid[:, i + 1, j]
+            + (1 - u) * v * grid[:, i, j + 1]
+            + u * v * grid[:, i + 1, j + 1]).T
+
+
+def coat_reflectance(cos_view, outside=N_WATER):
+    """The share of light a clear coat reflects like a mirror, seen at this
+    cosine from its normal, from water or (outside=1) from air."""
+    return fresnel(np.asarray(cos_view, dtype=float), outside, COAT)
+
+
+def particle_vsf(field, angle_deg, station):
+    """Volume scattering function of water and particles at one angle, at
+    MC_WAVELENGTHS, 1/(m sr): the particles' share of b with the shape the
+    Monte Carlo uses, Petzold's measured curve less pure water's."""
+    p = jerlov.petzold_scattering(station)
+    shape = (float(p.vsf_at(angle_deg))
+             - float(jerlov.pure_water_vsf(angle_deg, p.wavelength_nm)))
+    shape /= p.b - float(jerlov.pure_water_scattering(p.wavelength_nm))
+    water = np.array([float(jerlov.pure_water_vsf(angle_deg, wl))
+                      for wl in MC_WAVELENGTHS])
+    return (field["b"] - field["bw"]) * shape + water
+
+
+def shadowed(field, look, starts, lengths, station):
+    """The radiance that the sunbeam, scattered once towards the eye, would
+    have added along each line of sight but for the sphere's shadow:
+    (lines, wavelengths). Lines start at ``starts`` (m, from the sphere's
+    centre, z down) and run along ``look`` for ``lengths`` metres. The
+    shadow is the cylinder of RADIUS behind the sphere along the beam."""
+    s_dir, square = sunbeam()
+    angle = float(np.degrees(np.arccos(np.clip(s_dir @ -look, -1, 1))))
+    beta = particle_vsf(field, angle, station)
+    # where each line is inside the cylinder: |S + s L| off the axis < R
+    s_perp = starts - np.outer(starts @ s_dir, s_dir)
+    l_perp = look - (look @ s_dir) * s_dir
+    qa = l_perp @ l_perp
+    qb = s_perp @ l_perp
+    qc = np.sum(s_perp * s_perp, axis=1) - RADIUS ** 2
+    root = np.sqrt(np.maximum(qb * qb - qa * qc, 0.0))
+    enter, leave = (-qb - root) / qa, (-qb + root) / qa
+    leave = np.where(qb * qb - qa * qc > 0, leave, enter)
+    # and downstream of the sphere's centre
+    downstream = -(starts @ s_dir) / (look @ s_dir)
+    if look @ s_dir > 0:
+        enter = np.maximum(enter, downstream)
+    else:
+        leave = np.minimum(leave, downstream)
+    enter = np.clip(enter, 0.0, lengths)
+    leave = np.clip(leave, enter, lengths)
+    # the beam reaching depth DEPTH + z, thinned again on the way to the eye
+    k = np.outer(look[2] / s_dir[2] + 1.0, field["c"])
+    first = np.exp(-np.outer(DEPTH + starts[:, 2], field["c"]) / s_dir[2])
+    span = (np.exp(-k * enter[:, None]) - np.exp(-k * leave[:, None])) / k
+    return beta * square * first * span
 
 
 def background(field, look, k):
@@ -392,10 +479,13 @@ def disc():
     return x, y, cover / SUBSAMPLES ** 2
 
 
-def picture(field, look, up, k_eye):
+def picture(field, look, up, k_eye, gloss=False, shadow=False):
     """For one direction: the radiance the eye receives from each face of
-    the sphere it sees, per unit reflectance, and from the water past it,
-    with the pixels that show the sphere and how much of each."""
+    the sphere it sees, per unit reflectance, and from the water in front of
+    each pixel, with the pixels that show the sphere and how much of each.
+    With ``gloss``, a clear coat reflects part of the light like a mirror;
+    with ``shadow``, the lines of sight lose what the sphere's shadow keeps
+    from them."""
     x, y, cover = disc()
     shown = cover > 0
     # a pixel the edge crosses takes the face at the edge
@@ -405,18 +495,47 @@ def picture(field, look, up, k_eye):
     right = np.cross(up, look)
     normals = (xs[:, None] * right + ys[:, None] * up
                - np.sqrt(1 - xs ** 2 - ys ** 2)[:, None] * look)
-    lit = on_grid(face_irradiance(field, normals, 1)) / np.pi
     t = np.exp(-jerlov.water(WATER_TYPE).c(WAVELENGTHS) * DISTANCE)
+    lit = on_grid(face_irradiance(field, normals, 1)) / np.pi
+    mirror = np.zeros_like(lit)
+    if gloss:
+        cos_view = normals @ -look
+        coat = coat_reflectance(cos_view)[:, None]
+        # the light the coat sends to the eye travels along -look after
+        # reflection, so before it travelled along the mirror image
+        travel = -look - 2 * cos_view[:, None] * normals
+        mirror = coat * on_grid(cell_radiance(field, travel, 1))
+        lit = lit * (1 - coat)
     behind = on_grid(background(field, look, 1))[0]
     at_eye = on_grid(background(field, look, k_eye))[0]
-    return dict(face=lit * t, path=at_eye - behind * t, water=at_eye,
-                shown=shown, cover=cover[shown], normals=normals, t=t)
+    path = np.tile(at_eye - behind * t, (int(shown.sum()), 1))
+    water = np.tile(at_eye, (PIXELS * PIXELS, 1))
+    if shadow and field["sun_zenith"] is not None:
+        offsets = (x[..., None] * right + y[..., None] * up).reshape(-1, 3) \
+            * RADIUS
+        starts = offsets - DISTANCE * look
+        # to the sphere for the pixels that show it, far past it otherwise
+        lengths = np.where(shown.ravel(), DISTANCE, DISTANCE + 20.0)
+        lost = on_grid(shadowed(field, look, starts, lengths,
+                                field["station"]))
+        water = water - lost
+        path = path - lost[shown.ravel()]
+    return dict(face=lit * t, gloss=mirror * t, path=path, water=water,
+                clear=at_eye, shown=shown, cover=cover[shown],
+                normals=normals, t=t)
 
 
 def luminance(radiance):
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", jerlov.CoverageWarning)
         return float(jerlov.spectrum_to_xyz(radiance, WAVELENGTHS)[1])
+
+
+def luminance_weights():
+    """CIE Y of a unit of radiance at each wavelength, so that the luminance
+    of many spectra is one matrix product."""
+    return np.array([luminance(np.eye(WAVELENGTHS.size)[k])
+                     for k in range(WAVELENGTHS.size)])
 
 
 def linear_srgb(white):
@@ -446,21 +565,29 @@ def colour(radiance, to_linear):
                     1.055 * linear ** (1 / 2.4) - 0.055)
 
 
-def look_at(field, daylight, to_linear):
-    """Every sphere and its background: their colours, and each sphere's
-    mean luminance as a multiple of the water's seen past it."""
+def look_at(field, daylight, to_linear, gloss=False, shadow=False):
+    """Every sphere and the water round it: their colours, and each sphere's
+    mean luminance as a multiple of the water's seen past it, out of any
+    shadow."""
     out = {}
     for view, (look, up, k_eye) in VIEWS.items():
-        p = picture(field, look, up, k_eye)
+        p = picture(field, look, up, k_eye, gloss=gloss, shadow=shadow)
         water = p["water"] * daylight
+        clear = p["clear"] * daylight
         w = p["cover"][:, None]
         for paint, reflectance in PAINTS.items():
-            seen = (reflectance(WAVELENGTHS) * p["face"] + p["path"]) * daylight
+            seen = (reflectance(WAVELENGTHS) * p["face"] + p["gloss"]
+                    + p["path"]) * daylight
             mean = np.sum(w * seen, axis=0) / np.sum(w)
+            tile = water.copy()
+            tile[p["shown"].ravel()] = (w * seen
+                                        + (1 - w) * water[p["shown"].ravel()])
             out[view, paint] = dict(
-                pixels=colour(w * seen + (1 - w) * water, to_linear),
-                mean=colour(mean, to_linear), water=colour(water, to_linear),
-                ratio=luminance(mean) / luminance(water), shown=p["shown"])
+                pixels=colour(tile, to_linear).reshape(PIXELS, PIXELS, 3),
+                mean=colour(mean, to_linear), water=colour(clear, to_linear),
+                ratio=luminance(mean) / luminance(clear),
+                darkest=float(np.min(water @ luminance_weights()))
+                / luminance(clear))
     return out
 
 
@@ -571,36 +698,130 @@ every direction, so brightness can be compared across the table.""")
   for the other two. Backscattered light is the part the Jerlov type says
   least about (radiance_distribution.py, part 5).""")
 
+    # ----------------------------------------------------------------------
+    rule("5. An overcast sky")
+
+    sky = light_field(near, sun_zenith=None)
+    sky_white = on_grid(sky["ed"][:, 1])[0] * daylight / np.pi
+    sky_linear = linear_srgb(sky_white)
+    seen_sky = look_at(sky, daylight, sky_linear)
+    print(f"""The same spheres under a uniformly bright overcast in place of the sun,
+with D65 still for its spectrum, white-balanced to a white face turned up
+under it.""")
+    print(f"\n  {'grey 50%':<12} {'sun':>8} {'overcast':>9}   paints apart, sun / overcast")
+    sky_grey, sky_spread = {}, {}
+    for view in VIEWS:
+        sky_grey[view] = seen_sky[view, "grey 50%"]["ratio"]
+        ratios = [seen_sky[view, p]["ratio"] for p in PAINTS]
+        sky_spread[view] = max(ratios) / min(ratios)
+        print(f"  {view:<12} {grey[view]:>8.2f} {sky_grey[view]:>9.2f}"
+              f"   {spread[view]:>6.2f} / {sky_spread[view]:.2f}")
+    sides = ("towards sun", "sun behind")
+    print(f"""
+  Without the sun the two horizontal views come together: the grey sphere
+  is {sky_grey[sides[0]]:.2f} and {sky_grey[sides[1]]:.2f} times the water, against {grey[sides[0]]:.2f} and {grey[sides[1]]:.2f} with
+  the sun. Seen from above it is {sky_grey["from above"]:.1f} times the water, and from below
+  {sky_grey["from below"]:.2f}: whether the sphere stands out bright or dark still depends
+  on the direction it is seen from, sun or no sun.""")
+
+    # ----------------------------------------------------------------------
+    rule("6. Gloss")
+
+    in_water = float(coat_reflectance(1.0))
+    in_air_coat = float(coat_reflectance(1.0, outside=1.0))
+    seen_gloss = look_at(field, daylight, to_linear, gloss=True)
+    print(f"""A clear coat of refractive index {COAT} over the paint, reflecting like a
+mirror by Fresnel's equations, and letting the rest through to the paint.
+Looking straight at it, it reflects {100 * in_water:.2f} percent from water against {100 * in_air_coat:.1f}
+percent from air: water and coat differ less in refractive index than
+air and coat do. It reflects the scattered light from the direction it
+mirrors, interpolated between the Monte Carlo's cells; the sun's own
+mirror image is a point far smaller than a pixel, and is left out.""")
+    print(f"\n  {'grey 50%':<12} {'matte':>8} {'gloss':>8}")
+    glossed = {}
+    for view in VIEWS:
+        glossed[view] = seen_gloss[view, "grey 50%"]["ratio"] / grey[view] - 1
+        print(f"  {view:<12} {grey[view]:>8.2f} "
+              f"{seen_gloss[view, 'grey 50%']['ratio']:>8.2f}")
+    most_gloss = max(glossed, key=lambda v: abs(glossed[v]))
+    beam, _ = sunbeam()
+    glint, glint_cos = {}, {}
+    for view, (look, up, k_eye) in VIEWS.items():
+        p = picture(field, look, up, k_eye, gloss=True)
+        n = p["normals"][np.argmax(p["gloss"].sum(axis=1))]
+        glint_cos[view] = float(n @ -look)
+        mirrored = -look - 2 * (n @ -look) * n
+        glint[view] = float(np.degrees(np.arccos(np.clip(mirrored @ beam,
+                                                         -1, 1))))
+    print(f"""
+  The coat changes the grey sphere's mean luminance by at most {100 * abs(glossed[most_gloss]):.1f} percent,
+  seen {most_gloss}, and by {100 * min(abs(g) for g in glossed.values()):.1f} to {100 * sorted(abs(g) for g in glossed.values())[-2]:.1f} percent from the other three
+  directions. Where the coat is brightest, from every direction, it
+  mirrors light travelling within {max(glint.values()):.0f} degrees of the sunbeam: the forward
+  peak of the scattering round the beam. Seen from below that falls near
+  the rim, where the coat is seen at a slant and reflects most.""")
+
+    # ----------------------------------------------------------------------
+    rule("7. The sphere's shadow")
+
+    seen_shadow = look_at(field, daylight, to_linear, shadow=True)
+    print(f"""A sphere {2 * RADIUS:g} m across keeps the sunbeam from a column of water behind
+it, along the beam. Light the beam would have scattered once towards the
+eye from inside that column is taken away, from the water in front of the
+sphere and from the water seen past it; light scattered more than once
+still fills the column, and is left as it was.""")
+    print(f"\n  {'grey 50%':<12} {'sphere':>8} {'darkest water':>14}")
+    shade, darkest_water = {}, {}
+    for view in VIEWS:
+        g = seen_shadow[view, "grey 50%"]
+        shade[view] = g["ratio"] / grey[view] - 1
+        darkest_water[view] = 1 - g["darkest"]
+        print(f"  {view:<12} {100 * shade[view]:>+7.1f}% {-100 * darkest_water[view]:>+13.1f}%")
+    deepest = max(darkest_water, key=darkest_water.get)
+    print(f"""
+  From none of the four directions does the shadow show: the water in it
+  is at most {100 * darkest_water[deepest]:.1f} percent darker than the water out of it, seen
+  {deepest}, and the sphere's luminance changes by at most
+  {100 * max(abs(v) for v in shade.values()):.1f} percent. None of them looks along the beam, where the water
+  scatters most of the sunlight it scatters; across the beam, a column
+  {2 * RADIUS:g} m wide holds too little of the light that reaches the eye.""")
+
     if png:
         _, _, cover = disc()
-        tiles = []
-        for paint in PAINTS:
-            # in air: the paint lit by daylight and balanced to it, flat,
-            # on a mid-grey card
-            card = 0.18 * daylight
-            flat = PAINTS[paint](WAVELENGTHS) * daylight
-            row = [colour(cover[..., None] * flat
-                          + (1 - cover[..., None]) * card, in_air)]
-            for view in VIEWS:
-                s = seen[view, paint]
-                tile = np.tile(s["water"], (PIXELS, PIXELS, 1))
-                tile[s["shown"]] = s["pixels"]
-                row.append(tile)
-            tiles.append(np.concatenate(row, axis=1))
-        write_png(png, np.concatenate(tiles, axis=0))
-        print(f"\n  Wrote {png}: {', '.join(PAINTS)} down; in air, then "
-              f"{', '.join(VIEWS)}, across.")
+        blocks = []
+        for light_field_, linear, sun in ((field, to_linear, True),
+                                          (sky, sky_linear, False)):
+            full = look_at(light_field_, daylight, linear, gloss=True,
+                           shadow=sun)
+            for paint in PAINTS:
+                # in air: the paint lit by daylight and balanced to it, flat,
+                # on a mid-grey card
+                card = 0.18 * daylight
+                flat = PAINTS[paint](WAVELENGTHS) * daylight
+                row = [colour(cover[..., None] * flat
+                              + (1 - cover[..., None]) * card, in_air)]
+                row += [full[view, paint]["pixels"] for view in VIEWS]
+                blocks.append(np.concatenate(row, axis=1))
+        write_png(png, np.concatenate(blocks, axis=0))
+        print(f"""
+  Wrote {png}: the sun above, the overcast below, each with
+  {", ".join(PAINTS)} down; across, in air, then {", ".join(VIEWS)}.
+  The pictures include the gloss coat, and under the sun the shadow.
+  Under the overcast the water overhead is brighter than the white it is
+  balanced to, and is clipped to white.""")
 
     # ----------------------------------------------------------------------
     rule("Before you use any of this")
 
-    print(f"""  - The paint is a perfect diffuser: no gloss, no highlight. Real paint
-    has both, and they change most with the direction.
-  - The sphere casts no shadow on the water and takes no light from it
-    that it has blocked: it is small against the {DISTANCE:g} m it is seen across.
+    print(f"""  - The paint is a perfect diffuser, under a coat that reflects like a
+    perfect mirror in part 6. Real paint and coats are rougher, and spread
+    the sun's mirror image into a highlight this leaves out.
+  - The shadow (part 7) removes only light scattered once; the sphere also
+    takes from the water the light it blocks, which is left in.
   - The radiance is the Monte Carlo's, binned in {D_ZENITH:g} by {D_AZIMUTH:g} degree cells, at
-    {MC_WAVELENGTHS.size} wavelengths, from a flat surface and a sun alone; everything
-    radiance_distribution.py says before you use it applies here.
+    {MC_WAVELENGTHS.size} wavelengths, from a flat surface and either a sun alone or a uniform
+    overcast; a clear sky lies between. Everything radiance_distribution.py
+    says before you use it applies here.
   - The phase function moves the result (part 4), and the station nearest
     in b is not a good guide to it (DECISIONS.md section 40).
   - The colours are what a camera white-balanced to a white face turned up
@@ -613,7 +834,10 @@ every direction, so brightness can be compared across the table.""")
                 counted=counted, seen=seen, seen_other=seen_other,
                 grey=grey, brightest=brightest, darkest=darkest,
                 spread=spread, change=change, moved=moved, turned=turned,
-                field=field,
+                field=field, sky_grey=sky_grey, sky_spread=sky_spread,
+                in_water=in_water, in_air_coat=in_air_coat, glossed=glossed,
+                most_gloss=most_gloss, glint=glint, glint_cos=glint_cos, shade=shade,
+                darkest_water=darkest_water, deepest=deepest,
                 daylight=daylight, white=white, to_linear=to_linear)
 
 
