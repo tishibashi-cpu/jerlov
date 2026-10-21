@@ -139,7 +139,8 @@ class Water:
                 continue
             arr = np.array(value, dtype=float)
             if arr.shape != self.wavelengths.shape:
-                raise ValueError(f"{key} must have the same shape as wavelengths")
+                raise ValueError(
+                    f"{key} must have the same shape as wavelengths")
             self._series[key] = arr
         if not self._series:
             raise ValueError("at least one of a, b, kd must be given")
@@ -158,8 +159,8 @@ class Water:
                 )
             if len(statuses) != self.wavelengths.size:
                 raise ValueError(
-                    f"flags[{key!r}] has {len(statuses)} entries; it needs one "
-                    f"per wavelength ({self.wavelengths.size})"
+                    f"flags[{key!r}] has {len(statuses)} entries; it needs "
+                    f"one per wavelength ({self.wavelengths.size})"
                 )
         self._uncertainty: dict[str, np.ndarray] = {}
         for key, value in (uncertainty or {}).items():
@@ -220,15 +221,18 @@ class Water:
             if unknown:
                 raise ValueError(
                     f"unknown status {', '.join(map(repr, unknown))} in "
-                    f"flags; the statuses are {', '.join(sorted(_data.STATUSES))}"
+                    f"flags; the statuses are "
+                    f"{', '.join(sorted(_data.STATUSES))}"
                 )
             statuses[key] = values
         given = {"a": a, "b": b, "Kd": kd}
         for key in statuses:
             if given[key] is None:
-                raise ValueError(f"flags given for {key!r}, but no {key} values")
+                raise ValueError(
+                    f"flags given for {key!r}, but no {key} values")
         return cls(wavelengths, a=a, b=b, kd=kd, name=name, source=None,
-                   flags=statuses, uncertainty=keyed(uncertainty, "uncertainty"))
+                   flags=statuses,
+                   uncertainty=keyed(uncertainty, "uncertainty"))
 
     # -- access ----------------------------------------------------------
 
@@ -240,7 +244,7 @@ class Water:
         return quantity in self._series
 
     def _interp(self, quantity: str, wl, *, warn: bool = True,
-                values: np.ndarray | None = None) -> np.ndarray:
+                values: np.ndarray | None = None) -> np.ndarray | float:
         if quantity not in self._series:
             available = ", ".join(sorted(self._series)) or "none"
             raise MissingQuantityError(
@@ -254,7 +258,8 @@ class Water:
         lo, hi = self.range_nm
         if np.any(query < lo) or np.any(query > hi):
             raise ValueError(
-                f"wavelength outside the range of the data ({lo:g}-{hi:g} nm). "
+                f"wavelength outside the range of the data "
+                f"({lo:g}-{hi:g} nm). "
                 "This package does not extrapolate."
             )
         support = _support(self.wavelengths, query)
@@ -401,7 +406,8 @@ class Water:
             flagged = {s for s in statuses if s in _data.QUESTIONABLE}
             for status in sorted(flagged):
                 count = sum(1 for s in statuses if s == status)
-                out.append(f"{quantity}: {count} wavelength(s) marked {status!r}")
+                out.append(f"{quantity}: {count} wavelength(s) "
+                           f"marked {status!r}")
         return tuple(out)
 
     def __repr__(self) -> str:  # pragma: no cover - convenience only
@@ -454,7 +460,8 @@ def water(water_type: str, source: str = "williamson2022") -> Water:
             if wavelengths is None:
                 wavelengths = wl
             elif not np.array_equal(wavelengths, wl):
-                raise RuntimeError(f"inconsistent wavelength grid in {filename}")
+                raise RuntimeError(
+                    f"inconsistent wavelength grid in {filename}")
             series[quantity] = values
             flags[quantity] = statuses
         return Water(
@@ -683,7 +690,8 @@ def classify_kd(wavelengths, kd, *, source: str = "jerlov1976",
     for water_type, values in references.items():
         logs[water_type] = np.log(values[usable])
         difference = log_measured - logs[water_type]
-        distances.append((water_type, float(np.sqrt(np.mean(difference ** 2)))))
+        distances.append(
+            (water_type, float(np.sqrt(np.mean(difference ** 2)))))
     distances.sort(key=lambda pair: pair[1])
 
     clearest = min(logs, key=lambda t: logs[t].mean())
@@ -720,7 +728,7 @@ class Descent:
     layers: tuple[tuple[float, float, str], ...]
     """``(top, bottom, water type)`` of each layer crossed, in metres; the
     last stops at ``depth_m``."""
-    transmittance: np.ndarray
+    transmittance: np.ndarray | float
     """``Ed(depth) / Ed(0)``: ``exp(-sum(Kd_i * thickness_i))``."""
     _kd: tuple[np.ndarray, ...] = field(default=(), repr=False)
     """The Kd of each layer in :attr:`layers`, on :attr:`wavelengths`."""
@@ -761,7 +769,8 @@ class Descent:
             )
         depths = np.asarray(depth_m, dtype=float)
         if not np.all(np.isfinite(depths)):
-            raise ValueError(f"depth_m must be finite numbers, not {depth_m!r}")
+            raise ValueError(
+                f"depth_m must be finite numbers, not {depth_m!r}")
         if np.any(depths < 0):
             raise ValueError("depth_m cannot be negative")
         if np.any(depths > self.depth_m):
@@ -1020,7 +1029,8 @@ def kd_spectrum(kd, wavelength_nm: float, at):
     _require_number(query, "at")
     for value, label in ((wavelength_nm, "wavelength_nm"), (query, "at")):
         if np.any(np.asarray(value) < lo) or np.any(np.asarray(value) > hi):
-            raise ValueError(f"{label} outside the model range ({lo:g}-{hi:g} nm)")
+            raise ValueError(
+                f"{label} outside the model range ({lo:g}-{hi:g} nm)")
     kd_values = np.asarray(kd, dtype=float)
 
     m1 = float(np.interp(wavelength_nm, wl, m))

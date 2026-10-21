@@ -115,7 +115,8 @@ class ScatteringFunction:
 
     def __repr__(self) -> str:  # pragma: no cover - convenience only
         return (f"<ScatteringFunction {self.station} ({self.locale}), "
-                f"c={self.c:g} b={self.b:g} 1/m, B/S={self.backscatter_ratio:g}>")
+                f"c={self.c:g} b={self.b:g} 1/m, "
+                f"B/S={self.backscatter_ratio:g}>")
 
 
 def _stations() -> dict[str, dict[str, str]]:

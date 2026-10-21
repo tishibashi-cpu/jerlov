@@ -18,6 +18,7 @@ compare with, with the conditions they were made under.
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import Any
 
 import numpy as np
 
@@ -116,7 +117,8 @@ class SunZenithFluctuation:
     sampling_hz: float = 6.0
     """Fluctuations shorter than a third of a second are not resolved
     (p. 4)."""
-    sky: str = "clear: above-water irradiance at least 0.85 of the clear-sky model"
+    sky: str = ("clear: above-water irradiance at least 0.85 of the "
+                "clear-sky model")
 
     def __repr__(self) -> str:
         return (f"<SunZenithFluctuation Gernez 2009, sun "
@@ -148,7 +150,7 @@ def darecki2011_irradiance_cv() -> IrradianceFluctuation:
                                  cv=_data._frozen(cv))
 
 
-_PANELS = {
+_PANELS: dict[str, dict[str, Any]] = {
     "a": dict(place="Santa Barbara Channel, 18 September 2008, 12:20 local "
                     "time", depth_m=0.93, sun_zenith_deg=33.0,
               refracted_sun_zenith_deg=24.0, wind_m_s=7.0,

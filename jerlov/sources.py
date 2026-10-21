@@ -146,13 +146,13 @@ SOURCES: dict[str, Source] = {
             "the tabulated values give 87 percent. See DATA.md section 19.",
             "The small-particle scattering coefficient used here (1.513) does "
             "not match Haltrin (1999), which gives 1.151302.",
-            "The paper's Kd0 column is a reference spectrum from Jerlov (1951, "
-            "1968). It is kept in solonenko2015_iop.csv for comparison but "
-            "water() does not return it: it disagrees with Jerlov (1976) by up to "
-            "34 percent, falls below the paper's own absorption at 600 nm for "
-            "types I, IA, IB and II, and is identical for 1C and III from 525 "
-            "to 700 nm. Use source 'jerlov1976' or 'austin1986' for Kd, or "
-            "'jerlov1968' for the first edition itself.",
+            "The paper's Kd0 column is a reference spectrum from Jerlov "
+            "(1951, 1968). It is kept in solonenko2015_iop.csv for comparison "
+            "but water() does not return it: it disagrees with Jerlov (1976) "
+            "by up to 34 percent, falls below the paper's own absorption at "
+            "600 nm for types I, IA, IB and II, and is identical for 1C and "
+            "III from 525 to 700 nm. Use source 'jerlov1976' or 'austin1986' "
+            "for Kd, or 'jerlov1968' for the first edition itself.",
         ),
     ),
     "jerlov1976": Source(
@@ -190,8 +190,8 @@ SOURCES: dict[str, Source] = {
             "(1976) by 1 to 15 percent on average depending on the type, and "
             "by up to 35 percent at single wavelengths; do not mix the two. "
             "See DATA.md section 2.",
-            "Kd is -ln(T) of the printed transmittance per metre, given to two "
-            "or three figures, so Kd is no more precise than that.",
+            "Kd is -ln(T) of the printed transmittance per metre, given to "
+            "two or three figures, so Kd is no more precise than that.",
             "Jerlov 7C and 9C are blank at 310 nm.",
             "This is the Kd0 column of Solonenko & Mobley (2015), which "
             "reproduces this table to transcription accuracy.",
@@ -226,4 +226,5 @@ def get_source(key: str) -> Source:
         return SOURCES[key]
     except KeyError:
         known = ", ".join(sorted(SOURCES))
-        raise KeyError(f"unknown source {key!r}; known sources: {known}") from None
+        raise KeyError(
+            f"unknown source {key!r}; known sources: {known}") from None

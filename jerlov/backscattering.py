@@ -230,7 +230,8 @@ def bb_from_vsf(beta, angle_deg: float, wavelength_nm, *,
     if np.any(beta < 0):
         raise ValueError("a volume scattering function cannot be negative")
     beta_w = np.atleast_1d(pure_water_vsf(angle, wavelength_nm, salinity_psu))
-    bb_w = np.atleast_1d(pure_water_backscattering(wavelength_nm, salinity_psu))
+    bb_w = np.atleast_1d(
+        pure_water_backscattering(wavelength_nm, salinity_psu))
 
     particulate = 2.0 * math.pi * chi_p * (beta - beta_w)
     if np.any(particulate < 0):

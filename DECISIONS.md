@@ -1159,3 +1159,33 @@ from them, cited to the page; it does not carry the images.
 figures. A value read to a stated precision by a stated method is as
 usable as a printed one to that precision, and one read by eye with no
 record is not usable at all.
+
+## 43. Type checking and linting
+
+The package ships `py.typed`, which tells every caller's type checker
+to trust its annotations, and until now nothing checked them. The first
+run of mypy found two that said less than the code does:
+`Descent.transmittance` and the interpolation behind `Water.a` and the
+rest are floats for a scalar wavelength, and were annotated as arrays.
+
+**What runs.** `ruff check .` with its default rules, which find unused
+names and statements that cannot run, and `mypy` on `jerlov/` with its
+defaults. Both run in a CI job of their own, on Python 3.13 and the
+newest NumPy, at pinned versions. The weekly run is there to catch the world
+breaking this package (the comment in `test.yml`); a new ruff rule or a
+stricter mypy is not that, and should arrive as a change someone makes
+here, not as a red build.
+
+**The line length is held in the package only.** 79 characters, in
+`jerlov/`. The examples print their paragraphs from f-strings, so a
+source line is long where the printed line is not, and breaking it would
+change what the reader sees or bury the sentence in string pieces. The
+build scripts carry transcribed rows one table row to a line, and six of
+them write several short statements to a line; their style is left
+alone, since every edit to them means rerunning all of them. The rules
+ruff applies to them otherwise, unused imports included, are kept.
+
+**Rejected:** mypy's strict mode. Most of the public functions take
+`wavelength_nm` as anything array-like and return a float or an array as
+NumPy does; annotating that precisely is a change of its own, not a
+condition for checking what is already annotated.

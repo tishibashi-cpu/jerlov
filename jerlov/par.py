@@ -148,7 +148,8 @@ class ParProfile:
         """
         depths = np.asarray(depth_m, dtype=float)
         if depths.ndim > 1:
-            raise ValueError("depth_m must be a depth or a 1-D array of depths")
+            raise ValueError(
+                "depth_m must be a depth or a 1-D array of depths")
         rows = [self._surface_q * np.exp(-self._tau(self._depth(z, "depth_m")))
                 for z in np.atleast_1d(depths)]
         return rows[0] if depths.ndim == 0 else np.array(rows)
@@ -171,7 +172,8 @@ class ParProfile:
         """
         z1, z2 = self._depth(z1_m, "z1_m"), self._depth(z2_m, "z2_m")
         if not z1 < z2:
-            raise ValueError(f"z1_m must be above z2_m, not {z1:g} and {z2:g} m")
+            raise ValueError(
+                f"z1_m must be above z2_m, not {z1:g} and {z2:g} m")
         top, bottom = self._par_at(z1), self._par_at(z2)
         if top <= 0 or bottom <= 0:
             raise ValueError(
@@ -189,7 +191,8 @@ class ParProfile:
                          where=self.surface_par != 0)
 
     def depth_of_fraction(self, fraction: float = 0.01) -> float:
-        """The depth, in m, at which PAR falls to ``fraction`` of its surface value.
+        """The depth, in m, at which PAR falls to ``fraction`` of its
+        surface value.
 
         The default, 1 percent, is the usual convention for the bottom of
         the euphotic zone. It is a convention: phytoplankton grow below it,
@@ -208,7 +211,8 @@ class ParProfile:
         if not 0.0 < fraction < 1.0:
             raise ValueError("fraction must lie strictly between 0 and 1")
         if self.surface_par == 0:
-            raise ValueError("there is no PAR at the surface to take a fraction of")
+            raise ValueError(
+                "there is no PAR at the surface to take a fraction of")
         target = fraction * self.surface_par
 
         low, high = 0.0, 1.0
@@ -216,7 +220,8 @@ class ParProfile:
             high = self._deepest
             if self._par_at(high) > target:
                 raise MissingQuantityError(
-                    f"PAR is still {self._par_at(high) / self.surface_par:.2%} "
+                    f"PAR is still "
+                    f"{self._par_at(high) / self.surface_par:.2%} "
                     f"of its surface value at {high:g} m, the bottom of the "
                     f"descent, so the depth of {fraction:.2%} is below it"
                 )
@@ -242,12 +247,14 @@ class ParProfile:
 
     def __repr__(self) -> str:
         lo, hi = self.band_nm
-        band = "" if self.band_nm == PAR_RANGE_NM else f" over {lo:g}-{hi:g} nm"
+        band = ("" if self.band_nm == PAR_RANGE_NM
+                else f" over {lo:g}-{hi:g} nm")
         if self.weighted:
             band += ", weighted"
         return (
             f"<ParProfile surface {self.surface_par:.4g} umol m-2 s-1{band}, "
-            f"{self.depths_m.size} depth{'s' if self.depths_m.size != 1 else ''}; "
+            f"{self.depths_m.size} "
+            f"depth{'s' if self.depths_m.size != 1 else ''}; "
             f"Kd from {self.kd_from}>"
         )
 

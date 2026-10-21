@@ -6,7 +6,6 @@ are the numbers in the papers, and that nothing was mistyped on the way in.
 
 from __future__ import annotations
 
-import warnings
 
 import numpy as np
 import pytest

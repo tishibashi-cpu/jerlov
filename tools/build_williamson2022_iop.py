@@ -6,11 +6,14 @@ The published Table 7 has 10 nm resolution; the accompanying spreadsheet has
 table and against the paper's own scattering equations.
 """
 
-import sys, pathlib
+import sys
+import pathlib
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
 from _common import DATA_DIR, require, report
 
-import openpyxl, csv, numpy as np
+import openpyxl
+import csv
+import numpy as np
 wb=openpyxl.load_workbook(require("20290782/20221121-Dstl_MIOP_analysis_v3.xlsx"),data_only=True)
 ws=wb['a,b JIB-5C']
 T=["IB","II","III","1C","3C","5C"]

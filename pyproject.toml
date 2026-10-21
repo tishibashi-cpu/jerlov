@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "jerlov"
-version = "0.16.0"
+version = "0.16.1"
 description = "Inherent optical properties of Jerlov water types, with provenance"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -37,3 +37,22 @@ include = ["jerlov*"]
 [tool.setuptools.package-data]
 "jerlov.data" = ["*.csv"]
 "jerlov" = ["py.typed"]
+
+[tool.ruff]
+line-length = 79
+
+[tool.ruff.lint]
+# The default rules, which find unused names and code that cannot run, plus
+# the line length. The length is held in the package only: the examples
+# print paragraphs from f-strings whose source lines are long though the
+# printed lines are not, and the build scripts carry transcribed rows one to
+# a line. DECISIONS.md section 43.
+extend-select = ["E501"]
+
+[tool.ruff.lint.per-file-ignores]
+"examples/*" = ["E501"]
+"tests/*" = ["E501"]
+"tools/*" = ["E501", "E701", "E702", "E402"]
+
+[tool.mypy]
+files = ["jerlov"]

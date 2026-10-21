@@ -705,7 +705,7 @@ every direction, so brightness can be compared across the table.""")
     sky_white = on_grid(sky["ed"][:, 1])[0] * daylight / np.pi
     sky_linear = linear_srgb(sky_white)
     seen_sky = look_at(sky, daylight, sky_linear)
-    print(f"""The same spheres under a uniformly bright overcast in place of the sun,
+    print("""The same spheres under a uniformly bright overcast in place of the sun,
 with D65 still for its spectrum, white-balanced to a white face turned up
 under it.""")
     print(f"\n  {'grey 50%':<12} {'sun':>8} {'overcast':>9}   paints apart, sun / overcast")

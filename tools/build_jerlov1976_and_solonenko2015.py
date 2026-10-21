@@ -7,12 +7,14 @@ equations before anything is written; the duplicated rows in its Table 7 were
 found by exactly these checks.
 """
 
-import sys, pathlib
+import sys
+import pathlib
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
 from _common import DATA_DIR, require, report
 
 
-import csv, numpy as np
+import csv
+import numpy as np
 
 WL = [300,310,350,375,400,425,450,475,500,525,550,575,600,625,650,675,700]
 N = None  # a published value that is wrong and is not used
@@ -322,7 +324,6 @@ for t, rows in SM.items():
                         "themselves are very small")
             rows_out.append([t, w, q, val, "1/m", status, val, "", src_of, note])
 
-import io
 with open(DATA_DIR / "solonenko2015_iop.csv","w",newline="",encoding="utf-8") as f:
     wr = csv.writer(f)
     wr.writerow(["water_type","wavelength_nm","quantity","value_per_m","unit","status",

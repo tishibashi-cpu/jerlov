@@ -12,6 +12,7 @@ import os
 import sys
 from functools import lru_cache
 from importlib import resources
+from types import FrameType
 
 import numpy as np
 
@@ -21,7 +22,8 @@ import numpy as np
 #: that anything integrating over a grid finds it: putting it in colour.py
 #: meant two later modules reached for np.trapezoid and broke the oldest
 #: supported NumPy.
-trapezoid = getattr(np, "trapezoid", None) or np.trapz
+trapezoid = (getattr(np, "trapezoid", None)
+             or np.trapz)  # type: ignore[attr-defined]
 
 _PACKAGE_DIR = os.path.dirname(os.path.abspath(__file__)) + os.sep
 
@@ -35,9 +37,10 @@ def caller_stacklevel() -> int:
     constant pointed some warnings at this package instead of at the line
     that asked for the value.
     """
-    frame = sys._getframe(1)
+    frame: FrameType | None = sys._getframe(1)
     level = 1
-    while frame is not None and frame.f_code.co_filename.startswith(_PACKAGE_DIR):
+    while (frame is not None
+           and frame.f_code.co_filename.startswith(_PACKAGE_DIR)):
         frame = frame.f_back
         level += 1
     return level
@@ -66,7 +69,10 @@ STATUSES = QUESTIONABLE | {"ok", "interpolated"}
 
 def _read(name: str) -> list[dict[str, str]]:
     path = resources.files("jerlov.data").joinpath(name)
-    with path.open("r", encoding="utf-8", newline="") as handle:
+    # typeshed's Traversable.open does not list newline=, though the call
+    # passes it on to the text wrapper, as the csv module asks.
+    with path.open("r", encoding="utf-8",  # type: ignore[call-overload]
+                   newline="") as handle:
         return list(csv.DictReader(handle))
 
 
@@ -117,7 +123,8 @@ def spectrum(
 
 
 @lru_cache(maxsize=None)
-def notes(filename: str, water_type: str, quantity: str | None) -> dict[float, str]:
+def notes(filename: str, water_type: str,
+          quantity: str | None) -> dict[float, str]:
     """Map wavelength to the ``note`` column, for rows that carry one."""
     out: dict[float, str] = {}
     for row in _rows(filename):
@@ -133,7 +140,8 @@ def notes(filename: str, water_type: str, quantity: str | None) -> dict[float, s
 
 @lru_cache(maxsize=None)
 def austin_model() -> tuple[np.ndarray, np.ndarray, np.ndarray]:
-    """Return ``(wavelengths, M, Kw)`` from Austin & Petzold (1986) Table IV."""
+    """Return ``(wavelengths, M, Kw)`` from Austin & Petzold (1986)
+    Table IV."""
     rows = _rows("austin1986_model.csv")
     wl = np.array([float(r["wavelength_nm"]) for r in rows])
     m = np.array([float(r["M_slope"]) for r in rows])
@@ -144,7 +152,8 @@ def austin_model() -> tuple[np.ndarray, np.ndarray, np.ndarray]:
 
 @lru_cache(maxsize=None)
 def austin_model_status() -> tuple[str, ...]:
-    """The ``status`` of each row of :func:`austin_model`, in the same order."""
+    """The ``status`` of each row of :func:`austin_model`, in the same
+    order."""
     rows = sorted(_rows("austin1986_model.csv"),
                   key=lambda r: float(r["wavelength_nm"]))
     return tuple(r["status"] for r in rows)
@@ -152,7 +161,8 @@ def austin_model_status() -> tuple[str, ...]:
 
 @lru_cache(maxsize=None)
 def b_from_c_ratio() -> tuple[np.ndarray, dict[str, np.ndarray]]:
-    """Return ``(wavelengths, {statistic: ratio})`` from Smart (2007) Table 1."""
+    """Return ``(wavelengths, {statistic: ratio})`` from Smart (2007)
+    Table 1."""
     rows = _rows("smart2007_b_from_c.csv")
     wl = sorted({float(r["wavelength_nm"]) for r in rows})
     out: dict[str, np.ndarray] = {}

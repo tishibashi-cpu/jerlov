@@ -217,7 +217,8 @@ class Scene:
             raise ValueError("wavelengths must be a non-empty 1-D array")
         self.downwelling = np.array(downwelling, dtype=float)
         if self.downwelling.shape != self.wavelengths.shape:
-            raise ValueError("downwelling must have the same shape as wavelengths")
+            raise ValueError(
+                "downwelling must have the same shape as wavelengths")
         if np.any(self.downwelling < 0):
             raise ValueError("downwelling irradiance cannot be negative")
         self.depth_m = depth_m
@@ -383,7 +384,8 @@ class Scene:
         """
         rho = np.asarray(reflectance, dtype=float)
         if rho.shape != self.wavelengths.shape:
-            raise ValueError("reflectance must have the same shape as wavelengths")
+            raise ValueError(
+                "reflectance must have the same shape as wavelengths")
         if np.any(rho < 0) or np.any(rho > 1):
             raise ValueError("reflectance must lie between 0 and 1")
         if veiling_radiance is None:
@@ -427,7 +429,8 @@ class Scene:
 
     def __repr__(self) -> str:  # pragma: no cover - convenience only
         lo, hi = self.wavelengths[0], self.wavelengths[-1]
-        depth = f"{self.depth_m:g} m" if self.depth_m is not None else "unstated"
+        depth = (f"{self.depth_m:g} m" if self.depth_m is not None
+                 else "unstated")
         return (
             f"<Scene {self.water.name or 'unnamed'} depth={depth} "
             f"{lo:g}-{hi:g} nm>"

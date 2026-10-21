@@ -9,7 +9,8 @@ No input file is needed: the values are literals below, checked against the
 paper's own Eq. (6) before anything is written.
 """
 
-import sys, pathlib
+import sys
+import pathlib
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
 from _common import DATA_DIR, report
 
