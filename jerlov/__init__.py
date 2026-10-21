@@ -30,6 +30,11 @@ from .radiance import (
 )
 from .fluctuations import (
     DARECKI2011_PANELS,
+    GERNEZ2009_VARIABLES,
+    ConditionFluctuation,
+    SpectralFluctuation,
+    darecki2011_spectral_cv,
+    gernez2009_cv_by,
     IrradianceFluctuation,
     RadianceFluctuation,
     SunZenithFluctuation,
@@ -115,6 +120,11 @@ __all__ = [
     "RadianceFluctuation",
     "SunZenithFluctuation",
     "DARECKI2011_PANELS",
+    "darecki2011_spectral_cv",
+    "gernez2009_cv_by",
+    "SpectralFluctuation",
+    "ConditionFluctuation",
+    "GERNEZ2009_VARIABLES",
     "QuantaLevels",
     "QUANTA_BAND_NM",
     "pure_water_absorption",
@@ -140,4 +150,4 @@ __all__ = [
     "MissingQuantityError",
 ]
 
-__version__ = "0.16.1"
+__version__ = "0.17.0"

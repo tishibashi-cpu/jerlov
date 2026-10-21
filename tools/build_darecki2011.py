@@ -172,6 +172,82 @@ for panel, pts in FIG15.items():
 assert max(cv for _, cv in radiance["b"] + radiance["c"]) > 3.0
 
 
+# -- Figure 13b: CV of Ed against wavelength, five winds -------------------
+# Same frame as 13a in x, below it: x0 111.61 (400 nm) to 277.52 (700 nm),
+# y 382.544 (CV 0) to 243.840 (0.6). Major ticks at 400-650 nm by 50 and
+# at CV 0.1-0.5. The six irradiance channels are 410, 443, 488, 532, 610
+# and 670 nm (p. 3). Each curve is labelled with its wind speed in the
+# panel; the marker that goes with each label was matched by eye on a
+# rendering of the panel.
+WL_TICKS = ([121.960, 147.887, 173.814, 199.742, 225.669, 251.596],
+            [400, 450, 500, 550, 600, 650])
+CV13B_TICKS = ([382.544, 359.392, 336.292, 313.140, 290.040, 266.886],
+               [0.0, 0.1, 0.2, 0.3, 0.4, 0.5])
+CHANNELS = [410, 443, 488, 532, 610, 670]
+# wind m/s: (marker, boxes from 410 to 670 nm). Up triangles sit on their
+# centroid two thirds of the way down, down triangles one third.
+FIG13B = {
+    3.9: ("circle", [(124.949, 288.226, 129.323, 292.602),
+                     (142.073, 282.838, 146.394, 287.213),
+                     (165.385, 279.957, 169.706, 284.331),
+                     (188.217, 275.850, 192.590, 280.224),
+                     (228.654, 261.393, 233.029, 265.767),
+                     (259.757, 250.616, 264.132, 254.990)]),
+    5.4: ("square", [(125.268, 300.603, 128.949, 304.336),
+                     (142.392, 288.653, 146.073, 292.388),
+                     (165.705, 281.184, 169.386, 284.919),
+                     (188.538, 276.543, 192.273, 280.277),
+                     (228.975, 265.287, 232.656, 269.022),
+                     (260.077, 258.885, 263.757, 262.619)]),
+    6.3: ("up", [(124.949, 316.554, 129.269, 320.395),
+                 (142.073, 310.632, 146.394, 314.474),
+                 (165.385, 304.124, 169.706, 307.965),
+                 (188.218, 301.829, 192.591, 305.670),
+                 (228.655, 287.852, 232.976, 291.693),
+                 (259.757, 279.957, 264.078, 283.798)]),
+    7.2: ("down", [(124.949, 321.621, 129.269, 325.463),
+                   (142.073, 315.700, 146.394, 319.541),
+                   (165.385, 313.833, 169.706, 317.728),
+                   (188.218, 310.793, 192.591, 314.632),
+                   (228.655, 303.004, 232.976, 306.897),
+                   (259.757, 296.282, 264.078, 300.123)]),
+    10.3: ("diamond", [(124.575, 337.572, 129.696, 342.694),
+                       (141.700, 335.758, 146.767, 340.880),
+                       (165.012, 334.852, 170.079, 340.026),
+                       (187.844, 331.651, 192.965, 336.772),
+                       (228.283, 315.594, 233.404, 320.715),
+                       (259.383, 300.549, 264.505, 305.670)]),
+}
+# The caption's date and local time for each wind (p. 12).
+DAYS = {3.9: "20 September 2008, 09:42", 5.4: "18 September 2008, 09:48",
+        6.3: "16 September 2008, 13:55", 7.2: "19 September 2008, 13:41",
+        10.3: "15 September 2008, 14:15"}
+
+
+def point13b(kind, box):
+    x0, y0, x1, y1 = box
+    h = y1 - y0
+    y = {"up": y1 - h / 3, "down": y0 + h / 3}.get(kind, (y0 + y1) / 2)
+    return (x0 + x1) / 2, y
+
+
+wl_of, w_err = calibrate(*WL_TICKS)
+cv13b_of, c13_err = calibrate(*CV13B_TICKS)
+assert w_err < 0.1 and c13_err < 2e-4, (w_err, c13_err)
+spectral = {}
+for wind, (kind, boxes) in FIG13B.items():
+    read = [(wl_of(x), cv13b_of(y)) for x, y in (point13b(kind, b)
+                                                for b in boxes)]
+    # every marker sits on a channel, within a nanometre
+    assert all(abs(w - n) < 1.0 for (w, _), n in zip(read, CHANNELS)), wind
+    # "the CV of irradiance shows an increase with increasing light
+    # wavelength" (p. 12): red above blue on every day
+    assert read[-1][1] > read[0][1], wind
+    spectral[wind] = [cv for _, cv in read]
+# The windiest day is the steadiest at every wavelength.
+assert all(spectral[10.3][k] < min(spectral[w][k] for w in DAYS if w != 10.3)
+           for k in range(6))
+
 NOTE = "read from the figure's drawing commands; DATA.md section 24"
 path = DATA_DIR / "darecki2011_irradiance_cv.csv"
 with path.open("w", newline="", encoding="utf-8") as handle:
@@ -195,5 +271,18 @@ with path.open("w", newline="", encoding="utf-8") as handle:
         for angle, cv in pts:
             writer.writerow([panel, angle, f"{cv:.4f}", "read_from_figure",
                              NOTE])
+            rows += 1
+report(path.name, rows)
+
+path = DATA_DIR / "darecki2011_spectral_cv.csv"
+with path.open("w", newline="", encoding="utf-8") as handle:
+    writer = csv.writer(handle)
+    writer.writerow(["wind_m_s", "day", "wavelength_nm", "cv", "status",
+                     "note"])
+    rows = 0
+    for wind, cvs in spectral.items():
+        for wl, cv in zip(CHANNELS, cvs):
+            writer.writerow([wind, DAYS[wind], wl, f"{cv:.4f}",
+                             "read_from_figure", NOTE])
             rows += 1
 report(path.name, rows)

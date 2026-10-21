@@ -35,6 +35,8 @@ could not are `missing`, and values that are used but doubtful are `suspect`.
 | `darecki2011_irradiance_cv.csv` | Coefficient of variation of Ed under waves, 6 depths 0.86-9.58 m, 443, 532 and 670 nm; **read from a figure** | 18 |
 | `darecki2011_radiance_cv.csv` | Coefficient of variation of radiance at 532 nm, 13 zenith angles in the sun's plane, 3 occasions; **read from a figure** | 39 |
 | `gernez2009_sun_zenith.csv` | Coefficient of variation of Ed at 510 nm, its spread, and the period of the strongest fluctuation, against the sun's zenith angle, clear skies; **read from a figure** | 14 |
+| `darecki2011_spectral_cv.csv` | Coefficient of variation of Ed at about 1 m, 410-670 nm, on five days of wind from 3.9 to 10.3 m/s; **read from a figure** | 30 |
+| `gernez2009_conditions.csv` | As `gernez2009_sun_zenith`, against wave height, the square root of the wind speed, and Kd(490); **read from a figure** | 33 |
 
 The four tables drawn from the two Dstl datasets (`williamson2022_iop`,
 `williamson2022_measured`, `solonenko2015_iop` and `williamson2023_depth`)
@@ -1207,6 +1209,19 @@ as read. Figure 15: radiance at 532 nm, field of view 4.5 degrees in water
 the caption gives and `darecki2011_radiance_cv` carries: depth 0.93, 0.59
 and 0.54 m; sun 33, 41 and 35 degrees; refracted sunbeam 24, 29 and 25.
 
+**Figure 13b** (`darecki2011_spectral_cv.csv`), read the same way from
+the same page: CV at the six irradiance channels, 410, 443, 488, 532, 610
+and 670 nm (p. 3), on five days. Each curve is labelled in the panel with
+its wind speed, and the marker that goes with each label was matched on a
+rendering of the panel: circles 3.9 m/s, squares 5.4, upward triangles
+6.3, downward triangles 7.2, diamonds 10.3. Upward triangles are placed by
+their centroid two thirds of the way down. Every marker falls within a
+nanometre of a channel; on every day CV is larger in the red than the
+blue, and the windiest day has the smallest CV at every wavelength. The
+caption gives each day's date and local time, and for all five a depth of
+0.91-1.25 m, a sun 42-46 degrees from the zenith and c(555) of 0.55-0.78
+1/m, not which day had which.
+
 **What they depend on that the package does not know.** The collector's
 size: larger collectors read smaller fluctuations, and "a collector of a
 few millimeters in diameter or smaller is required" near the surface
@@ -1216,10 +1231,20 @@ wind on five days.
 
 ## 25. Gernez & Antoine's light fluctuations, read from their figure (note)
 
-`gernez2009_sun_zenith.csv` is read from Gernez, P. and Antoine, D. (2009),
-"Field characterization of wave-induced underwater light field
-fluctuations", J. Geophys. Res. 114, C06025, doi:10.1029/2008JC005059,
-Figure 8a (p. 9), by `tools/build_gernez2009.py`.
+`gernez2009_sun_zenith.csv` and `gernez2009_conditions.csv` are read from
+Gernez, P. and Antoine, D. (2009), "Field characterization of wave-induced
+underwater light field fluctuations", J. Geophys. Res. 114, C06025,
+doi:10.1029/2008JC005059, Figure 8 (p. 9), by `tools/build_gernez2009.py`.
+
+**Medians, and a shifted series.** Figure 8 is "as in Figure 7", whose
+caption says "The symbols are the median values, and the vertical bars are
+the standard deviations" and "the Tmax curve is shifted to avoid that
+error bars for CV and Tmax are superimposed" (p. 8). The values are
+medians over the one-minute sequences in each class. Version 0.16.0 called
+the values of Figure 8a means here and in its accessor; they are the same
+numbers, and they are medians. The squares of Tmax are drawn shifted
+sideways from their class, so each is assigned to the class of the circle
+it follows.
 
 **How it was read.** The figure is a greyscale raster in the PDF, 877 by
 821 pixels at 150 per inch. The build script carries pixel rows and
@@ -1228,10 +1253,14 @@ checked by overlaying the readings on the image. The axes are calibrated
 on their tick marks: one pixel is 0.115 percent of CV and 0.013 s of
 Tmax.
 
-- CV and its standard deviation: each solid bar is the mean plus and
-  minus one standard deviation, so the mean is its midpoint; the circle
-  drawn there was found within a pixel of it at every angle. Read to one
-  pixel.
+- CV and its standard deviation: each solid bar is drawn the same length
+  either side of its circle, so where its ends are clear its midpoint is
+  the median. In panel a the circle was found within a pixel of the
+  midpoint at every angle. In panels b to d, where markers and the other
+  series' bars cross, the circle is found by its outline, and the bar is
+  read only where its midpoint lies within 1.5 pixels of it; at three
+  classes it does not, and their standard deviation is left empty (the
+  accessor gives nan). Read to one pixel.
 - Tmax: the centre of the square marker, from its vertical sides. At 30,
   45, 55 and 70 degrees only one side could be told from the dashed bar,
   and the value is read to two pixels. The `tmax_reading_s` column says
@@ -1240,10 +1269,24 @@ Tmax.
   bars end between dashes, and their ends cannot be placed closer than a
   dash.
 
-**What the build checks.** The text's own figures for this panel: CV
-"maximal at 25%" at the highest sun, "down to 5%" near the horizon, and
-Tmax rising "from 1s to 3s" (p. 7). Beyond 35 degrees CV only falls and
-Tmax only rises.
+**What the build checks.** The text's own figures. Panel a: CV "maximal
+at 25%" at the highest sun, "down to 5%" near the horizon, Tmax rising
+"from 1s to 3s" (p. 7); beyond 35 degrees CV only falls and Tmax only
+rises. Panel c: CV "reaches a maximum of about 22% when the wind speed is
+around 3 m s-1" (p. 7), read as 22.8 percent at a square-rooted wind of
+1.6, 2.6 m/s; Tmax 1.6 s near 8 m/s (p. 8). Panel d: CV down to about 12
+percent at the most turbid end of Kd(490), and Tmax from about 1 s to
+1.5 s by 0.065 1/m (p. 8). Each circle stands at its class to within a fifth of a class.
+
+**Where the text and the figure differ.** The text says CV decreases "from
+30% to 12 %" as Kd(490) goes from 0.03 to 0.15 (p. 8); the figure's
+largest CV in panel d is 24.0 percent, at 0.025. It says Tmax is "minimal
+at 1.2s for wind speeds between 2 and 4 m s-1" (p. 8); the lowest Tmax
+read in panel c is 1.12 s at a square-rooted wind of 1.2, about 1.4 m/s,
+next to 1.15 s at 1.6, about 2.6 m/s. And it puts the upper radiometers
+"around 4 m" (p. 8) where the description of the buoy gives 2.7 to 3.7 m
+(p. 3). The values shipped are the figure's; the build checks the text
+only where the two agree.
 
 **The measurements.** The BOUSSOLE buoy in the Ligurian Sea, from 2003;
 downwelling irradiance at 510 nm, collectors 8 mm across, sampled 6 times
