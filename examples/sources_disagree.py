@@ -42,7 +42,7 @@ print("""Williamson & Hollins (2022) measured a and b. Solonenko & Mobley
 (2015) obtained them by inverting Kd. Both are published for the same ten
 water types under the same names.""")
 
-print(f"\nScattering coefficient b at 510 nm, 1/m\n")
+print("\nScattering coefficient b at 510 nm, 1/m\n")
 print(f"{'type':>6} {'measured':>10} {'inverted':>10} {'ratio':>8}")
 for water_type in SHARED:
     measured = float(jerlov.water(water_type).b(510))

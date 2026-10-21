@@ -46,7 +46,7 @@ for water_type in OCEANIC:
     print(f"  {water_type:>5} {p.R:>7.2f} {p.zeta1_m:>11.2f} {p.zeta2_m:>11.1f}")
 
 alternative = jerlov.shortwave_parameters("I_upper50")
-print(f"\n  There is a second row for type I, fitted over the upper 50 m:")
+print("\n  There is a second row for type I, fitted over the upper 50 m:")
 print(f"  {'I*':>5} {alternative.R:>7.2f} {alternative.zeta1_m:>11.2f} "
       f"{alternative.zeta2_m:>11.1f}")
 print(f"    {alternative.note}")

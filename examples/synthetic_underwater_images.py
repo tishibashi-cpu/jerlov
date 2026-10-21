@@ -72,7 +72,7 @@ daylight = np.interp(WAVELENGTHS, *jerlov.d65(), left=0.0, right=0.0)
 
 print(f"  water type          {water_type}   ({iops.source.key})")
 print(f"  depth               {depth_m:g} m")
-print(f"  surface spectrum    CIE D65, a daylight phase, not a measurement")
+print("  surface spectrum    CIE D65, a daylight phase, not a measurement")
 print(f"  backscatter ratio   {backscatter_ratio}  (bb/b, stated by us)")
 
 deeper = jerlov.water_type_at_depth(water_type, depth_m)

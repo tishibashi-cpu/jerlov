@@ -90,7 +90,7 @@ theta = np.radians(np.linspace(90.0, 180.0, 90001))
 direct = 2 * math.pi * amplitude * float(
     trapezoid((1 + ratio() * np.cos(theta) ** 2) * np.sin(theta), theta))
 spread = (max(by_angle) - min(by_angle)) / direct
-print(f"check: chi_w reproduces the Eq. (3) integral at every angle")
+print("check: chi_w reproduces the Eq. (3) integral at every angle")
 print(f"  by angle {min(by_angle):.6f} to {max(by_angle):.6f}, "
       f"integral {direct:.6f}, spread {spread:.2e}")
 assert spread < 1e-9, "Eq. (9) disagrees with Eq. (3)"

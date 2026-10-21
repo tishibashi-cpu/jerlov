@@ -10,7 +10,8 @@ checked. The 2023 Table 1 omits two a values that pass it (5C at 676 and
 715 nm); see DATA.md section 9.
 """
 
-import sys, pathlib
+import sys
+import pathlib
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
 from _common import DATA_DIR, require, report
 

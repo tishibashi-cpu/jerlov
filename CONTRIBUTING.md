@@ -112,6 +112,12 @@ it. A test refuses either name anywhere in the repository.
 
 Scalar input returns a scalar, arrays return arrays, matching `numpy.interp`.
 
+CI also runs `ruff check .` and `mypy`, at the versions pinned in
+`.github/workflows/test.yml`. The package ships `py.typed`, so its
+annotations are a promise to every caller's type checker. Lines in
+`jerlov/` are held to 79 characters; the examples, tests and build scripts
+are not (DECISIONS.md section 43).
+
 ## Tests
 
 ```bash

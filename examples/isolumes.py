@@ -14,7 +14,6 @@ sensitivity can be used instead with `integrate_response`; see
 `what_an_eye_sees.py`.
 """
 
-import math
 
 import numpy as np
 

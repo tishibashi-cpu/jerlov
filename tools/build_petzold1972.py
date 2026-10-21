@@ -21,7 +21,10 @@ the summary pages, so that a misread digit cannot pass silently. No input
 file is needed: the numbers are literals, as for Austin & Petzold (1986).
 """
 
-import sys, pathlib, math, csv
+import sys
+import pathlib
+import math
+import csv
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
 from _common import DATA_DIR, report
 

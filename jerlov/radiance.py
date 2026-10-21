@@ -2,9 +2,9 @@
 
 The radiance from every direction at seven depths in a deep lake Tyler
 judged homogeneous, under a clear sky, as he tabulated it. The package does
-not compute radiance distributions (DECISIONS.md sections 12 and 38); this is the
-measurement one can be compared with. ``examples/radiance_distribution.py``
-does.
+not compute radiance distributions (DECISIONS.md sections 12 and 38); this
+is the measurement one can be compared with.
+``examples/radiance_distribution.py`` does.
 """
 
 from __future__ import annotations

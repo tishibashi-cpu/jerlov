@@ -83,8 +83,9 @@ def _rows():
     return _data._rows("paulson1977_shortwave.csv")
 
 
-def shortwave_parameters(water_type: str, *,
-                         include_non_types: bool = False) -> ShortwaveParameters:
+def shortwave_parameters(
+        water_type: str, *,
+        include_non_types: bool = False) -> ShortwaveParameters:
     """Paulson & Simpson parameters for a Jerlov water type.
 
     Only the five oceanic types I, IA, IB, II and III were fitted; the paper
@@ -146,7 +147,8 @@ def solar_fraction(water_type: str, depth_m):
     return shortwave_parameters(water_type).fraction_at(depth_m)
 
 
-def jerlov1968_solar_fraction(water_type: str) -> tuple[np.ndarray, np.ndarray]:
+def jerlov1968_solar_fraction(
+        water_type: str) -> tuple[np.ndarray, np.ndarray]:
     """Jerlov (1968) Table XXI: ``(depths_m, fraction)`` of surface irradiance.
 
     Broadband, 300-2500 nm, as measured and tabulated by Jerlov, for all ten
@@ -165,8 +167,9 @@ def jerlov1968_solar_fraction(water_type: str) -> tuple[np.ndarray, np.ndarray]:
     rows = [r for r in _data._rows("jerlov1968_total_irradiance.csv")
             if r["water_type"] == water_type]
     if not rows:
-        known = sorted({r["water_type"]
-                        for r in _data._rows("jerlov1968_total_irradiance.csv")})
+        known = sorted({
+            r["water_type"]
+            for r in _data._rows("jerlov1968_total_irradiance.csv")})
         raise KeyError(f"Table XXI has no water type {water_type!r} "
                        f"(known: {', '.join(known)})")
     rows.sort(key=lambda r: float(r["depth_m"]))

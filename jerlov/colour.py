@@ -60,7 +60,8 @@ class CoverageWarning(UserWarning):
     """
 
 
-def _rgb_matrix(primaries: np.ndarray, whitepoint_xy: np.ndarray) -> np.ndarray:
+def _rgb_matrix(primaries: np.ndarray,
+                whitepoint_xy: np.ndarray) -> np.ndarray:
     """Derive the XYZ to linear RGB matrix from chromaticities."""
     x, y = primaries[:, 0], primaries[:, 1]
     m = np.vstack([x / y, np.ones(3), (1 - x - y) / y])

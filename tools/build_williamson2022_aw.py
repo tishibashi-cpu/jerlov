@@ -12,11 +12,14 @@ the paper's Table 6, Eqs. (4)-(6) must give back the a of the sheet
 not been obtained; see DATA.md section 20.
 """
 
-import sys, pathlib
+import sys
+import pathlib
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
 from _common import DATA_DIR, require, report
 
-import openpyxl, csv, numpy as np
+import openpyxl
+import csv
+import numpy as np
 wb=openpyxl.load_workbook(require("20290782/20221121-Dstl_MIOP_analysis_v3.xlsx"),data_only=True)
 
 ws=wb['a,b measured and model']

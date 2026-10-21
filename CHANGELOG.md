@@ -4,6 +4,42 @@ Every release is archived on Zenodo under the concept DOI
 [10.5281/zenodo.22321312](https://doi.org/10.5281/zenodo.22321312), which
 always resolves to the latest version.
 
+## 0.16.1 — 2026-10-21
+
+The package's type annotations and its source are now checked in CI. No
+shipped value changed, and no code changed what it does.
+
+**Fixed.**
+
+- Two annotations said less than the code returns. `Descent.transmittance`
+  is a float when the wavelength asked for is a scalar, as every other
+  wavelength-indexed result is, but was annotated as an array; so was the
+  internal interpolation behind `Water.a`, `b`, `c` and `kd`. The table of
+  Figure 15's conditions behind `darecki2011_radiance_cv` is annotated so
+  that its mixed values type-check.
+- Unused imports in `examples/isolumes.py`,
+  `tests/test_reproduces_papers.py` and one build script, and f-strings
+  with nothing to format in four examples and a build script. The
+  examples' output is unchanged.
+
+**Changed.** Lines in `jerlov/` longer than 79 characters are wrapped.
+The text of every message and docstring is unchanged apart from where its
+lines break.
+
+**Packaging.**
+
+- A new CI job runs `ruff check .` and `mypy` on the package, at pinned
+  versions (ruff 0.15.20, mypy 1.20.2), configured in `pyproject.toml`.
+- `actions/checkout` v4 → v5, `actions/setup-python` v5 → v6,
+  `actions/upload-artifact` v4 → v6 and `actions/download-artifact`
+  v4 → v7, the first versions of each that run on Node.js 24; GitHub
+  warned that Node.js 20 is deprecated. The artifact is downloaded by name,
+  whose behaviour none of these versions changed.
+- The build scripts' imports were split one to a line. Rerunning every
+  script reproduces every shipped CSV byte for byte.
+
+**Docs.** DECISIONS.md section 43; CONTRIBUTING.md.
+
 ## 0.16.0 — 2026-10-18
 
 The fluctuations of the light under a wavy surface, as two field studies
