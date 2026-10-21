@@ -4,6 +4,37 @@ Every release is archived on Zenodo under the concept DOI
 [10.5281/zenodo.22321312](https://doi.org/10.5281/zenodo.22321312), which
 always resolves to the latest version.
 
+## 0.17.0 — 2026-10-21
+
+The rest of the two fluctuation studies' figures. No shipped value
+changed; two data files are added.
+
+**Added.**
+
+- `darecki2011_spectral_cv()`: the coefficient of variation of the
+  downwelling irradiance at about 1 m, at 410, 443, 488, 532, 610 and
+  670 nm, on five days with winds from 3.9 to 10.3 m/s (Darecki et al.
+  2011, Figure 13b), as a `SpectralFluctuation` with each day's date and
+  time. Read from the figure's drawing commands, like 13a and 15.
+- `gernez2009_cv_by(variable)`: under clear skies at about 3 m, the
+  coefficient of variation of the downwelling irradiance at 510 nm, its
+  standard deviation and the period of the strongest fluctuation, against
+  the wave height, the square root of the wind speed or Kd(490) (Gernez &
+  Antoine 2009, Figures 8b-8d), as a `ConditionFluctuation`;
+  `GERNEZ2009_VARIABLES` names the three. Read from the figure's pixels.
+  Where a bar cannot be told from the other series', its standard
+  deviation is nan.
+
+**Fixed.** The values of `gernez2009_cv_by_sun_zenith()` are the medians
+of each class, as the caption of the paper's Figure 7 says for Figure 8;
+0.16.0 called them means in its docstrings, in DATA.md section 25 and in
+the build script. The numbers are unchanged.
+
+**Docs.** DATA.md sections 24 and 25: the new readings, and where the
+paper's text and its figure differ (CV "from 30%" with Kd(490), where the
+figure's largest is 24 percent; the wind of the shortest period; the depth
+of the upper radiometers).
+
 ## 0.16.1 — 2026-10-21
 
 The package's type annotations and its source are now checked in CI. No

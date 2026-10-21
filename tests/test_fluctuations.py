@@ -80,3 +80,47 @@ def test_gernez_as_read():
                                   "gernez2009_sun_zenith.csv"])
 def test_every_value_says_it_was_read_from_a_figure(name):
     assert {r["status"] for r in _data._rows(name)} == {"read_from_figure"}
+
+
+def test_darecki_spectral_as_read():
+    """Figure 13b: higher in the red on every day, lowest on the windiest
+    (p. 12); the caption's days."""
+    s = jerlov.darecki2011_spectral_cv()
+    assert s.wind_m_s.tolist() == [3.9, 5.4, 6.3, 7.2, 10.3]
+    assert s.wavelengths_nm.tolist() == [410, 443, 488, 532, 610, 670]
+    assert s.cv[0].tolist() == [0.3983, 0.4216, 0.4341, 0.4518, 0.5143,
+                                0.5609]
+    assert np.all(s.cv[:, -1] > s.cv[:, 0])
+    assert np.all(s.cv[-1] == s.cv.min(axis=0))
+    assert s.days[0] == "20 September 2008, 09:42"
+    assert repr(s) == ("<SpectralFluctuation Darecki 2011, wind 3.9-10.3 "
+                       "m/s, 410-670 nm>")
+
+
+def test_gernez_conditions_as_read():
+    """Figures 8b-8d: CV peaks near 22% at about 3 m/s of wind (p. 7);
+    from 24% down to about 12% with Kd(490); Tmax 1 to 1.5 s by 0.065
+    (p. 8); the standard deviation left out where the bar is not clear."""
+    assert jerlov.GERNEZ2009_VARIABLES == ("wave_height_m", "sqrt_wind",
+                                          "kd490_per_m")
+    w = jerlov.gernez2009_cv_by("sqrt_wind")
+    k = int(np.argmax(w.cv))
+    assert round(w.x[k], 1) == 1.6 and round(100 * w.cv[k], 1) == 22.8
+    assert np.isnan(w.cv_sd).sum() == 1
+    d = jerlov.gernez2009_cv_by("kd490_per_m")
+    assert d.x.size == 13 and round(d.x[0], 3) == 0.025
+    assert round(100 * d.cv[0], 1) == 24.0
+    assert round(100 * d.cv.min()) == 12
+    assert 0.95 <= d.tmax_s[0] <= 1.1 and 1.4 <= d.tmax_s[4] <= 1.6
+    assert np.isnan(d.cv_sd).sum() == 2
+    h = jerlov.gernez2009_cv_by("wave_height_m")
+    assert h.x.tolist() == [0.25 * i for i in range(10)]
+    assert not np.any(np.isnan(h.cv_sd))
+    with pytest.raises(KeyError, match="known: wave_height_m"):
+        jerlov.gernez2009_cv_by("wind")
+
+
+@pytest.mark.parametrize("name", ["darecki2011_spectral_cv.csv",
+                                  "gernez2009_conditions.csv"])
+def test_the_new_files_say_they_were_read_from_a_figure(name):
+    assert {r["status"] for r in _data._rows(name)} == {"read_from_figure"}

@@ -3,11 +3,12 @@
 Waves focus and spread the sunlight that crosses the surface, and the light
 under it flickers. Two field studies are shipped as they were published,
 in figures: Darecki, Stramski & Sokolski (2011), with the fluctuations of
-the downwelling irradiance against depth and of the radiance against
-direction, and Gernez & Antoine (2009), with those of the irradiance
-against the sun's zenith angle. Neither printed a table, so the values are
-read off the figures; DATA.md sections 24 and 25 say how, and how
-closely.
+the downwelling irradiance against depth, against wavelength on five days
+of different wind, and of the radiance against direction; and Gernez &
+Antoine (2009), with those of the irradiance against the sun's zenith
+angle, the wave height, the wind and the water's clarity. Neither printed
+a table, so the values are read off the figures; DATA.md sections 24 and
+25 say how, and how closely.
 
 The package does not model the fluctuations (DECISIONS.md section 42): how
 strong they are depends on the wind, the waves, the sky and the size of the
@@ -26,6 +27,11 @@ from . import _data
 
 DARECKI2011_PANELS = ("a", "b", "c")
 """The three panels of Darecki et al.'s (2011) Figure 15."""
+
+GERNEZ2009_VARIABLES = ("wave_height_m", "sqrt_wind", "kd490_per_m")
+"""What Gernez & Antoine's (2009) Figures 8b, 8c and 8d are plotted
+against: the wave height, m; the square root of the wind speed, the wind in
+m/s; and Kd at 490 nm, 1/m."""
 
 
 @dataclass(frozen=True, eq=False, repr=False)
@@ -92,16 +98,16 @@ class RadianceFluctuation:
 
 @dataclass(frozen=True, eq=False, repr=False)
 class SunZenithFluctuation:
-    """Gernez & Antoine's (2009) Figure 8a: under clear skies, the mean
+    """Gernez & Antoine's (2009) Figure 8a: under clear skies, the median
     coefficient of variation of the downwelling irradiance at 510 nm, its
-    standard deviation, and the mean period of the strongest fluctuation,
-    against the sun's zenith angle. Built by
+    standard deviation, and the median period of the strongest
+    fluctuation, against the sun's zenith angle. Built by
     :func:`gernez2009_cv_by_sun_zenith`; CV as a ratio."""
 
     sun_zenith_deg: np.ndarray
     cv: np.ndarray
     cv_sd: np.ndarray
-    """The standard deviation of CV among the minutes averaged."""
+    """The standard deviation of CV among the minutes in each class."""
     tmax_s: np.ndarray
     tmax_reading_s: np.ndarray
     """How closely ``tmax_s`` is read, one or two pixels of the figure."""
@@ -124,6 +130,64 @@ class SunZenithFluctuation:
         return (f"<SunZenithFluctuation Gernez 2009, sun "
                 f"{self.sun_zenith_deg[0]:g}-{self.sun_zenith_deg[-1]:g} deg, "
                 f"CV {self.cv.max():.1%} to {self.cv.min():.1%}>")
+
+
+@dataclass(frozen=True, eq=False, repr=False)
+class SpectralFluctuation:
+    """Darecki et al.'s (2011) Figure 13b: the coefficient of variation of
+    the downwelling irradiance at about 1 m, at six wavelengths, on five
+    days of different wind. Built by :func:`darecki2011_spectral_cv`;
+    ``cv[i, j]`` is at ``wind_m_s[i]`` and ``wavelengths_nm[j]``."""
+
+    wind_m_s: np.ndarray
+    wavelengths_nm: np.ndarray
+    cv: np.ndarray
+    days: tuple[str, ...]
+    """The date and local time of each wind's measurement, as the caption
+    gives them."""
+    cv_reading: float = 0.0002
+    place: str = "Santa Barbara Channel, September 2008"
+    depth_m: tuple[float, float] = (0.91, 1.25)
+    sun_zenith_deg: tuple[float, float] = (42.0, 46.0)
+    beam_attenuation_555: tuple[float, float] = (0.55, 0.78)
+    collector_mm: float = 2.5
+
+    def __repr__(self) -> str:
+        return (f"<SpectralFluctuation Darecki 2011, wind "
+                f"{self.wind_m_s[0]:g}-{self.wind_m_s[-1]:g} m/s, "
+                f"{self.wavelengths_nm[0]:g}-{self.wavelengths_nm[-1]:g} "
+                f"nm>")
+
+
+@dataclass(frozen=True, eq=False, repr=False)
+class ConditionFluctuation:
+    """One of Gernez & Antoine's (2009) Figures 8b to 8d: under clear
+    skies, the median coefficient of variation of the downwelling
+    irradiance at 510 nm, its standard deviation, and the median period of
+    the strongest fluctuation, against one of the conditions in
+    :data:`GERNEZ2009_VARIABLES`. Built by :func:`gernez2009_cv_by`."""
+
+    variable: str
+    x: np.ndarray
+    """The class, in the unit the variable's name gives."""
+    cv: np.ndarray
+    cv_sd: np.ndarray
+    """The standard deviation of CV among the minutes in each class; nan
+    where the figure's bar cannot be told from the other series'."""
+    tmax_s: np.ndarray
+    tmax_reading_s: np.ndarray
+    cv_reading: float = 0.0011
+    place: str = "BOUSSOLE buoy, Ligurian Sea"
+    wavelength_nm: float = 510.0
+    depth_m: tuple[float, float] = (2.7, 3.7)
+    collector_mm: float = 8.0
+    sampling_hz: float = 6.0
+    sky: str = ("clear: above-water irradiance at least 0.85 of the "
+                "clear-sky model")
+
+    def __repr__(self) -> str:
+        return (f"<ConditionFluctuation Gernez 2009 against "
+                f"{self.variable}, {self.x.size} classes>")
 
 
 def darecki2011_irradiance_cv() -> IrradianceFluctuation:
@@ -208,4 +272,56 @@ def gernez2009_cv_by_sun_zenith() -> SunZenithFluctuation:
         sun_zenith_deg=column("sun_zenith_deg"),
         cv=column("cv_percent", 0.01), cv_sd=column("cv_sd_percent", 0.01),
         tmax_s=column("tmax_s"), tmax_reading_s=column("tmax_reading_s"),
+        cv_reading=float(rows[0]["cv_reading_percent"]) / 100)
+
+
+def darecki2011_spectral_cv() -> SpectralFluctuation:
+    """The coefficient of variation of the downwelling irradiance against
+    wavelength, 410 to 670 nm, at about 1 m on five days of different wind.
+
+    Darecki et al. (2011), as for :func:`darecki2011_irradiance_cv`, Figure
+    13b, p. 12; the conditions are the caption's. Read off the figure's
+    drawing commands: DATA.md section 24.
+    """
+    rows = _data._rows("darecki2011_spectral_cv.csv")
+    winds = sorted({float(r["wind_m_s"]) for r in rows})
+    wls = sorted({float(r["wavelength_nm"]) for r in rows})
+    cv = np.empty((len(winds), len(wls)))
+    days = {}
+    for r in rows:
+        w = float(r["wind_m_s"])
+        cv[winds.index(w), wls.index(float(r["wavelength_nm"]))] = \
+            float(r["cv"])
+        days[w] = r["day"]
+    return SpectralFluctuation(
+        wind_m_s=_data._frozen(np.array(winds)),
+        wavelengths_nm=_data._frozen(np.array(wls)),
+        cv=_data._frozen(cv), days=tuple(days[w] for w in winds))
+
+
+def gernez2009_cv_by(variable: str) -> ConditionFluctuation:
+    """The coefficient of variation of the downwelling irradiance at 510 nm,
+    and the period of its strongest fluctuation, against the wave height,
+    the wind or Kd(490), under clear skies.
+
+    ``variable`` is one of :data:`GERNEZ2009_VARIABLES`. Gernez & Antoine
+    (2009), as for :func:`gernez2009_cv_by_sun_zenith`, Figures 8b-8d,
+    p. 9. Read off the figure's pixels: DATA.md section 25. The values are
+    the medians of each class; the period's standard deviation is not
+    read, and that of CV only where its bar is clear of the other series.
+    """
+    if variable not in GERNEZ2009_VARIABLES:
+        raise KeyError(f"Figure 8 is not plotted against {variable!r} "
+                       f"(known: {', '.join(GERNEZ2009_VARIABLES)})")
+    rows = [r for r in _data._rows("gernez2009_conditions.csv")
+            if r["variable"] == variable]
+
+    def column(name, scale=1.0):
+        return _data._frozen(np.array(
+            [float(r[name]) * scale if r[name] else np.nan for r in rows]))
+
+    return ConditionFluctuation(
+        variable=variable, x=column("x"), cv=column("cv_percent", 0.01),
+        cv_sd=column("cv_sd_percent", 0.01), tmax_s=column("tmax_s"),
+        tmax_reading_s=column("tmax_reading_s"),
         cv_reading=float(rows[0]["cv_reading_percent"]) / 100)

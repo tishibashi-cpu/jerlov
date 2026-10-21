@@ -323,6 +323,8 @@ conditions and the precision of the reading:
 jerlov.darecki2011_irradiance_cv()     # CV of Ed, 0.86-9.58 m, 443/532/670 nm
 jerlov.darecki2011_radiance_cv("a")    # CV of radiance, 13 angles in the sun's plane
 jerlov.gernez2009_cv_by_sun_zenith()   # CV of Ed at 510 nm against the sun's zenith angle
+jerlov.darecki2011_spectral_cv()       # CV of Ed at 410-670 nm on five days of wind
+jerlov.gernez2009_cv_by("kd490_per_m") # ... against wave height, wind or Kd(490)
 ```
 
 They carry `status = read_from_figure`. The package does not model the
