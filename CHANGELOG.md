@@ -4,6 +4,31 @@ Every release is archived on Zenodo under the concept DOI
 [10.5281/zenodo.22321312](https://doi.org/10.5281/zenodo.22321312), which
 always resolves to the latest version.
 
+## 0.18.0 — 2026-10-23
+
+A model of the flicker under waves, as an example, checked against the
+measurement the package carries. No shipped value changed.
+
+**Examples.** `wave_focusing.py`, for anyone working with the light just
+below a sunlit sea. It draws a random sea surface from the wave spectrum
+of Elfouhaily et al. (1997), with the friction velocity from Wu (1982),
+traces the refracted sunbeam down to Darecki et al.'s (2011) six depths,
+blurs it by the sun's disc and their 2.5 mm collector, and compares the
+coefficient of variation with `darecki2011_irradiance_cv()`, using the
+water You et al. (2010) measured on the same day. The surface's mean
+square slope agrees with Cox and Munk (1954). The checks were written
+down before the run (DECISIONS.md section 44). With the scattered light
+spread evenly, the measurement is 1.5 to 2.7 times the model down to
+2.84 m, and the third check fails. Looking for the cause (section 45):
+light scattered on its way down still carries the pattern, shifted, and
+with that the model passes all three checks, the measurement 0.69 to
+1.24 times it down to 2.84 m and 0.54 to 0.77 below, where the model
+leaves out the sky. Petzold's NUC 2240 phase function brings the deeper
+values to 0.78 to 0.97; a smaller square or a coarser grid moves the
+result by 5 percent at most. Takes about N minutes.
+
+**Docs.** DECISIONS.md sections 44 and 45.
+
 ## 0.17.0 — 2026-10-21
 
 The rest of the two fluctuation studies' figures. No shipped value

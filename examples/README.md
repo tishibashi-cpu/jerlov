@@ -216,11 +216,22 @@ grey sphere by at most 8.9 percent; the sphere's shadow, at most 0.4. `--png`
 writes the picture, sun and overcast, with each paint in air beside it.
 Takes about two minutes.
 
+**`wave_focusing.py`** — the flicker of the light under a wind-driven
+sea, against what Darecki et al. (2011) measured in the Santa Barbara
+Channel. A random surface from Elfouhaily et al.'s (1997) spectrum refracts
+the sunbeam; the rays are counted at each depth, blurred by the sun's disc
+and a 2.5 mm collector. With the scattered light spread evenly, as fixed
+beforehand, the measured coefficient of variation is 1.5 to 2.7 times the
+model's down to 2.84 m. Light scattered on its way down still carries the
+pattern, shifted; with that, the measurement is 0.69 to 1.24 times the
+model down to 2.84 m and 0.54 to 0.77 below. Takes about N minutes.
+
 ## What they do not show
 
-Two scripts compare with field measurements: `euphotic_zone.py` with
-Jerlov's quanta irradiance by water type, and `radiance_distribution.py` with
-Tyler's radiance distribution in a lake, which it does not match (part 6).
+Three scripts compare with field measurements: `euphotic_zone.py` with
+Jerlov's quanta irradiance by water type, `radiance_distribution.py` with
+Tyler's radiance distribution in a lake, which it does not match (part 6),
+and `wave_focusing.py` with Darecki et al.'s flicker under waves.
 Nothing else has been compared against photographs or field radiometry; the
 output is what the published coefficients imply.
 

@@ -1277,3 +1277,51 @@ def test_the_waves_shifts_add_up_to_ed(waves_module):
     assert np.allclose(ours, ed, rtol=0.03)
     dx, dy, w = found[0]
     assert abs(np.average(dy, weights=w)) < 0.01
+
+
+@pytest.fixture(scope="module")
+def waves_example(waves_module):
+    """examples/wave_focusing.py, run once. Several minutes."""
+    import contextlib
+    import io
+    with contextlib.redirect_stdout(io.StringIO()):
+        return waves_module["main"]()
+
+
+def _carried_ratio(r, name="carried"):
+    cv = r["cv"][name][5.5]
+    return r["measured"] / cv
+
+
+@source_tree
+def test_figures_for_the_waves_example(waves_example):
+    """wave_focusing.py as printed, CHANGELOG 0.18.0 and examples/README.md:
+    the surface passes both checks, the waves longer than 4 m carry about a
+    quarter of the slope at 5.5 m/s; section 44's model fails its third
+    check, the measurement 1.5 to 2.7 times the model down to 2.84 m;
+    carrying the scattered light passes all three, 0.69 to 1.24 down to
+    2.84 m and 0.54 to 0.77 below; with NUC 2240's phase function 0.78 to
+    0.97 from 2.84 to 6.73 m; a smaller square or a coarser grid moves
+    section 44's model by 5 percent at most."""
+    r = waves_example
+    assert r["station"] == "HAOCE 5"
+    assert r["others"] == ["HAOCE 11", "NUC 2240", "NUC 2200", "NUC 2040"]
+    assert r["held"] and r["near"]
+    s = r["surfaces"][5.5]
+    assert round(100 * s["longer"] / s["total"]) == 24
+    first, second = r["first"], r["second"]
+    assert (first["falls"], first["redder"], first["within_two"]) \
+        == (True, True, False)
+    assert (round(first["ratio"].min(), 1), round(first["ratio"].max(), 1)) \
+        == (1.5, 2.7)
+    assert (second["falls"], second["redder"], second["within_two"]) \
+        == (True, True, True)
+    assert (round(second["ratio"].min(), 2), round(second["ratio"].max(), 2)) \
+        == (0.69, 1.24)
+    deep = _carried_ratio(r)[:, r["cv"]["carried"][5.5].shape[1] - 3:]
+    assert (round(deep.min(), 2), round(deep.max(), 2)) == (0.54, 0.77)
+    nuc = (r["measured"] / r["cv"]["NUC 2240"][5.5])[:, 2:5]
+    assert (round(nuc.min(), 2), round(nuc.max(), 2)) == (0.78, 0.97)
+    for value in r["sizes"].values():
+        share = value / r["cv"]["even"][5.5]
+        assert np.all(np.abs(share - 1) <= 0.05)

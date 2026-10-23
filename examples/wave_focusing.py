@@ -6,7 +6,7 @@ below, and how strongly the light at one point flickers falls with depth.
 The package carries what Darecki et al. (2011) measured of it (section 42
 of DECISIONS.md) and no model, since waves are not set by the water type.
 This example builds one from published parts and checks it against that
-measurement, with its choices fixed beforehand (section 44).
+measurement, with its choices fixed beforehand (sections 44 and 45).
 
     python examples/wave_focusing.py               # about N minutes
 
@@ -15,15 +15,21 @@ Elfouhaily et al. (1997), for a wind of 4.1, 5.5 or 6.4 m/s, on a square 4
 m across with a point every millimetre. Each point refracts the sunbeam,
 and the ray goes straight down to a depth, where the rays are counted on
 a horizontal grid of the same spacing. The sun's disc and a 2.5 mm
-collector blur that pattern. Only the light that arrives unscattered
-carries the pattern; the scattered sunlight is a uniform background,
-taken from the Monte Carlo of `radiance_distribution.py` with a flat
-surface, copied here so that the script stands alone. The coefficient of
-variation is the standard deviation of the irradiance over the grid
-divided by its mean.
+collector blur that pattern. The coefficient of variation is the standard
+deviation of the irradiance over the grid divided by its mean.
+
+The scattered sunlight is treated two ways. As section 44 fixed it, it is
+spread evenly, with its size from the Monte Carlo of
+`radiance_distribution.py` under a flat surface, copied here so that the
+script stands alone; that model falls short of the measurement. As
+section 45 found, a photon scattered on its way down carries the same
+pattern, shifted by how far the scattering moved it, and a second Monte
+Carlo, with the same scattering, gives those shifts.
 """
 
+import os
 import sys
+from concurrent.futures import ThreadPoolExecutor
 
 import numpy as np
 
@@ -372,34 +378,55 @@ def rays(eta, sx, sy, sun_zenith=SUN_ZENITH):
 
 
 
-def patterns(eta, beams, depth, cs, side=SIDE, rows=1024):
+def _band(eta, beams, depth, cs, step, top, rows):
+    """The rays from one band of rows, counted over the rows they reach:
+    the first of those rows, and an image for each c."""
+    tx, ty, tz, power = (v[top:top + rows] for v in beams)
+    n = eta.shape[1]
+    columns = np.arange(n)
+    travel = (depth + eta[top:top + rows]) / -tz      # along the ray
+    px = columns[None, :] + travel * tx / step
+    py = columns[top:top + rows, None] + travel * ty / step
+    i0, j0 = np.floor(px), np.floor(py)
+    fx, fy = px - i0, py - j0
+    i0 = i0.astype(np.int64) % n
+    j0 = j0.astype(np.int64)
+    low = int(j0.min())
+    j0 -= low
+    height = int(j0.max()) + 2
+    i1 = i0 + 1
+    i1[i1 == n] = 0
+    index = np.concatenate([(j0 * n + i0).ravel(), (j0 * n + i1).ravel(),
+                            ((j0 + 1) * n + i0).ravel(),
+                            ((j0 + 1) * n + i1).ravel()])
+    share = np.concatenate([((1 - fx) * (1 - fy)).ravel(),
+                            (fx * (1 - fy)).ravel(),
+                            ((1 - fx) * fy).ravel(), (fx * fy).ravel()])
+    return low, [np.bincount(index, np.tile((power * np.exp(-c * travel))
+                                            .ravel(), 4) * share,
+                             height * n).reshape(height, n) for c in cs]
+
+
+def patterns(eta, beams, depth, cs, side=SIDE):
     """The unscattered irradiance on a horizontal grid at one depth, for
     each beam attenuation in ``cs``; each ray is shared among the four
-    nearest grid points. Done a band of rows at a time, to keep the
-    memory down."""
-    tx, ty, tz, power = beams
+    nearest grid points. A band of rows at a time, on as many threads as
+    there are processors; the bands are added in order, so the sums do
+    not depend on which thread finishes first."""
     n = eta.shape[0]
-    step = side / n
-    images = [np.zeros(n * n) for _ in cs]
-    columns = np.arange(n)
-    for top in range(0, n, rows):
-        band = slice(top, top + rows)
-        travel = (depth + eta[band]) / -tz[band]      # along the ray
-        px = columns[None, :] + travel * tx[band] / step
-        py = (columns[band, None] + travel * ty[band] / step)
-        i0, j0 = np.floor(px).astype(np.int64), np.floor(py).astype(np.int64)
-        fx, fy = px - i0, py - j0
-        i0, j0 = i0 % n, j0 % n
-        i1, j1 = (i0 + 1) % n, (j0 + 1) % n
-        index = np.concatenate([(j0 * n + i0).ravel(), (j0 * n + i1).ravel(),
-                                (j1 * n + i0).ravel(), (j1 * n + i1).ravel()])
-        share = np.concatenate([((1 - fx) * (1 - fy)).ravel(),
-                                (fx * (1 - fy)).ravel(),
-                                ((1 - fx) * fy).ravel(), (fx * fy).ravel()])
-        for image, c in zip(images, cs):
-            weight = np.tile((power[band] * np.exp(-c * travel)).ravel(), 4)
-            image += np.bincount(index, weight * share, n * n)
-    return [image.reshape(n, n) for image in images]
+    # a band about as tall as its rays spread across the sun's plane
+    reach = (depth + eta.max()) * np.max(np.abs(beams[1] / beams[2])) * n / side
+    rows = max(128, int(reach))
+    images = [np.zeros((n, n)) for _ in cs]
+    with ThreadPoolExecutor(os.cpu_count()) as pool:
+        bands = pool.map(lambda top: _band(eta, beams, depth, cs, side / n,
+                                           top, rows), range(0, n, rows))
+        for low, locals_ in bands:
+            for image, local in zip(images, locals_):
+                for first in range(0, len(local), n):   # rows wrap round
+                    part = local[first:first + n]
+                    image[(low + first + np.arange(len(part))) % n] += part
+    return images
 
 
 def moments(transform):
@@ -676,14 +703,22 @@ def main():
             blurs[z] = blur(z)
         return blurs[z]
 
-    def carrying(found):
+    def carrying(found, keep=False):
+        made = {}
+
         def kernel(z, i):
+            if (z, i) in made:
+                return made[z, i]
             j = int(np.flatnonzero(DEPTHS == z)[0])
-            return even_blur(z, i) * spread_kernel(found[wls[i]][j], z, cs[i])
+            out = even_blur(z, i) * spread_kernel(found[wls[i]][j], z, cs[i])
+            if keep:                      # the same for every wind
+                made[z, i] = out
+            return out
         return kernel
 
     found, met = carried(station)
-    models = {"even": (even_blur, rest), "carried": (carrying(found), met)}
+    models = {"even": (even_blur, rest),
+              "carried": (carrying(found, keep=True), met)}
 
     rule("The sea surface")
     k_high = np.pi * POINTS / SIDE
@@ -773,6 +808,22 @@ at {WIND} m/s: the coefficient of variation as a share of section 44's.
             print(f"{head}  {wl} nm "
                   + "  ".join(f"{value[i, j] / cv['even'][WIND][i, j]:5.2f}"
                               for j in range(DEPTHS.size)))
+    rule("Before you use any of this")
+    print(f"""  - The surface is linear, random and frozen; the variation is taken over
+    positions, where Darecki's is over time at one point. Waves longer
+    than {SIDE:g} m are left out (3 above suggests they matter little).
+  - The sea is fully developed, the wind blows along the sun's plane, and
+    the wind's height is taken as 10 m; Darecki gives none of these.
+  - Rays that would meet the surface again are not followed, and the sun's
+    disc is applied as a shift of the whole pattern, which holds to first
+    order.
+  - There is no sky. Any sky adds light that does not flicker, and lowers
+    every modelled value.
+  - The water is You et al.'s, measured the same day; the phase function
+    is Petzold's, and the station moves the result (2 above).
+
+  Every one of these is a choice you can replace with a measurement.
+""")
     return dict(station=station, others=others, cv=cv, surfaces=surfaces,
                 held=held, near=near, first=first, second=second,
                 sizes=sizes, measured=measured)
