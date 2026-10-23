@@ -412,9 +412,10 @@ python examples/lure_colours.py                painted lures: colour and contras
 python examples/ultraviolet.py                 UV-A at depth, against PAR
 python examples/radiance_distribution.py       radiance from every direction
 python examples/painted_sphere.py              a sphere seen from four directions
+python examples/wave_focusing.py               flicker under waves, against Darecki
 ```
 
-Sixteen scripts, each aimed at a different reader; `examples/README.md` says
+Seventeen scripts, each aimed at a different reader; `examples/README.md` says
 which to start with. CI runs all of them on every push, so an example that has
 stopped working is a failed build. Every one ends with the assumptions it
 made.
