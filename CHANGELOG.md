@@ -25,7 +25,7 @@ with that the model passes all three checks, the measurement 0.69 to
 1.24 times it down to 2.84 m and 0.54 to 0.77 below, where the model
 leaves out the sky. Petzold's NUC 2240 phase function brings the deeper
 values to 0.78 to 0.97; a smaller square or a coarser grid moves the
-result by 5 percent at most. Takes about N minutes.
+result by 5 percent at most. Takes about ten minutes.
 
 **Docs.** DECISIONS.md sections 44 and 45.
 

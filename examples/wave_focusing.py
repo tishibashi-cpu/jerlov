@@ -8,7 +8,7 @@ of DECISIONS.md) and no model, since waves are not set by the water type.
 This example builds one from published parts and checks it against that
 measurement, with its choices fixed beforehand (sections 44 and 45).
 
-    python examples/wave_focusing.py               # about N minutes
+    python examples/wave_focusing.py               # about ten minutes
 
 The method. A sea surface is drawn at random from the wave spectrum of
 Elfouhaily et al. (1997), for a wind of 4.1, 5.5 or 6.4 m/s, on a square 4
