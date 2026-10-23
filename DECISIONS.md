@@ -1337,3 +1337,36 @@ example's model from here on, section 44's three checks are applied to it
 and printed beside the first result, and section 44's own result stays
 printed as it was. Candidates 2 to 4 are shown as sensitivities only and
 do not replace a choice.
+
+## 46. A picture of the light shafts
+
+`wave_focusing.py --png` (0.18.1) draws what section 44's surface does
+to the water seen from below: the bright lines of section 44's pattern,
+seen edge on, are the shafts that seem to spread from the sun. It is a
+picture, not a check, and its choices are stated rather than tested
+against anything.
+
+**What is drawn.** Looking up towards the refracted sun from 6 m, 70
+degrees across, at 532 nm: the unscattered sunbeam at each depth, found
+every 5 cm on the 4 m square and blurred by the sun's disc, scattered
+once towards the eye by Petzold's volume scattering function scaled to
+You et al.'s b, and thinned by exp(-c s) on the way. Below Petzold's first
+measured angle the function is held at its first value rather than
+extended, since the package warns there. Beside it, the same under a flat
+surface, on the same scale, and the one divided by the other.
+
+**For speed** the picture's surface has a point every 4 mm rather than
+every 1, on the same square and at 5.5 m/s; section 45 found a 2 mm grid
+moves the variation by a few percent, and the shafts are centimetres
+across. Lines of sight that run far sideways cross the square more than
+once, so far from the centre the pattern repeats every 4 m.
+
+**Left out.** Light scattered more than once, the sky, the sun's own
+image and Snell's window: the picture shows where the scattered light
+comes from, not everything the eye would see.
+
+**Rejected:** a colour picture from the three wavelengths. Three samples
+are not a spectrum, and `painted_sphere.py` uses twelve for its colours.
+Also rejected: adding the scattered light from the Monte Carlo as a
+background, whose 10 by 45 degree cells are far coarser than the glow
+around the sun.

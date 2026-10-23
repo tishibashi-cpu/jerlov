@@ -9,6 +9,10 @@ This example builds one from published parts and checks it against that
 measurement, with its choices fixed beforehand (sections 44 and 45).
 
     python examples/wave_focusing.py               # about ten minutes
+    python examples/wave_focusing.py --png shafts.png     # and a picture
+
+With --png it also draws the light shafts seen looking up towards the sun
+from 6 m, beside the same under a flat surface (section 46).
 
 The method. A sea surface is drawn at random from the wave spectrum of
 Elfouhaily et al. (1997), for a wind of 4.1, 5.5 or 6.4 m/s, on a square 4
@@ -28,7 +32,9 @@ Carlo, with the same scattering, gives those shifts.
 """
 
 import os
+import struct
 import sys
+import zlib
 from concurrent.futures import ThreadPoolExecutor
 
 import numpy as np
@@ -829,6 +835,138 @@ at {WIND} m/s: the coefficient of variation as a share of section 44's.
                 sizes=sizes, measured=measured)
 
 
+# -- the picture: light shafts, looking up towards the sun ---------------------
+
+EYE_DEPTH = 6.0             # m
+FIELD = 70.0                # degrees across the picture
+PICTURE = 400               # pixels a side
+SHAFT_POINTS = 1024         # a coarser surface for the picture, 4 mm apart
+SLICE = 0.05                # m between the depths the light is found at
+PICTURE_WAVELENGTH = 532
+
+
+def write_png(path, pixels):
+    """Write an 8-bit RGB image, ``pixels`` of shape (h, w, 3) in 0-1."""
+    data = np.clip(np.rint(np.asarray(pixels) * 255), 0, 255).astype(np.uint8)
+    height, width, _ = data.shape
+    raw = b"".join(b"\x00" + row.tobytes() for row in data)
+
+    def chunk(kind, body):
+        return (struct.pack(">I", len(body)) + kind + body
+                + struct.pack(">I", zlib.crc32(kind + body) & 0xFFFFFFFF))
+
+    with open(path, "wb") as handle:
+        handle.write(b"\x89PNG\r\n\x1a\n")
+        handle.write(chunk(b"IHDR", struct.pack(">IIBBBBB", width, height,
+                                                8, 2, 0, 0, 0)))
+        handle.write(chunk(b"IDAT", zlib.compress(raw, 9)))
+        handle.write(chunk(b"IEND", b""))
+
+
+def sunbeam_in_water(sun_zenith=SUN_ZENITH):
+    """The direction the refracted sunlight travels, z down."""
+    sin_w = np.sin(np.radians(sun_zenith)) / N_WATER
+    return np.array([sin_w, 0.0, np.sqrt(1 - sin_w ** 2)])
+
+
+def view(pixels=PICTURE, field=FIELD, sun_zenith=SUN_ZENITH):
+    """The direction each pixel looks along, z down: the centre straight
+    towards the refracted sun, the top of the picture towards the horizon
+    beyond it."""
+    forward = -sunbeam_in_water(sun_zenith)
+    right = np.array([0.0, 1.0, 0.0])
+    up = np.cross(forward, right)
+    if up[0] > 0:                         # beyond the sun is -x
+        up = -up
+    half = np.tan(np.radians(field / 2))
+    a = (np.arange(pixels) + 0.5) / pixels * 2 - 1
+    across, down = np.meshgrid(a * half, a * half, indexing="xy")
+    look = (forward[None, None, :] + across[..., None] * right
+            - down[..., None] * up)
+    return look / np.linalg.norm(look, axis=-1, keepdims=True)
+
+
+def vsf(station, angle_deg, b):
+    """Petzold's volume scattering function scaled to the water's b. Below
+    his first measured angle it is held at the first value."""
+    p = jerlov.petzold_scattering(station)
+    first = p.angles_deg[[s == "ok" for s in p.statuses]][0]
+    angle = np.maximum(np.asarray(angle_deg, float), first)
+    return p.vsf_at(angle.ravel()).reshape(angle.shape) * b / p.b
+
+
+def shafts(eta, beams, station, side=SIDE, eye_depth=EYE_DEPTH,
+           wavelength=PICTURE_WAVELENGTH, pixels=PICTURE, field=FIELD,
+           step=SLICE):
+    """The radiance of the sunlight scattered once towards an eye looking
+    up, per unit planar irradiance above the surface.
+
+    Along each line of sight, the unscattered sunlight at each depth, blurred
+    by the sun's disc, is scattered towards the eye by the volume scattering
+    function at the angle between the sunbeam and the line of sight, and
+    thinned by exp(-c s) on its way to the eye.
+    """
+    a, b, _ = water_at(wavelength)
+    c = a + b
+    look = view(pixels, field)
+    up = -look[..., 2]                    # cosine with the vertical, upwards
+    beam = sunbeam_in_water()
+    angle = np.degrees(np.arccos(np.clip(-(look @ beam), -1, 1)))
+    beta = vsf(station, angle, b)
+    n = eta.shape[0]
+    cell = side / n
+    radiance = np.zeros(look.shape[:2])
+    seen = up > 0.05
+    for z in np.arange(eye_depth - step / 2, 0, -step):
+        image, = patterns(eta, beams, z, [c], side)
+        kernel = blur(z, side, n)
+        image = np.fft.irfft2(np.fft.rfft2(image) * kernel, s=image.shape)
+        s = np.where(seen, (eye_depth - z) / np.where(seen, up, 1), 0.0)
+        x = (s * look[..., 0]) / cell % n
+        y = (s * look[..., 1]) / cell % n
+        i, j = np.floor(x).astype(int), np.floor(y).astype(int)
+        fx, fy = x - i, y - j
+        i1, j1 = (i + 1) % n, (j + 1) % n
+        here = ((1 - fx) * (1 - fy) * image[j, i] + fx * (1 - fy) * image[j, i1]
+                + (1 - fx) * fy * image[j1, i] + fx * fy * image[j1, i1])
+        radiance += np.where(seen, beta * here * np.exp(-c * s)
+                             * step / np.where(seen, up, 1), 0.0)
+    return radiance, seen
+
+
+def picture(path, station):
+    """Write the light shafts seen looking up towards the sun at 5.5 m/s."""
+    amp = amplitudes(WIND, SIDE, SHAFT_POINTS)
+    eta, sx, sy = surface(amp, 0, SIDE)
+    beams = rays(eta, sx, sy)
+    radiance, seen = shafts(eta, beams, station)
+    flat = np.zeros_like(eta)
+    smooth, _ = shafts(flat, rays(flat, flat, flat), station)
+    rule("The picture")
+    ratio = np.where(seen, radiance / np.where(seen, smooth, 1), 0.0)
+    print(f"""Looking up towards the sun from {EYE_DEPTH:g} m, {FIELD:g} degrees across, at
+{PICTURE_WAVELENGTH} nm: the sunlight scattered once towards the eye, from the unscattered
+beam under a {WIND} m/s sea, beside the same under a flat surface. The
+brightest point of the shafts is {ratio[seen].max():.1f} times the flat surface's there;
+half the picture is within {np.percentile(np.abs(ratio[seen] - 1), 50) * 100:.0f} percent of it.""")
+    top = np.percentile(np.concatenate([radiance[seen], smooth[seen]]), 99.5)
+    tones = [np.clip(r / top, 0, 1) ** (1 / 2.2) for r in (radiance, smooth)]
+    tones.append(np.clip(ratio / 2, 0, 1))
+    gap = np.ones((PICTURE, 8))
+    grey = np.hstack([tones[0], gap, tones[1], gap, tones[2]])
+    write_png(path, np.repeat(grey[..., None], 3, axis=2))
+    print(f"""
+Written to {path}: left, the {WIND} m/s sea; middle, a flat surface,
+both on the same scale; right, the one divided by the other, black at 0
+and white at 2 or more.""")
+    return dict(radiance=radiance, smooth=smooth, seen=seen, ratio=ratio)
+
+
 if __name__ == "__main__":
-    main()
+    png = None
+    if "--png" in sys.argv:
+        png = sys.argv[sys.argv.index("--png") + 1]
+    result = main()
+    if png:
+        picture(png, result["station"])
     sys.exit(0)
