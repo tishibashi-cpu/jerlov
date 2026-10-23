@@ -4,6 +4,17 @@ Every release is archived on Zenodo under the concept DOI
 [10.5281/zenodo.22321312](https://doi.org/10.5281/zenodo.22321312), which
 always resolves to the latest version.
 
+## 0.18.1 — 2026-10-23
+
+**Examples.** `wave_focusing.py --png` draws the light shafts seen looking
+up towards the sun from 6 m at 532 nm: the unscattered sunbeam under the
+5.5 m/s sea, scattered once towards the eye by Petzold's volume scattering
+function, beside the same under a flat surface and the one divided by
+the other, where the shafts spread from the sun across the whole field.
+No value printed without `--png` changed.
+
+**Docs.** DECISIONS.md section 46.
+
 ## 0.18.0 — 2026-10-23
 
 A model of the flicker under waves, as an example, checked against the

@@ -1325,3 +1325,28 @@ def test_figures_for_the_waves_example(waves_example):
     for value in r["sizes"].values():
         share = value / r["cv"]["even"][5.5]
         assert np.all(np.abs(share - 1) <= 0.05)
+
+
+@source_tree
+def test_the_shafts_under_a_flat_surface(waves_module):
+    """Section 46: under a flat surface the picture is the single-scattering
+    integral done by hand, and the centre looks straight at the sun."""
+    m = waves_module
+    look = m["view"](pixels=9, field=40.0)
+    assert np.allclose(look[4, 4], -m["sunbeam_in_water"]())
+    assert look[0, 4][0] < look[8, 4][0]       # the top is beyond the sun
+    n, side, eye, step = 32, 0.25, 1.0, 0.1
+    flat = np.zeros((n, n))
+    radiance, seen = m["shafts"](flat, m["rays"](flat, flat, flat),
+                                 "HAOCE 5", side=side, eye_depth=eye,
+                                 pixels=9, field=40.0, step=step)
+    a, b, _ = m["water_at"](532)
+    c = a + b
+    up = -look[..., 2]
+    beam = m["sunbeam_in_water"]()
+    angle = np.degrees(np.arccos(np.clip(-(look @ beam), -1, 1)))
+    beta = m["vsf"]("HAOCE 5", angle, b)
+    expected = sum(beta * m["unscattered"](c, z) * np.exp(-c * (eye - z) / up)
+                   * step / up for z in np.arange(eye - step / 2, 0, -step))
+    assert seen.all()
+    assert np.allclose(radiance, expected, rtol=1e-9)

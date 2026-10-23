@@ -224,7 +224,9 @@ and a 2.5 mm collector. With the scattered light spread evenly, as fixed
 beforehand, the measured coefficient of variation is 1.5 to 2.7 times the
 model's down to 2.84 m. Light scattered on its way down still carries the
 pattern, shifted; with that, the measurement is 0.69 to 1.24 times the
-model down to 2.84 m and 0.54 to 0.77 below. Takes about ten minutes.
+model down to 2.84 m and 0.54 to 0.77 below. `--png` draws the light
+shafts seen looking up towards the sun, beside a flat surface's. Takes about
+ten minutes.
 
 ## What they do not show
 
