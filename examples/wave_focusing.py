@@ -370,32 +370,45 @@ def rays(eta, sx, sy, sun_zenith=SUN_ZENITH):
     return tx, ty, tz, power
 
 
-def patterns(eta, beams, depth, cs, side=SIDE):
+
+
+def patterns(eta, beams, depth, cs, side=SIDE, rows=1024):
     """The unscattered irradiance on a horizontal grid at one depth, for
     each beam attenuation in ``cs``; each ray is shared among the four
-    nearest grid points."""
+    nearest grid points. Done a band of rows at a time, to keep the
+    memory down."""
     tx, ty, tz, power = beams
     n = eta.shape[0]
     step = side / n
-    travel = (depth + eta) / -tz                      # along the ray
-    grid = np.arange(n)
-    px = grid[None, :] + travel * tx / step
-    py = grid[:, None] + travel * ty / step
-    i0, j0 = np.floor(px).astype(np.int64), np.floor(py).astype(np.int64)
-    fx, fy = px - i0, py - j0
-    i0, j0 = i0 % n, j0 % n
-    i1, j1 = (i0 + 1) % n, (j0 + 1) % n
-    corners = [(j0 * n + i0, (1 - fx) * (1 - fy)), (j0 * n + i1, fx * (1 - fy)),
-               (j1 * n + i0, (1 - fx) * fy), (j1 * n + i1, fx * fy)]
-    out = []
-    for c in cs:
-        weight = power * np.exp(-c * travel)
-        image = np.zeros(n * n)
-        for index, share in corners:
-            image += np.bincount(index.ravel(), (weight * share).ravel(),
-                                 n * n)
-        out.append(image.reshape(n, n))
-    return out
+    images = [np.zeros(n * n) for _ in cs]
+    columns = np.arange(n)
+    for top in range(0, n, rows):
+        band = slice(top, top + rows)
+        travel = (depth + eta[band]) / -tz[band]      # along the ray
+        px = columns[None, :] + travel * tx[band] / step
+        py = (columns[band, None] + travel * ty[band] / step)
+        i0, j0 = np.floor(px).astype(np.int64), np.floor(py).astype(np.int64)
+        fx, fy = px - i0, py - j0
+        i0, j0 = i0 % n, j0 % n
+        i1, j1 = (i0 + 1) % n, (j0 + 1) % n
+        index = np.concatenate([(j0 * n + i0).ravel(), (j0 * n + i1).ravel(),
+                                (j1 * n + i0).ravel(), (j1 * n + i1).ravel()])
+        share = np.concatenate([((1 - fx) * (1 - fy)).ravel(),
+                                (fx * (1 - fy)).ravel(),
+                                ((1 - fx) * fy).ravel(), (fx * fy).ravel()])
+        for image, c in zip(images, cs):
+            weight = np.tile((power[band] * np.exp(-c * travel)).ravel(), 4)
+            image += np.bincount(index, weight * share, n * n)
+    return [image.reshape(n, n) for image in images]
+
+
+def moments(transform):
+    """The mean and the mean square of a real field on an even square grid,
+    from its rfft2, by Parseval's theorem."""
+    n = transform.shape[0]
+    power = transform.real ** 2 + transform.imag ** 2
+    total = 2 * power.sum() - power[:, 0].sum() - power[:, -1].sum()
+    return transform[0, 0].real / n ** 2, total / n ** 4
 
 
 def blur(depth, side=SIDE, points=POINTS, sub=4):
@@ -418,6 +431,8 @@ def blur(depth, side=SIDE, points=POINTS, sub=4):
         k = np.zeros((points, points))
         idx = np.arange(-half, half + 1) % points
         k[np.ix_(idx, idx)] = cells.mean(axis=(1, 3))
+        if not k.any():                   # smaller than the samples in a cell
+            k[0, 0] = 1.0
         return np.fft.rfft2(k / k.sum())
 
     sun = shape(lambda x, y: (x / rx) ** 2 + (y / ry) ** 2 <= 1, max(rx, ry))
@@ -426,72 +441,251 @@ def blur(depth, side=SIDE, points=POINTS, sub=4):
     return sun * disc
 
 
+def water_at(wl):
+    """a, b and pure water's b at one of You et al.'s wavelengths."""
+    c_w, w_w, c_p, w_p = YOU2010_TABLE1[wl]
+    b_w, b = c_w * w_w, c_w * w_w + c_p * w_p
+    return c_w + c_p - b, b, b_w
+
+
 def background(station, sun_zenith=SUN_ZENITH):
-    """Ed under a flat surface from the Monte Carlo, less the sunlight that
-    arrives unscattered: the light taken as uniform. Per unit planar
+    """Section 44: Ed under a flat surface from the Monte Carlo, less the
+    sunlight that arrives unscattered, taken as uniform. Per unit planar
     irradiance above the surface, at each wavelength and depth."""
     particles = particle_phase(station)
-    out = {}
-    for wl, (c_w, w_w, c_p, w_p) in YOU2010_TABLE1.items():
-        b_w, b = c_w * w_w, c_w * w_w + c_p * w_p
-        a = c_w + c_p - b
+    out = []
+    for wl in YOU2010_TABLE1:
+        a, b, b_w = water_at(wl)
         ed = np.mean([simulate(a, b, b_w, particles, water_phase(wl),
                                sun_zenith, seed, depths=DEPTHS)["ed"]
                       for seed in range(BATCHES)], axis=0)
-        out[wl] = ed - unscattered(a + b, DEPTHS)
-    return out
+        out.append(ed - unscattered(a + b, DEPTHS))
+    return np.array(out)
 
 
-def flicker(u10, rest, seeds=range(REALIZATIONS)):
+def shifts(a, b, bw, particles, water, seed, photons=PHOTONS, depths=DEPTHS,
+           sun_zenith=SUN_ZENITH, n_water=N_WATER):
+    """Section 45: where the scattered sunlight crosses each depth going
+    down, measured sideways from the line the unscattered light follows.
+
+    The same scattering as ``simulate``. A photon that has met the surface
+    from below is counted apart, as light to spread evenly. Per unit
+    planar irradiance above a flat surface: for each depth the shifts in x
+    and y and the weights of the scattered photons, and the weight of those
+    that met the surface.
+    """
+    rng = np.random.default_rng(seed)
+    c = a + b
+    mu_air = np.cos(np.radians(sun_zenith))
+    weight = np.full(photons, 1 - fresnel(np.array([mu_air]), 1.0,
+                                          n_water)[0])
+    sin_w = np.sqrt(1 - mu_air ** 2) / n_water
+    tan_w = sin_w / np.sqrt(1 - sin_w ** 2)
+    ux, uy = np.full(photons, sin_w), np.zeros(photons)
+    uz = np.full(photons, np.sqrt(1 - sin_w ** 2))
+    x, y, z = (np.zeros(photons) for _ in range(3))
+    scattered = np.zeros(photons, bool)
+    met = np.zeros(photons, bool)
+    found = [[] for _ in depths]
+    even = np.zeros(depths.size)
+
+    alive = np.arange(photons)
+    while alive.size:
+        i = alive
+        step = -np.log(1.0 - rng.random(i.size)) / c
+        x0, y0, z0 = x[i], y[i], z[i]
+        z1 = z0 + step * uz[i]
+        surfaced = z1 < 0
+        step = np.where(surfaced, z0 / np.maximum(-uz[i], 1e-12), step)
+        x1, y1 = x0 + step * ux[i], y0 + step * uy[i]
+        z1 = np.where(surfaced, 0.0, z1)
+        for k, zk in enumerate(depths):
+            down = (z0 < zk) & (z1 >= zk) & scattered[i]
+            if not down.any():
+                continue
+            g = (zk - z0[down]) / (z1[down] - z0[down])
+            w = weight[i][down]
+            m = met[i][down]
+            even[k] += w[m].sum()
+            keep = ~m
+            found[k].append((x0[down][keep] + g[keep] * (x1 - x0)[down][keep]
+                             - zk * tan_w,
+                             y0[down][keep] + g[keep] * (y1 - y0)[down][keep],
+                             w[keep]))
+        x[i], y[i], z[i] = x1, y1, z1
+
+        up = i[surfaced]
+        weight[up] *= fresnel(uz[up], n_water, 1.0)
+        uz[up] = -uz[up]
+        met[up] = True
+
+        hit = i[~surfaced]
+        weight[hit] *= b / c
+        by_water = rng.random(hit.size) < bw / b
+        cos_t = np.empty(hit.size)
+        cos_t[by_water] = np.interp(rng.random(by_water.sum()),
+                                    water["cdf"], water["cos"])
+        n_part = int((~by_water).sum())
+        straight = rng.random(n_part) < particles["straight"]
+        cos_t[~by_water] = np.where(
+            straight, 1.0,
+            np.interp(rng.random(n_part), particles["cdf"], particles["cos"]))
+        ux[hit], uy[hit], uz[hit] = turn(ux[hit], uy[hit], uz[hit], cos_t, rng)
+        scattered[hit] = True
+
+        weak = alive[weight[alive] < 1e-4]
+        keep = rng.random(weak.size) < 0.1
+        weight[weak[keep]] *= 10.0
+        weight[weak[~keep]] = 0.0
+        alive = alive[weight[alive] > 0]
+
+    out = []
+    for parts in found:
+        dx, dy, w = (np.concatenate(p) / photons if j == 2
+                     else np.concatenate(p)
+                     for j, p in enumerate(zip(*parts)))
+        out.append((dx, dy, w))
+    return out, even / photons
+
+
+def carried(station):
+    """Section 45: for each wavelength and depth, the scattered light as
+    shifts and weights, pooled over the batches, and the light that met the
+    surface."""
+    particles = particle_phase(station)
+    out, even = {}, []
+    for wl in YOU2010_TABLE1:
+        a, b, b_w = water_at(wl)
+        runs = [shifts(a, b, b_w, particles, water_phase(wl), seed)
+                for seed in range(BATCHES)]
+        out[wl] = [tuple(np.concatenate([r[0][k][j] for r in runs])
+                         / (BATCHES if j == 2 else 1) for j in range(3))
+                   for k in range(DEPTHS.size)]
+        even.append(np.mean([r[1] for r in runs], axis=0))
+    return out, np.array(even)
+
+
+def spread_kernel(found, depth, c, side=SIDE, points=POINTS):
+    """The unscattered light and the scattered light it carries, as the
+    transform of one kernel: a spike at no shift, plus each scattered
+    photon at its shift, relative to the unscattered irradiance."""
+    dx, dy, w = found
+    step = side / points
+    i = np.rint(dx / step).astype(np.int64) % points
+    j = np.rint(dy / step).astype(np.int64) % points
+    k = np.bincount(j * points + i, w, points * points).reshape(points,
+                                                                 points)
+    k /= unscattered(c, depth)
+    k[0, 0] += 1.0
+    return np.fft.rfft2(k)
+
+
+def flicker(u10, models, seeds=range(REALIZATIONS), side=SIDE,
+            points=POINTS):
     """The coefficient of variation at each wavelength and depth, pooled
-    over the realizations; the surfaces' mean square slope, and what the
-    spectrum gives for the same wavenumbers, with the spread expected of
-    that mean."""
-    amp = amplitudes(u10)
-    kx, ky = wavenumbers()
+    over the realizations, for each model of the light; the surfaces' mean
+    square slope, what the spectrum gives for the same wavenumbers, and the
+    spread expected of that mean.
+
+    ``models`` maps a name to (kernel, even): kernel(depth, i) gives the
+    transform of the blur for wavelength i, and even[i, depth] the light
+    spread evenly.
+    """
+    amp = amplitudes(u10, side, points)
+    kx, ky = wavenumbers(side, points)
     w = (kx * kx + ky * ky) * amp * amp
     expected = float(np.sum(w))
     # a wavenumber and its opposite share one random amplitude, whose square
     # varies as much as its mean: the spread of the mean of the realizations
-    spread_expected = float(np.sqrt(2 * np.sum(w * w) / len(seeds)))
+    sampling = float(np.sqrt(2 * np.sum(w * w) / len(seeds)))
     del kx, ky, w
-    cs = [c_w + c_p for c_w, _, c_p, _ in YOU2010_TABLE1.values()]
-    kernels = {z: blur(z) for z in DEPTHS}
-    sums = np.zeros((len(cs), DEPTHS.size, 2))
-    slopes = []
+    cs = [sum(water_at(wl)[:2]) for wl in YOU2010_TABLE1]
+    seas, slopes = [], []
     for seed in seeds:
-        eta, sx, sy = surface(amp, seed)
+        eta, sx, sy = surface(amp, seed, side)
         slopes.append(float(np.mean(sx * sx + sy * sy)))
-        beams = rays(eta, sx, sy)
+        seas.append((eta, rays(eta, sx, sy)))
         del sx, sy
-        for j, z in enumerate(DEPTHS):
-            for i, image in enumerate(patterns(eta, beams, z, cs)):
-                seen = np.fft.irfft2(np.fft.rfft2(image) * kernels[z],
-                                     s=image.shape)
-                sums[i, j] += seen.mean(), np.mean(seen * seen)
-    sums /= len(seeds)
-    mean, square = sums[..., 0], sums[..., 1]
-    spread = np.sqrt(np.maximum(square - mean * mean, 0.0))
-    rest = np.array([rest[wl] for wl in YOU2010_TABLE1])
-    return (spread / (mean + rest), float(np.mean(slopes)), expected,
-            spread_expected)
+    sums = {name: np.zeros((len(cs), DEPTHS.size, 2)) for name in models}
+    for j, z in enumerate(DEPTHS):
+        kernels = {name: [kernel(z, i) for i in range(len(cs))]
+                   for name, (kernel, _) in models.items()}
+        for eta, beams in seas:
+            for i, image in enumerate(patterns(eta, beams, z, cs, side)):
+                transform = np.fft.rfft2(image)
+                for name in models:
+                    sums[name][i, j] += moments(transform * kernels[name][i])
+        del kernels
+    cv = {}
+    for name, (_, even) in models.items():
+        mean, square = (sums[name] / len(seeds)).transpose(2, 0, 1)
+        spread = np.sqrt(np.maximum(square - mean * mean, 0.0))
+        cv[name] = spread / (mean + even)
+    return cv, float(np.mean(slopes)), expected, sampling
 
 
 # -- the run ------------------------------------------------------------------
 
+def table(measured, cv, wls, title):
+    print(f"\n{title}")
+    for i, wl in enumerate(wls):
+        print(f"\n  {wl} nm  depth  measured   model at "
+              + "   ".join(f"{u:g}" for u in WINDS) + " m/s   measured/model")
+        for j, z in enumerate(DEPTHS):
+            print(f"         {z:5.2f}   {measured[i, j]:.3f}       "
+                  + "   ".join(f"{cv[u][i, j]:.3f}" for u in WINDS)
+                  + f"        {measured[i, j] / cv[WIND][i, j]:.2f}")
+
+
+def checks(measured, cv):
+    falls = all(np.all(np.diff(cv[u], axis=1) < 0) for u in WINDS)
+    redder = all(np.all(cv[u][-1] > cv[u][0]) for u in WINDS)
+    shallow = DEPTHS <= CHECKED_TO
+    ratio = measured[:, shallow] / cv[WIND][:, shallow]
+    within_two = bool(np.all((ratio >= 0.5) & (ratio <= 2.0)))
+    for text, ok in (("falls with depth at every wavelength and wind", falls),
+                     ("higher at 670 nm than at 443 nm at every depth", redder),
+                     (f"measured within a factor of 2, to {CHECKED_TO} m, at "
+                      f"{WIND} m/s", within_two)):
+        print(f"  {'yes' if ok else 'NO '}  {text}")
+    return dict(falls=falls, redder=redder, within_two=within_two,
+                ratio=ratio)
+
+
 def main():
     _banner()
-    measured = jerlov.darecki2011_irradiance_cv()
-    assert np.allclose(measured.depth_m, DEPTHS)
+    darecki = jerlov.darecki2011_irradiance_cv()
+    assert np.allclose(darecki.depth_m, DEPTHS)
     wls = list(YOU2010_TABLE1)
-    assert wls == [int(w) for w in measured.wavelengths_nm]
-    c_w, w_w, c_p, w_p = YOU2010_TABLE1[532]
-    b532 = c_w * w_w + c_p * w_p
-    station = min(jerlov.PETZOLD_STATIONS,
+    assert wls == [int(w) for w in darecki.wavelengths_nm]
+    measured = darecki.cv.T
+    b532 = water_at(532)[1]
+    by_b = sorted(jerlov.PETZOLD_STATIONS,
                   key=lambda s: abs(jerlov.petzold_scattering(s).b - b532))
+    station = by_b[0]
+    others = [s for s in by_b[1:]
+              if 1 / 3 <= jerlov.petzold_scattering(s).b / b532 <= 3]
+    cs = [sum(water_at(wl)[:2]) for wl in wls]
+
+    rest = background(station)
+    blurs = {}
+
+    def even_blur(z, i):
+        if z not in blurs:
+            blurs.clear()
+            blurs[z] = blur(z)
+        return blurs[z]
+
+    def carrying(found):
+        def kernel(z, i):
+            j = int(np.flatnonzero(DEPTHS == z)[0])
+            return even_blur(z, i) * spread_kernel(found[wls[i]][j], z, cs[i])
+        return kernel
+
+    found, met = carried(station)
+    models = {"even": (even_blur, rest), "carried": (carrying(found), met)}
 
     rule("The sea surface")
-    k_low = 2 * np.pi / SIDE
     k_high = np.pi * POINTS / SIDE
     print(f"""Elfouhaily et al. (1997), fully developed (Omega_c = {OMEGA_C}),
 the wind along the sun's plane; u* from Wu (1982). On a square {SIDE:g} m
@@ -499,18 +693,23 @@ across, {POINTS} points a side: waves from {2 * np.pi / k_high * 1000:.1f} mm
 to {SIDE:g} m, {REALIZATIONS} realizations each. Mean square slope:
 
   U10    u*     realized  same waves         longer   all waves  Cox & Munk""")
-    rest = background(station)
-    cv, surfaces = {}, {}
+    cv, surfaces = {"even": {}, "carried": {}}, {}
     for u in WINDS:
-        cv[u], realized, within, sampling = flicker(u, rest)
-        longer = slope_variance(u, 1e-4, k_low)
+        these = dict(models)
+        if u == WIND:
+            for s in others:
+                f, m = carried(s)
+                these[s] = (carrying(f), m)
+        found_cv, realized, within, sampling = flicker(u, these)
+        for name, value in found_cv.items():
+            cv.setdefault(name, {})[u] = value
+        longer = slope_variance(u, 1e-4, 2 * np.pi / SIDE)
         total = slope_variance(u, 1e-4, 1e5)
-        w = wind_at(COX_MUNK_HEIGHT, u)
-        cm = COX_MUNK[0] + COX_MUNK[1] * w
+        cm = COX_MUNK[0] + COX_MUNK[1] * wind_at(COX_MUNK_HEIGHT, u)
         surfaces[u] = dict(u_star=float(friction_velocity(u)),
                            realized=realized, expected=within,
-                           sampling=sampling,
-                           longer=longer, total=total, cox_munk=cm)
+                           sampling=sampling, longer=longer, total=total,
+                           cox_munk=cm)
         print(f"  {u:4.1f}  {friction_velocity(u):.3f}   {realized:.4f}"
               f"    {within:.4f} +- {sampling:.4f}   {longer:.4f}   {total:.4f}"
               f"     {cm:.4f} +- {COX_MUNK[2]}")
@@ -530,31 +729,53 @@ realization; "all waves" is the spectrum's whole slope variance, and Cox
   {'yes' if near else 'NO '}  all waves within Cox & Munk's 0.004""")
 
     rule("The flicker, against Darecki et al. (2011), Figure 13a")
-    print(f"""Water from You et al. (2010), Table 1; scattered light from the
-Monte Carlo with {station}'s phase function. Coefficient of variation:""")
-    for i, wl in enumerate(wls):
-        print(f"\n  {wl} nm  depth  measured   model at "
-              + "   ".join(f"{u:g}" for u in WINDS) + " m/s   measured/model")
-        for j, z in enumerate(DEPTHS):
-            print(f"         {z:5.2f}   {measured.cv[j, i]:.3f}       "
-                  + "   ".join(f"{cv[u][i, j]:.3f}" for u in WINDS)
-                  + f"        {measured.cv[j, i] / cv[WIND][i, j]:.2f}")
-
-    falls = all(np.all(np.diff(cv[u], axis=1) < 0) for u in WINDS)
-    redder = all(np.all(cv[u][-1] > cv[u][0]) for u in WINDS)
-    shallow = DEPTHS <= CHECKED_TO
-    ratio = measured.cv.T[:, shallow] / cv[WIND][:, shallow]
-    within_two = bool(np.all((ratio >= 0.5) & (ratio <= 2.0)))
+    print(f"""Water from You et al. (2010), Table 1; the particles scatter with
+the phase function of Petzold's {station}. Coefficient of variation.""")
+    table(measured, cv["even"], wls,
+          "As section 44 fixed it: the scattered light spread evenly.")
     rule("The checks fixed beforehand (DECISIONS.md section 44)")
-    for text, ok in (("falls with depth at every wavelength and wind", falls),
-                     ("higher at 670 nm than at 443 nm at every depth", redder),
-                     (f"measured within a factor of 2, to {CHECKED_TO} m, at "
-                      f"{WIND} m/s", within_two)):
-        print(f"  {'yes' if ok else 'NO '}  {text}")
-    return dict(station=station, cv=cv, surfaces=surfaces, ratio=ratio,
-                held=held, near=near,
-                falls=falls, redder=redder, within_two=within_two,
-                measured=measured.cv.T)
+    first = checks(measured, cv["even"])
+
+    rule("Looking for the cause (DECISIONS.md section 45)")
+    table(measured, cv["carried"], wls,
+          "1. The scattered light carries the pattern, shifted as it was "
+          "scattered:")
+    print("\nSection 44's checks, applied to it:")
+    second = checks(measured, cv["carried"])
+    print(f"""
+2. With another station's phase function, measured/model at {WIND} m/s:
+
+  station    b(530)   depth: """ + "  ".join(f"{z:5.2f}" for z in DEPTHS))
+    for s in [station] + others:
+        for i, wl in enumerate(wls):
+            label = (f"  {s:<9}  {jerlov.petzold_scattering(s).b:5.3f}"
+                     if i == 0 else " " * 19)
+            print(f"{label}  {wl} nm "
+                  + "  ".join(f"{measured[i, j] / cv[s if s != station else 'carried'][WIND][i, j]:5.2f}"
+                              for j in range(DEPTHS.size)))
+
+    sizes = {}
+    for label, side, points in (("2 m square, 1 mm", SIDE / 2, POINTS // 2),
+                                ("4 m square, 2 mm", SIDE, POINTS // 2)):
+        def kernel(z, i, side=side, points=points):
+            return blur(z, side, points)
+        found_cv = flicker(WIND, {"even": (kernel, rest)}, side=side,
+                           points=points)[0]
+        sizes[label] = found_cv["even"]
+    print(f"""
+3 and 4. Section 44's model on a smaller square, and on a coarser grid,
+at {WIND} m/s: the coefficient of variation as a share of section 44's.
+
+  grid               depth: """ + "  ".join(f"{z:5.2f}" for z in DEPTHS))
+    for label, value in sizes.items():
+        for i, wl in enumerate(wls):
+            head = f"  {label:<17}" if i == 0 else " " * 19
+            print(f"{head}  {wl} nm "
+                  + "  ".join(f"{value[i, j] / cv['even'][WIND][i, j]:5.2f}"
+                              for j in range(DEPTHS.size)))
+    return dict(station=station, others=others, cv=cv, surfaces=surfaces,
+                held=held, near=near, first=first, second=second,
+                sizes=sizes, measured=measured)
 
 
 if __name__ == "__main__":

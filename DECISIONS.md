@@ -1291,3 +1291,49 @@ surface the flicker comes from the short waves (Gernez and Antoine 2009,
 p. 7). Also rejected: copying You et al.'s wave model, whose equation (8)
 has twice the coefficient that Pierson and Moskowitz's equation (12)
 gives when written in wavenumber, for a reason the paper does not state.
+
+## 45. Looking for the cause of the shortfall against Darecki
+
+Written after section 44's run and before any of the runs below.
+
+Section 44's model fell short of Darecki's measurement: down to 2.84 m
+the measured coefficient of variation is 1.5 to 2.7 times the model's at
+5.5 m/s, more with depth, and the third check failed. As with Tyler
+(section 40), the example changes one thing at a time from section 44's
+model, at 5.5 m/s, and prints what each does. Nothing is fitted.
+
+**The candidates.**
+
+1. *The scattered light.* Section 44 spread every scattered photon
+   evenly. A photon scattered on its way down has followed the same path
+   as an unscattered one until then, so it carries the same pattern,
+   shifted by how far the scattering has moved it by the time it reaches
+   the depth. The light at a depth is then the unscattered pattern
+   blurred by the distribution of those shifts, which a Monte Carlo
+   gives directly: photons are started along the refracted sunbeam, their
+   sideways shift from the unscattered line is recorded where they cross
+   the depth going down, and a photon that has met the surface from below
+   is spread evenly, since a flat surface would reflect it in a way the
+   waves would not. This uses the same scattering as the example's other
+   Monte Carlo, from functions copied unchanged.
+2. *The phase function.* With the scattered light carrying the pattern,
+   how narrow the forward peak is matters. Petzold's other stations whose
+   b at 530 nm is within a factor of 3 of You et al.'s, in place of the
+   nearest.
+3. *The longest waves.* The square 2 m across instead of 4, with the same
+   spacing: how much the waves between 2 and 4 m move the result, as a
+   guide to what the waves longer than 4 m would.
+4. *The shortest waves.* A point every 2 mm instead of every 1 on the 4 m
+   square: how much the waves between 2 and 4 mm move it.
+
+Not run: the sky, which can only lower the modelled variation; the wind,
+whose whole range was run already; and the instrument's own changes of
+depth, about 0.14 m (You et al. 2010, p. 1043), which no fixed depth can
+represent.
+
+**What is decided now.** Candidate 1 removes a simplification section 44
+named rather than changing a choice, so whatever it gives, it becomes the
+example's model from here on, section 44's three checks are applied to it
+and printed beside the first result, and section 44's own result stays
+printed as it was. Candidates 2 to 4 are shown as sensitivities only and
+do not replace a choice.

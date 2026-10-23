@@ -1256,3 +1256,24 @@ def test_the_waves_tracing_keeps_the_light(waves_module):
     assert image.sum() == pytest.approx(beams[3].sum())
     kernel = m["blur"](1.7, side=side, points=n)
     assert kernel[0, 0] == pytest.approx(1.0)
+
+
+@source_tree
+def test_the_waves_shifts_add_up_to_ed(waves_module):
+    """Section 45: the scattered light it shifts, the light that met the
+    surface and the unscattered light are the Ed the engine counts."""
+    m = waves_module
+    a, b, bw = m["water_at"](532)
+    particles = m["particle_phase"]("HAOCE 5")
+    water = m["water_phase"](532)
+    depths = np.array([0.86, 2.84, 6.73])
+    found, even = m["shifts"](a, b, bw, particles, water, seed=5,
+                              photons=40_000, depths=depths)
+    ours = (np.array([f[2].sum() for f in found]) + even
+            + m["unscattered"](a + b, depths))
+    ed = np.mean([m["simulate"](a, b, bw, particles, water, 30.0, seed,
+                                photons=40_000, depths=depths)["ed"]
+                  for seed in range(2)], axis=0)
+    assert np.allclose(ours, ed, rtol=0.03)
+    dx, dy, w = found[0]
+    assert abs(np.average(dy, weights=w)) < 0.01
