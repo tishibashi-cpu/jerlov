@@ -1189,3 +1189,105 @@ ruff applies to them otherwise, unused imports included, are kept.
 `wavelength_nm` as anything array-like and return a float or an array as
 NumPy does; annotating that precisely is a change of its own, not a
 condition for checking what is already annotated.
+
+## 44. Light under waves, and the check against Darecki
+
+Written before the example was run; the choices below were not changed
+after its results were seen.
+
+The light under a wavy surface flickers, and the package carries what
+Darecki et al. (2011) measured of it (section 42). Waves are not set by
+the water type, so a model of the flicker belongs in an example
+(sections 4 and 12): `wave_focusing.py` (0.18.0).
+
+**The sea surface.** The directional spectrum of Elfouhaily et al.
+(1997), equation (67), p. 15794, with B_l from equations (31), (32), (2),
+(3) and (34), B_h from (40), (41) and (44), and the spreading Delta from
+(57) and (59), as printed. The sea is taken as fully developed,
+Omega_c = 0.84 (p. 15783), since no fetch was recorded; there gamma is
+1.7, so the logarithm in the formula for gamma, whose base the paper does
+not state, does not enter. The paper gives no formula for the friction
+velocity (p. 15792 points to Garratt 1977 or Wu 1982); the example takes
+Wu (1982), equation (1), p. 9704: C10 = (0.8 + 0.065 U10) x 10^-3 and
+u* = sqrt(C10) U10, which gives the u* = 0.38 m/s at U10 = 10 m/s that
+Elfouhaily's Figure 11 caption states (p. 15793). The wind blows along
+the sun's vertical plane, as You et al. (2010) took it.
+
+**Wind heights.** Elfouhaily's wind is at 10 m, Cox and Munk's at 41 ft
+(12.5 m, p. 199), and Darecki does not give a height. Darecki's winds are
+taken as U10. Other heights follow the logarithmic profile with
+kappa = 0.4 and Charnock's constant 0.0185 (Wu 1982, p. 9704).
+
+**The realization.** A linear surface with random phases on a periodic
+square 4 m across, 4096 points a side. Waves longer than the square are
+left out, and the slope variance they would carry is computed from the
+spectrum and printed. The heights and the slopes both enter the ray
+tracing. The surface is frozen: the coefficient of variation is taken
+over the positions under three realizations, in place of Darecki's time
+series at one point. The surface is checked twice: its mean square slope
+against what the spectrum gives for the same wavenumbers, and the
+spectrum's mean square slope over all wavenumbers against Cox and Munk's
+(1954) clean surface, 0.003 + 5.12 x 10^-3 W with W in m/s at 12.5 m
+(equation (42), p. 221, where W is in cm/s), within the 0.004 they state.
+
+The first check was written as "within 1 percent", and was changed before
+the example was run at full size, when a smaller trial showed it could
+not be met: a few waves near 4 m long carry much of the slope, their
+amplitudes are random, and the mean square slope of one realization
+varies by about a tenth (over 200 realizations on a coarse grid its mean
+is within a percent of the spectrum's, so the realization is not biased).
+The check is now within three times the spread that the spectrum itself
+gives for the mean of the three realizations. The checks against Darecki
+below were not changed.
+
+**The light.** The sun at 30 degrees from the zenith (Darecki: 30 to 33;
+You et al.: 30), a uniform disc 0.53 degrees across. Each surface point
+refracts the sunbeam (n = 1.34 at every wavelength) with the Fresnel
+transmittance, and the ray goes straight down to the depth asked for,
+where it is collected on a horizontal grid; rays that would meet the
+surface again are not followed. The sun's disc and the 2.5 mm collector
+are applied together as one blur of that pattern: to first order a small
+change in the sun's direction moves the whole pattern, by an ellipse that
+grows with depth. Only the light that arrives unscattered carries the
+pattern, weighted by exp(-c s) along its path. The rest of the sunlight,
+scattered on the way, is a uniform background, its size taken from the
+example's Monte Carlo (section 38) with a flat surface. Light scattered
+through small angles still carries some of the pattern, so this makes the
+modelled variation too small, more so with depth. A sky model is not
+chosen here, as section 39 did not choose one, and the sky is left out;
+any sky adds to the uniform background and makes the variation smaller
+still. The two omissions push opposite ways and are
+reported, not balanced.
+
+**The water.** You et al. (2010), Table 1, p. 1046, measured in the Santa
+Barbara Channel on 11 September 2008, the day of Darecki's Figure 13a:
+c and the single scattering albedo for pure sea water and for the rest at
+443, 532 and 670 nm. At 532 nm that gives c = 0.698 per m, against the
+c(555) = 0.68 per m Darecki states. The particles scatter with Petzold's
+phase function at the station whose b at 530 nm is nearest, as in
+section 39. These are the example's values, cited where they are used,
+and are not shipped.
+
+**The comparison**, fixed before running: `darecki2011_irradiance_cv()`
+at its six depths and three wavelengths, against the model at
+U10 = 4.1, 5.5 and 6.4 m/s (Darecki's range, and You et al.'s 5.5). For
+every depth and wavelength the example prints the measured coefficient of
+variation, the modelled one at each wind, and their ratio. Agreement
+means:
+
+1. the modelled variation falls with depth at every wavelength and wind;
+2. at every depth it is higher at 670 nm than at 443 nm, as Darecki
+   found (p. 12);
+3. down to 2.84 m, the measured value lies between half and twice the
+   modelled one, at 5.5 m/s.
+
+Below 2.84 m the model is expected to fall short (above), and the ratios
+are printed without a mark. Nothing is fitted to the measurements; a
+check that fails is reported as it is.
+
+**Rejected:** Pierson and Moskowitz (1964), which You et al. used. Its
+spectrum, equation (12), p. 5187, stops at gravity waves, and near the
+surface the flicker comes from the short waves (Gernez and Antoine 2009,
+p. 7). Also rejected: copying You et al.'s wave model, whose equation (8)
+has twice the coefficient that Pierson and Moskowitz's equation (12)
+gives when written in wavenumber, for a reason the paper does not state.

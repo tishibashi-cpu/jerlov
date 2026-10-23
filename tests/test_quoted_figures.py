@@ -1144,3 +1144,115 @@ def test_figures_for_the_sphere_example_extended(sphere_example):
     assert r["deepest"] == "from above"
     assert round(100 * r["darkest_water"]["from above"], 1) == 0.4
     assert round(100 * max(abs(v) for v in r["shade"].values()), 1) == 0.3
+
+
+# -- light under waves (wave_focusing.py, DECISIONS.md section 44) ----------
+
+
+@pytest.fixture(scope="module")
+def waves_module():
+    import runpy
+    return runpy.run_path(str(ROOT / "examples" / "wave_focusing.py"),
+                          run_name="wave_focusing")
+
+
+@source_tree
+def test_the_waves_example_carries_the_same_monte_carlo(waves_module):
+    """wave_focusing.py copies part of the engine of
+    radiance_distribution.py; the copies must not drift apart."""
+    import ast
+    names = ("inverse_cdf", "particle_phase", "water_phase", "fresnel",
+             "turn", "simulate")
+    sources = {}
+    for name in ("radiance_distribution.py", "wave_focusing.py"):
+        text = (ROOT / "examples" / name).read_text()
+        sources[name] = {node.name: ast.get_source_segment(text, node)
+                         for node in ast.parse(text).body
+                         if isinstance(node, ast.FunctionDef)
+                         and node.name in names}
+    assert set(sources["wave_focusing.py"]) == set(names)
+    assert all(sources["wave_focusing.py"][n]
+               == sources["radiance_distribution.py"][n] for n in names)
+    import runpy
+    other = runpy.run_path(str(ROOT / "examples" / "radiance_distribution.py"),
+                           run_name="radiance_distribution")
+    for constant in ("N_WATER", "D_ZENITH", "D_AZIMUTH", "BATCHES",
+                     "PHOTONS"):
+        assert waves_module[constant] == other[constant]
+
+
+@source_tree
+def test_the_waves_example_quotes_its_sources(waves_module):
+    """DECISIONS.md section 44: Wu (1982) gives Elfouhaily's u* = 0.38 m/s
+    at 10 m/s; You et al.'s Table 1 gives c(532) = 0.698 per m; the
+    Petzold station nearest in b is HAOCE 5; the sun's light under a flat
+    surface is what the Fresnel transmittance and exp(-c z / mu) give."""
+    m = waves_module
+    assert round(float(m["friction_velocity"](10.0)), 2) == 0.38
+    c_w, _, c_p, _ = m["YOU2010_TABLE1"][532]
+    assert round(c_w + c_p, 3) == 0.698
+    b = {wl: c_w * w_w + c_p * w_p
+         for wl, (c_w, w_w, c_p, w_p) in m["YOU2010_TABLE1"].items()}
+    near = min(jerlov.PETZOLD_STATIONS,
+               key=lambda s: abs(jerlov.petzold_scattering(s).b - b[532]))
+    assert near == "HAOCE 5"
+    assert m["wind_at"](10.0, 5.5) == pytest.approx(5.5)
+    assert 1.0 < m["wind_at"](12.5, 5.5) / 5.5 < 1.05
+
+
+@source_tree
+def test_the_waves_spectrum_as_printed(waves_module):
+    """Elfouhaily et al. (1997): the spreading leaves the omnidirectional
+    spectrum whole (equations (45)-(49)); the curvature spectrum's secondary
+    peak is near 370 rad/m (p. 15790, Figure 8) for a strong wind; long
+    waves line up with the wind (Delta near 1) and short ones less so."""
+    m = waves_module
+    s, delta = m["spectrum"](np.array([1.0, 10.0, 100.0]), 5.5)
+    assert np.all(s > 0) and np.all((delta > 0) & (delta <= 1))
+    phi = np.linspace(-np.pi, np.pi, 4001)
+    spread = (1 + delta[:, None] * np.cos(2 * phi)) / (2 * np.pi)
+    assert np.allclose(np.sum(0.5 * (spread[:, 1:] + spread[:, :-1])
+                              * np.diff(phi), axis=1), 1.0)
+    k = np.geomspace(50.0, 2000.0, 4000)
+    curvature = k ** 3 * m["spectrum"](k, 15.0)[0]
+    assert 300 < k[np.argmax(curvature)] < 450
+    kp = m["G"] / 5.5 ** 2 * m["OMEGA_C"] ** 2
+    assert m["spectrum"](np.array([kp]), 5.5)[1][0] > 0.99
+
+
+@source_tree
+def test_the_waves_realization_is_not_biased(waves_module):
+    """Section 44: one square's mean square slope varies by about a tenth,
+    but over many realizations it is the spectrum's."""
+    m = waves_module
+    amp = m["amplitudes"](5.5, 4.0, 128)
+    kx, ky = m["wavenumbers"](4.0, 128)
+    w = (kx * kx + ky * ky) * amp * amp
+    expected = np.sum(w)
+    spread = np.sqrt(2 * np.sum(w * w)) / expected
+    assert 0.08 < spread < 0.2
+    found = [np.mean(sx * sx + sy * sy)
+             for sx, sy in (m["surface"](amp, seed)[1:] for seed in range(400))]
+    assert np.mean(found) / expected == pytest.approx(1.0, abs=0.025)
+    assert np.std(found) / expected == pytest.approx(spread, rel=0.2)
+
+
+@source_tree
+def test_the_waves_tracing_keeps_the_light(waves_module):
+    """A flat surface gives the unscattered irradiance everywhere; a wavy
+    one moves the light about without losing any; the blur keeps it."""
+    m = waves_module
+    n, side = 64, 0.0625
+    flat = np.zeros((n, n))
+    beams = m["rays"](flat, flat, flat)
+    image, = m["patterns"](flat, beams, 1.7, [0.698], side=side)
+    density = image * (n / side) ** 2 / n ** 2 * side ** 2
+    assert np.allclose(density, m["unscattered"](0.698, 1.7))
+    rng = np.random.default_rng(1)
+    eta = 0.003 * rng.standard_normal((n, n))
+    sx, sy = 0.1 * rng.standard_normal((2, n, n))
+    beams = m["rays"](eta, sx, sy)
+    image, = m["patterns"](eta, beams, 1.7, [0.0], side=side)
+    assert image.sum() == pytest.approx(beams[3].sum())
+    kernel = m["blur"](1.7, side=side, points=n)
+    assert kernel[0, 0] == pytest.approx(1.0)

@@ -1,6 +1,6 @@
 # Examples
 
-Sixteen scripts. Each runs against the installed package and needs nothing beyond
+Seventeen scripts. Each runs against the installed package and needs nothing beyond
 NumPy.
 
 ```
@@ -20,6 +20,7 @@ python examples/lure_colours.py
 python examples/ultraviolet.py
 python examples/radiance_distribution.py
 python examples/painted_sphere.py
+python examples/wave_focusing.py
 ```
 
 CI runs all of them on every push, so an example that has stopped working is a
@@ -50,6 +51,7 @@ copy of the package silently wins over the working tree. In a clone, run
 | study ultraviolet exposure under water, of reefs, plankton or chemistry | `ultraviolet.py` |
 | need the radiance distribution, the mean cosine or scalar irradiance | `radiance_distribution.py` |
 | render or photograph objects under water, from any direction | `painted_sphere.py` |
+| work with the flicker of light under waves, near the surface | `wave_focusing.py` |
 
 ## What each shows
 
