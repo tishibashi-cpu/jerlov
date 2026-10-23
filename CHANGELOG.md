@@ -4,6 +4,15 @@ Every release is archived on Zenodo under the concept DOI
 [10.5281/zenodo.22321312](https://doi.org/10.5281/zenodo.22321312), which
 always resolves to the latest version.
 
+## 0.18.2 — 2026-10-23
+
+**Packaging.** CI ran `wave_focusing.py` twice in every job, once in the
+loop over the examples and once in the test that recomputes its quoted
+numbers, which took each job from about six minutes to about fifteen. The
+loop now skips it, and the test runs it with `ProvenanceWarning` an error,
+as the loop does (DECISIONS.md section 47). Nothing in the package or the
+examples changed.
+
 ## 0.18.1 — 2026-10-23
 
 **Examples.** `wave_focusing.py --png` draws the light shafts seen looking

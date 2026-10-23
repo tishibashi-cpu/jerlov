@@ -1281,10 +1281,17 @@ def test_the_waves_shifts_add_up_to_ed(waves_module):
 
 @pytest.fixture(scope="module")
 def waves_example(waves_module):
-    """examples/wave_focusing.py, run once. Several minutes."""
+    """examples/wave_focusing.py, run once. About ten minutes.
+
+    CI's loop over the examples skips this one and leaves it to this
+    fixture, so that it runs once rather than twice; it is run here as the
+    loop runs the others, with ProvenanceWarning an error (DECISIONS.md
+    section 47).
+    """
     import contextlib
     import io
-    with contextlib.redirect_stdout(io.StringIO()):
+    with contextlib.redirect_stdout(io.StringIO()), warnings.catch_warnings():
+        warnings.simplefilter("error", jerlov.ProvenanceWarning)
         return waves_module["main"]()
 
 
