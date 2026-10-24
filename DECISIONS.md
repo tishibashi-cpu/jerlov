@@ -1370,3 +1370,20 @@ are not a spectrum, and `painted_sphere.py` uses twelve for its colours.
 Also rejected: adding the scattered light from the Monte Carlo as a
 background, whose 10 by 45 degree cells are far coarser than the glow
 around the sun.
+
+## 47. The ten-minute example runs once in CI
+
+`wave_focusing.py` (section 44) takes about ten minutes, and CI ran it
+twice in every job: once in the loop over the examples and once in the
+test that recomputes the numbers its documentation quotes. That doubled
+each job from about six minutes to about fifteen.
+
+**The test runs it, and the loop skips it.** The test's fixture runs it
+as the loop runs the others, with `ProvenanceWarning` an error, so what
+the loop checked is still checked. What is no longer exercised in CI is
+the script's own `__main__` block, which only reads `--png` and calls
+`main()`; `--png` itself is run by hand before each release.
+
+**Rejected:** skipping the test in CI, which would let the quoted numbers
+drift without a failed build, and caching the example's output between
+jobs, which would tie the jobs together for a few minutes' saving.
