@@ -4,6 +4,31 @@ Every release is archived on Zenodo under the concept DOI
 [10.5281/zenodo.22321312](https://doi.org/10.5281/zenodo.22321312), which
 always resolves to the latest version.
 
+## 0.20.0 — 2026-10-24
+
+An attenuation coefficient from a Secchi depth, by a rule the caller names.
+No shipped value changed.
+
+**Added.** `k_from_secchi(secchi_depth_m, coefficient=...)` returns
+coefficient / Secchi depth, in 1/m. The coefficient has no default.
+`POOLE1929_SECCHI_COEFFICIENT` is 1.7, the rule of Poole & Atkins (1929):
+the mean of K times the Secchi depth over their 14 comparisons off
+Plymouth in 1928, which ran from 1.32 to 2.18. Their K is the attenuation
+from 0 to 20 m of the light on a horizontal surface, measured with
+potassium photocells, so it is not a spectral Kd or Kd(PAR). Every call
+raises a `ProvenanceWarning` that gives this range and the authors' own
+words, "a very rough rule" (DECISIONS.md section 52).
+
+**Examples.** `seagrass_depth_limit.py` has a fifth part, for when all you
+have is a Secchi depth. Duarte (1991) and Duarte et al. (2007) used K =
+1.7 / Secchi depth where a report gave no attenuation coefficient. With
+that rule the 11 percent depth is 1.30 Secchi depths in any water, and
+anywhere from 1.01 to 1.67 across Poole & Atkins's range.
+
+**Fixed.** The example's docstring said most of both Duarte papers'
+attenuation coefficients came from Secchi depths. Duarte (1991) does not
+say how many of his did; the docstring now says what each paper says.
+
 ## 0.19.2 — 2026-10-24
 
 **Packaging.** The release workflow now makes the GitHub Release itself,
