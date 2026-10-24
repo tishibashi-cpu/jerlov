@@ -73,7 +73,7 @@ from .shortwave import (
 )
 from .sources import SOURCES, Source, get_source
 from .water import (
-    DUARTE1991_SECCHI_COEFFICIENT,
+    POOLE1929_SECCHI_COEFFICIENT,
     Descent,
     KdClassification,
     MeasuredPoints,
@@ -162,7 +162,7 @@ __all__ = [
     "ShortwaveParameters",
     "kd_spectrum",
     "k_from_secchi",
-    "DUARTE1991_SECCHI_COEFFICIENT",
+    "POOLE1929_SECCHI_COEFFICIENT",
     "b_from_c",
     "measured_points",
     "MeasuredPoints",

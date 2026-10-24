@@ -154,9 +154,10 @@ turbid water, Duarte et al. (2007) find seagrasses need more light, and
 their 33.3 percent puts the limit 2.1 to 2.2 times shallower than 11
 percent does. A Kd(PAR) measured in the top metre puts the limit in III at
 9.4 m rather than 13.4, because PAR attenuates fastest near the surface.
-With only a Secchi depth, K = 1.7 / Secchi depth, as both Duarte papers
-used where no K was reported, puts the 11 percent depth at 1.30 Secchi
-depths in any water.
+With only a Secchi depth, K = 1.7 / Secchi depth (Poole & Atkins 1929),
+which both Duarte papers used where no K was reported, puts the 11 percent
+depth at 1.30 Secchi depths in any water; the scatter behind 1.7, from
+1.32 to 2.18, would put it anywhere from 1.01 to 1.67.
 
 **`isolumes.py`** — the depth of light levels from a tenth to a
 hundred-thousandth of the surface PAR, and how far each moves for a tenfold

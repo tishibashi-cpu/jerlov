@@ -27,8 +27,9 @@ These are quoted, not checked by this package. Two cautions from the
 papers themselves: where no attenuation coefficient was reported, they
 estimated one from the Secchi depth as K = 1.7 / Secchi depth, Duarte
 (1991, p. 364) without saying for how many of his reports, and Duarte et
-al. (2007, p. 652) for all but 27 of 424; and neither says over which
-waveband K was measured where it was.
+al. (2007, p. 652) for all but 27 of 424, a rule Poole & Atkins (1929)
+themselves called very rough; and neither says over which waveband K was
+measured where it was.
 
     Duarte, C. M. (1991), Aquatic Botany 40, 363-377.
         doi:10.1016/0304-3770(91)90081-F
@@ -38,6 +39,8 @@ waveband K was measured where it was.
         of seagrasses, NOAA Technical Memorandum NMFS-SEFC-287.
     Duarte, C. M. et al. (2007), Estuaries and Coasts 30, 652-656.
         doi:10.1007/BF02841962
+    Poole, H. H. & Atkins, W. R. G. (1929), J. Mar. Biol. Assoc. U.K. 16,
+        297-324. doi:10.1017/S0025315400029829
 """
 
 import math
@@ -200,14 +203,14 @@ rule("5. If all you have is a Secchi depth")
 
 print("""Where a report gave no attenuation coefficient, Duarte (1991) and
 Duarte et al. (2007) estimated it from the Secchi depth as K = 1.7 /
-Secchi depth. With that rule the depth limit follows from the Secchi depth
-alone:""")
+Secchi depth, the rule of Poole & Atkins (1929). With that rule the depth
+limit follows from the Secchi depth alone:""")
 
 with warnings.catch_warnings(record=True) as caught:
     warnings.simplefilter("always", jerlov.ProvenanceWarning)
     secchi = np.array([2.0, 5.0, 10.0])
     k_secchi = jerlov.k_from_secchi(
-        secchi, coefficient=jerlov.DUARTE1991_SECCHI_COEFFICIENT)
+        secchi, coefficient=jerlov.POOLE1929_SECCHI_COEFFICIENT)
 for w in caught:
     if not issubclass(w.category, jerlov.ProvenanceWarning):
         warnings.warn_explicit(w.message, w.category, w.filename, w.lineno)
@@ -218,11 +221,15 @@ for w in caught[:1]:
     print(textwrap.fill(f"Warned: {w.message}", width=76,
                         initial_indent="\n  ", subsequent_indent="  "))
 
-per_secchi = math.log(1 / 0.11) / jerlov.DUARTE1991_SECCHI_COEFFICIENT
+per_secchi = math.log(1 / 0.11) / jerlov.POOLE1929_SECCHI_COEFFICIENT
+SECCHI_RATIOS = (1.32, 2.18)   # Poole & Atkins (1929), Table III
+deepest, shallowest = (math.log(1 / 0.11) / r for r in SECCHI_RATIOS)
 print(f"""
   The 11 percent depth is then {per_secchi:.2f} Secchi depths, in any water: the
-  rule carries no more information than the Secchi depth itself. Which
-  waveband its K stands for is not defined, so it should not be read as
+  rule carries no more information than the Secchi depth itself. Poole &
+  Atkins's own 14 comparisons gave K times the Secchi depth from
+  {SECCHI_RATIOS[0]} to {SECCHI_RATIOS[1]}, which would put it anywhere from {shallowest:.2f} to {deepest:.2f} Secchi
+  depths. Their K is the attenuation of what their photocells saw, not
   Kd(PAR), and it cannot replace the spectra used above.""")
 
 # --------------------------------------------------------------------------

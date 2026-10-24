@@ -361,7 +361,7 @@ jerlov.b_from_c(c=0.5, wavelength_nm=555, bw=0.0019, cw=0.0659)
 jerlov.pure_water_scattering(555)   # Morel's bw, if that is what c was corrected with
 
 # An attenuation coefficient from a Secchi depth, by a rule you name; warns.
-jerlov.k_from_secchi(4.0, coefficient=jerlov.DUARTE1991_SECCHI_COEFFICIENT)  # 1.7 / 4 m
+jerlov.k_from_secchi(4.0, coefficient=jerlov.POOLE1929_SECCHI_COEFFICIENT)  # 1.7 / 4 m
 
 # The measured points behind the williamson2022 spectra, with their spread.
 m = jerlov.measured_points("III", "a")   # m.wavelengths, m.values, m.std_dev

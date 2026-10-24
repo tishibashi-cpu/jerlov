@@ -143,15 +143,39 @@ def test_b_from_c_matches_the_ratio_table():
 
 def test_k_from_secchi_is_the_coefficient_over_the_depth():
     """K = coefficient / Secchi depth; Duarte (1991, p. 364) used 1.7."""
-    assert jerlov.DUARTE1991_SECCHI_COEFFICIENT == 1.7
+    assert jerlov.POOLE1929_SECCHI_COEFFICIENT == 1.7
     with pytest.warns(ProvenanceWarning, match="1.7 / Secchi depth"):
         k = jerlov.k_from_secchi(
-            4.0, coefficient=jerlov.DUARTE1991_SECCHI_COEFFICIENT)
+            4.0, coefficient=jerlov.POOLE1929_SECCHI_COEFFICIENT)
     assert isinstance(k, float)
     assert k == pytest.approx(0.425)
     with pytest.warns(ProvenanceWarning, match="1.44 / Secchi depth"):
         assert jerlov.k_from_secchi(2.0, coefficient=1.44) == \
             pytest.approx(0.72)
+
+
+# Poole & Atkins (1929), p. 310, Table III: the Secchi depth D, m, and the
+# attenuation coefficient from 0 to 20 m, 1/m, and their printed product.
+POOLE1929_TABLE_III = (
+    (14.0, 0.118, 1.65), (13.5, 0.151, 2.04), (10.0, 0.139, 1.39),
+    (18.0, 0.088, 1.58), (22.0, 0.090, 1.98), (14.0, 0.115, 1.61),
+    (11.5, 0.153, 1.76), (18.5, 0.118, 2.18), (17.5, 0.104, 1.82),
+    (10.0, 0.181, 1.81), (15.0, 0.112, 1.68), (16.5, 0.089, 1.47),
+    (6.5, 0.203, 1.32), (11.0, 0.136, 1.50),
+)
+
+
+def test_the_secchi_coefficient_is_poole_and_atkins_mean():
+    """1.70 is the mean of D times K over Table III; 1.32 to 2.18 its range,
+    as the warning says."""
+    products = [d * k for d, k, _ in POOLE1929_TABLE_III]
+    assert [round(x, 2) for x in products] == \
+        [printed for _, _, printed in POOLE1929_TABLE_III]
+    assert round(sum(products) / len(products), 2) == \
+        jerlov.POOLE1929_SECCHI_COEFFICIENT
+    assert (round(min(products), 2), round(max(products), 2)) == (1.32, 2.18)
+    with pytest.warns(ProvenanceWarning, match="from 1.32 to 2.18"):
+        jerlov.k_from_secchi(5.0, coefficient=1.7)
 
 
 def test_k_from_secchi_keeps_the_shape_of_the_depths():

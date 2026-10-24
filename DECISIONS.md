@@ -1550,42 +1550,59 @@ start the upload.
 
 ## 52. An attenuation coefficient from a Secchi depth
 
-Many of the attenuation coefficients behind the seagrass depth limits that
-`seagrass_depth_limit.py` quotes were not measured. Where a report gave
-none, Duarte (1991, p. 364) estimated one from the Secchi depth as K = 1.7
-/ Sd, attributing the rule to Poole & Atkins (1929), without saying for
-how many reports; Duarte et al. (2007, pp. 652-653) did the same for all
-but 27 of 424. The example's docstring said "most" of both papers'
-coefficients were estimated this way, which Duarte (1991) does not
-support; it says what each paper says now. A user with only a Secchi
-depth, or comparing with those papers, needs the same step, and it is easy
-to get subtly wrong by hand: K comes out in 1/m only if Sd is in m.
+Many of the attenuation coefficients behind the seagrass depth limits
+that `seagrass_depth_limit.py` quotes were not measured. Where a report
+gave none, Duarte (1991, p. 364) estimated one from the Secchi depth as
+K = 1.7 / Sd, citing Poole & Atkins (1929), without saying for how many
+reports; Duarte et al. (2007, pp. 652-653) did the same for all but 27 of
+424. The example's docstring said "most" of both papers' coefficients
+were estimated this way, which Duarte (1991) does not support; it says
+what each paper says now. A user with only a Secchi depth, or comparing
+with those papers, needs the same step.
+
+**The source.** Poole & Atkins (1929), J. Mar. Biol. Assoc. U.K. 16,
+297-324, doi:10.1017/S0025315400029829. Duarte's reference list gives it
+the title of their earlier papers ("... the penetration of light into sea
+water"); the volume and first page are right, and the paper is
+"Photo-electric measurements of submarine illumination throughout the
+year". Its Table III (p. 310) compares the Secchi depth D, the deepest at
+which the disc was seen from either side of the ship, with the attenuation
+coefficient from 0 to 20 m on 14 occasions in 1928 at Station E1, off
+Plymouth. That coefficient is natural-log, per metre, of the light on a
+horizontal surface, measured with potassium photoelectric cells behind
+opal glass, and assumes 15 percent of the light is lost at the surface
+(pp. 297-298, 309). D times it ran from 1.32 to 2.18, mean 1.70, from
+which "a very rough rule for finding the opacity is 1.7/D" (p. 310); the
+scatter shows the method cannot be "anything more than a rough
+approximation" (p. 310). The cells' spectral response is not given there
+as a waveband, so K stands for whatever they responded to. The tests
+transcribe the table and recompute every product, the mean and the range.
+One printed percentage in the table, 15.9 for Series 30 and 31, does not
+follow from its own D and coefficient (17.0); it is not used.
 
 **Now.** `jerlov.k_from_secchi(secchi_depth_m, coefficient=...)` returns
-coefficient / Sd. The coefficient has no default. It is an empirical
-ratio, not a property of light in water, so the caller names it; the value
-Duarte used is `jerlov.DUARTE1991_SECCHI_COEFFICIENT` (1.7). It is named
-after the paper it was read in, since Poole & Atkins (1929) could not be
-obtained here: the archive copy has been withdrawn and the publisher's is
-not open, so neither what they measured nor over which waveband is known
-from them. Every call raises a `ProvenanceWarning`, because the result is
-not a measurement and nothing in it says so: it names the coefficient,
-says the rule defines no waveband, and repeats Duarte's own caution that
-the conversion adds to the error of an analysis built on it, with his
-judgement that for his data it was small. Depths that are not finite and
-positive, and a coefficient that is not, are errors.
+coefficient / Sd. The coefficient has no default: it is an empirical
+ratio, not a property of light in water, so the caller names it. Poole &
+Atkins's value is `jerlov.POOLE1929_SECCHI_COEFFICIENT` (1.7). Every call
+raises a `ProvenanceWarning`, because the result is not a measurement and
+nothing in it says so: it names the coefficient, says the rule defines no
+waveband, and gives the 1.32 to 2.18 behind 1.7 and the authors' "very
+rough rule". Depths that are not finite and positive, and a coefficient
+that is not a single finite positive number, are errors.
 
-**Checks.** The tests recompute K for a few depths and arrays, the
-shape of the result, the warning on every call and the errors. The
-seagrass example gets a fifth part: what Duarte's rule implies for the
-11 percent depth, ln(1 / 0.11) / 1.7 = 1.30 Secchi depths, and K for
-Secchi depths of 2, 5 and 10 m. The example catches the warning by its
-type and prints it under the table, as `synthetic_underwater_images.py`
-does with its own, so CI, which runs the examples with
-`ProvenanceWarning` as an error, still sees any other.
+**Checks.** Besides the table, the tests recompute K for a few depths and
+arrays, the shape of the result, the warning on every call and the
+errors. The seagrass example gets a fifth part: K for Secchi depths of 2,
+5 and 10 m and the 11 percent depth, which the rule puts at ln(1 / 0.11)
+/ 1.7 = 1.30 Secchi depths in any water, and 1.01 to 1.67 across Poole &
+Atkins's own range. The example catches the warning by its type and
+prints it under the table, as `synthetic_underwater_images.py` does with
+its own, so CI, which runs the examples with `ProvenanceWarning` as an
+error, still sees any other.
 
 **Rejected:** 1.7 as a default, which would hide the one choice the
-result depends on; a table of coefficients from other studies, whose
-papers have not been read here; and converting the other way, from K to
-a Secchi depth, which needs the contrast of the disc against the water
-as well as the attenuation and is a different model.
+result depends on; shipping Table III as data, when only its mean and
+range are used; a table of coefficients from other studies, whose papers
+have not been read here; and converting the other way, from K to a
+Secchi depth, which needs the contrast of the disc against the water as
+well as the attenuation and is a different model.
