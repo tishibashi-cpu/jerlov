@@ -1089,6 +1089,74 @@ def kd_spectrum(kd, wavelength_nm: float, at):
     return result
 
 
+#: K = 1.7 / Secchi depth: the mean of K times the Secchi depth over the 14
+#: comparisons of Poole & Atkins (1929, p. 310, Table III), which ran from
+#: 1.32 to 2.18. DECISIONS.md section 52.
+POOLE1929_SECCHI_COEFFICIENT = 1.7
+
+
+def k_from_secchi(secchi_depth_m, *, coefficient: float):
+    """Estimate an attenuation coefficient from a Secchi depth.
+
+    ``K = coefficient / secchi_depth_m``, in 1/m.
+
+    Parameters
+    ----------
+    secchi_depth_m:
+        Secchi depth(s), m: where the disc disappears from view. A scalar or
+        an array; each must be finite and positive.
+    coefficient:
+        The empirical ratio K * Secchi depth. There is no default: it is not
+        a property of light in water but a rule fitted to observations, and
+        the result is no better than it. Poole & Atkins (1929) proposed
+        1.7, :data:`POOLE1929_SECCHI_COEFFICIENT`; Duarte (1991, p. 364)
+        and Duarte et al. (2007, p. 653) used it for seagrass depth
+        limits.
+
+    Returns
+    -------
+    A float for a scalar depth, an array of the same shape otherwise.
+
+    Notes
+    -----
+    Every call raises a :class:`ProvenanceWarning`, since the result is
+    not a measurement and nothing else in it says so.
+
+    Poole & Atkins (1929, p. 310) compared the Secchi depth D with the
+    attenuation of daylight from 0 to 20 m, on 14 days in 1928 in the
+    English Channel off Plymouth. Their K is the natural-log attenuation
+    coefficient of the light on a horizontal surface, measured with
+    potassium photoelectric cells behind opal glass and assuming 15
+    percent of the light lost at the surface. K * D ran from 1.32 to 2.18,
+    mean 1.70, which they called "a very rough rule" and, from the
+    scatter, "a rough approximation" at best (pp. 310, 324). K is
+    therefore the attenuation of whatever their cells responded to, not a
+    spectral Kd and not Kd(PAR), and cannot be passed where one is
+    expected. DECISIONS.md section 52.
+    """
+    depth = _as_array(secchi_depth_m)
+    _require_number(depth, "secchi_depth_m")
+    if not np.all(np.isfinite(depth)) or np.any(depth <= 0):
+        raise ValueError("secchi_depth_m must be finite and positive, in m")
+    ratio = np.asarray(coefficient, dtype=float)
+    if (ratio.ndim != 0 or not np.isfinite(ratio)
+            or float(ratio) <= 0):
+        raise ValueError("coefficient must be a single finite positive "
+                         "number, such as POOLE1929_SECCHI_COEFFICIENT")
+    warnings.warn(
+        f"K = {float(ratio):g} / Secchi depth is an empirical rule, not a "
+        "measurement, and defines no waveband. The 14 comparisons behind "
+        "the 1.7 of Poole & Atkins (1929) gave K times the Secchi depth "
+        "from 1.32 to 2.18; they called it a very rough rule.",
+        ProvenanceWarning,
+        stacklevel=_data.caller_stacklevel(),
+    )
+    result = float(ratio) / depth
+    if np.ndim(secchi_depth_m) == 0:
+        return float(result[0])
+    return result.reshape(np.shape(secchi_depth_m))
+
+
 def b_from_c(c, wavelength_nm, *, bw, cw, bound: str = "average"):
     """Estimate the scattering coefficient from the beam attenuation.
 
