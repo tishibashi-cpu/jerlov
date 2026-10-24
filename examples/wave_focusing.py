@@ -6,7 +6,7 @@ below, and how strongly the light at one point flickers falls with depth.
 The package carries what Darecki et al. (2011) measured of it (section 42
 of DECISIONS.md) and no model, since waves are not set by the water type.
 This example builds one from published parts and checks it against that
-measurement, with its choices fixed beforehand (sections 44 and 45).
+measurement, with its choices fixed beforehand (sections 44, 45 and 48).
 
     python examples/wave_focusing.py               # about ten minutes
     python examples/wave_focusing.py --png shafts.png     # and a picture
@@ -29,8 +29,17 @@ script stands alone; that model falls short of the measurement. As
 section 45 found, a photon scattered on its way down carries the same
 pattern, shifted by how far the scattering moved it, and a second Monte
 Carlo, with the same scattering, gives those shifts.
+
+The sky, as section 48 fixed it: its share of the light above the sea
+from the clear-sky model of Gregg and Carder (1990), for a range of
+atmospheres since Darecki did not record one, and its light under the
+waves taken as uniform, from the same Monte Carlo under a uniform
+overcast. It is added to the second model as more light that does not
+flicker.
 """
 
+import contextlib
+import io
 import os
 import struct
 import sys
@@ -93,6 +102,21 @@ KAPPA, CHARNOCK = 0.4, 0.0185
 #: wind in m/s at 41 ft (p. 199).
 COX_MUNK = (0.003, 5.12e-3, 0.004)
 COX_MUNK_HEIGHT = 12.5      # m
+
+#: Gregg and Carder (1990): the Navy aerosol's mode radii, um, and its
+#: factor R (p. 1664), and the standard pressure, hPa.
+NAVY_RADII = (0.03, 0.24, 2.0)
+NAVY_R = 0.05
+STANDARD_PRESSURE = 1013.25
+#: Section 48: the atmospheres the sky is bracketed with, as (aerosol
+#: optical thickness at 550 nm, air-mass type); 80 percent relative
+#: humidity and You et al.'s 5.5 m/s for both of the paper's winds.
+ATMOSPHERES = [(tau, am) for tau in (0.05, 0.1, 0.2, 0.4) for am in (1, 10)]
+SKY_HUMIDITY, SKY_WIND = 80.0, 5.5
+#: Gernez and Antoine (2009), p. 4, and the share of diffuse light they
+#: print along the top of Figure 10a: section 48's check.
+GERNEZ_SKY = dict(tau550=0.2, air_mass_type=1, humidity=80.0,
+                  wind_mean=5.0, wind=5.0)
 
 
 # -- the Monte Carlo, as in radiance_distribution.py ---------------------------
@@ -613,8 +637,71 @@ def spread_kernel(found, depth, c, side=SIDE, points=POINTS):
     return np.fft.rfft2(k)
 
 
+# -- the sky: Gregg and Carder (1990) ------------------------------------------
+def air_mass(zenith):
+    """Kasten's path length, equation (13); the zenith angle in degrees."""
+    return 1 / (np.cos(np.radians(zenith)) + 0.15 * (93.885 - zenith)
+                ** -1.253)
+
+
+def angstrom(air_mass_type, humidity, wind_mean, wind):
+    """The Navy aerosol model as a Junge distribution, equations (20) to
+    (26): the Angstrom exponent."""
+    a1 = 2000.0 * air_mass_type ** 2
+    a2 = max(5.866 * (wind_mean - 2.2), 0.5)
+    a3 = max(0.01527 * (wind - 2.2) * NAVY_R, 1.4e-5)
+    f = ((2 - humidity / 100) / (6 * (1 - humidity / 100))) ** (1 / 3)
+    r = np.array([0.1, 1.0, 10.0])
+    dn = sum(a * np.exp(-np.log(r / (f * r0)) ** 2)
+             for a, r0 in zip((a1, a2, a3), NAVY_RADII)) / f
+    gamma = np.polyfit(np.log(r), np.log(dn), 1)[0]
+    return -(gamma + 3)
+
+
+def sky_share(wavelength, zenith, tau550, air_mass_type, humidity=SKY_HUMIDITY,
+              wind_mean=SKY_WIND, wind=SKY_WIND, pressure=STANDARD_PRESSURE):
+    """The diffuse share of the downwelling irradiance just above the sea,
+    equations (2), (4) to (7), (15), (16), (27), (30) to (36). The gases'
+    transmittances and the sun's spectrum multiply both parts alike and
+    are left out. ``wavelength`` in nm, ``zenith`` in degrees."""
+    lam = wavelength / 1000.0
+    m = air_mass(zenith)
+    t_r = np.exp(-m * pressure / STANDARD_PRESSURE
+                 / (115.6406 * lam ** 4 - 1.335 * lam ** 2))
+    alpha = angstrom(air_mass_type, humidity, wind_mean, wind)
+    tau = tau550 * (lam / 0.55) ** -alpha
+    omega = (-0.0032 * air_mass_type + 0.972) * np.exp(3.06e-4 * humidity)
+    t_aa = np.exp(-(1 - omega) * tau * m)
+    t_as = np.exp(-omega * tau * m)
+    mean_cos = 0.82 if alpha < 0 else 0.65 if alpha > 1.2 \
+        else -0.1417 * alpha + 0.82
+    b3 = np.log(1 - mean_cos)
+    b1 = b3 * (1.459 + b3 * (0.1595 + 0.4129 * b3))
+    b2 = b3 * (0.0783 + b3 * (-0.3824 - 0.5874 * b3))
+    mu = np.cos(np.radians(zenith))
+    f_a = 1 - 0.5 * np.exp((b1 + b2 * mu) * mu)
+    direct = t_r * np.exp(-tau * m)
+    rayleigh = t_aa * (1 - t_r ** 0.95) * 0.5
+    aerosol = t_aa * t_r ** 1.5 * (1 - t_as) * f_a
+    return (rayleigh + aerosol) / (direct + rayleigh + aerosol)
+
+
+def sky_below(station):
+    """Section 48: Ed under a flat surface from the Monte Carlo, for a sky
+    of uniform radiance, per unit planar irradiance of the sky above the
+    surface, at each wavelength and depth."""
+    particles = particle_phase(station)
+    out = []
+    for wl in YOU2010_TABLE1:
+        a, b, b_w = water_at(wl)
+        out.append(np.mean([simulate(a, b, b_w, particles, water_phase(wl),
+                                     None, seed, depths=DEPTHS)["ed"]
+                            for seed in range(BATCHES)], axis=0))
+    return np.array(out)
+
+
 def flicker(u10, models, seeds=range(REALIZATIONS), side=SIDE,
-            points=POINTS):
+            points=POINTS, skies=None):
     """The coefficient of variation at each wavelength and depth, pooled
     over the realizations, for each model of the light; the surfaces' mean
     square slope, what the spectrum gives for the same wavenumbers, and the
@@ -622,7 +709,8 @@ def flicker(u10, models, seeds=range(REALIZATIONS), side=SIDE,
 
     ``models`` maps a name to (kernel, even): kernel(depth, i) gives the
     transform of the blur for wavelength i, and even[i, depth] the light
-    spread evenly.
+    spread evenly. ``skies`` maps a name to (model, more): that model with
+    ``more`` added to its even light.
     """
     amp = amplitudes(u10, side, points)
     kx, ky = wavenumbers(side, points)
@@ -650,8 +738,11 @@ def flicker(u10, models, seeds=range(REALIZATIONS), side=SIDE,
                     sums[name][i, j] += moments(transform * kernels[name][i])
         del kernels
     cv = {}
-    for name, (_, even) in models.items():
-        mean, square = (sums[name] / len(seeds)).transpose(2, 0, 1)
+    evens = {name: (name, even) for name, (_, even) in models.items()}
+    for name, (model, more) in (skies or {}).items():
+        evens[name] = (model, models[model][1] + more)
+    for name, (model, even) in evens.items():
+        mean, square = (sums[model] / len(seeds)).transpose(2, 0, 1)
         spread = np.sqrt(np.maximum(square - mean * mean, 0.0))
         cv[name] = spread / (mean + even)
     return cv, float(np.mean(slopes)), expected, sampling
@@ -725,6 +816,11 @@ def main():
     found, met = carried(station)
     models = {"even": (even_blur, rest),
               "carried": (carrying(found, keep=True), met)}
+    below = sky_below(station)
+    shares = {atm: np.array([sky_share(wl, SUN_ZENITH, *atm) for wl in wls])
+              for atm in ATMOSPHERES}
+    skies = {atm: ("carried", (share / (1 - share))[:, None] * below)
+             for atm, share in shares.items()}
 
     rule("The sea surface")
     k_high = np.pi * POINTS / SIDE
@@ -741,7 +837,7 @@ to {SIDE:g} m, {REALIZATIONS} realizations each. Mean square slope:
             for s in others:
                 f, m = carried(s)
                 these[s] = (carrying(f), m)
-        found_cv, realized, within, sampling = flicker(u, these)
+        found_cv, realized, within, sampling = flicker(u, these, skies=skies)
         for name, value in found_cv.items():
             cv.setdefault(name, {})[u] = value
         longer = slope_variance(u, 1e-4, 2 * np.pi / SIDE)
@@ -814,6 +910,63 @@ at {WIND} m/s: the coefficient of variation as a share of section 44's.
             print(f"{head}  {wl} nm "
                   + "  ".join(f"{value[i, j] / cv['even'][WIND][i, j]:5.2f}"
                               for j in range(DEPTHS.size)))
+    rule("The sky's light (DECISIONS.md section 48)")
+    g = GERNEZ_SKY
+    zeniths = list(range(20, 90, 10))
+    printed = jerlov.gernez2009_diffuse_share()
+    printed = dict(zip(printed.sun_zenith_deg, 100 * printed.diffuse_fraction))
+    ours = {wl: [100 * sky_share(wl, z, g["tau550"], g["air_mass_type"],
+                                 g["humidity"], g["wind_mean"], g["wind"])
+                 for z in zeniths] for wl in (442, 510, 560)}
+    print(f"""The share of diffuse light above the sea, Gregg and Carder (1990), with
+Gernez and Antoine's settings: tau(550) = {g['tau550']}, a marine air mass,
+{g['humidity']:g} percent humidity; percent, against what they print.
+
+  sun     """ + "".join(f"{z:6d}" for z in zeniths) + """
+  printed """ + "".join(f"{printed[z]:6.0f}" for z in zeniths))
+    for wl, row in ours.items():
+        print(f"  {wl} nm  " + "".join(f"{v:6.1f}" for v in row))
+    low = np.min([ours[wl] for wl in ours], axis=0) - 3
+    high = np.max([ours[wl] for wl in ours], axis=0) + 3
+    order = all(low[k] <= printed[z] <= high[k]
+                for k, z in enumerate(zeniths) if z <= 70)
+    print(f"""
+  {'yes' if order else 'NO '}  20 to 70 degrees: each printed share within the model's at 442-560 nm,
+       widened by 3 points
+
+The sky as uniform light under the waves, added to section 45's model; the
+sun at {SUN_ZENITH:g} degrees. For each atmosphere the sky's share at """
+          + ", ".join(f"{wl}" for wl in wls) + f""" nm, section 44's
+checks, and measured/model at {WIND} m/s to {CHECKED_TO} m and below.
+
+  tau(550)  air mass   share, percent        checks    to {CHECKED_TO} m     below""")
+    sky_checks = {}
+    for atm in ATMOSPHERES:
+        with_sky = {u: cv[atm][u] for u in WINDS}
+        with contextlib.redirect_stdout(io.StringIO()):
+            found_checks = checks(measured, with_sky)
+        ratio = measured / with_sky[WIND]
+        deep = ratio[:, DEPTHS > CHECKED_TO]
+        sky_checks[atm] = dict(found_checks, deep=deep)
+        marks = "".join("y" if found_checks[k] else "n"
+                        for k in ("falls", "redder", "within_two"))
+        print(f"  {atm[0]:8.2f}  {'marine' if atm[1] == 1 else 'continental':<11}"
+              + " ".join(f"{100 * v:5.1f}" for v in shares[atm])
+              + f"      {marks}      {found_checks['ratio'].min():.2f}-"
+              f"{found_checks['ratio'].max():.2f}    {deep.min():.2f}-"
+              f"{deep.max():.2f}")
+    least = min(ATMOSPHERES, key=lambda a: shares[a].mean())
+    most = max(ATMOSPHERES, key=lambda a: shares[a].mean())
+    bare = (measured / cv["carried"][WIND])[:, DEPTHS > CHECKED_TO]
+    print(f"""
+  checks: falls with depth, higher at 670 than at 443 nm, within a factor
+  of 2 to {CHECKED_TO} m (y or n). Without a sky, section 45's model:
+  {second['ratio'].min():.2f}-{second['ratio'].max():.2f} and {bare.min():.2f}-{bare.max():.2f}.""")
+    for atm, label in ((least, "smallest"), (most, "largest")):
+        table(measured, {u: cv[atm][u] for u in WINDS}, wls,
+              f"With the {label} sky's share: tau(550) = {atm[0]:g}, "
+              f"{'marine' if atm[1] == 1 else 'continental'} air:")
+
     rule("Before you use any of this")
     print(f"""  - The surface is linear, random and frozen; the variation is taken over
     positions, where Darecki's is over time at one point. Waves longer
@@ -823,8 +976,10 @@ at {WIND} m/s: the coefficient of variation as a share of section 44's.
   - Rays that would meet the surface again are not followed, and the sun's
     disc is applied as a shift of the whole pattern, which holds to first
     order.
-  - There is no sky. Any sky adds light that does not flicker, and lowers
-    every modelled value.
+  - The sky is taken as uniform, above the sea and under it, and its
+    share from a model of the air, bracketed since Darecki did not record
+    it. A real clear sky is brighter near the sun, and the waves gather
+    some of that light too.
   - The water is You et al.'s, measured the same day; the phase function
     is Petzold's, and the station moves the result (2 above).
 
@@ -832,7 +987,9 @@ at {WIND} m/s: the coefficient of variation as a share of section 44's.
 """)
     return dict(station=station, others=others, cv=cv, surfaces=surfaces,
                 held=held, near=near, first=first, second=second,
-                sizes=sizes, measured=measured)
+                sizes=sizes, measured=measured, order=order, ours=ours,
+                shares=shares, sky_checks=sky_checks, least=least,
+                most=most)
 
 
 # -- the picture: light shafts, looking up towards the sun ---------------------
