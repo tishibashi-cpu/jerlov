@@ -1387,3 +1387,81 @@ the script's own `__main__` block, which only reads `--png` and calls
 **Rejected:** skipping the test in CI, which would let the quoted numbers
 drift without a failed build, and caching the example's output between
 jobs, which would tie the jobs together for a few minutes' saving.
+
+## 48. The sky's light under waves
+
+Written before the runs below; the choices and the marks were not changed
+after their results were seen.
+
+Sections 44 and 45 left the sky out, and named the omission: light from
+the sky arrives from every direction, is hardly gathered by the waves, and
+adds to the light that does not flicker, so any sky lowers every modelled
+coefficient of variation. Darecki's sun was in a clear sky, which still
+sends a fifth or more of the light (Gernez and Antoine 2009 print 21 to 28
+percent with the sun 20 to 50 degrees from the zenith, DATA.md section
+25). Section 45's model fits Darecki's measurement within a factor of 2
+down to 2.84 m and falls to about 0.5 to 0.8 of it below; this section
+asks how far the sky moves that.
+
+**The share of the sky.** Gregg and Carder (1990), as Gernez and Antoine
+used it, for the direct and diffuse irradiance on a horizontal surface
+just above the sea: equations (2), (4) and (6) with (5) and (7), the air
+mass (13), Rayleigh's transmittance (15) and (16), the aerosol from the
+Navy model reduced to a Junge distribution, (20) to (26), its optical
+thickness (27) to (29), its forward-scattering probability (31) to (35)
+and its single-scattering albedo (36), as printed (pp. 1660-1666). The
+ozone, water vapour and oxygen transmittances multiply the direct and the
+diffuse light alike, so the share of the sky does not need them, nor the
+extraterrestrial spectrum. The light reflected back and forth between the
+sea and the sky, which the paper also leaves out (p. 1660), is left out.
+The aerosol is set by its optical thickness at 550 nm rather than by the
+visibility; with the paper's 1 km scale height, V = 3.91 / tau km.
+
+**Its check.** With Gernez and Antoine's settings (p. 4): 80 percent
+relative humidity, a marine air mass (AM = 1), tau(550) = 0.2, 1013.25
+hPa, and, since they give none, a wind of 5 m/s for both of the paper's
+winds. They used Shettle and Fenn's maritime aerosol, not the Navy model,
+and do not say at what wavelength, so this checks the order, not the
+digits: at 20 to 70 degrees each share they print must lie within the
+model's range over 442 to 560 nm, widened by 3 points either way. At 80
+degrees it is printed without a mark. If the check fails the runs below
+still go ahead, and the failure is printed with them.
+
+**Darecki's sky.** Not recorded beyond clear (Darecki et al. 2011, the
+sun 30 to 33 degrees from the zenith). The atmosphere is bracketed rather
+than chosen: tau(550) = 0.05, 0.1, 0.2 and 0.4, each with a marine (AM =
+1) and a continental (AM = 10) air mass, 80 percent relative humidity,
+1013.25 hPa, and the wind at 5.5 m/s, You et al.'s, for both winds. The
+two lowest optical thicknesses lie below the visibilities Gregg and
+Carder observed (8 to 24 km, their Table 2) and stand for a clean marine
+sky. The sun is at 30 degrees, as in section 44.
+
+**The sky under the water.** Its radiance is taken as uniform, and its
+light under the waves as uniform too: the example's Monte Carlo with
+`sun_zenith=None`, a uniform overcast, flat surface, the same water and
+phase function as section 45, gives the planar irradiance at each depth
+per unit irradiance of the sky above the sea, with the Fresnel loss at the
+surface. Times the ratio of diffuse to direct light from above, that is
+added to the light that does not flicker in section 45's model, at each
+wavelength, depth and wind, and nothing else changes. A real clear sky is
+brighter near the sun, and that light is gathered by the waves somewhat
+as the sun's is; taking it as uniform gives the sky its largest effect,
+so section 45's model without a sky and this one with it bracket the
+model's answer.
+
+**What is printed.** For each atmosphere the sky's share at 443, 532 and
+670 nm; section 44's three checks applied to the model with that sky; and
+the range of measured / model at 5.5 m/s down to 2.84 m and below it. The
+full table for the atmospheres with the smallest and largest share.
+
+**Read beforehand.** If with every atmosphere the ratios below 2.84 m
+come within 0.8 to 1.25, the sky accounts for the shortfall there; if they
+rise but some stay below 0.8, it accounts for part; if none rises by more
+than 0.05, it does not. Whatever the result, section 45's model stays the
+example's model without a sky; this one is printed beside it, and nothing
+is fitted.
+
+**Rejected:** a sky radiance distribution from a radiative transfer
+model, which would choose for the reader what Darecki did not record and
+the package does not determine (section 39); and adding the sky to
+section 44's model, which section 45 replaced.
