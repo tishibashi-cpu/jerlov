@@ -1089,6 +1089,65 @@ def kd_spectrum(kd, wavelength_nm: float, at):
     return result
 
 
+#: The coefficient in K = 1.7 / Secchi depth that Duarte (1991, p. 364) used,
+#: attributing it to Poole & Atkins (1929). DECISIONS.md section 52.
+DUARTE1991_SECCHI_COEFFICIENT = 1.7
+
+
+def k_from_secchi(secchi_depth_m, *, coefficient: float):
+    """Estimate an attenuation coefficient from a Secchi depth.
+
+    ``K = coefficient / secchi_depth_m``, in 1/m.
+
+    Parameters
+    ----------
+    secchi_depth_m:
+        Secchi depth(s), m: where the disc disappears from view. A scalar or
+        an array; each must be finite and positive.
+    coefficient:
+        The empirical ratio K * Secchi depth. There is no default: it is not
+        a property of light in water but a rule fitted to observations, and
+        the result is no better than it. Duarte (1991, p. 364) used 1.7,
+        attributing it to Poole & Atkins (1929), and Duarte et al. (2007,
+        p. 653) followed him; that value is
+        :data:`DUARTE1991_SECCHI_COEFFICIENT`.
+
+    Returns
+    -------
+    A float for a scalar depth, an array of the same shape otherwise.
+
+    Notes
+    -----
+    Every call raises a :class:`ProvenanceWarning`, since the result is
+    not a measurement and nothing else in it says so. The rule does not
+    say over which waveband K holds, so it is not a spectral Kd and cannot
+    be passed where one is expected. Poole & Atkins (1929) could not be
+    read for this package; DECISIONS.md section 52.
+    """
+    depth = _as_array(secchi_depth_m)
+    _require_number(depth, "secchi_depth_m")
+    if not np.all(np.isfinite(depth)) or np.any(depth <= 0):
+        raise ValueError("secchi_depth_m must be finite and positive, in m")
+    ratio = np.asarray(coefficient, dtype=float)
+    if (ratio.ndim != 0 or not np.isfinite(ratio)
+            or float(ratio) <= 0):
+        raise ValueError("coefficient must be a single finite positive "
+                         "number, such as DUARTE1991_SECCHI_COEFFICIENT")
+    warnings.warn(
+        f"K = {float(ratio):g} / Secchi depth is an empirical rule, not a "
+        "measurement. It does not say over which waveband K holds, and "
+        "Duarte (1991, p. 364), who used 1.7, notes that it adds to the "
+        "error of an analysis built on it, an error he judged small "
+        "against the wide range of his data.",
+        ProvenanceWarning,
+        stacklevel=_data.caller_stacklevel(),
+    )
+    result = float(ratio) / depth
+    if np.ndim(secchi_depth_m) == 0:
+        return float(result[0])
+    return result.reshape(np.shape(secchi_depth_m))
+
+
 def b_from_c(c, wavelength_nm, *, bw, cw, bound: str = "average"):
     """Estimate the scattering coefficient from the beam attenuation.
 

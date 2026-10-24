@@ -141,6 +141,60 @@ def test_b_from_c_matches_the_ratio_table():
     assert lower < b < upper
 
 
+def test_k_from_secchi_is_the_coefficient_over_the_depth():
+    """K = coefficient / Secchi depth; Duarte (1991, p. 364) used 1.7."""
+    assert jerlov.DUARTE1991_SECCHI_COEFFICIENT == 1.7
+    with pytest.warns(ProvenanceWarning, match="1.7 / Secchi depth"):
+        k = jerlov.k_from_secchi(
+            4.0, coefficient=jerlov.DUARTE1991_SECCHI_COEFFICIENT)
+    assert isinstance(k, float)
+    assert k == pytest.approx(0.425)
+    with pytest.warns(ProvenanceWarning, match="1.44 / Secchi depth"):
+        assert jerlov.k_from_secchi(2.0, coefficient=1.44) == \
+            pytest.approx(0.72)
+
+
+def test_k_from_secchi_keeps_the_shape_of_the_depths():
+    depths = np.array([[2.0, 5.0], [10.0, 0.5]])
+    with pytest.warns(ProvenanceWarning):
+        k = jerlov.k_from_secchi(depths, coefficient=1.7)
+    assert k.shape == (2, 2)
+    np.testing.assert_allclose(k, [[0.85, 0.34], [0.17, 3.4]])
+    with pytest.warns(ProvenanceWarning):
+        assert jerlov.k_from_secchi([3.4], coefficient=1.7).shape == (1,)
+
+
+def test_k_from_secchi_warns_on_every_call():
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always")
+        for _ in range(3):
+            jerlov.k_from_secchi(5.0, coefficient=1.7)
+    assert [w.category for w in caught] == [ProvenanceWarning] * 3
+    assert all(w.filename == __file__ for w in caught)
+    assert "waveband" in str(caught[0].message)
+
+
+def test_k_from_secchi_needs_the_coefficient_named():
+    with pytest.raises(TypeError):
+        jerlov.k_from_secchi(5.0)  # type: ignore[call-arg]
+    with pytest.raises(TypeError):
+        jerlov.k_from_secchi(5.0, 1.7)  # type: ignore[misc]
+
+
+@pytest.mark.parametrize("depth", [0.0, -1.0, np.nan, np.inf, [2.0, 0.0]])
+def test_k_from_secchi_refuses_a_depth_that_is_not_positive(depth):
+    with pytest.raises(ValueError, match="secchi_depth_m"):
+        jerlov.k_from_secchi(depth, coefficient=1.7)
+
+
+@pytest.mark.parametrize("coefficient", [0.0, -1.7, np.nan, np.inf,
+                                         [1.7, 1.44]])
+def test_k_from_secchi_refuses_a_coefficient_that_is_not_one_positive(
+        coefficient):
+    with pytest.raises(ValueError, match="coefficient"):
+        jerlov.k_from_secchi(5.0, coefficient=coefficient)
+
+
 def test_sources_are_described():
     for key, source in jerlov.SOURCES.items():
         assert source.key == key

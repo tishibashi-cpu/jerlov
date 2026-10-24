@@ -580,6 +580,18 @@ def test_figures_for_the_turbid_seagrass_section():
         == (2.1, 2.2)
 
 
+def test_figures_for_the_secchi_seagrass_section():
+    """With K = 1.7 / Secchi depth the 11 percent depth is 1.30 Secchi
+    depths: 2.6, 6.5 and 13.0 m for 2, 5 and 10 m, where K is 0.850, 0.340
+    and 0.170 1/m."""
+    with pytest.warns(jerlov.ProvenanceWarning):
+        k = jerlov.k_from_secchi(np.array([2.0, 5.0, 10.0]), coefficient=1.7)
+    assert [f"{v:.3f}" for v in k] == ["0.850", "0.340", "0.170"]
+    limit = np.log(1 / 0.11) / k
+    assert [f"{v:.1f}" for v in limit] == ["2.6", "6.5", "13.0"]
+    assert f"{math.log(1 / 0.11) / 1.7:.2f}" == "1.30"
+
+
 def test_figures_for_the_lure_example():
     """examples/README.md: 22 to 35 percent of the contrast is left at 2 m
     in Jerlov 1C; the start spans a factor of 124 across the six guesses, and

@@ -24,10 +24,11 @@ turbid-water figure in part 2.
     python examples/seagrass_depth_limit.py
 
 These are quoted, not checked by this package. Two cautions from the
-papers themselves: most of their attenuation coefficients were estimated
-from Secchi depths, by K = 1.7 / Secchi depth in Duarte (1991, p. 364) and
-for all but 27 of 424 reports in Duarte et al. (2007, p. 652); and neither
-says over which waveband K was measured where it was.
+papers themselves: where no attenuation coefficient was reported, they
+estimated one from the Secchi depth as K = 1.7 / Secchi depth, Duarte
+(1991, p. 364) without saying for how many of his reports, and Duarte et
+al. (2007, p. 652) for all but 27 of 424; and neither says over which
+waveband K was measured where it was.
 
     Duarte, C. M. (1991), Aquatic Botany 40, 363-377.
         doi:10.1016/0304-3770(91)90081-F
@@ -40,6 +41,8 @@ says over which waveband K was measured where it was.
 """
 
 import math
+import textwrap
+import warnings
 
 import numpy as np
 
@@ -193,10 +196,40 @@ print("""
   the depth range you care about, or attenuate the spectrum, as here.""")
 
 # --------------------------------------------------------------------------
+rule("5. If all you have is a Secchi depth")
+
+print("""Where a report gave no attenuation coefficient, Duarte (1991) and
+Duarte et al. (2007) estimated it from the Secchi depth as K = 1.7 /
+Secchi depth. With that rule the depth limit follows from the Secchi depth
+alone:""")
+
+with warnings.catch_warnings(record=True) as caught:
+    warnings.simplefilter("always", jerlov.ProvenanceWarning)
+    secchi = np.array([2.0, 5.0, 10.0])
+    k_secchi = jerlov.k_from_secchi(
+        secchi, coefficient=jerlov.DUARTE1991_SECCHI_COEFFICIENT)
+for w in caught:
+    if not issubclass(w.category, jerlov.ProvenanceWarning):
+        warnings.warn_explicit(w.message, w.category, w.filename, w.lineno)
+print(f"\n  {'Secchi':>7} {'K':>7} {'at 11%':>8}")
+for sd, k in zip(secchi, k_secchi):
+    print(f"  {sd:>5.0f} m {k:>7.3f} {math.log(1 / 0.11) / k:>6.1f} m")
+for w in caught[:1]:
+    print(textwrap.fill(f"Warned: {w.message}", width=76,
+                        initial_indent="\n  ", subsequent_indent="  "))
+
+per_secchi = math.log(1 / 0.11) / jerlov.DUARTE1991_SECCHI_COEFFICIENT
+print(f"""
+  The 11 percent depth is then {per_secchi:.2f} Secchi depths, in any water: the
+  rule carries no more information than the Secchi depth itself. Which
+  waveband its K stands for is not defined, so it should not be read as
+  Kd(PAR), and it cannot replace the spectra used above.""")
+
+# --------------------------------------------------------------------------
 rule("Before you use any of this")
 
 print("""  - The light requirements are quoted from the literature, not
-    derived, and the papers' own attenuation coefficients are mostly
+    derived, and the papers' own attenuation coefficients are often
     estimated from Secchi depths. Use the requirement measured for your
     species and site.
   - This is planar PAR, from Ed: the light on a flat surface facing up,

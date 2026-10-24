@@ -1547,3 +1547,45 @@ duplication this removes; making the Release first and uploading after,
 the order that let 0.19.0 reach Zenodo alone; and a separate workflow that
 only makes the tag, since a tag pushed with the workflow token would not
 start the upload.
+
+## 52. An attenuation coefficient from a Secchi depth
+
+Many of the attenuation coefficients behind the seagrass depth limits that
+`seagrass_depth_limit.py` quotes were not measured. Where a report gave
+none, Duarte (1991, p. 364) estimated one from the Secchi depth as K = 1.7
+/ Sd, attributing the rule to Poole & Atkins (1929), without saying for
+how many reports; Duarte et al. (2007, pp. 652-653) did the same for all
+but 27 of 424. The example's docstring said "most" of both papers'
+coefficients were estimated this way, which Duarte (1991) does not
+support; it says what each paper says now. A user with only a Secchi
+depth, or comparing with those papers, needs the same step, and it is easy
+to get subtly wrong by hand: K comes out in 1/m only if Sd is in m.
+
+**Now.** `jerlov.k_from_secchi(secchi_depth_m, coefficient=...)` returns
+coefficient / Sd. The coefficient has no default. It is an empirical
+ratio, not a property of light in water, so the caller names it; the value
+Duarte used is `jerlov.DUARTE1991_SECCHI_COEFFICIENT` (1.7). It is named
+after the paper it was read in, since Poole & Atkins (1929) could not be
+obtained here: the archive copy has been withdrawn and the publisher's is
+not open, so neither what they measured nor over which waveband is known
+from them. Every call raises a `ProvenanceWarning`, because the result is
+not a measurement and nothing in it says so: it names the coefficient,
+says the rule defines no waveband, and repeats Duarte's own caution that
+the conversion adds to the error of an analysis built on it, with his
+judgement that for his data it was small. Depths that are not finite and
+positive, and a coefficient that is not, are errors.
+
+**Checks.** The tests recompute K for a few depths and arrays, the
+shape of the result, the warning on every call and the errors. The
+seagrass example gets a fifth part: what Duarte's rule implies for the
+11 percent depth, ln(1 / 0.11) / 1.7 = 1.30 Secchi depths, and K for
+Secchi depths of 2, 5 and 10 m. The example catches the warning by its
+type and prints it under the table, as `synthetic_underwater_images.py`
+does with its own, so CI, which runs the examples with
+`ProvenanceWarning` as an error, still sees any other.
+
+**Rejected:** 1.7 as a default, which would hide the one choice the
+result depends on; a table of coefficients from other studies, whose
+papers have not been read here; and converting the other way, from K to
+a Secchi depth, which needs the contrast of the disc against the water
+as well as the attenuation and is a different model.
