@@ -33,6 +33,16 @@ jobs:
         run: pip install "numpy==1.22.*"
       - run: python -c "import numpy; print('numpy', numpy.__version__)"
       - run: python -m pytest tests/ -v
+      - name: The tests must also pass away from the source tree
+        # The release workflow runs them from a copy next to nothing else,
+        # where what needs the source tree is skipped. A test that needs it
+        # but is not marked passed here and stopped 0.19.0 at the tag;
+        # running the same copy here finds that before a tag does
+        # (DECISIONS.md section 50).
+        run: |
+          cp -r tests "$RUNNER_TEMP/wheel-tests"
+          cd "$RUNNER_TEMP"
+          python -m pytest wheel-tests -q -p no:cacheprovider
 
   examples:
     # The examples run beside the tests rather than after them, on the same
