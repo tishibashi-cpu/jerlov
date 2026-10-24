@@ -4,6 +4,19 @@ Every release is archived on Zenodo under the concept DOI
 [10.5281/zenodo.22321312](https://doi.org/10.5281/zenodo.22321312), which
 always resolves to the latest version.
 
+## 0.19.2 — 2026-10-24
+
+**Packaging.** The release workflow makes the GitHub Release itself, with
+the version's section of this file as its text, and only after PyPI has
+the version (DECISIONS.md section 51). Zenodo archives the Release, so a
+version can no longer reach Zenodo without reaching PyPI, as 0.19.0 did.
+The workflow is run from the Actions tab on main, takes the version from
+`pyproject.toml` and makes the tag; pushing a tag still runs it, and a
+Release that already exists is left as it is. `tools/release_notes.py`
+prints the text, and a version with no section here stops the run before
+anything is uploaded. Nothing in the package, the data or the examples
+changed.
+
 ## 0.19.1 — 2026-10-24
 
 **Packaging.** 0.19.0 did not reach PyPI. The release workflow runs the
