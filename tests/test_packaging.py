@@ -346,6 +346,24 @@ def test_CI_runs_the_examples_with_provenance_warnings_as_errors():
 
 
 @source_tree
+def test_CI_runs_the_examples_on_the_versions_it_tests():
+    """The examples run in a job of their own beside the tests (DECISIONS.md
+    section 49); it must cover the same Python and numpy versions."""
+    ci = (ROOT / ".github" / "workflows" / "test.yml").read_text()
+
+    def matrix(job):
+        block = ci.split(f"\n  {job}:\n", 1)[1].split("\n  lint:", 1)[0]
+        block = block.split("\n    steps:", 1)[0]
+        return (re.findall(r"python-version: \[(.+?)\]", block),
+                re.findall(r'^ +- python-version: "(.+?)"\n +numpy: "(.+?)"',
+                           block, re.M))
+    tests, examples = matrix("test"), matrix("examples")
+    assert tests == examples and tests[0] and tests[1], (tests, examples)
+    assert "python -m pytest" not in ci.split("\n  examples:\n", 1)[1]
+    assert "examples/*.py" not in ci.split("\n  examples:\n", 1)[0]
+
+
+@source_tree
 def test_the_python_classifiers_are_the_versions_CI_runs():
     """PyPI shows these. A version listed but never tested is a claim, as
     section 15 of DECISIONS.md found for numpy; one tested but not listed

@@ -1480,3 +1480,23 @@ all rise, but not every atmosphere brings them within 0.8 to 1.25. The
 sky that comes closest below 2.84 m lowers the model too far near the
 surface, where at 0.86 m the measurement becomes 1.75 to 1.87 times it, so
 no one uniform sky fits every depth.
+
+## 49. The examples run beside the tests in CI
+
+In 0.18.2's CI each test job ran the tests, about 4.5 to 7.75 minutes,
+and then the examples, about 1.5 to 2.75; the slowest job (Python 3.10
+with numpy 1.22) took about 10.75 minutes, and the run waits for the
+slowest job. The examples now run in a job of their own, on the same
+versions and with the same commands, which starts with the tests instead
+of after them. Every check that ran before still runs, on every version;
+a failure in either job fails the run as before. The run should take the
+length of the tests, about 8 minutes. A test checks that the two jobs
+cover the same versions.
+
+**Rejected:** running the tests in parallel processes (pytest-xdist),
+which might save a minute or two more but adds a dependency and changes
+how the tests run, for which they would first have to be shown safe;
+running the slow examples on fewer versions, which removes checks and
+barely shortens a run whose jobs already run at the same time; and a
+coarser grid or cached results in `wave_focusing.py`, which would change
+or stop checking the numbers its documentation quotes.

@@ -44,6 +44,12 @@ surface (1.16-1.87 down to 2.84 m): the sky accounts for part of the
 shortfall, and no one uniform sky fits every depth. Section 45's model
 without a sky is printed as before.
 
+**CI.** The examples run in a job of their own, beside the tests rather
+than after them, on the same versions and with the same commands
+(DECISIONS.md section 49): every check still runs, and a run should take
+about 8 minutes rather than 11. A test checks that the two jobs cover the
+same versions.
+
 **Docs.** DATA.md section 25: how they were read, and where the text and
 the figures differ. Figure 14's text gives its two Tmax curves the
 opposite skies from the figure's own labels and caption; the values follow
