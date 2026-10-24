@@ -4,6 +4,29 @@ Every release is archived on Zenodo under the concept DOI
 [10.5281/zenodo.22321312](https://doi.org/10.5281/zenodo.22321312), which
 always resolves to the latest version.
 
+## 0.19.0 — 2026-10-24
+
+The rest of Gernez & Antoine's (2009) figures that carry measurements. No
+shipped value changed; two data files are added.
+
+**Added.**
+
+- `gernez2009_cv_by(variable, sky=..., irradiance=...)`: besides the clear
+  sky and Ed of Figure 8, the overcast subset (Figure 7) and the upwelling
+  irradiance Eu under clear skies (Figure 13), each against the sun's
+  zenith angle, the wave height, the wind speed and Kd(490).
+  `GERNEZ2009_PLOTS` gives the variables for each. `ConditionFluctuation`
+  carries the figure and the irradiance.
+- `gernez2009_spectral_cv(irradiance)`: the average CV and period of the
+  strongest fluctuation at 412 to 683 nm under clear and overcast skies, of
+  Ed at the upper depth (Figure 11) or Eu at the lower, 8 to 8.7 m (Figure
+  14), as a `SkySpectralFluctuation`.
+
+**Docs.** DATA.md section 25: how they were read, and where the text and
+the figures differ. Figure 14's text gives its two Tmax curves the
+opposite skies from the figure's own labels and caption; the values follow
+the figure.
+
 ## 0.18.2 — 2026-10-23
 
 **Packaging.** CI ran `wave_focusing.py` twice in every job, once in the

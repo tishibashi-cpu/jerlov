@@ -224,3 +224,354 @@ with path.open("w", newline="", encoding="utf-8") as handle:
                          "read_from_figure", NOTE])
 report(path.name, len(conditions))
 
+
+
+# -- Figures 7 and 13 -------------------------------------------------------------
+# As Figure 8, for the overcast subset at the upper depth (Figure 7, page 8
+# of 15, an 876 by 782 pixel image) and for the upward irradiance under clear
+# skies at the upper depth (Figure 13, page 12, 877 by 785). Both have four
+# panels, against the sun's zenith angle, the wave height, the wind speed
+# itself (not its square root) and Kd(490); CV is 0-8 percent on the left,
+# Tmax 0-4 s (Figure 7) or 0-8 s (Figure 13) on the right. The symbols are
+# the medians ("As in Figure 8", whose caption refers to Figure 7's).
+#
+# Figure 7's circles and squares are filled. The circle's centre is the
+# midpoint of its top and bottom edges two pixels either side of the bar,
+# and the square's that of its top and bottom edges. Figure 13's are open:
+# the circle's centre is the midpoint of its outline two pixels either side
+# of the bar, and the square's that of its top and bottom edges, found by
+# matching an outline 7 to 9 pixels across. Where an edge was not clear the
+# rows were read from the pixels by eye, to a pixel. The CV bars are solid
+# and read as in Figure 8; Tmax's are dashed and not read.
+
+def ticks(px, first, step):
+    return list(px), [first + k * step for k in range(len(px))]
+
+
+FIG7_X = {
+    "sun_zenith_deg": ticks([72.0, 113.0, 154.0, 195.0, 236.0, 277.0,
+                             318.0, 359.0], 20, 10),
+    "wave_height_m": ticks([525.0, 584.56, 644.0, 703.0, 762.53, 822.0],
+                           0.0, 0.5),
+    "wind_m_s": ticks([54.0, 84.51, 115.0, 145.54, 176.0, 207.0, 237.0,
+                       268.0, 298.0, 329.0, 359.0], 0, 1),
+    "kd490_per_m": ticks([513.4, 616.0, 719.0], 0.0, 0.05),
+}
+FIG7_Y = {"upper_cv": ticks([317.0, 240.0, 163.0, 86.0, 9.0], 0, 2),
+          "upper_tmax": ticks([317.0, 240.0, 163.0, 86.0, 9.0], 0, 1),
+          "lower_cv": ticks([723.0, 646.0, 569.0, 492.0, 415.0], 0, 2),
+          "lower_tmax": ticks([723.0, 646.0, 569.0, 492.0, 415.0], 0, 1)}
+FIG13_X = {
+    "sun_zenith_deg": ticks([70.0, 111.0, 152.0, 193.54, 235.0, 276.0,
+                             317.0, 358.0], 20, 10),
+    "wave_height_m": ticks([525.0, 584.0, 644.0, 703.0, 762.44, 822.0],
+                           0.0, 0.5),
+    "wind_m_s": ticks([52.5, 83.0, 114.0, 144.0, 175.0, 205.0, 236.0,
+                       266.42, 297.0, 328.0, 358.0], 0, 1),
+    "kd490_per_m": ticks([523.0, 622.0, 722.0], 0.0, 0.05),
+}
+FIG13_Y = {"upper_cv": ticks([318.0, 279.0, 240.0, 202.0, 163.0, 124.0,
+                              86.0, 47.0, 9.0], 0, 1),
+           "lower_cv": ticks([726.0, 687.0, 649.0, 610.0, 571.0, 533.0,
+                              494.0, 456.0, 417.0], 0, 1)}
+FIG13_Y["upper_tmax"] = FIG13_Y["upper_cv"]
+FIG13_Y["lower_tmax"] = FIG13_Y["lower_cv"]
+PANEL_ROW = {"sun_zenith_deg": "upper", "wave_height_m": "upper",
+             "wind_m_s": "lower", "kd490_per_m": "lower"}
+CLASS = {"sun_zenith_deg": (20, 5), "wave_height_m": (0.0, 0.25),
+         "wind_m_s": (0, 1), "kd490_per_m": (0.025, 0.01)}
+
+# (column of the CV bar, its first and last dark row, row of the circle's
+#  centre, row of the square's centre). None where the bar's midpoint is
+#  not at the circle (see below).
+FIG7 = {
+    "sun_zenith_deg": [
+        (71, 175, 215, 195, 128), (92, 165, 214, 189, 124),
+        (113, 171, 219, 195, 131), (133, 172, 215, 194, 123),
+        (154, 167, 209, 188, 123), (174, 168, 215, 191.25, 116.5),
+        (195, 163, 208, 185.25, 110), (215, 160, 208, 184, 113),
+        (236, 165, 213, 189, 113), (257, 159, 205, 182, 107),
+        (277, 160, 209, 185, 106.5), (298, 170, 216, 193, 113),
+        (318, 161, 206, 183, 105), (339, 147, 187, 167, 98)],
+    "wave_height_m": [
+        (525, 239, 282, 260, 136), (555, 211, 254, 232.25, 125.5),
+        (585, 184, 218, 201.5, 116), (614, 172, 204, 188, 110),
+        (644, 160, 191, 176, 110), (674, 143, 171, 157.5, 107),
+        (703, 136, 166, 151, 88), (733, 120, 151, 135, 73),
+        (763, 109, 136, 122.5, 66), (792, 99, 125, 112, 60)],
+    "wind_m_s": [
+        (54, 616, 653, 634, 520), (84, 602, 647, 624.75, 526),
+        (115, 589, 636, 612, 526), (146, 592, 633, 613, 526),
+        (176, 584, 621, 602.5, 529), (207, 570, 610, 589.75, 518),
+        (237, 566, 601, 583.25, 520), (268, 570, 608, 589.25, 520),
+        (298, 556, 589, 573, 513), (329, 549, 583, 566.75, 510)],
+    "kd490_per_m": [
+        (565, 585, 628, 606, 526), (585, 573, 618, 595, 523),
+        (606, 576, 620, 598, 517), (626, 562, 608, 585, 517),
+        (647, 566, 609, 587, 517), (668, 572, 614, 593, 513),
+        (688, 556, 606, 581.5, 517), (709, 576, 623, 600, 526),
+        (729, 582, 635, 608.5, 538), (750, 570, 614, 592, 540),
+        (770, 587, 636, 611.75, 538), (791, 579, 636, 607.5, 523),
+        (811, 643, 683, 663, 540)],
+}
+# In Figure 13a at 85 degrees the bar runs from row 140, above the square,
+# to the axis, and its midpoint is 13 pixels below the circle; at Kd 0.035
+# the bar is faint and its midpoint 2 pixels from the circle. Their
+# standard deviations are not read. At 1.75 m the circle's lower edge runs
+# into the S of the panel's "SUN"; the bar's midpoint is at the circle.
+FIG13 = {
+    "sun_zenith_deg": [
+        (70, 266, 297, 281.75, 194.5), (91, 261, 294, 277.5, 186.5),
+        (111, 253, 292, 272.5, 180.5), (132, 245, 300, 272.5, 186.5),
+        (152, 245, 289, 267, 180.5), (173, 243, 282, 262.5, 183.5),
+        (194, 224, 293, 258.5, 174.5), (214, 230, 283, 256.5, 174.5),
+        (235, 223, 270, 246.5, 168.5), (255, 210, 263, 236.5, 160.5),
+        (276, 205, 263, 233.5, 160.5), (296, 186, 260, 223, 156.5),
+        (317, 168, 260, 213.5, 148.5), (338, None, None, 215.5, 152.5)],
+    "wave_height_m": [
+        (525, 263, 311, 286.75, 208.5), (554, 256, 300, 278.5, 200.5),
+        (584, 241, 285, 262.5, 178), (614, 214, 277, 245.5, 156.5),
+        (644, 206, 247, 226.5, 139.5), (673, 181, 234, 207.5, 128.5),
+        (703, 176, 225, 200.5, 110.5), (733, 118, 291, 204.5, 92.5),
+        (762, 131, 222, 176, 88.5), (792, 133, 216, 174.5, 103.5)],
+    "wind_m_s": [
+        (52, 660, 710, 685.25, 586.5), (83, 659, 703, 681.25, 583.5),
+        (114, 650, 705, 677.5, 578.5), (144, 650, 696, 673.25, 591.5),
+        (175, 639, 688, 662.75, 593.5), (205, 620, 695, 657.5, 597.5),
+        (236, 626, 684, 654.5, 591.5), (266, 631, 676, 653, 589),
+        (297, 620, 668, 644.25, 572.5), (328, 568, 689, 628.5, 552.5)],
+    "kd490_per_m": [
+        (573, 667, 711, 689, 604.5), (593, None, None, 681.5, 594.5),
+        (612, 644, 696, 669.75, 586.5), (632, 624, 691, 657.5, 576.5),
+        (652, 626, 690, 658, 572.5), (672, 619, 696, 657.5, 569),
+        (692, 638, 687, 662.5, 565.5), (712, 640, 687, 663.5, 569),
+        (732, 639, 686, 662.5, 554.5), (752, 626, 680, 653.5, 565.5),
+        (772, 632, 683, 657.5, 569.5), (792, 613, 678, 645.5, 542.5),
+        (812, 608, 683, 645.5, 515.5)],
+}
+
+
+def read_panels(points, x_ticks, y_ticks, name):
+    lines = {k: calibrate(*v) for k, v in y_ticks.items()}
+    for key, (_, err) in lines.items():
+        assert err < 0.02 * y_ticks[key][1][-1], (name, key, err)
+    out = []
+    for variable, pts in points.items():
+        x_of, x_err = calibrate(*x_ticks[variable])
+        assert x_err < 0.01 * x_ticks[variable][1][-1], (name, variable)
+        first, step = CLASS[variable]
+        row = PANEL_ROW[variable]
+        cv_line, t_line = lines[row + "_cv"][0], lines[row + "_tmax"][0]
+        per_px = abs(cv_line(1.0) - cv_line(0.0))
+        t_px = abs(t_line(1.0) - t_line(0.0))
+        for k, (column, top, bottom, circle, square) in enumerate(pts):
+            x = round(first + k * step, 3)
+            assert abs(x_of(column) - x) < 0.2 * step, (name, variable, k)
+            sd = None
+            if top is not None and abs(0.5 * (top + bottom) - circle) <= 1.5:
+                sd = 0.5 * (bottom - top) * per_px
+            out.append((variable, x, cv_line(circle), sd, per_px,
+                        t_line(square), t_px))
+    return out
+
+
+fig7 = read_panels(FIG7, FIG7_X, FIG7_Y, "Figure 7")
+fig13 = read_panels(FIG13, FIG13_X, FIG13_Y, "Figure 13")
+
+
+def series(rows, variable, k):
+    return [r[k] for r in rows if r[0] == variable]
+
+
+# Figure 7: "CV is low (steadily around 3%) and nearly independent of the
+# sun altitude (Figure 7a) or the water clarity (Figure 7d)", "CV and Tmax
+# regularly and slightly increasing with the wave height (Figure 7b), and,
+# to a lesser extent, with the wind speed (Figure 7c). The average Tmax is
+# of about 2.5s" (p. 7). Kd's last class, read at 1.6 percent, is the
+# exception to "steadily around 3%": DATA.md section 25.
+assert all(2.5 <= c <= 4.0 for c in series(fig7, "sun_zenith_deg", 2))
+assert all(2.5 <= c <= 4.0 for c in series(fig7, "kd490_per_m", 2)[:-1])
+for v in ("wave_height_m", "wind_m_s"):
+    for k in (2, 5):
+        s = series(fig7, v, k)
+        assert s[-1] > s[0], (v, k, s)
+cv = series(fig7, "wave_height_m", 2)
+assert cv == sorted(cv), cv
+t7 = [r[5] for r in fig7]
+assert 2.3 <= sum(t7) / len(t7) <= 2.8, sum(t7) / len(t7)
+# Figure 13: "as qs increases, CV increases from 1 to 3% and Tmax goes from
+# 3.5 to 4.5s (Figure 13a)" (p. 10); the figure's Tmax is 3.2 s at 20
+# degrees and 4.3 at 85: DATA.md section 25.
+cv = series(fig13, "sun_zenith_deg", 2)
+assert round(cv[0]) == 1 and round(cv[-1]) == 3, cv
+t = series(fig13, "sun_zenith_deg", 5)
+assert 3.0 <= t[0] <= 3.5 and 4.2 <= t[-1] <= 4.6, t
+# "Larger changes ... with the wave height (Figure 13b)", and "both
+# parameters increase when the water gets less clear (Figure 13d)".
+for k in (2, 5):
+    w = series(fig13, "wave_height_m", k)
+    assert max(w) - min(w) > max(series(fig13, "wind_m_s", k)) \
+        - min(series(fig13, "wind_m_s", k)), k
+    d = series(fig13, "kd490_per_m", k)
+    assert d[-1] > d[0], (k, d)
+
+path = DATA_DIR / "gernez2009_more_conditions.csv"
+with path.open("w", newline="", encoding="utf-8") as handle:
+    writer = csv.writer(handle)
+    writer.writerow(["figure", "sky", "irradiance", "variable", "x",
+                     "cv_percent", "cv_sd_percent", "cv_reading_percent",
+                     "tmax_s", "tmax_reading_s", "status", "note"])
+    for figure, sky, flux, rows_ in (("7", "overcast", "Ed", fig7),
+                                     ("13", "clear", "Eu", fig13)):
+        for variable, x, cv_, sd, per_px, tm, t_px in rows_:
+            writer.writerow([figure, sky, flux, variable, f"{x:g}",
+                             f"{cv_:.2f}", "" if sd is None else f"{sd:.2f}",
+                             f"{per_px:.3f}", f"{tm:.3f}", f"{t_px:.3f}",
+                             "read_from_figure", NOTE])
+report(path.name, len(fig7) + len(fig13))
+
+
+# -- Figures 11 and 14 -----------------------------------------------------------
+# The average CV and Tmax against wavelength, for the clear (open symbols,
+# solid lines and bars) and overcast (filled, dotted) subsets: Figure 11 of
+# the downwelling irradiance at the upper depth (page 11, 877 by 389
+# pixels), Figure 14 of the upward irradiance at the lower depth, 8 to
+# 8.7 m (page 13, 877 by 402). The captions say "average", not median.
+# Clear-sky symbols and bars are read as in Figure 13; the overcast
+# symbols as in Figure 7. The overcast bars are dotted, a dot every four
+# pixels, and are not read. In Figure 11b the clear-sky bars at 665 and
+# 683 nm run past the axis at 0 s; the standard deviation is read from the
+# upper end, the bars being drawn the same length either side. In Figure
+# 14 the overcast symbols are drawn 5 nm to the right of their band.
+
+FIG11_X = {"a": ticks([59.0, 112.0, 166.0, 219.0, 273.0, 326.0, 380.0],
+                      400, 50),
+           "b": ticks([541.0, 594.0, 647.51, 701.0, 754.52, 808.0, 861.57],
+                      400, 50)}
+FIG11_Y = {"a": ticks([330.0, 250.0, 169.0, 89.0, 9.0], 0, 10),
+           "b": ticks([330.0, 290.0, 250.0, 210.0, 169.0, 129.0, 89.0, 49.0,
+                       9.0], 0, 1)}
+FIG14_X = {"a": ticks([60.5, 116.0, 171.0, 226.49, 282.0, 337.0, 393.0],
+                      400, 50),
+           "b": ticks([529.0, 584.0, 639.45, 695.0, 750.0, 806.0, 861.0],
+                      400, 50)}
+FIG14_Y = {"a": ticks([341.0, 308.0, 275.0, 242.0, 208.44, 175.0, 142.0,
+                       109.0, 76.0, 42.42], 0, 1),
+           "b": ticks([341.0, 300.0, 258.0, 217.0, 175.0, 134.0, 92.0, 51.0],
+                      0, 1)}
+BANDS = (412, 442, 490, 510, 560, 665, 683)
+# band: ((clear: column, bar's first and last dark row, symbol's centre),
+#        (overcast: column, symbol's centre)), for panel a (CV) and b (Tmax).
+# A last row of None is a bar that runs past the axis.
+FIG11 = {
+    "a": {412: ((72, 176, 242, 209.25), (72, 304.5)),
+          442: ((104, 168, 240, 204.5), (104, 304.5)),
+          490: ((155, 144, 223, 183.5), (155, 303.5)),
+          510: ((177, 128, 215, 171.25), (177, 303.5)),
+          560: ((230, 122, 207, 164.5), (230, 303.5)),
+          665: ((342, 71, 173, 121.5), (343, 266.5)),
+          683: ((362, 65, 169, 117.0), (362, 259.75))},
+    "b": {412: ((553, 254, 300, 276.5), (554, 221.0)),
+          442: ((585, 248, 301, 274.5), (586, 224.5)),
+          490: ((637, 253, 300, 276.5), (637, 224.5)),
+          510: ((658, 256, 302, 278.5), (659, 224.5)),
+          560: ((712, 253, 303, 277.5), (712, 226.0)),
+          665: ((824, 190, None, 281.5), (824, 91.5)),
+          683: ((843, 187, None, 280.5), (843, 100.0))},
+}
+FIG14 = {
+    "a": {412: ((74, 266, 314, 290.0), (80, 283.5)),
+          442: ((107, 272, 311, 292.0), (113, 282.5)),
+          490: ((160, 280, 312, 296.0), (166, 288.5)),
+          510: ((182, 276, 309, 292.5), (189, 287.5)),
+          560: ((238, 257, 295, 276.0), (244, 272.0)),
+          665: ((354, 139, 194, 166.0), (360, 163.0)),
+          683: ((374, 161, 213, 187.0), (380, 195.0))},
+    "b": {412: ((542, 105, 194, 149.5), (548, 103.5)),
+          442: ((575, 125, 212, 168.5), (581, 103.0)),
+          490: ((628, 152, 237, 194.5), (634, 111.0)),
+          510: ((650, 161, 240, 200.0), (657, 111.0)),
+          560: ((706, 178, 258, 218.0), (712, 111.0)),
+          665: ((822, 215, 290, 252.5), (828, 257.0)),
+          683: ((842, 217, 271, 244.0), (848, 224.0))},
+}
+
+
+def read_bands(points, x_ticks, y_ticks, name, shift=0.0):
+    out = {}
+    for panel in ("a", "b"):
+        x_of, x_err = calibrate(*x_ticks[panel])
+        y_of, y_err = calibrate(*y_ticks[panel])
+        assert x_err < 1.0 and y_err < 0.01 * y_ticks[panel][1][-1], \
+            (name, panel, x_err, y_err)
+        per_px = abs(y_of(1.0) - y_of(0.0))
+        for band, ((col, top, bottom, centre), (col2, centre2)) \
+                in points[panel].items():
+            assert abs(x_of(col) - band) < 3, (name, panel, band)
+            assert abs(x_of(col2) - band - shift) < 3, (name, panel, band)
+            if bottom is None:
+                sd = (centre - top) * per_px
+            else:
+                assert abs(0.5 * (top + bottom) - centre) <= 1.0, \
+                    (name, panel, band)
+                sd = 0.5 * (bottom - top) * per_px
+            out.setdefault(band, {})[panel] = (y_of(centre), sd,
+                                               y_of(centre2), per_px)
+    return out
+
+
+fig11 = read_bands(FIG11, FIG11_X, FIG11_Y, "Figure 11")
+fig14 = read_bands(FIG14, FIG14_X, FIG14_Y, "Figure 14", shift=5.5)
+
+# Figure 11: "the average value of CV for clear skies steadily increases
+# from the blue (~15%) to the red (~25%), whereas it is slightly larger
+# only for the red bands in the case of overcast skies", "The average Tmax
+# period is spectrally flat for clear skies ..., whereas two distinct
+# regimes appear under overcast skies, with larger values (Tmax = 6s) for
+# the red bands" (p. 10).
+clear = [fig11[b]["a"][0] for b in BANDS]
+over = [fig11[b]["a"][2] for b in BANDS]
+assert round(clear[0]) == 15 and 25 <= clear[-1] <= 27, clear
+assert all(a < b for a, b in zip(clear, clear[1:])), clear
+assert max(over[:5]) - min(over[:5]) < 0.2 and min(over[5:]) > 2 * max(over[:5])
+t_clear = [fig11[b]["b"][0] for b in BANDS]
+t_over = [fig11[b]["b"][2] for b in BANDS]
+assert max(t_clear) - min(t_clear) < 0.25, t_clear
+assert all(round(t) == 6 for t in t_over[5:]), t_over
+# Figure 14: "The coefficient of variation is almost spectrally flat and
+# equal to about 2% for l < 600 nm, and then increases to about 6% in the
+# red"; the figure's largest is 5.4: DATA.md section 25. Tmax "monotonously
+# decreases from 5s (at 442 nm) to 2s (red bands)" on one curve and is
+# "constant for l < 600 nm" on the other (p. 10); the text gives these to
+# the opposite skies from the figure's labels and caption, which are
+# followed here: DATA.md section 25.
+for k in (0, 2):
+    cv14 = [fig14[b]["a"][k] for b in BANDS]
+    assert all(1.2 <= c <= 2.5 for c in cv14[:5]) and min(cv14[5:]) > 4, cv14
+    assert max(cv14) < 5.5, cv14
+t_clear = [fig14[b]["b"][0] for b in BANDS]
+t_over = [fig14[b]["b"][2] for b in BANDS]
+assert all(a > b for a, b in zip(t_clear[:6], t_clear[1:6])), t_clear
+assert 4 <= t_clear[1] <= 5 and all(2 <= t <= 2.5 for t in t_clear[5:])
+assert max(t_over[:5]) - min(t_over[:5]) < 0.3, t_over
+
+path = DATA_DIR / "gernez2009_spectral.csv"
+with path.open("w", newline="", encoding="utf-8") as handle:
+    writer = csv.writer(handle)
+    writer.writerow(["figure", "irradiance", "sky", "wavelength_nm",
+                     "cv_percent", "cv_sd_percent", "cv_reading_percent",
+                     "tmax_s", "tmax_sd_s", "tmax_reading_s", "status",
+                     "note"])
+    count = 0
+    for figure, flux, data in (("11", "Ed", fig11), ("14", "Eu", fig14)):
+        for sky in ("clear", "overcast"):
+            for band in BANDS:
+                a, b = data[band]["a"], data[band]["b"]
+                k = 0 if sky == "clear" else 2
+                sd_a = f"{a[1]:.2f}" if sky == "clear" else ""
+                sd_b = f"{b[1]:.3f}" if sky == "clear" else ""
+                writer.writerow([figure, flux, sky, band, f"{a[k]:.2f}",
+                                 sd_a, f"{a[3]:.3f}", f"{b[k]:.3f}", sd_b,
+                                 f"{b[3]:.3f}", "read_from_figure", NOTE])
+                count += 1
+report(path.name, count)

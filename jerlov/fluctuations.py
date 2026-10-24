@@ -33,6 +33,26 @@ GERNEZ2009_VARIABLES = ("wave_height_m", "sqrt_wind", "kd490_per_m")
 against: the wave height, m; the square root of the wind speed, the wind in
 m/s; and Kd at 490 nm, 1/m."""
 
+GERNEZ2009_PLOTS = {
+    ("clear", "Ed"): GERNEZ2009_VARIABLES,
+    ("overcast", "Ed"): ("sun_zenith_deg", "wave_height_m", "wind_m_s",
+                         "kd490_per_m"),
+    ("clear", "Eu"): ("sun_zenith_deg", "wave_height_m", "wind_m_s",
+                      "kd490_per_m"),
+}
+"""For each sky and irradiance that Gernez & Antoine (2009) plot against
+the conditions, what they plot them against: Figure 8b-d (clear sky,
+downwelling), Figure 7 (overcast, downwelling) and Figure 13 (clear sky,
+upwelling), all at the upper depth. ``wind_m_s`` is the wind speed itself,
+in m/s."""
+
+_FIGURE = {("clear", "Ed"): "8", ("overcast", "Ed"): "7",
+           ("clear", "Eu"): "13"}
+_SKY = {"clear": ("clear: above-water irradiance at least 0.85 of the "
+                  "clear-sky model"),
+        "overcast": ("overcast: above-water irradiance below 0.6 of the "
+                     "clear-sky model")}
+
 
 @dataclass(frozen=True, eq=False, repr=False)
 class IrradianceFluctuation:
@@ -161,15 +181,19 @@ class SpectralFluctuation:
 
 @dataclass(frozen=True, eq=False, repr=False)
 class ConditionFluctuation:
-    """One of Gernez & Antoine's (2009) Figures 8b to 8d: under clear
-    skies, the median coefficient of variation of the downwelling
-    irradiance at 510 nm, its standard deviation, and the median period of
-    the strongest fluctuation, against one of the conditions in
-    :data:`GERNEZ2009_VARIABLES`. Built by :func:`gernez2009_cv_by`."""
+    """One panel of Gernez & Antoine's (2009) Figures 7, 8 or 13: the
+    median coefficient of variation of the irradiance at 510 nm at the
+    upper depth, its standard deviation, and the median period of the
+    strongest fluctuation, against one of the conditions in
+    :data:`GERNEZ2009_PLOTS`. Built by :func:`gernez2009_cv_by`."""
 
     variable: str
     x: np.ndarray
     """The class, in the unit the variable's name gives."""
+    irradiance: str
+    """``"Ed"``, downwelling, or ``"Eu"``, upwelling."""
+    figure: str
+    """The paper's figure: ``"8"``, ``"7"`` or ``"13"``."""
     cv: np.ndarray
     cv_sd: np.ndarray
     """The standard deviation of CV among the minutes in each class; nan
@@ -186,8 +210,9 @@ class ConditionFluctuation:
                 "clear-sky model")
 
     def __repr__(self) -> str:
-        return (f"<ConditionFluctuation Gernez 2009 against "
-                f"{self.variable}, {self.x.size} classes>")
+        return (f"<ConditionFluctuation Gernez 2009 Figure {self.figure}, "
+                f"{self.irradiance} against {self.variable}, "
+                f"{self.x.size} classes>")
 
 
 def darecki2011_irradiance_cv() -> IrradianceFluctuation:
@@ -299,29 +324,116 @@ def darecki2011_spectral_cv() -> SpectralFluctuation:
         cv=_data._frozen(cv), days=tuple(days[w] for w in winds))
 
 
-def gernez2009_cv_by(variable: str) -> ConditionFluctuation:
-    """The coefficient of variation of the downwelling irradiance at 510 nm,
-    and the period of its strongest fluctuation, against the wave height,
-    the wind or Kd(490), under clear skies.
+def gernez2009_cv_by(variable: str, sky: str = "clear",
+                     irradiance: str = "Ed") -> ConditionFluctuation:
+    """The coefficient of variation of the irradiance at 510 nm at the upper
+    depth, and the period of its strongest fluctuation, against one of the
+    conditions: the wave height, the wind, Kd(490) or, for ``sky`` and
+    ``irradiance`` other than the defaults, the sun's zenith angle.
 
-    ``variable`` is one of :data:`GERNEZ2009_VARIABLES`. Gernez & Antoine
-    (2009), as for :func:`gernez2009_cv_by_sun_zenith`, Figures 8b-8d,
-    p. 9. Read off the figure's pixels: DATA.md section 25. The values are
-    the medians of each class; the period's standard deviation is not
-    read, and that of CV only where its bar is clear of the other series.
+    ``sky`` is ``"clear"`` or ``"overcast"`` and ``irradiance`` ``"Ed"`` or
+    ``"Eu"``; :data:`GERNEZ2009_PLOTS` gives the variables for each pair
+    the paper plots. Gernez & Antoine (2009), as for
+    :func:`gernez2009_cv_by_sun_zenith`: Figures 8b-8d (clear, Ed, p. 9), 7
+    (overcast, Ed, p. 8) and 13 (clear, Eu, p. 12). Read off the figures'
+    pixels: DATA.md section 25. The values are the medians of each class;
+    the period's standard deviation is not read, and that of CV only where
+    its bar is clear.
     """
-    if variable not in GERNEZ2009_VARIABLES:
-        raise KeyError(f"Figure 8 is not plotted against {variable!r} "
-                       f"(known: {', '.join(GERNEZ2009_VARIABLES)})")
-    rows = [r for r in _data._rows("gernez2009_conditions.csv")
-            if r["variable"] == variable]
+    key = (sky, irradiance)
+    if key not in GERNEZ2009_PLOTS:
+        known = ", ".join(f"{a}/{b}" for a, b in GERNEZ2009_PLOTS)
+        raise KeyError(f"the paper plots no {irradiance} under a {sky} sky "
+                       f"against the conditions (known: {known})")
+    if variable not in GERNEZ2009_PLOTS[key]:
+        raise KeyError(f"Figure {_FIGURE[key]} is not plotted against "
+                       f"{variable!r} (known: "
+                       f"{', '.join(GERNEZ2009_PLOTS[key])})")
+    if key == ("clear", "Ed"):
+        rows = [r for r in _data._rows("gernez2009_conditions.csv")
+                if r["variable"] == variable]
+    else:
+        rows = [r for r in _data._rows("gernez2009_more_conditions.csv")
+                if r["figure"] == _FIGURE[key] and r["variable"] == variable]
 
     def column(name, scale=1.0):
         return _data._frozen(np.array(
             [float(r[name]) * scale if r[name] else np.nan for r in rows]))
 
     return ConditionFluctuation(
-        variable=variable, x=column("x"), cv=column("cv_percent", 0.01),
+        variable=variable, x=column("x"), irradiance=irradiance,
+        figure=_FIGURE[key], cv=column("cv_percent", 0.01),
         cv_sd=column("cv_sd_percent", 0.01), tmax_s=column("tmax_s"),
         tmax_reading_s=column("tmax_reading_s"),
-        cv_reading=float(rows[0]["cv_reading_percent"]) / 100)
+        cv_reading=float(rows[0]["cv_reading_percent"]) / 100,
+        sky=_SKY[sky])
+
+
+@dataclass(frozen=True, eq=False, repr=False)
+class SkySpectralFluctuation:
+    """Gernez & Antoine's (2009) Figure 11 (downwelling irradiance, upper
+    depth) or 14 (upwelling, lower depth): the average coefficient of
+    variation and period of the strongest fluctuation at seven wavelengths,
+    under clear and overcast skies. Built by :func:`gernez2009_spectral_cv`;
+    ``cv[i, j]`` is for ``skies[i]`` at ``wavelengths_nm[j]``."""
+
+    irradiance: str
+    figure: str
+    wavelengths_nm: np.ndarray
+    cv: np.ndarray
+    cv_sd: np.ndarray
+    """The standard deviation among the minutes; nan for the overcast sky,
+    whose dotted bars are not read."""
+    tmax_s: np.ndarray
+    tmax_sd_s: np.ndarray
+    cv_reading: float
+    tmax_reading_s: float
+    depth_m: tuple[float, float]
+    skies: tuple[str, str] = ("clear", "overcast")
+    place: str = "BOUSSOLE buoy, Ligurian Sea"
+    collector_mm: float = 8.0
+    sampling_hz: float = 6.0
+
+    def __repr__(self) -> str:
+        return (f"<SkySpectralFluctuation Gernez 2009 Figure {self.figure}, "
+                f"{self.irradiance}, {self.wavelengths_nm[0]:g}-"
+                f"{self.wavelengths_nm[-1]:g} nm>")
+
+
+def gernez2009_spectral_cv(irradiance: str = "Ed") -> SkySpectralFluctuation:
+    """The average coefficient of variation and period of the strongest
+    fluctuation at 412 to 683 nm, under clear and overcast skies: of the
+    downwelling irradiance at the upper depth (``"Ed"``, Figure 11, p. 11)
+    or of the upwelling at the lower depth, 8 to 8.7 m (``"Eu"``, Figure 14,
+    p. 13).
+
+    Gernez & Antoine (2009), as for :func:`gernez2009_cv_by_sun_zenith`.
+    Read off the figures' pixels: DATA.md section 25. The captions call
+    these averages, not medians. The overcast standard deviations are
+    drawn dotted and not read.
+    """
+    figure = {"Ed": "11", "Eu": "14"}.get(irradiance)
+    if figure is None:
+        raise KeyError(f"no spectral figure for {irradiance!r} "
+                       f"(known: Ed, Eu)")
+    rows = [r for r in _data._rows("gernez2009_spectral.csv")
+            if r["figure"] == figure]
+    wls = sorted({float(r["wavelength_nm"]) for r in rows})
+    skies = ("clear", "overcast")
+
+    def grid(name, scale=1.0):
+        out = np.full((2, len(wls)), np.nan)
+        for r in rows:
+            if r[name]:
+                out[skies.index(r["sky"]), wls.index(float(
+                    r["wavelength_nm"]))] = float(r[name]) * scale
+        return _data._frozen(out)
+
+    return SkySpectralFluctuation(
+        irradiance=irradiance, figure=figure,
+        wavelengths_nm=_data._frozen(np.array(wls)),
+        cv=grid("cv_percent", 0.01), cv_sd=grid("cv_sd_percent", 0.01),
+        tmax_s=grid("tmax_s"), tmax_sd_s=grid("tmax_sd_s"),
+        cv_reading=float(rows[0]["cv_reading_percent"]) / 100,
+        tmax_reading_s=float(rows[0]["tmax_reading_s"]),
+        depth_m=(2.7, 3.7) if irradiance == "Ed" else (8.0, 8.7))
