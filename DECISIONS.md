@@ -1515,3 +1515,35 @@ on every version. It takes a few seconds.
 **Rejected:** a test that inspects the other tests for the mark, which
 would have to guess from their fixtures what touches the source tree;
 running the copy is the check itself.
+
+## 51. The release workflow makes the GitHub Release
+
+Until 0.19.2 a release was made by hand: the GitHub Release was published
+with a new tag, its text written each time from CHANGELOG.md, and the tag
+started the workflow that uploads to PyPI. Zenodo archives the Release
+when it is published, before the upload has run, so when the upload
+stopped at 0.19.0 that version was on Zenodo and not on PyPI. And the text
+was written twice, once in CHANGELOG.md and once for the Release.
+
+**Now.** The workflow is run by hand from the Actions tab, on main. It
+takes the version from `pyproject.toml`, stops if that version is tagged
+already, builds and tests as before, uploads to PyPI, and only then makes
+the tag and the Release, whose text `tools/release_notes.py` takes from
+the version's section of CHANGELOG.md. A version with no section stops it
+before anything is uploaded. The text joins CHANGELOG.md's wrapped lines,
+since GitHub shows each line break in a Release as a break. Pushing a tag
+by hand still runs the workflow, and then a Release that already exists
+for the tag is left as it is, so the old way still works.
+
+**Not yet seen.** The Release is made with the workflow's own token.
+GitHub does not start other workflows for what that token does, but it
+does send the repository's webhooks, through which Zenodo learns of a
+Release; the first release made this way will show whether Zenodo
+archives it. If it does not, the Release can be republished by hand, and
+this section will be followed by one saying so.
+
+**Rejected:** writing the Release's text by hand as before, which is the
+duplication this removes; making the Release first and uploading after,
+the order that let 0.19.0 reach Zenodo alone; and a separate workflow that
+only makes the tag, since a tag pushed with the workflow token would not
+start the upload.

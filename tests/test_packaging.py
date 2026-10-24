@@ -455,3 +455,56 @@ def test_publishing_checks_the_tag_and_runs_the_suite_on_the_wheel():
         "publish.yml no longer compares the tag with the version")
     assert "pytest wheel-tests" in workflow, (
         "publish.yml no longer runs the tests against the installed wheel")
+
+
+def _release_notes_module():
+    import importlib.util
+    spec = importlib.util.spec_from_file_location(
+        "release_notes", ROOT / "tools" / "release_notes.py")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+@source_tree
+def test_every_version_in_the_changelog_makes_release_notes():
+    """The release workflow takes the Release's text from CHANGELOG.md
+    (DECISIONS.md section 51): every section must give some, under a
+    heading naming the version, one line per paragraph or list item."""
+    notes = _release_notes_module()
+    changelog = (ROOT / "CHANGELOG.md").read_text(encoding="utf-8")
+    versions = re.findall(r"^## (\d+\.\d+\.\d+) — ", changelog, re.M)
+    assert jerlov.__version__ in versions
+    for version in versions:
+        text = notes.release_notes(version, changelog)
+        assert text.startswith(f"## jerlov {version}\n\n"), version
+        assert "\n## " not in text[3:], version
+        body = text.split("\n\n", 1)[1].strip()
+        assert body, version
+    wrapped = notes.unwrap("one\ntwo\n\n- a\n  b\n  - c\n    d\n\n**E.** e\nf")
+    assert wrapped == "one two\n\n- a b\n  - c d\n\n**E.** e f"
+
+
+@source_tree
+def test_release_notes_refuse_a_version_without_a_section():
+    notes = _release_notes_module()
+    with pytest.raises(ValueError, match="no section for 9.9.9"):
+        notes.release_notes("9.9.9", "## 1.0.0 — 2026-01-01\n\ntext\n")
+    with pytest.raises(ValueError, match="empty"):
+        notes.release_notes("1.0.0", "## 1.0.0 — 2026-01-01\n\n## 0.9.0 — "
+                                     "2025-01-01\n\ntext\n")
+
+
+@source_tree
+def test_the_release_comes_after_pypi_and_its_text_is_not_uploaded():
+    """Zenodo archives the GitHub Release, so the workflow makes it only
+    once PyPI has the version (0.19.0 reached Zenodo and not PyPI), and the
+    notes stay out of dist/, which is what PyPI receives."""
+    workflow = (ROOT / ".github" / "workflows" / "publish.yml").read_text()
+    release = workflow.split("\n  release:\n", 1)[1]
+    assert re.search(r"needs: \[build, publish\]", release)
+    assert "gh release create" in release
+    assert "gh release create" not in workflow.split("\n  release:\n", 1)[0]
+    assert "release-notes.md" not in re.sub(r"notes/release-notes\.md", "",
+                                            workflow)
+    assert "tools/release_notes.py" in workflow.split("\n  publish:\n")[0]
