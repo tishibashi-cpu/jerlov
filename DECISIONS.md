@@ -1500,3 +1500,18 @@ running the slow examples on fewer versions, which removes checks and
 barely shortens a run whose jobs already run at the same time; and a
 coarser grid or cached results in `wave_focusing.py`, which would change
 or stop checking the numbers its documentation quotes.
+
+## 50. The tests run away from the source tree in CI too
+
+The release workflow runs the tests against the installed wheel from a
+copy of `tests/` with nothing beside it, and the tests that need the
+source tree (the examples, the README) are marked to skip there. Until
+0.19.1 nothing else ran that copy, so a test that needed the source tree
+but was not marked passed every CI run and failed only at the tag: two
+tests added in 0.19.0 did, and 0.19.0 never reached PyPI. CI's test job
+now runs the same copy, with the same command, after the ordinary run,
+on every version. It takes a few seconds.
+
+**Rejected:** a test that inspects the other tests for the mark, which
+would have to guess from their fixtures what touches the source tree;
+running the copy is the check itself.

@@ -4,6 +4,18 @@ Every release is archived on Zenodo under the concept DOI
 [10.5281/zenodo.22321312](https://doi.org/10.5281/zenodo.22321312), which
 always resolves to the latest version.
 
+## 0.19.1 — 2026-10-24
+
+**Packaging.** 0.19.0 did not reach PyPI. The release workflow runs the
+tests against the installed wheel, from a copy of `tests/` away from the
+source tree, where the tests that need the examples are skipped. Two tests
+added in 0.19.0 for `wave_focusing.py`'s sky needed the example but were
+not marked as needing the source tree, so they failed there and the
+upload never ran. They are marked now. CI's test job now also runs the
+tests from such a copy on every push, so that this is found before a tag
+rather than at it. Nothing in the package, the data or the examples
+changed from 0.19.0; its tag stays, and it is not on PyPI.
+
 ## 0.19.0 — 2026-10-24
 
 The rest of Gernez & Antoine's (2009) figures that carry measurements, and

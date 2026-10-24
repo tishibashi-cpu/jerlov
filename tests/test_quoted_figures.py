@@ -1279,6 +1279,7 @@ def test_the_waves_shifts_add_up_to_ed(waves_module):
     assert abs(np.average(dy, weights=w)) < 0.01
 
 
+@source_tree
 def test_the_sky_share_by_hand(waves_module):
     """Gregg and Carder (1990) with only Rayleigh scattering: no aerosol
     leaves the diffuse share 0.5 (1 - Tr^0.95) / (Tr + that)."""
@@ -1350,6 +1351,7 @@ def test_figures_for_the_waves_example(waves_example):
         assert np.all(np.abs(share - 1) <= 0.05)
 
 
+@source_tree
 def test_the_sky_for_the_waves_example(waves_example):
     """Section 48 and CHANGELOG 0.19.0: Gregg and Carder with Gernez's
     settings passes its check, 21.3 percent at 560 nm with the sun at 20
