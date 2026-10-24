@@ -325,6 +325,10 @@ jerlov.darecki2011_radiance_cv("a")    # CV of radiance, 13 angles in the sun's 
 jerlov.gernez2009_cv_by_sun_zenith()   # CV of Ed at 510 nm against the sun's zenith angle
 jerlov.darecki2011_spectral_cv()       # CV of Ed at 410-670 nm on five days of wind
 jerlov.gernez2009_cv_by("kd490_per_m") # ... against wave height, wind or Kd(490)
+jerlov.gernez2009_cv_by("wind_m_s", sky="overcast")    # overcast; or irradiance="Eu"
+jerlov.gernez2009_spectral_cv("Eu")    # CV of Eu at 412-683 nm, clear and overcast
+jerlov.gernez2009_band_cv("wind_m_s")  # CV of Ed at six bands against the conditions
+jerlov.gernez2009_diffuse_share()      # the sky's share of the light, as printed
 ```
 
 They carry `status = read_from_figure`. The package does not model the

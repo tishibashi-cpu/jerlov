@@ -1279,6 +1279,22 @@ def test_the_waves_shifts_add_up_to_ed(waves_module):
     assert abs(np.average(dy, weights=w)) < 0.01
 
 
+def test_the_sky_share_by_hand(waves_module):
+    """Gregg and Carder (1990) with only Rayleigh scattering: no aerosol
+    leaves the diffuse share 0.5 (1 - Tr^0.95) / (Tr + that)."""
+    m = waves_module
+    lam, zenith = 0.5, 40.0
+    mass = 1 / (np.cos(np.radians(zenith))
+                + 0.15 * (93.885 - zenith) ** -1.253)
+    t_r = np.exp(-mass / (115.6406 * lam ** 4 - 1.335 * lam ** 2))
+    diffuse = 0.5 * (1 - t_r ** 0.95)
+    assert np.isclose(m["sky_share"](500.0, zenith, 0.0, 1),
+                      diffuse / (t_r + diffuse), rtol=1e-12)
+    assert m["sky_share"](443.0, 30.0, 0.4, 1) \
+        > m["sky_share"](443.0, 30.0, 0.1, 1) \
+        > m["sky_share"](670.0, 30.0, 0.1, 1)
+
+
 @pytest.fixture(scope="module")
 def waves_example(waves_module):
     """examples/wave_focusing.py, run once. About ten minutes.
@@ -1332,6 +1348,39 @@ def test_figures_for_the_waves_example(waves_example):
     for value in r["sizes"].values():
         share = value / r["cv"]["even"][5.5]
         assert np.all(np.abs(share - 1) <= 0.05)
+
+
+def test_the_sky_for_the_waves_example(waves_example):
+    """Section 48 and CHANGELOG 0.19.0: Gregg and Carder with Gernez's
+    settings passes its check, 21.3 percent at 560 nm with the sun at 20
+    degrees against the 21 printed; every atmosphere passes section 44's
+    three checks; measured / model below 2.84 m rises from 0.54-0.77 to
+    0.64-0.88 with the smallest sky, tau(550) = 0.05 and continental air
+    (0.83-1.32 down to 2.84 m),
+    and to 0.86-1.20 with the largest, 0.4 and marine, where down to 2.84 m
+    it becomes 1.16-1.87, 1.75-1.87 at 0.86 m; 44.9 percent at 560 nm and
+    70 degrees; the sky's share 6.1 to 46.4 percent."""
+    r = waves_example
+    assert r["order"]
+    assert round(r["ours"][560][0], 1) == 21.3
+    for found in r["sky_checks"].values():
+        assert found["falls"] and found["redder"] and found["within_two"]
+    assert r["least"] == (0.05, 10) and r["most"] == (0.4, 1)
+    least, most = r["sky_checks"][r["least"]], r["sky_checks"][r["most"]]
+    assert (round(least["deep"].min(), 2), round(least["deep"].max(), 2)) \
+        == (0.64, 0.88)
+    assert (round(most["deep"].min(), 2), round(most["deep"].max(), 2)) \
+        == (0.86, 1.20)
+    assert (round(most["ratio"].min(), 2), round(most["ratio"].max(), 2)) \
+        == (1.16, 1.87)
+    assert (round(least["ratio"].min(), 2), round(least["ratio"].max(), 2)) \
+        == (0.83, 1.32)
+    assert round(r["ours"][560][5], 1) == 44.9
+    surface = r["measured"][:, 0] / r["cv"][r["most"]][5.5][:, 0]
+    assert (round(surface.min(), 2), round(surface.max(), 2)) == (1.75, 1.87)
+    shares = np.array(list(r["shares"].values()))
+    assert (round(100 * shares.min(), 1), round(100 * shares.max(), 1)) \
+        == (6.1, 46.4)
 
 
 @source_tree

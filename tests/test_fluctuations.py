@@ -124,3 +124,110 @@ def test_gernez_conditions_as_read():
                                   "gernez2009_conditions.csv"])
 def test_the_new_files_say_they_were_read_from_a_figure(name):
     assert {r["status"] for r in _data._rows(name)} == {"read_from_figure"}
+
+
+def test_gernez_overcast_and_upwelling_as_read():
+    """Figures 7 and 13 (DATA.md section 25): overcast CV steadily around
+    3 percent but for the last Kd class, 1.6; Eu's CV from 1 to 3 percent
+    with the sun, Tmax 3.2 s at 20 degrees and 4.3 s at 85; and the
+    standard deviations left out where the bar is not at its symbol."""
+    assert jerlov.GERNEZ2009_PLOTS[("clear", "Ed")] \
+        == jerlov.GERNEZ2009_VARIABLES
+    for key in (("overcast", "Ed"), ("clear", "Eu")):
+        assert jerlov.GERNEZ2009_PLOTS[key] == (
+            "sun_zenith_deg", "wave_height_m", "wind_m_s", "kd490_per_m")
+    over = jerlov.gernez2009_cv_by("sun_zenith_deg", sky="overcast")
+    assert over.figure == "7" and over.sky.startswith("overcast")
+    assert over.x.tolist() == list(range(20, 90, 5))
+    assert np.all((over.cv >= 0.025) & (over.cv <= 0.04))
+    kd = jerlov.gernez2009_cv_by("kd490_per_m", sky="overcast")
+    assert round(100 * kd.cv[-1], 1) == 1.6
+    assert np.all(kd.cv[:-1] >= 0.025)
+    up = jerlov.gernez2009_cv_by("sun_zenith_deg", irradiance="Eu")
+    assert up.figure == "13" and up.irradiance == "Eu"
+    assert (round(100 * up.cv[0]), round(100 * up.cv[-1])) == (1, 3)
+    assert (round(up.tmax_s[0], 1), round(up.tmax_s[-1], 1)) == (3.2, 4.3)
+    assert np.isnan(up.cv_sd[-1]) and np.isnan(up.cv_sd).sum() == 1
+    assert np.isnan(jerlov.gernez2009_cv_by(
+        "kd490_per_m", irradiance="Eu").cv_sd).sum() == 1
+    assert round(100 * up.cv_reading, 3) == 0.026
+    with pytest.raises(KeyError, match="known: clear/Ed"):
+        jerlov.gernez2009_cv_by("wind_m_s", sky="overcast", irradiance="Eu")
+    with pytest.raises(KeyError, match="known: sun_zenith_deg"):
+        jerlov.gernez2009_cv_by("sqrt_wind", sky="overcast")
+
+
+def test_gernez_spectral_as_read():
+    """Figures 11 and 14: clear-sky CV of Ed from 15 to 26.5 percent; Eu's
+    largest CV 5.4 percent; the clear-sky Tmax of Eu 4.6 s at 412 nm and
+    4.2 at 442; overcast standard deviations not read; one pixel 0.125
+    and 0.030 percent of CV."""
+    ed = jerlov.gernez2009_spectral_cv("Ed")
+    assert ed.wavelengths_nm.tolist() == [412, 442, 490, 510, 560, 665, 683]
+    assert ed.figure == "11" and ed.depth_m == (2.7, 3.7)
+    assert round(100 * ed.cv[0, 0]) == 15 and 25 <= 100 * ed.cv[0, -1] <= 27
+    assert np.all(np.isnan(ed.cv_sd[1])) and not np.any(np.isnan(ed.cv_sd[0]))
+    assert [round(t) for t in ed.tmax_s[1, 5:]] == [6, 6]
+    assert round(100 * ed.cv_reading, 3) == 0.125
+    eu = jerlov.gernez2009_spectral_cv("Eu")
+    assert eu.figure == "14" and eu.depth_m == (8.0, 8.7)
+    assert round(100 * eu.cv.max(), 1) == 5.4
+    assert (round(eu.tmax_s[0, 0], 1), round(eu.tmax_s[0, 1], 1)) == (4.6, 4.2)
+    assert round(100 * eu.cv_reading, 3) == 0.030
+    assert repr(eu) == ("<SkySpectralFluctuation Gernez 2009 Figure 14, Eu, "
+                        "412-683 nm>")
+    with pytest.raises(KeyError, match="known: Ed, Eu"):
+        jerlov.gernez2009_spectral_cv("Lu")
+
+
+def test_gernez_bands_as_read():
+    """Figure 10 (DATA.md section 25): six bands; the 510 nm line within
+    0.2 percent of Figure 8's medians; CV rising with wavelength at every
+    class; the red bands' CV rising with the wave height, the others'
+    falling; 683 nm off the axes at 2.25 m; one pixel 0.115 percent."""
+    assert jerlov.GERNEZ2009_BAND_VARIABLES == (
+        "sun_zenith_deg", "wave_height_m", "wind_m_s", "kd490_per_m")
+    fig8 = {"sun_zenith_deg": jerlov.gernez2009_cv_by_sun_zenith().cv}
+    for v in ("wave_height_m", "kd490_per_m"):
+        fig8[v] = jerlov.gernez2009_cv_by(v).cv
+    for v in jerlov.GERNEZ2009_BAND_VARIABLES:
+        b = jerlov.gernez2009_band_cv(v)
+        assert b.wavelengths_nm.tolist() == [443, 490, 510, 560, 670, 683]
+        assert round(100 * b.cv_reading, 3) == 0.115
+        cv = b.cv.copy()
+        cv[np.isnan(cv)] = np.inf
+        assert np.all(np.diff(cv[:, :5], axis=1) > 0)
+        assert np.all(cv[:, 5] >= cv[:, 4])
+        if v in fig8:
+            assert np.max(np.abs(b.cv[:, 2] - fig8[v])) < 0.002
+    waves = jerlov.gernez2009_band_cv("wave_height_m")
+    assert np.isnan(waves.cv).sum() == 1 and np.isnan(waves.cv[-1, -1])
+    assert np.all(waves.cv[-1, :4] < waves.cv[0, :4])
+    assert np.all(waves.cv[-2, 4:] > waves.cv[0, 4:] + 0.08)
+    assert jerlov.gernez2009_band_cv("wind_m_s").x.tolist() == list(range(10))
+    assert repr(waves) == ("<BandConditionFluctuation Gernez 2009 Figure "
+                           "10, against wave_height_m, 443-683 nm>")
+    with pytest.raises(KeyError, match="known: sun_zenith_deg"):
+        jerlov.gernez2009_band_cv("sqrt_wind")
+
+
+def test_gernez_diffuse_share_as_printed():
+    """The top axis of Figures 8a and 10a, transcribed."""
+    d = jerlov.gernez2009_diffuse_share()
+    assert d.sun_zenith_deg.tolist() == list(range(20, 100, 10))
+    assert (100 * d.diffuse_fraction).round().tolist() == [
+        21, 23, 25, 28, 34, 45, 70, 100]
+    assert np.isnan(d.wavelength_nm) and "Gregg and Carder" in d.model
+    assert {r["status"] for r in _data._rows(
+        "gernez2009_diffuse_share.csv")} == {"transcribed"}
+
+
+@pytest.mark.parametrize("name", ["gernez2009_more_conditions.csv",
+                                  "gernez2009_spectral.csv"])
+def test_the_0_19_files_say_they_were_read_from_a_figure(name):
+    assert {r["status"] for r in _data._rows(name)} == {"read_from_figure"}
+
+
+def test_the_bands_file_says_how_each_value_was_got():
+    assert {r["status"] for r in _data._rows("gernez2009_bands.csv")} == {
+        "read_from_figure", "above_axis"}
