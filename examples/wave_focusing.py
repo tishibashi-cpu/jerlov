@@ -935,9 +935,9 @@ Gernez and Antoine's settings: tau(550) = {g['tau550']}, a marine air mass,
        widened by 3 points
 
 The sky as uniform light under the waves, added to section 45's model; the
-sun at {SUN_ZENITH:g} degrees. For each atmosphere the sky's share at """
-          + ", ".join(f"{wl}" for wl in wls) + f""" nm, section 44's
-checks, and measured/model at {WIND} m/s to {CHECKED_TO} m and below.
+sun at {SUN_ZENITH:g} degrees. For each atmosphere the sky's share at
+""" + ", ".join(f"{wl}" for wl in wls) + f""" nm, section 44's checks, and measured/model at
+{WIND} m/s to {CHECKED_TO} m and below.
 
   tau(550)  air mass   share, percent        checks    to {CHECKED_TO} m     below""")
     sky_checks = {}

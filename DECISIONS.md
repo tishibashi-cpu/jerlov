@@ -1465,3 +1465,18 @@ is fitted.
 model, which would choose for the reader what Darecki did not record and
 the package does not determine (section 39); and adding the sky to
 section 44's model, which section 45 replaced.
+
+**The result** (0.19.0, written after the run). The check passed: with
+Gernez and Antoine's settings the model gives 21.3 to 44.9 percent at 560
+nm with the sun at 20 to 70 degrees, against their 21 to 45, and more at
+shorter wavelengths. The sky's share at 443 to 670 nm runs from 6.1
+percent (tau 0.05, continental air, 670 nm) to 46.4 (tau 0.4, continental,
+443 nm). Every atmosphere passes section 44's three checks. Below 2.84 m
+the ratios, 0.54 to 0.77 without a sky, rise to 0.64 to 0.88 with the
+smallest share and 0.86 to 1.20 with the largest; down to 2.84 m they rise
+from 0.69 to 1.24 to 0.83 to 1.32 and 1.16 to 1.87. By what was read
+beforehand the sky accounts for part of the shortfall below 2.84 m: they
+all rise, but not every atmosphere brings them within 0.8 to 1.25. The
+sky that comes closest below 2.84 m lowers the model too far near the
+surface, where at 0.86 m the measurement becomes 1.75 to 1.87 times it, so
+no one uniform sky fits every depth.

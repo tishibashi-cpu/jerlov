@@ -6,8 +6,9 @@ always resolves to the latest version.
 
 ## 0.19.0 — 2026-10-24
 
-The rest of Gernez & Antoine's (2009) figures that carry measurements. No
-shipped value changed; four data files are added.
+The rest of Gernez & Antoine's (2009) figures that carry measurements, and
+the sky's light in `wave_focusing.py`. No shipped value changed; four data
+files are added.
 
 **Added.**
 
@@ -30,6 +31,18 @@ shipped value changed; four data files are added.
   that the paper prints along the top of Figures 8a and 10a, from 21
   percent with the sun at 20 degrees to 100 at the horizon. It comes from
   a model of the sky (Gregg and Carder, 1990), not a measurement.
+
+**Examples.** `wave_focusing.py` adds the sky's light (DECISIONS.md
+section 48, written before the run): its share above the sea from the
+clear-sky model of Gregg and Carder (1990), checked against the shares
+Gernez and Antoine print, for eight atmospheres since Darecki did not
+record one, and its light under the waves taken as uniform. Every
+atmosphere passes section 44's checks. Below 2.84 m measured / model,
+0.54-0.77 without a sky, becomes 0.64-0.88 with the smallest share and
+0.86-1.20 with the largest, which lowers the model too far near the
+surface (1.16-1.87 down to 2.84 m): the sky accounts for part of the
+shortfall, and no one uniform sky fits every depth. Section 45's model
+without a sky is printed as before.
 
 **Docs.** DATA.md section 25: how they were read, and where the text and
 the figures differ. Figure 14's text gives its two Tmax curves the
