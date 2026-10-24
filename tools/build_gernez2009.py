@@ -34,11 +34,12 @@ the image by eye; the axes are calibrated on the tick marks.
   bars' ends fall between dashes and cannot be placed closer than a
   dash, so the standard deviation of Tmax is not read.
 
-No input file is needed. DATA.md section 25.
+Figures 7, 10, 11, 13 and 14 are read further down, each with its own
+notes. No input file is needed. DATA.md section 25.
 
 Gernez, P. and Antoine, D. (2009), "Field characterization of
 wave-induced underwater light field fluctuations", J. Geophys. Res. 114,
-C06025, doi:10.1029/2008JC005059. Figure 8, p. 9.
+C06025, doi:10.1029/2008JC005059. Figures 7 to 14, pp. 8-13.
 """
 
 import csv
@@ -575,3 +576,192 @@ with path.open("w", newline="", encoding="utf-8") as handle:
                                  f"{b[3]:.3f}", "read_from_figure", NOTE])
                 count += 1
 report(path.name, count)
+
+
+# -- Figure 10 -------------------------------------------------------------------
+# Figure 8 for six bands, under clear skies at the upper depth ("As in
+# Figure 8, but for all bands", page 11, an 877 by 823 pixel colour image),
+# against the sun's zenith angle, the wave height, the wind speed itself and
+# Kd(490). Each band is a coloured line, CV and Tmax alike, without symbols
+# or bars. The CV lines bend at the classes of Figure 8, and Figure 10's 510
+# nm line lies on Figure 8's medians (checked below); the wind classes are
+# whole metres per second, as in Figures 7 and 13. The Tmax lines bend a
+# few pixels to the side of the classes and, in the same colours, cross
+# their own band's CV line and run within a pixel or two of each other: they
+# are not read.
+#
+# Each band's pixels are found by hue (443 nm blue, 490 sky blue, 510
+# turquoise, 560 green, 670 red, 683 orange). The CV line is followed from
+# its left end, where it is the band's upper line, class by class, taking at
+# each class the run of the band's colour whose straight segment back to the
+# previous class, and on to the next, is best covered by that colour. Each
+# segment is then fitted with a straight line through the band's pixels
+# along it, where they make a single run; the row given is the mean of the
+# two fits that meet at the class's column, or the one fit at either end.
+# Three places are read otherwise. At 20 degrees the 510 nm line lies under
+# the 560 nm line; its row is where the fit to its visible pixels, 84 to 100,
+# meets the class's column. In panel b at 1.75 and 2 m the 683 nm line runs
+# beside its own Tmax line; the rows are where the fits to the segments
+# beyond them meet the classes, and past 2 m the line leaves the axes at 35
+# percent (column 777), so 2.25 m is not read (None).
+FIG10_X = {
+    "sun_zenith_deg": ticks([81.0, 121.0, 162.0, 203.0, 243.0, 284.0, 325.0,
+                             365.0], 20, 10),
+    "wave_height_m": ticks([530.0, 588.0, 647.0, 706.0, 764.61, 823.0],
+                           0.0, 0.5),
+    "wind_m_s": ticks([63.0, 93.0, 124.0, 154.0, 184.0, 214.0, 245.0, 275.0,
+                       305.0, 335.0, 365.46], 0, 1),
+    "kd490_per_m": ticks([528.0, 626.0, 725.0], 0.0, 0.05),
+}
+FIG10_Y = {"upper": ticks([361.0, 317.0, 273.0, 230.0, 186.0, 143.0, 99.0,
+                           56.0], 0, 5),
+           "lower": ticks([763.0, 720.0, 676.0, 632.0, 589.0, 545.0, 502.0,
+                           458.0], 0, 5)}
+FIG10_CLASS = {"sun_zenith_deg": (20, 5, 14), "wave_height_m": (0.0, 0.25, 10),
+               "wind_m_s": (0, 1, 10), "kd490_per_m": (0.025, 0.01, 13)}
+FIG10_BANDS = (443, 490, 510, 560, 670, 683)
+# Rows of the CV line at each class, top of the image 0.
+FIG10 = {
+    "sun_zenith_deg": {
+        443: [188.0, 186.7, 196.9, 195.4, 202.8, 212.0, 226.8, 234.5, 247.9,
+              267.1, 286.9, 308.7, 317.3, 326.5],
+        490: [165.6, 165.1, 174.5, 172.4, 180.8, 188.4, 203.5, 210.9, 224.3,
+              244.5, 264.6, 289.4, 306.7, 320.9],
+        510: [147.4, 146.2, 159.8, 154.2, 165.7, 174.5, 189.4, 198.9, 212.4,
+              233.4, 254.7, 283.0, 300.6, 319.4],
+        560: [146.0, 144.7, 154.7, 150.5, 160.5, 167.8, 182.9, 190.1, 200.4,
+              220.0, 240.1, 269.6, 284.5, 306.6],
+        670: [99.7, 101.4, 109.4, 105.4, 113.6, 123.9, 141.1, 148.9, 165.0,
+              185.8, 206.6, 233.7, 243.7, 265.0],
+        683: [95.4, 99.2, 106.8, 101.5, 110.1, 118.6, 135.5, 144.9, 159.5,
+              182.9, 204.0, 228.2, 239.9, 258.8],
+    },
+    "wave_height_m": {
+        443: [241.9, 227.6, 214.9, 223.5, 227.0, 235.0, 238.5, 238.9, 237.8,
+              265.0],
+        490: [218.8, 203.6, 192.7, 202.5, 205.3, 215.7, 224.3, 225.9, 223.9,
+              253.6],
+        510: [206.5, 188.1, 177.7, 190.2, 195.2, 203.5, 215.3, 218.4, 213.9,
+              244.1],
+        560: [200.3, 180.8, 170.5, 181.4, 188.0, 193.6, 209.6, 211.7, 207.4,
+              231.2],
+        670: [168.1, 145.0, 131.5, 136.8, 131.1, 115.0, 117.2, 77.0, 83.4,
+              65.7],
+        683: [165.7, 141.6, 126.1, 132.0, 124.7, 106.2, 106.5, 75.5, 63.0,
+              None],
+    },
+    "wind_m_s": {
+        443: [651.5, 630.9, 614.3, 610.7, 609.6, 622.2, 635.8, 648.4, 643.4,
+              659.1],
+        490: [628.8, 608.5, 590.3, 585.9, 585.9, 600.7, 616.1, 626.8, 623.8,
+              646.7],
+        510: [616.0, 594.8, 575.1, 570.2, 571.7, 588.9, 604.2, 617.1, 614.0,
+              638.6],
+        560: [609.5, 587.7, 566.5, 563.6, 565.2, 581.2, 597.7, 607.3, 608.6,
+              628.9],
+        670: [576.4, 544.9, 520.5, 516.4, 515.0, 535.5, 554.9, 570.1, 571.8,
+              583.1],
+        683: [571.6, 539.3, 517.4, 511.6, 510.2, 533.3, 551.7, 565.5, 565.2,
+              578.1],
+    },
+    "kd490_per_m": {
+        443: [596.7, 613.3, 625.3, 637.9, 648.3, 649.5, 659.0, 660.7, 670.8,
+              671.2, 681.7, 673.6, 670.4],
+        490: [572.5, 589.4, 601.3, 615.5, 625.9, 627.6, 639.1, 644.2, 653.0,
+              657.3, 665.3, 659.6, 652.5],
+        510: [553.9, 573.8, 587.0, 603.9, 612.6, 617.7, 628.0, 633.7, 643.6,
+              649.1, 654.9, 654.5, 642.6],
+        560: [548.7, 567.0, 581.1, 593.3, 603.6, 607.4, 619.8, 626.4, 635.6,
+              643.9, 642.9, 651.9, 639.1],
+        670: [505.6, 522.0, 536.6, 550.4, 555.9, 558.3, 578.5, 576.2, 585.3,
+              600.1, 603.5, 600.7, 586.4],
+        683: [502.4, 517.8, 531.5, 547.6, 550.6, 551.1, 574.5, 571.5, 580.7,
+              595.4, 599.7, 592.1, 582.3],
+    },
+}
+# The share of diffuse light in the downwelling irradiance above the water,
+# printed along the top of Figure 10a (and of Figure 8a) at the major ticks
+# of the sun's zenith angle, 20 to 90 degrees.
+DIFFUSE_SHARE = {20: 21, 30: 23, 40: 25, 50: 28, 60: 34, 70: 45, 80: 70,
+                 90: 100}
+
+fig10 = {}
+for variable, bands in FIG10.items():
+    x_of, x_err = calibrate(*FIG10_X[variable])
+    assert x_err < 0.01 * FIG10_X[variable][1][-1], variable
+    half = "upper" if variable in ("sun_zenith_deg", "wave_height_m") \
+        else "lower"
+    y_of, y_err = calibrate(*FIG10_Y[half])
+    assert y_err < 0.1, (variable, y_err)
+    per_px = abs(y_of(1.0) - y_of(0.0))
+    first, step, count = FIG10_CLASS[variable]
+    for band in FIG10_BANDS:
+        assert len(bands[band]) == count, (variable, band)
+        fig10[variable, band] = [
+            (round(first + k * step, 3), None if row is None else y_of(row))
+            for k, row in enumerate(bands[band])]
+fig10_per_px = per_px
+
+# Figure 10's 510 nm line is Figure 8's medians: within 0.2 percent at
+# every class of panels a, b and d (panel c's classes differ).
+fig8 = [("sun_zenith_deg", r[0], r[1]) for r in rows] \
+    + [c[:3] for c in conditions]
+checked = 0
+for variable, x, median in fig8:
+    line = dict(fig10.get((variable, 510), []))
+    if round(x, 3) in line:
+        assert abs(line[round(x, 3)] - median) < 0.2, (variable, x)
+        checked += 1
+assert checked == 14 + 10 + 13, checked
+# "the shape of the CV curves is essentially preserved, whereas the
+# amplitude changes, with larger CVs for longer wavelengths" (p. 9): at
+# every class read, CV rises from band to band, 683 nm at least 670's.
+for variable, (first, step, count) in FIG10_CLASS.items():
+    for k in range(count):
+        cvs = [fig10[variable, b][k][1] for b in FIG10_BANDS]
+        if cvs[-1] is None:
+            cvs = cvs[:-1]
+        assert all(a < b for a, b in zip(cvs[:-2], cvs[1:-1])), (variable, k)
+        assert cvs[-1] >= cvs[-2], (variable, k)
+# "CV at these bands [the red] increases with wave height, contrary to what
+# is observed at 510 nm and at other wavelengths < 600 nm" (p. 10).
+for band in FIG10_BANDS:
+    cvs = [c for _, c in fig10["wave_height_m", band] if c is not None]
+    if band > 600:
+        assert cvs[-1] > cvs[0] + 8, (band, cvs)
+    else:
+        assert cvs[-1] < cvs[0] and cvs[-1] < max(cvs) - 4, (band, cvs)
+# The diffuse share rises with the sun's zenith angle to all of the light.
+share = [DIFFUSE_SHARE[z] for z in sorted(DIFFUSE_SHARE)]
+assert share == sorted(share) and share[-1] == 100, share
+
+path = DATA_DIR / "gernez2009_bands.csv"
+with path.open("w", newline="", encoding="utf-8") as handle:
+    writer = csv.writer(handle)
+    writer.writerow(["variable", "x", "wavelength_nm", "cv_percent",
+                     "cv_reading_percent", "status", "note"])
+    count = 0
+    for variable in FIG10:
+        for band in FIG10_BANDS:
+            for x, cv_ in fig10[variable, band]:
+                if cv_ is None:
+                    writer.writerow([variable, f"{x:g}", band, "",
+                                     f"{fig10_per_px:.3f}", "above_axis",
+                                     "the line leaves the axes at 35 "
+                                     "percent; DATA.md section 25"])
+                else:
+                    writer.writerow([variable, f"{x:g}", band, f"{cv_:.2f}",
+                                     f"{fig10_per_px:.3f}",
+                                     "read_from_figure", NOTE])
+                count += 1
+report(path.name, count)
+
+path = DATA_DIR / "gernez2009_diffuse_share.csv"
+with path.open("w", newline="", encoding="utf-8") as handle:
+    writer = csv.writer(handle)
+    writer.writerow(["sun_zenith_deg", "diffuse_percent", "status", "note"])
+    for zenith in sorted(DIFFUSE_SHARE):
+        writer.writerow([zenith, DIFFUSE_SHARE[zenith], "transcribed",
+                         "printed along the top of Figures 8a and 10a; "
+                         "DATA.md section 25"])
+report(path.name, len(DIFFUSE_SHARE))

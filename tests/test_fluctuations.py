@@ -180,7 +180,54 @@ def test_gernez_spectral_as_read():
         jerlov.gernez2009_spectral_cv("Lu")
 
 
+def test_gernez_bands_as_read():
+    """Figure 10 (DATA.md section 25): six bands; the 510 nm line within
+    0.2 percent of Figure 8's medians; CV rising with wavelength at every
+    class; the red bands' CV rising with the wave height, the others'
+    falling; 683 nm off the axes at 2.25 m; one pixel 0.115 percent."""
+    assert jerlov.GERNEZ2009_BAND_VARIABLES == (
+        "sun_zenith_deg", "wave_height_m", "wind_m_s", "kd490_per_m")
+    fig8 = {"sun_zenith_deg": jerlov.gernez2009_cv_by_sun_zenith().cv}
+    for v in ("wave_height_m", "kd490_per_m"):
+        fig8[v] = jerlov.gernez2009_cv_by(v).cv
+    for v in jerlov.GERNEZ2009_BAND_VARIABLES:
+        b = jerlov.gernez2009_band_cv(v)
+        assert b.wavelengths_nm.tolist() == [443, 490, 510, 560, 670, 683]
+        assert round(100 * b.cv_reading, 3) == 0.115
+        cv = b.cv.copy()
+        cv[np.isnan(cv)] = np.inf
+        assert np.all(np.diff(cv[:, :5], axis=1) > 0)
+        assert np.all(cv[:, 5] >= cv[:, 4])
+        if v in fig8:
+            assert np.max(np.abs(b.cv[:, 2] - fig8[v])) < 0.002
+    waves = jerlov.gernez2009_band_cv("wave_height_m")
+    assert np.isnan(waves.cv).sum() == 1 and np.isnan(waves.cv[-1, -1])
+    assert np.all(waves.cv[-1, :4] < waves.cv[0, :4])
+    assert np.all(waves.cv[-2, 4:] > waves.cv[0, 4:] + 0.08)
+    assert jerlov.gernez2009_band_cv("wind_m_s").x.tolist() == list(range(10))
+    assert repr(waves) == ("<BandConditionFluctuation Gernez 2009 Figure "
+                           "10, against wave_height_m, 443-683 nm>")
+    with pytest.raises(KeyError, match="known: sun_zenith_deg"):
+        jerlov.gernez2009_band_cv("sqrt_wind")
+
+
+def test_gernez_diffuse_share_as_printed():
+    """The top axis of Figures 8a and 10a, transcribed."""
+    d = jerlov.gernez2009_diffuse_share()
+    assert d.sun_zenith_deg.tolist() == list(range(20, 100, 10))
+    assert (100 * d.diffuse_fraction).round().tolist() == [
+        21, 23, 25, 28, 34, 45, 70, 100]
+    assert np.isnan(d.wavelength_nm) and "Gregg and Carder" in d.model
+    assert {r["status"] for r in _data._rows(
+        "gernez2009_diffuse_share.csv")} == {"transcribed"}
+
+
 @pytest.mark.parametrize("name", ["gernez2009_more_conditions.csv",
                                   "gernez2009_spectral.csv"])
 def test_the_0_19_files_say_they_were_read_from_a_figure(name):
     assert {r["status"] for r in _data._rows(name)} == {"read_from_figure"}
+
+
+def test_the_bands_file_says_how_each_value_was_got():
+    assert {r["status"] for r in _data._rows("gernez2009_bands.csv")} == {
+        "read_from_figure", "above_axis"}

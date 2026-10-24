@@ -7,7 +7,7 @@ always resolves to the latest version.
 ## 0.19.0 — 2026-10-24
 
 The rest of Gernez & Antoine's (2009) figures that carry measurements. No
-shipped value changed; two data files are added.
+shipped value changed; four data files are added.
 
 **Added.**
 
@@ -21,11 +21,22 @@ shipped value changed; two data files are added.
   strongest fluctuation at 412 to 683 nm under clear and overcast skies, of
   Ed at the upper depth (Figure 11) or Eu at the lower, 8 to 8.7 m (Figure
   14), as a `SkySpectralFluctuation`.
+- `gernez2009_band_cv(variable)`: the median CV of Ed at 443 to 683 nm,
+  clear skies, against the sun's zenith angle, the wave height, the wind
+  speed or Kd(490) (Figure 10), as a `BandConditionFluctuation`; its 510
+  nm line is Figure 8's medians to within 0.2 percent. The periods, drawn
+  in the same colours and crossing the CV lines, are not read.
+- `gernez2009_diffuse_share()`: the share of diffuse light above the water
+  that the paper prints along the top of Figures 8a and 10a, from 21
+  percent with the sun at 20 degrees to 100 at the horizon. It comes from
+  a model of the sky (Gregg and Carder, 1990), not a measurement.
 
 **Docs.** DATA.md section 25: how they were read, and where the text and
 the figures differ. Figure 14's text gives its two Tmax curves the
 opposite skies from the figure's own labels and caption; the values follow
-the figure.
+the figure. Figure 8's caption calls the top axis the ratio of direct to
+total light; the axis label, Ediffuse / Etotal, and the numbers say
+diffuse.
 
 ## 0.18.2 — 2026-10-23
 

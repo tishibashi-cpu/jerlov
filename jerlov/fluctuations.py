@@ -46,6 +46,11 @@ downwelling), Figure 7 (overcast, downwelling) and Figure 13 (clear sky,
 upwelling), all at the upper depth. ``wind_m_s`` is the wind speed itself,
 in m/s."""
 
+GERNEZ2009_BAND_VARIABLES = ("sun_zenith_deg", "wave_height_m", "wind_m_s",
+                             "kd490_per_m")
+"""What Gernez & Antoine's (2009) Figure 10, CV at six bands, is plotted
+against: as Figure 8, but the wind speed itself, in m/s."""
+
 _FIGURE = {("clear", "Ed"): "8", ("overcast", "Ed"): "7",
            ("clear", "Eu"): "13"}
 _SKY = {"clear": ("clear: above-water irradiance at least 0.85 of the "
@@ -437,3 +442,101 @@ def gernez2009_spectral_cv(irradiance: str = "Ed") -> SkySpectralFluctuation:
         cv_reading=float(rows[0]["cv_reading_percent"]) / 100,
         tmax_reading_s=float(rows[0]["tmax_reading_s"]),
         depth_m=(2.7, 3.7) if irradiance == "Ed" else (8.0, 8.7))
+
+
+@dataclass(frozen=True, eq=False, repr=False)
+class BandConditionFluctuation:
+    """One panel of Gernez & Antoine's (2009) Figure 10: the median
+    coefficient of variation of the downwelling irradiance at the upper
+    depth under clear skies, at six bands, against one of
+    :data:`GERNEZ2009_BAND_VARIABLES`. Built by :func:`gernez2009_band_cv`;
+    ``cv[i, j]`` is at ``x[i]`` and ``wavelengths_nm[j]``."""
+
+    variable: str
+    x: np.ndarray
+    wavelengths_nm: np.ndarray
+    cv: np.ndarray
+    """nan where the line leaves the figure's axes, above 35 percent."""
+    cv_reading: float
+    place: str = "BOUSSOLE buoy, Ligurian Sea"
+    depth_m: tuple[float, float] = (2.7, 3.7)
+    collector_mm: float = 8.0
+    sampling_hz: float = 6.0
+    sky: str = ("clear: above-water irradiance at least 0.85 of the "
+                "clear-sky model")
+
+    def __repr__(self) -> str:
+        return (f"<BandConditionFluctuation Gernez 2009 Figure 10, against "
+                f"{self.variable}, {self.wavelengths_nm[0]:g}-"
+                f"{self.wavelengths_nm[-1]:g} nm>")
+
+
+def gernez2009_band_cv(variable: str) -> BandConditionFluctuation:
+    """The median coefficient of variation of the downwelling irradiance at
+    443, 490, 510, 560, 670 and 683 nm, at the upper depth under clear
+    skies, against the sun's zenith angle, the wave height, the wind speed
+    or Kd(490): Gernez & Antoine (2009), Figure 10 (p. 11), as for
+    :func:`gernez2009_cv_by_sun_zenith`.
+
+    Read off the figure's coloured lines: DATA.md section 25. The 510 nm
+    line is Figure 8's medians. The periods, drawn in the same colours, are
+    not read.
+    """
+    if variable not in GERNEZ2009_BAND_VARIABLES:
+        raise KeyError(f"Figure 10 is not plotted against {variable!r} "
+                       f"(known: {', '.join(GERNEZ2009_BAND_VARIABLES)})")
+    rows = [r for r in _data._rows("gernez2009_bands.csv")
+            if r["variable"] == variable]
+    xs = sorted({float(r["x"]) for r in rows})
+    wls = sorted({float(r["wavelength_nm"]) for r in rows})
+    cv = np.full((len(xs), len(wls)), np.nan)
+    for r in rows:
+        if r["cv_percent"]:
+            cv[xs.index(float(r["x"])), wls.index(float(
+                r["wavelength_nm"]))] = float(r["cv_percent"]) / 100
+    return BandConditionFluctuation(
+        variable=variable, x=_data._frozen(np.array(xs)),
+        wavelengths_nm=_data._frozen(np.array(wls)), cv=_data._frozen(cv),
+        cv_reading=float(rows[0]["cv_reading_percent"]) / 100)
+
+
+@dataclass(frozen=True, eq=False, repr=False)
+class DiffuseShare:
+    """The share of diffuse light in the downwelling irradiance above the
+    water that Gernez & Antoine (2009) print along the top of their
+    Figures 8a and 10a. Built by :func:`gernez2009_diffuse_share`."""
+
+    sun_zenith_deg: np.ndarray
+    diffuse_fraction: np.ndarray
+    model: str = ("Gregg and Carder (1990), with the buoy's air pressure, "
+                  "80 percent relative humidity, TOMS ozone and a "
+                  "maritime aerosol of Shettle and Fenn (1979) of optical "
+                  "thickness 0.2 at 550 nm (p. 4)")
+    wavelength_nm: float = float("nan")
+    """Not stated."""
+
+    def __repr__(self) -> str:
+        return (f"<DiffuseShare Gernez 2009, sun "
+                f"{self.sun_zenith_deg[0]:g}-{self.sun_zenith_deg[-1]:g} deg, "
+                f"{self.diffuse_fraction[0]:.0%} to "
+                f"{self.diffuse_fraction[-1]:.0%}>")
+
+
+def gernez2009_diffuse_share() -> DiffuseShare:
+    """The share of diffuse light in the above-water downwelling irradiance
+    under a clear sky, every 10 degrees of the sun's zenith angle from 20
+    to 90, as Gernez & Antoine (2009) print it along the top of Figures 8a
+    and 10a, from a model of the sky (:attr:`DiffuseShare.model`), not a
+    measurement.
+
+    Whole percents as printed. The axis is labelled Ediffuse / Etotal; the
+    caption of Figure 8 calls it the ratio of direct to total, which the
+    numbers, rising to 100 percent at the horizon, are not: DATA.md section
+    25.
+    """
+    rows = _data._rows("gernez2009_diffuse_share.csv")
+    return DiffuseShare(
+        sun_zenith_deg=_data._frozen(np.array(
+            [float(r["sun_zenith_deg"]) for r in rows])),
+        diffuse_fraction=_data._frozen(np.array(
+            [float(r["diffuse_percent"]) / 100 for r in rows])))

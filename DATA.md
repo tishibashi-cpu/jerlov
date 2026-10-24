@@ -39,6 +39,8 @@ could not are `missing`, and values that are used but doubtful are `suspect`.
 | `gernez2009_conditions.csv` | As `gernez2009_sun_zenith`, against wave height, the square root of the wind speed, and Kd(490); **read from a figure** | 33 |
 | `gernez2009_more_conditions.csv` | As `gernez2009_conditions`, for Ed under overcast skies (Figure 7) and Eu under clear skies (Figure 13), against the sun's zenith angle, wave height, wind speed and Kd(490); **read from a figure** | 94 |
 | `gernez2009_spectral.csv` | Average CV and period of the strongest fluctuation at seven wavelengths, clear and overcast skies, of Ed at the upper depth (Figure 11) and Eu at the lower (Figure 14); **read from a figure** | 28 |
+| `gernez2009_bands.csv` | Median CV of Ed at six bands, 443-683 nm, clear skies, against the sun's zenith angle, wave height, wind speed and Kd(490) (Figure 10); **read from a figure** | 282 |
+| `gernez2009_diffuse_share.csv` | Share of diffuse light in the downwelling irradiance above the water, sun 20-90 degrees, as printed on Figures 8a and 10a from a model of the sky | 8 |
 
 The four tables drawn from the two Dstl datasets (`williamson2022_iop`,
 `williamson2022_measured`, `solonenko2015_iop` and `williamson2023_depth`)
@@ -1237,8 +1239,9 @@ wind on five days.
 Gernez, P. and Antoine, D. (2009), "Field characterization of wave-induced
 underwater light field fluctuations", J. Geophys. Res. 114, C06025,
 doi:10.1029/2008JC005059, Figure 8 (p. 9), by `tools/build_gernez2009.py`;
-`gernez2009_more_conditions.csv` and `gernez2009_spectral.csv` from Figures
-7, 11, 13 and 14 by the same script (0.19.0, below).
+`gernez2009_more_conditions.csv`, `gernez2009_spectral.csv`,
+`gernez2009_bands.csv` and `gernez2009_diffuse_share.csv` from Figures 7,
+10, 11, 13 and 14 by the same script (0.19.0, below).
 
 **Medians, and a shifted series.** Figure 8 is "as in Figure 7", whose
 caption says "The symbols are the median values, and the vertical bars are
@@ -1334,6 +1337,47 @@ about 6 s in the red. Figure 14: CV about 2 percent below 600 nm and
 higher in the red; on the clear-sky curve Tmax falls steadily from about
 4.2 s at 442 nm to about 2 s in the red.
 
+**Figure 10 (0.19.0).** Figure 8 for six bands, clear skies, upper depth:
+one coloured line per band for CV and another for Tmax, without symbols or
+bars, against the sun's zenith angle, the wave height, the wind speed
+itself (in whole metres per second, as in Figures 7 and 13) and Kd(490).
+The legend names the bands 443, 490, 510, 560, 670 and 683 nm; Figure 11
+puts the same instruments' bands at 442 and 665, and the text says "from
+442 to 683 nm" (p. 9). The legend's names are kept. Each band is found by
+its hue. The CV line is followed from its left end, where it is the band's
+upper line, class by class, taking at each class the run of the band's
+colour whose straight segments back to the previous class and on to the
+next are best covered by that colour; each segment is then fitted with a
+straight line through the band's pixels along it, and the value at a class
+is the mean of the two fits that meet there. This reads the classes where
+a line is hidden under another, or crosses its own Tmax line. Three were
+read otherwise: at 20 degrees the 510 nm line lies under the 560 nm line
+and is read where the fit to its visible pixels meets the class; in panel
+b the 683 nm line at 1.75 and 2 m runs beside its own Tmax line and is read
+from the segments beyond; past 2 m it leaves the axes at 35 percent, and
+2.25 m is left empty with status `above_axis`. One pixel is 0.115 percent
+of CV. The Tmax lines are not read: they bend a few pixels to the side of
+the classes, in each panel the red and orange ones cross their own band's
+CV line, and the others run within a pixel or two of each other, so that
+which line a pixel belongs to cannot be told along much of their length.
+
+The build checks the 510 nm line against Figure 8's medians, read
+separately from another image: within 0.2 percent at all 37 classes of
+panels a, b and d (panel c's classes are not Figure 8c's). Against the
+text: "larger CVs for longer wavelengths" (p. 9), which holds at every
+class read, 683 nm at least 670's; and in panel b, CV at the red bands
+"increases with wave height, contrary to what is observed at 510 nm and at
+other wavelengths < 600 nm" (p. 10).
+
+**The share of diffuse light (0.19.0).** Along the top of Figures 8a and
+10a the paper prints, at the sun's zenith angles 20, 30, ... 90 degrees,
+Ediffuse / Etotal: 21, 23, 25, 28, 34, 45, 70 and 100 percent. These come
+from the clear-sky model of Gregg and Carder (1990), with the buoy's air
+pressure, 80 percent relative humidity, the ozone of the TOMS satellite
+product and a maritime aerosol of Shettle and Fenn (1979) of optical
+thickness 0.2 at 550 nm (p. 4); the wavelength is not stated. They are
+shipped as printed, in whole percents, with status `transcribed`.
+
 **Where these differ from the text.**
 
 - Figure 7's caption says "The symbols are the median values"; the text
@@ -1353,6 +1397,11 @@ higher in the red; on the clear-sky curve Tmax falls steadily from about
   curve is 4.2 s at 442 nm and 4.6 s at 412.
 - Figures 11 and 14 are averages (their captions), where Figures 7, 8 and
   13 are medians.
+- Figure 8's caption calls its top axis "The ratio of direct to total
+  radiation within the above water downward irradiance"; the axis itself
+  is labelled Ediffuse / Etotal, and its numbers rise with the sun's
+  zenith angle to 100 percent at the horizon, which only the diffuse share
+  does. The label is followed.
 
 **Equation (8), not shipped.** The paper fits the change of CV with wind
 speed as CV / CV(0) = a + b sqrt(w) + exp(-(sqrt(w) - c)^2 / 2 s^2) /
