@@ -1657,3 +1657,33 @@ Table 5 as water becoming more turbid is withdrawn. If it fails, that
 reading stands and Tests 2 and 3 say only how much the sky and the meter
 could move the result. Either way the numbers quoted are recomputed in
 `tests/test_quanta.py`.
+
+**Result.** None of the three tests passes, so the reading of section 22
+stands and the cause is still open; what changed is how much is ruled out.
+
+- Test 1 fails, narrowly. Every oceanic z(30) is within 0.2 m of
+  Jerlov's equation and every z(3) within 2.4 percent, but the 1 percent
+  level of type I is 3.6 percent above the equation's (103 m against
+  106.8), outside the 3 percent set above. The other four are within 2.7
+  percent. So it is not shown that Table 2 was made from the equations,
+  and nothing in section 22 is withdrawn. That z(30) follows the
+  quadratic to 0.2 m for all five types is recorded as an observation; the
+  coastal types miss it by 0.37 and 0.38 m.
+- Test 2 fails at its first condition: the package puts IB's 10 percent
+  level at 37.4 m, not within 2 m of 33. The excess does not start below
+  the 10 percent level; it grows with depth, 4.4 m at 10 percent, 11.6 m
+  at 3 percent and 23.0 m at 1 percent. IB's z(1) / z(10) is 2.49 in the
+  package against 2.12 in Table 2.
+- Test 3 fails. Over n from -2 to 2 IB's 1 percent level moves from 98.9
+  to 84.7 m. At n = +1, the only tilt that keeps z(10) within 2 m of 33
+  (34.2 m), it is 89.2 m, 19 m too deep. The sky's spectrum, over that
+  range, is not the cause.
+- An error in the plan: the same tilt as the meter's response is not a
+  second test. A weight on the photons multiplies the spectrum at the
+  surface and at depth alike, so it gives exactly the levels of the same
+  tilt applied to the sky, as the run showed. What the run tests is the
+  product of the two, and neither alone nor together does it explain the
+  excess within that range.
+
+The numbers are recomputed in `tests/test_quanta.py`. DATA.md section 22
+now says that the sky and the meter were tested and in what range.

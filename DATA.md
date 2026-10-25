@@ -1118,9 +1118,15 @@ edition.
 stated. Jerlov's discussion (p. 286) notes that "ocean water is not
 optically homogenous as particle accumulations occur at different levels";
 a deep chlorophyll maximum would do it, but the paper does not say, and
-nothing is assumed here. The comparison uses D65 for the sky; the
-agreement in the top 10 m suggests that matters little for the levels, but
-it has not been tested.
+nothing is assumed here. The comparison uses D65 for the sky. Tilting it
+by (wavelength / 550 nm)^n, n from -2 to 2, moves IB's 1 percent level
+between 98.9 and 84.7 m, and where it keeps the 10 percent level within 2
+m of Jerlov's 33 it is 89.2 m; the same tilt stands for a quanta meter
+whose response differs from a flat one, and gives the same levels. So
+neither the sky's spectrum nor the meter's response explains the
+difference over that range (DECISIONS.md section 53). The package's IB is
+already 4.4 m too deep at the 10 percent level, 37.4 m against 33, and the
+difference grows with depth.
 
 ## 23. Tyler's measured radiance distribution (note)
 

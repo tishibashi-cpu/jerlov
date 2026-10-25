@@ -142,6 +142,63 @@ def test_IB_agrees_in_its_own_10_m_and_departs_below():
     assert np.all(np.diff(q.layer_kd[deep]) >= 0)
 
 
+def test_table_2_against_jerlovs_own_equations():
+    """DECISIONS.md section 53, Test 1: every oceanic z(30) within 0.2 m of
+    0.50 z(10) - 0.0023 z(10)^2, every z(3) within 2.4 percent of
+    1.65 z(10); z(1) of I 3.6 percent above 2.18 z(10), the other oceanic
+    types within 2.7; the coastal z(30) 0.37 and 0.38 m off."""
+    z30_off, z3_off, z1_off = {}, {}, {}
+    for t in TYPES:
+        z30, z10, z3, z1 = _quanta(t).level_depth_m
+        z30_off[t] = abs(z30 - (0.50 * z10 - 0.0023 * z10 ** 2))
+        z3_off[t] = abs(z3 / (1.65 * z10) - 1)
+        z1_off[t] = abs(z1 / (2.18 * z10) - 1)
+    oceanic = ("I", "IA", "IB", "II", "III")
+    assert max(z30_off[t] for t in oceanic) < 0.2
+    assert round(100 * max(z3_off[t] for t in oceanic), 1) == 2.4
+    assert round(100 * z1_off["I"], 1) == 3.6
+    assert round(100 * max(z1_off[t] for t in oceanic if t != "I"), 1) \
+        == 2.7
+    assert (round(z30_off["1C"], 2), round(z30_off["3C"], 2)) == (0.37, 0.38)
+
+
+def test_IB_is_too_deep_from_the_10_percent_level_down():
+    """Section 53, Test 2: IB's 10 percent level is 37.4 m against 33; the
+    excess is 4.4, 11.6 and 23.0 m at 10, 3 and 1 percent; z(1) / z(10) is
+    2.49 against 2.12."""
+    _, z10, z3, z1 = _layered("IB")
+    _, p10, p3, p1 = _quanta("IB").level_depth_m
+    assert round(z10, 1) == 37.4
+    assert [round(m - p, 1) for m, p in ((z10, p10), (z3, p3), (z1, p1))] \
+        == [4.4, 11.6, 23.0]
+    assert (round(z1 / z10, 2), round(p1 / p10, 2)) == (2.49, 2.12)
+
+
+def test_neither_the_sky_nor_the_meter_explains_IB():
+    """Section 53, Test 3: tilting D65 by (wavelength / 550)^n, n from -2 to
+    2, puts IB's 1 percent level between 98.9 and 84.7 m; at n = +1, the
+    only tilt keeping z(10) within 2 m of 33 (34.2 m), it is 89.2 m. The
+    same tilt as the meter's response gives the same levels."""
+    descent = jerlov.descend("IB", jerlov.profile_depth("IB"), BAND)
+
+    def levels(surface, weight=None):
+        return _level_depths(jerlov.par_profile(
+            surface, BAND, 0.0, kd=descent, unit="energy",
+            band=jerlov.QUANTA_BAND_NM, photon_weight=weight))
+
+    sky, meter = {}, {}
+    for n in (-2, -1, 0, 1, 2):
+        tilt = (BAND / 550.0) ** n
+        sky[n] = levels(SURFACE * tilt)
+        meter[n] = levels(SURFACE, tilt)
+        np.testing.assert_allclose(meter[n], sky[n], rtol=1e-9)
+    assert (round(sky[-2][3], 1), round(sky[2][3], 1)) == (98.9, 84.7)
+    within = [n for n in sky if abs(sky[n][1] - 33) <= 2]
+    assert within == [1]
+    assert (round(sky[1][1], 1), round(sky[1][3], 1)) == (34.2, 89.2)
+    assert all(abs(z[3] - 70) > 3 for z in sky.values())
+
+
 def test_DATA_md_figures_for_the_tables_against_each_other():
     """The recomputed ranges in DATA.md section 22, and integrating Table 5
     down to 10 m for II gives 29 percent against Table 3's 32."""
