@@ -1149,9 +1149,17 @@ of them, by 1.63 and 1.56 times from the shallowest layer to the deepest,
 and in every deepest layer was above Jerlov's IB, up to 1.89 times. Two of
 the three were normalised in variable weather, with errors Smith puts as
 high as a factor of two; the one measured in clear weather rises either
-way. What made the deeper water more turbid is not examined.
-`tools/nygard1973_quanta.csv` and `tools/smith1973_blue.csv` are the
-transcriptions; they are not shipped.
+way. Morel's quanta, measured on the same cruise with another meter and
+another surface correction (DECISIONS.md section 58), agree with
+Nygård's: in the four sets whose 10 percent level is IB-like the 1
+percent level lies 2.08 to 2.18 times as deep, median 2.14. Chlorophyll
+was higher in the deepest of Smith's layers than in the shallowest at
+the two stations where both can be compared, 2.80 and 1.42 times, but
+also at the one of them where the blue Kd did not rise, so it is not
+shown to be the cause.
+`tools/nygard1973_quanta.csv`, `tools/smith1973_blue.csv`,
+`tools/morel1973_quanta.csv` and `tools/baird1973_chlorophyll.csv` are
+the transcriptions; they are not shipped.
 
 ## 23. Tyler's measured radiance distribution (note)
 

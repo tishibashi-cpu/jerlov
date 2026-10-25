@@ -4,6 +4,33 @@ Every release is archived on Zenodo under the concept DOI
 [10.5281/zenodo.22321312](https://doi.org/10.5281/zenodo.22321312), which
 always resolves to the latest version.
 
+## 0.22.0 — 2026-10-25
+
+Scalar PAR, from a mean cosine and a reflectance the caller gives, and the
+IB result checked against a second instrument from the same cruise. No
+shipped value changed.
+
+**Added.** `ParProfile.scalar_par(mean_cosine=..., reflectance=...)`
+returns PAR on scalar irradiance, what a spherical sensor reads, at each
+depth, from E0 = Ed (1 - R) / mu: the definition of the mean cosine
+(Ed - Eu) / E0 rearranged, with R = Eu / Ed. Neither has a default, since
+both depend on the light field, which the package does not model;
+`reflectance=0` leaves out the upwelling light as a stated choice. Each
+is a number or one value per depth, and nothing is interpolated between
+depths. A pair with mu above (1 - R) / (1 + R), which would make E0 less
+than Ed + Eu, describes no light field and is refused (DECISIONS.md
+section 59).
+
+**Docs.** DECISIONS.md section 58 and DATA.md section 22: Morel's quanta
+profiles from the Discoverer expedition of 1970, read from the data report
+(SIO Ref. 73-16, vol. I, section F), agree with Nygård's. Where the 10
+percent level is IB-like, z(1) / z(10) has a median of 2.14, and 2.08 to
+2.17 over the range of surface corrections tried, against 2.12 in Jerlov
+(1977) and 2.49 in the package. A comparison with the chlorophyll measured
+at the same stations decides nothing by its own rule: it needed a station
+that has no sample in its shallowest layer. The transcriptions and
+analyses are in `tools/` and are not shipped.
+
 ## 0.21.0 — 2026-10-25
 
 A measured Kd's uncertainty carried through to PAR and to the nearest

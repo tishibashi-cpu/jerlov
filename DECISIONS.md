@@ -1979,3 +1979,139 @@ Monte Carlo over independent errors, whose answer depends on how finely
 the spectrum is sampled, since independent errors average away over more
 samples; and a correlation argument, which would ask the caller for a
 matrix almost nobody has, to give a range narrower than the one here.
+
+## 58. IB against Morel's profiles, and the chlorophyll at the IB-like stations: the plan
+
+Sections 55 and 56 rest on Nygård's quanta and Smith's spectra. The 1977
+paper also drew on Morel's measurements on the same cruise, and the data
+report gives the chlorophyll at every station. This section asks two
+questions of them, and is written before either is read; while finding
+where they are in the report, Morel's table for station 22, set 1 (vol.
+I, p. F82), and the size-fractionated chlorophyll of section E for
+stations 13 to 21 were seen in passing. Neither is a measurement the
+tests below are decided on, except that station 22's lowering counts in
+Test A like any other.
+
+**Test A: Morel's profiles of quanta.** Morel's downwelling quanta-meter
+tables (vol. I, section F) give, for each station and experiment ("set"),
+the quanta at each depth as a percentage of the value above the surface,
+already corrected to a constant surface irradiance (p. F3). Every
+downwelling set with at least three depths below the surface is read from
+the page images; a depth printed twice, at two gain settings, is averaged
+in ln. The value just below the surface is taken as t times the value
+above it, with t = 0.96 for the light lost at the surface; the 10 and 1
+percent levels are then found as in section 55, by linear interpolation
+of ln Q in depth. A set is IB-like if its 10 percent level lies above
+28.5 m and at most at 37 m. For the IB-like sets that reach 1 percent,
+the median of z(1) / z(10) is compared with Table 2's 2.12 and the
+package's 2.49, as in section 55, and the result is taken only if it is
+the same for every t from 0.92 to 1.00; otherwise, or with fewer than
+three such sets, Test A decides nothing. Every set's levels are reported.
+
+**Test B: chlorophyll where the blue Kd rose.** From the routine
+fluorometric chlorophyll a of section C (vol. I, Table I), for stations 3,
+12 and 15: the mean of the samples whose depth lies within the shallowest
+and within the deepest of Smith's layers at that station (section 56).
+Chlorophyll rises with depth at a station if the deeper mean exceeds the
+shallower by more than 1.2 times. It is consistent with section 56 if it
+rises at both stations where the blue Kd rose, 3 and 12; at 15, where the
+blue Kd did not, it is reported. A layer with no sample in it leaves its
+station uncounted, and is reported.
+
+**What follows.** If Test A agrees with section 55, Morel's instrument and
+method, with its own surface correction, give the same answer as Nygård's,
+and the result does not rest on one instrument. If Test B is consistent,
+phytoplankton deeper down is a sufficient explanation for the rise of the
+blue Kd; if not, it is not shown to be one. Neither test gives a cause by
+itself; neither changes the package.
+
+**Result, Test A.** It agrees with section 55. All 53 downwelling sets,
+at 23 stations, were read (vol. I, pp. F33-F85); 41 reach both levels, 10
+turn back before 1 percent and 2 before 10 percent. With t = 0.96 four
+sets are IB-like and reach 1 percent: station 10 set 2, station 12 set 1
+and station 17 sets 3 and 4, with z(1) / z(10) of 2.16, 2.08, 2.18 and
+2.12, median 2.14, against 2.12 in Table 2 and 2.49 in the package. Over
+t from 0.92 to 1.00 the median runs from 2.08 to 2.17; at 0.92 and 0.94
+station 15 set 2 is IB-like too, with 1.83 and 1.84. Over all 41 sets
+the ratio runs from 1.86 to 2.89, median 2.16. So Morel's quanta meter,
+with its own correction for the light at the surface, gives the answer
+Nygård's did: in water whose 10 percent level is IB's, the 1 percent
+level lies about 2.1 times as deep, not 2.5.
+
+**Result, Test B.** It decides nothing, by its own rule. At station 12
+no chlorophyll sample lies within Smith's shallowest layer, 9.8 to
+18.9 m (the nearest are at 9 and 21 m), so the station is not counted,
+and consistency needed it. At station 3 the chlorophyll rose from 0.061
+mg m-3 in the shallowest layer to 0.172 in the deepest, 2.80 times, where
+the blue Kd rose too; at station 15 it rose from 0.141 to 0.200, 1.42
+times, where the blue Kd did not. At station 12 the deepest layer, 49.3
+to 62.6 m, holds 0.12 mg m-3 (one depth), below the 0.21 to 0.23 of the
+samples at 36 and 45 m. So chlorophyll is higher deep down at both
+stations that can be counted, including one where the blue Kd was not;
+a subsurface maximum of chlorophyll is consistent with the deeper water
+being more turbid, but these data do not show it is the cause.
+
+The transcriptions and analyses are `tools/morel1973_quanta.csv`,
+`tools/morel1973_levels.py`, `tools/baird1973_chlorophyll.csv` and
+`tools/baird1973_chlorophyll.py`; `tests/test_quanta.py` recomputes the
+numbers. DATA.md section 22 says so.
+
+## 59. Scalar PAR, from a mean cosine the caller gives
+
+`par_profile` integrates the planar irradiance Ed, and since section 29
+its docstring has said that PAR on scalar irradiance E0, what a spherical
+quantum sensor reads and what a cell suspended in the water receives, is
+larger by a factor the package cannot supply. The factor depends on the
+light field: the sun, the sky, the surface and the scattering of the
+water, none of which the package models (sections 12 and 38). It can be
+measured, or computed by radiative transfer, as
+`examples/radiance_distribution.py` does. So the caller gives it, as the
+backscatter ratio is given in section 4.
+
+**Now.** `ParProfile.scalar_par(*, mean_cosine, reflectance)` returns
+scalar PAR at `depths_m`, umol photons m-2 s-1, from the identity
+
+    E0 = (Ed - Eu) / mu = Ed (1 - R) / mu
+
+where `mu` is the mean cosine of the whole light field, (Ed - Eu) / E0,
+and R the irradiance reflectance Eu / Ed, both of the photon flux over
+`band_nm` (and of the weighted flux if a `photon_weight` was given). It
+is the definition of the mean cosine rearranged, not an approximation, so
+the only error in it is the caller's error in mu and R.
+
+- Both are keyword-only and have no default. R is asked for, rather than
+  dropped, because leaving out the upwelling light is a choice: passing
+  `reflectance=0` makes it, and its cost, a result too high by a factor
+  1 / (1 - R), is then one the caller knows they have accepted.
+- Each is a number, or one value per depth, of the shape of `depths_m`.
+  Nothing is interpolated between depths, and so there is no
+  `depth_of_fraction` for scalar PAR: it would need mu and R between the
+  depths given. With mu and R the same at every depth the depth of a
+  fraction is the planar one, and the docstring says so.
+- mu must lie in (0, 1] and R in [0, 1), and together they must satisfy
+  mu <= (1 - R) / (1 + R). That is E0 >= Ed + Eu, which holds for any
+  light field, since a radiance counts fully in E0 and by its cosine in
+  Ed or Eu; equality is light travelling only straight up and down. A
+  pair outside it describes no light field and is refused.
+- The mean cosine of the downwelling light alone, Ed / E0d, is a
+  different and larger number; given here with `reflectance=0` it gives
+  the downwelling part of scalar PAR only. The docstring says so.
+- The bounds of section 57 are not repeated: `par_bounds()` divided the
+  same way gives them, for mu and R taken as exact.
+
+**Checks.** The tests compute three light fields whose ratio is known
+without the package: a beam straight down (mu = 1, R = 0, scalar equals
+planar); downwelling radiance the same from every direction of the upper
+hemisphere and none from below (Ed = pi L, E0 = 2 pi L, so mu = 0.5,
+R = 0, scalar twice planar); and light travelling only straight up and
+down (E0 = Ed + Eu, at the limit mu = (1 - R) / (1 + R)). Per-depth
+values are applied depth by depth, and the refusals above are tested.
+
+**Rejected:** a default mean cosine, such as a value typical of clear
+water, for the reason of section 4: it would be defensible somewhere,
+wrong elsewhere, and invisible. Taking E0 / Ed directly, which is what
+the radiance example prints: it is the same number as (1 - R) / mu, but
+the mean cosine is the quantity measured and published, and taking it
+with R keeps the upwelling light a visible choice. Interpolating per-depth
+values to give a depth of a fraction: it would guess at the light field
+between the depths the caller described.

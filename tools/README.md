@@ -36,4 +36,6 @@ GitHub Release text from CHANGELOG.md (DECISIONS.md section 51).
 the analysis of DECISIONS.md section 55, Nygård's measured profiles of
 quanta checked against Jerlov's IB, and `smith1973_blue.py` with
 `smith1973_blue.csv` that of section 56, Smith's spectra at the same
-stations; the transcriptions are not shipped.
+stations; `morel1973_levels.py` and `baird1973_chlorophyll.py`, with their
+CSVs, those of section 58, Morel's profiles and the chlorophyll. The
+transcriptions are not shipped.

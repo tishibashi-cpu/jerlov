@@ -200,7 +200,8 @@ print("""  - The profile is typical, not local. Williamson & Hollins (2023) give
     sources.
   - D65 stands in for the real surface spectrum.
   - PAR here is planar: it integrates Ed. PAR defined on scalar
-    irradiance is larger, by a factor that depends on the light field.
+    irradiance is larger, by a factor that depends on the light field;
+    `ParProfile.scalar_par` applies a mean cosine you give it.
 
   Every one of these is a choice you can replace with a measurement.
 """)

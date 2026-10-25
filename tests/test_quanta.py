@@ -359,6 +359,61 @@ def test_smiths_blue_kd_rises_with_depth_at_two_of_three_stations():
     assert spans == {3: (0.68, 1.11), 12: (0.98, 1.89), 15: (1.16, 2.87)}
 
 
+@source_tree
+def test_morels_ib_like_profiles_agree_with_nygards():
+    """DECISIONS.md section 58, Test A: 53 sets at 23 stations, 41 reaching
+    both levels, 10 not 1 percent and 2 not 10 percent; IB-like at t = 0.96:
+    10/2, 12/1, 17/3, 17/4 with 2.16, 2.08, 2.18, 2.12, median 2.14; the
+    median 2.08 to 2.17 over t = 0.92-1.00, with 15/2 at 1.83 and 1.84 at
+    0.92 and 0.94; 1.86 to 2.89, median 2.16, over all 41."""
+    morel = _tool("morel1973_levels")
+    sets = morel.read()
+    assert (len(sets), len({s for s, _ in sets})) == (53, 23)
+    found = {key: morel.levels(profile) for key, profile in sets.items()}
+    both = [lv[0.01] / lv[0.10] for lv in found.values()
+            if lv[0.10] is not None and lv[0.01] is not None]
+    assert len(both) == 41
+    assert sum(lv[0.10] is not None and lv[0.01] is None
+               for lv in found.values()) == 10
+    assert sum(lv[0.10] is None for lv in found.values()) == 2
+    assert (round(min(both), 2), round(max(both), 2),
+            round(statistics.median(both), 2)) == (1.86, 2.89, 2.16)
+    ib = morel.ib_ratios(sets)
+    assert [key for key, _ in ib] == [(10, 2), (12, 1), (17, 3), (17, 4)]
+    assert [round(r, 2) for _, r in ib] == [2.16, 2.08, 2.18, 2.12]
+    median = statistics.median(r for _, r in ib)
+    assert round(median, 2) == 2.14
+    assert abs(median - 2.12) < abs(median - 2.49)
+    medians = []
+    for t in morel.SURFACE_RANGE:
+        ratios = dict(morel.ib_ratios(sets, t))
+        medians.append(statistics.median(ratios.values()))
+        assert len(ratios) >= 3
+        assert abs(medians[-1] - 2.12) < abs(medians[-1] - 2.49)
+        if t < 0.95:
+            assert round(ratios[(15, 2)], 2) == {0.92: 1.83, 0.94: 1.84}[t]
+        else:
+            assert (15, 2) not in ratios
+    assert (round(min(medians), 2), round(max(medians), 2)) == (2.08, 2.17)
+
+
+@source_tree
+def test_chlorophyll_in_smiths_layers_decides_nothing():
+    """Section 58, Test B: station 12 has no sample in its shallowest
+    layer; 0.061 -> 0.172 mg m-3 (2.80 times) at station 3, 0.141 -> 0.200
+    (1.42) at 15; 0.12 in station 12's deepest layer against 0.21-0.23 at
+    36 and 45 m."""
+    baird = _tool("baird1973_chlorophyll")
+    found = baird.compare()
+    assert found[12][0] is None and round(found[12][1], 2) == 0.12
+    assert [round(x, 3) for x in found[3]] == [0.061, 0.172]
+    assert [round(x, 3) for x in found[15]] == [0.141, 0.200]
+    assert (round(found[3][1] / found[3][0], 2),
+            round(found[15][1] / found[15][0], 2)) == (2.80, 1.42)
+    near_max = [c for z, c in baird.read()[12] if z in (36.0, 45.0)]
+    assert (round(min(near_max), 2), round(max(near_max), 2)) == (0.21, 0.23)
+
+
 def test_DATA_md_figures_for_the_tables_against_each_other():
     """The recomputed ranges in DATA.md section 22, and integrating Table 5
     down to 10 m for II gives 29 percent against Table 3's 32."""

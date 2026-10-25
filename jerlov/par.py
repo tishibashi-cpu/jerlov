@@ -23,7 +23,9 @@ Three things are stated rather than hidden:
 - **This is planar PAR.** It integrates the downwelling *planar* irradiance
   Ed. PAR is often defined on scalar irradiance E0, which counts light from
   every direction equally and is larger, by a factor that depends on the
-  light field and is not determined here.
+  light field and is not determined here:
+  :meth:`ParProfile.scalar_par` takes it from the caller as a mean cosine
+  and a reflectance.
 - **The surface spectrum is the caller's.** No solar spectrum is assumed:
   the sky, the sun's elevation and the surface all change it.
 - **The Kd of a type is applied unchanged with depth**, as in
@@ -297,6 +299,74 @@ class ParProfile:
                             ).reshape(self.depths_m.shape)
 
         return at_depths(more), at_depths(less)
+
+    def scalar_par(self, *, mean_cosine, reflectance) -> np.ndarray:
+        """Scalar PAR at :attr:`depths_m`, umol photons m-2 s-1, from a
+        mean cosine and a reflectance the caller gives.
+
+        ``par`` integrates the planar irradiance Ed. Scalar irradiance E0,
+        what a spherical sensor reads, counts light from every direction
+        equally, and by the definition of the mean cosine::
+
+            E0 = (Ed - Eu) / mean_cosine = Ed (1 - reflectance) / mean_cosine
+
+        That is exact, so the result is as good as the two numbers given.
+        Neither has a default: both depend on the sun, the sky, the surface
+        and the water's scattering, which the package does not model
+        (DECISIONS.md section 59). ``examples/radiance_distribution.py``
+        computes them for one water by Monte Carlo.
+
+        Parameters
+        ----------
+        mean_cosine:
+            ``(Ed - Eu) / E0`` of the photon flux over :attr:`band_nm`, of
+            the weighted flux if a ``photon_weight`` was given: the mean
+            cosine of the whole light field, in (0, 1]. That of the
+            downwelling light alone, ``Ed / E0d``, is larger; with
+            ``reflectance=0`` it gives the downwelling part of scalar PAR
+            only.
+        reflectance:
+            ``Eu / Ed`` of the same flux, in [0, 1). ``0`` leaves out the
+            upwelling light, and the result is then too high by a factor
+            ``1 / (1 - R)`` for the true reflectance R.
+
+        Each is a number, or one value per depth with the shape of
+        :attr:`depths_m`. Nothing is interpolated between depths, so there
+        is no depth of a fraction of scalar PAR here; with the same values
+        at every depth it is :meth:`depth_of_fraction`. Dividing
+        :meth:`par_bounds` the same way gives its range, for the two taken
+        as exact.
+
+        Raises
+        ------
+        ValueError
+            Outside those ranges, or if ``mean_cosine`` exceeds
+            ``(1 - R) / (1 + R)``: E0 is at least Ed + Eu in any light
+            field, equal when all of it travels straight up or down.
+        """
+        mu = self._per_depth(mean_cosine, "mean_cosine")
+        r = self._per_depth(reflectance, "reflectance")
+        if np.any(mu <= 0) or np.any(mu > 1):
+            raise ValueError("mean_cosine must lie in (0, 1]")
+        if np.any(r < 0) or np.any(r >= 1):
+            raise ValueError("reflectance must lie in [0, 1)")
+        if np.any(mu > (1 - r) / (1 + r) * (1 + 1e-12)):
+            raise ValueError(
+                "mean_cosine cannot exceed (1 - reflectance) / "
+                "(1 + reflectance): scalar irradiance is at least Ed + Eu "
+                "in any light field")
+        return self.par * (1 - r) / mu
+
+    def _per_depth(self, values, name: str) -> np.ndarray:
+        """A number, or one value per depth, as an array of depths' shape."""
+        array = np.array(values, dtype=float)
+        if array.shape not in ((), self.depths_m.shape):
+            raise ValueError(
+                f"{name} must be a number or one value per depth, of shape "
+                f"{self.depths_m.shape}")
+        if not np.all(np.isfinite(array)):
+            raise ValueError(f"{name} must be finite")
+        return np.broadcast_to(array, self.depths_m.shape)
 
     def __repr__(self) -> str:
         lo, hi = self.band_nm
