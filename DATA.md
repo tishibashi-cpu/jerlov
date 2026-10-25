@@ -1126,7 +1126,11 @@ whose response differs from a flat one, and gives the same levels. So
 neither the sky's spectrum nor the meter's response explains the
 difference over that range (DECISIONS.md section 53). The package's IB is
 already 4.4 m too deep at the 10 percent level, 37.4 m against 33, and the
-difference grows with depth.
+difference grows with depth. Nor is it Jerlov's (1976) Kd for IB: Austin &
+Petzold's (1986) revision puts the 1 percent level at 95.8 m, and the
+fits of Solonenko & Mobley at 98.5 and 104.1 m (DECISIONS.md section 54).
+Every set of spectral Kd for IB in the package gives 93 to 104 m against
+the 70 of the 1977 paper.
 
 ## 23. Tyler's measured radiance distribution (note)
 

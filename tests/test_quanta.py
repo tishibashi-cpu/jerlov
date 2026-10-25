@@ -199,6 +199,41 @@ def test_neither_the_sky_nor_the_meter_explains_IB():
     assert all(abs(z[3] - 70) > 3 for z in sky.values())
 
 
+def test_no_spectral_kd_for_IB_reaches_jerlovs_70_m():
+    """DECISIONS.md section 54: with Austin & Petzold's Kd IB's levels are
+    14.7, 38.5, 67.7 and 95.8 m; II's 1 percent level 54.6 m and III's
+    33.2 m; IA 102.9 and I 109.2 m. Solonenko & Mobley put IB at 98.5 m
+    (kd) and 104.1 m (kd_hydrolight), Jerlov (1968) at 98.4 m. Every set
+    gives 93 to 104 m."""
+    def layered(water_type, source):
+        return _level_depths(_quanta_profile(jerlov.descend(
+            water_type, jerlov.profile_depth(water_type), BAND,
+            source=source)))
+
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", jerlov.ProvenanceWarning)
+        austin = {t: layered(t, "austin1986")
+                  for t in ("I", "IA", "IB", "II", "III")}
+        fitted = layered("IB", "solonenko2015")
+        hydrolight = _level_depths(_quanta_profile(
+            jerlov.water("IB", source="solonenko2015").kd_hydrolight(BAND)))
+    assert [round(z, 1) for z in austin["IB"]] == [14.7, 38.5, 67.7, 95.8]
+    assert (round(austin["II"][3], 1), round(austin["III"][3], 1)) \
+        == (54.6, 33.2)
+    assert (round(austin["IA"][3], 1), round(austin["I"][3], 1)) \
+        == (102.9, 109.2)
+    assert (round(fitted[3], 1), round(hydrolight[3], 1)) == (98.5, 104.1)
+    assert set(jerlov.water_type_at_depth(
+        "IB", np.arange(0.0, 200.0, 10.0))) == {"IB"}
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", jerlov.ProvenanceWarning)
+        jerlov1968 = layered("IB", "jerlov1968")[3]
+    every = [_layered("IB")[3], jerlov1968, austin["IB"][3], fitted[3],
+             hydrolight[3]]
+    assert round(jerlov1968, 1) == 98.4
+    assert (round(min(every)), round(max(every))) == (93, 104)
+
+
 def test_DATA_md_figures_for_the_tables_against_each_other():
     """The recomputed ranges in DATA.md section 22, and integrating Table 5
     down to 10 m for II gives 29 percent against Table 3's 32."""

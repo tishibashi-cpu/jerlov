@@ -1717,3 +1717,24 @@ difference lies in Jerlov's (1976) Kd for IB and not in the water below,
 and the reading of Table 5 as water becoming more turbid is withdrawn.
 If it fails, section 22 says that Austin & Petzold's Kd does not explain
 it either, and by how much.
+
+**Result.** Test 4 fails, and on both counts. With Austin & Petzold's Kd
+IB's levels are 14.7, 38.5, 67.7 and 95.8 m, deeper than with Jerlov
+(1976), not shallower: 5.5 m too deep at 10 percent and 25.8 m at 1
+percent. II's 1 percent level moves to 54.6 m, 2.6 m from Table 2, and
+III's to 33.2 m, 2.2 m, so the agreement from II down is also slightly
+worse. IA is 102.9 m against 87 and I 109.2 m against 103.
+
+The fits of Solonenko & Mobley put IB deeper still: 98.5 m with their
+`kd`, 104.1 m with `kd_hydrolight` (IB keeps its type to 200 m in the
+profile, so one Kd is the whole descent).
+
+So every published set of spectral Kd for IB that the package carries,
+from Jerlov's first and third editions to Austin & Petzold's revision and
+a radiative transfer model of the same types, puts the 1 percent level of
+quanta between 93 and 104 m (98.4 m with the first edition), against 70
+in Jerlov (1977). The difference
+is not in one table's values. What is left is the 1977 paper's own IB:
+which stations it was formed from, and how, which the paper does not
+give per type (section 22). The numbers are recomputed in
+`tests/test_quanta.py`, and DATA.md section 22 says so.
