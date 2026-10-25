@@ -1738,3 +1738,48 @@ is not in one table's values. What is left is the 1977 paper's own IB:
 which stations it was formed from, and how, which the paper does not
 give per type (section 22). The numbers are recomputed in
 `tests/test_quanta.py`, and DATA.md section 22 says so.
+
+## 55. IB's 1 percent level against Nygård's profiles: the plan
+
+Sections 53 and 54 left the 1977 paper's own IB as the only candidate:
+which profiles it was formed from, and how. Two of its sources are now at
+hand, in Tyler, J. E. (ed.) (1973), Data Report, SCOR Discoverer
+Expedition, May 1970, SIO Ref. 73-16, Visibility Laboratory, Scripps
+Institution of Oceanography, two volumes, which has no DOI: Morel's
+spectral and total irradiance (vol. I, section F) and Nygård's direct
+measurements of quanta (vol. II, section I). Jerlov's Table 1 counts 11
+of Nygård's observations off Ecuador and Panama, 7 in the Caribbean and 1
+in the Sargasso Sea. This section is written before any profile is read.
+
+**What is read.** Nygård's tables give, station by station, the time, the
+depth and the downwelling quantum irradiance Q, with Q at 0 m derived
+from the reading above the surface; they are not normalised to the deck
+monitor (vol. II, p. I-3). From the page images, not the text layer,
+every lowering is transcribed that starts at 0 m and has at least three
+depths. The station positions are taken from vol. I. Nothing is shipped
+in the package; the transcription stays with the analysis.
+
+**What is computed.** For each lowering, Q(z) / Q(0), and the depths of
+10 and 1 percent by linear interpolation of ln Q in depth between the
+readings that bracket them. A lowering that does not reach a level gives
+no value for it. Where Q was read several times at one depth, the mean
+of ln Q is used. The deck monitor is not used for the main result, as
+Nygård advises; the levels with each reading scaled by the monitor are
+reported beside it.
+
+**The test.** Jerlov's types are keyed on the 10 percent level, so a
+lowering counts as IB-like if its 10 percent level lies between the
+midpoints of Table 2's neighbours, above 28.5 m and at most 37 m (II at
+24, IB at 33, IA at 41). For the IB-like lowerings that reach 1 percent,
+the median of z(1) / z(10) is compared with Table 2's 2.12 and with the
+package's 2.49 (section 53). If it is nearer 2.12, the water measured
+did attenuate faster below the 10 percent level than any spectral Kd for
+IB allows, and the difference lies in the water, as section 22 read it.
+If it is nearer 2.49, the measurements agree with the package and the
+difference lies in how the 1977 paper formed its IB. Fewer than three
+IB-like lowerings that reach 1 percent decides nothing, and is reported
+as such. Every lowering's levels are reported, whatever its class.
+
+**Not in this test.** Morel's profiles in vol. I, which Jerlov also used,
+and the region of each station; both are reported if the test is
+undecided, without changing the criterion.
