@@ -1918,3 +1918,64 @@ on either set of wavelengths. What made the deeper water more turbid
 examined here. The transcription and the analysis are
 `tools/smith1973_blue.csv` and `tools/smith1973_blue.py`;
 `tests/test_quanta.py` recomputes the numbers.
+
+## 57. Carrying the uncertainty of a measured Kd through to PAR
+
+`Water.from_measurements(..., uncertainty={"kd": sigma})` has stored a
+standard uncertainty since section 26, but nothing used it: a 1 percent
+depth from a measured Kd came out as one number however good the
+measurement. Section 26 declined to propagate uncertainty into c because
+that needs the correlation between a and b, which only the caller knows.
+A calculation that starts from Kd alone does not meet that problem, but
+it meets a smaller one of the same kind: the correlation of the errors
+between wavelengths, which decides how they add up in an integral over
+the spectrum, and which is also only the caller's to know.
+
+**Now.** The errors are taken as fully correlated between wavelengths:
+the range reported is that of Kd shifted by k standard uncertainties at
+every wavelength together, k = 1 by default, and the calculation is
+repeated exactly with Kd + k sigma and Kd - k sigma, not linearised.
+That is the assumption `Water.uncertainty` already makes when it
+interpolates between wavelengths. It is also the safe one. PAR at any
+depth falls as Kd rises at any wavelength, so the two shifted spectra
+give the shallowest and the deepest depth that any errors within k sigma
+at every wavelength can give; errors correlated less than fully give a
+narrower range. When they are fully correlated and normal, the range is
+exactly the interval of plus and minus k standard deviations, 68 percent
+for k = 1.
+
+- `par_profile` takes the uncertainty from a `Water` that carries one for
+  Kd, or as `kd_uncertainty=`, an array on the wavelengths, beside an
+  array `kd`. A `Descent` and the packaged types carry none, since no
+  source publishes one; asking them for a range raises
+  `MissingQuantityError`, as does a gap (NaN) in the uncertainty within
+  the band.
+- `ParProfile.depth_of_fraction_bounds(fraction, k=1)` returns the
+  shallower and the deeper depth; `ParProfile.par_bounds(k=1)` the lower
+  and higher PAR at each depth asked for. The surface PAR does not depend
+  on Kd and has no range. A Kd minus k sigma below zero at any wavelength
+  in the band is refused, not clipped: the uncertainty is then larger
+  than the value, and the deeper bound would rest on a Kd that cannot be.
+- `classify_kd(..., uncertainty=sigma)` ranks the types again with the
+  measurement shifted by plus and minus k sigma, and
+  `KdClassification.nearest_within_uncertainty` lists every type that comes
+  out nearest in any of the three, the measurement's own nearest first.
+  A shift of the whole spectrum moves a measurement along the scale from
+  clear to turbid, which is where the types lie, but not across it; a
+  type that only an error in the spectrum's shape would make nearest is
+  not found. The docstring says so.
+
+**Checks.** With a Kd that is the same at every wavelength, the depth of
+a fraction f is ln(1 / f) / Kd whatever the spectrum, so the bounds must
+be ln(1 / f) / (Kd plus and minus k sigma); the tests compute it so.
+Zero uncertainty gives bounds equal to the depth; the bounds bracket it;
+k scales them; the refusals above are tested; and a `Water` built with an
+uncertainty gives the same bounds as the array it was built from. The
+README shows it on a measured Kd.
+
+**Rejected:** a first-order formula, which is exact only for small
+uncertainty and is no simpler to compute than the two shifted spectra; a
+Monte Carlo over independent errors, whose answer depends on how finely
+the spectrum is sampled, since independent errors average away over more
+samples; and a correlation argument, which would ask the caller for a
+matrix almost nobody has, to give a range narrower than the one here.
