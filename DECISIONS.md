@@ -1783,3 +1783,27 @@ as such. Every lowering's levels are reported, whatever its class.
 **Not in this test.** Morel's profiles in vol. I, which Jerlov also used,
 and the region of each station; both are reported if the test is
 undecided, without changing the criterion.
+
+**Rules settled while transcribing, before any level was computed.** The
+tables needed choices the plan did not make. All 79 pages (vol. II, pp.
+I-7 to I-85) were compared with their images, with a draft made from the
+text layer.
+
+- A lowering starts at the last 0 m reading before readings below the
+  surface, so that a 0 m reading closing the previous lowering, or one
+  taken on deck, is not mixed in. It ends where the depth first falls
+  more than 6 m below the deepest reading so far, or where the instrument
+  changes; within that, every reading counts, including one printed a
+  few metres out of order (p. I-18). This keeps the long stationary
+  series of the FC 31 meter, which go down in steps and come back up,
+  and the quick FC 5 casts, which go down and up, on the same footing.
+- Values printed in parentheses (p. I-12) are left out.
+- Two pages give upwelling irradiance (pp. I-77, I-84) and are left out.
+- Where the printed depth is plainly a slip it is kept as printed and
+  noted, since the plan reads the tables, not corrects them: 10.7 m
+  between 94.2 and 100.4 m (p. I-14), 4.9 m between 9.9 and 19.8 m (p.
+  I-41), and 46 between 159 and 120 at 43.0 m (p. I-66). The last
+  brackets the 10 percent level of its lowering; its effect is reported.
+- A range in the monitor column is taken as its midpoint, and a reading
+  with no monitor value takes the last one given before it in the same
+  lowering.
