@@ -29,3 +29,9 @@ comparisons.
 Every table has a script. Those whose values are transcribed from a paper
 rather than read from a dataset keep the numbers as literals and check them
 against the paper's own equations before writing anything.
+
+Two files here build no table. `release_notes.py` prints a version's
+GitHub Release text from CHANGELOG.md (DECISIONS.md section 51).
+`nygard1973_levels.py` and its transcription `nygard1973_quanta.csv` are
+the analysis of DECISIONS.md section 55, Nygård's measured profiles of
+quanta checked against Jerlov's IB; the transcription is not shipped.

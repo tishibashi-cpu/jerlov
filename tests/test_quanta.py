@@ -8,13 +8,22 @@ Jerlov's (1976) Kd predict.
 
 from __future__ import annotations
 
+import importlib.util
 import math
+import pathlib
+import statistics
 import warnings
 
 import numpy as np
 import pytest
 
 import jerlov
+
+ROOT = pathlib.Path(__file__).resolve().parent.parent
+source_tree = pytest.mark.skipif(
+    not (ROOT / "tools" / "nygard1973_quanta.csv").exists(),
+    reason="not running from a source tree",
+)
 
 TYPES = ("I", "IA", "IB", "II", "III", "1C", "3C")
 BAND = np.arange(350.0, 701.0, 5.0)          # Jerlov's quanta band
@@ -232,6 +241,84 @@ def test_no_spectral_kd_for_IB_reaches_jerlovs_70_m():
              hydrolight[3]]
     assert round(jerlov1968, 1) == 98.4
     assert (round(min(every)), round(max(every))) == (93, 104)
+
+
+def _nygard():
+    spec = importlib.util.spec_from_file_location(
+        "nygard1973_levels", ROOT / "tools" / "nygard1973_levels.py")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+@source_tree
+def test_nygards_ib_like_profiles_follow_table_2_not_the_package():
+    """DECISIONS.md section 55: 48 lowerings at 19 stations, 37 reaching
+    both levels and 10 turning back before 1 percent at 68 to 89 m; five
+    IB-like, z(1) / z(10) 2.51, 1.89, 2.01, 1.73 and 1.95, median 1.95, at
+    stations 3, 12, 12, 15 and 15; 1.99 with the monitor; 1.59 to 2.51,
+    median 2.05, over all 37."""
+    nygard = _nygard()
+    found = nygard.lowerings(nygard.read())
+    assert len(found) == 48
+    assert len({lowering[0]["station"] for lowering in found}) == 19
+    plain = [nygard.levels(lowering) for lowering in found]
+    both = [(lv[0.10], lv[0.01]) for lv in plain
+            if lv[0.10] is not None and lv[0.01] is not None]
+    assert len(both) == 37
+    short = [max(r["depth"] for r in lowering)
+             for lowering, lv in zip(found, plain)
+             if lv[0.10] is not None and lv[0.01] is None]
+    assert (len(short), round(min(short)), round(max(short))) == (10, 68, 89)
+    ib = [(lowering[0]["station"], lv[0.01] / lv[0.10])
+          for lowering, lv in zip(found, plain)
+          if nygard.ib_like(lv[0.10]) and lv[0.01] is not None]
+    assert [s for s, _ in ib] == [3, 12, 12, 15, 15]
+    assert [round(r, 2) for _, r in ib] == [2.51, 1.89, 2.01, 1.73, 1.95]
+    median = statistics.median(r for _, r in ib)
+    assert round(median, 2) == 1.95
+    assert abs(median - 2.12) < abs(median - 2.49)
+    assert (round(abs(median - 2.12), 2), round(abs(median - 2.49), 2)) \
+        == (0.17, 0.54)
+    scaled = [nygard.levels(lowering, monitor=True) for lowering in found]
+    with_monitor = [lv[0.01] / lv[0.10] for lv in scaled
+                    if lv and nygard.ib_like(lv[0.10]) and lv[0.01]]
+    assert (len(with_monitor), round(statistics.median(with_monitor), 2)) \
+        == (5, 1.99)
+    ratios = [z1 / z10 for z10, z1 in both]
+    assert (round(min(ratios), 2), round(max(ratios), 2),
+            round(statistics.median(ratios), 2)) == (1.59, 2.51, 2.05)
+
+
+@source_tree
+def test_nygards_slips_and_false_starts_do_not_change_the_test():
+    """Section 55: 146 for the 46 at 43.0 m moves its lowering's 10 percent
+    level from 40.3 to 47.1 m; counting the four false starts adds two
+    IB-like lowerings and leaves the median at 1.95."""
+    nygard = _nygard()
+    rows = nygard.read()
+
+    def ib_median(rows):
+        ratios = []
+        for lowering in nygard.lowerings(rows):
+            lv = nygard.levels(lowering)
+            if nygard.ib_like(lv[0.10]) and lv[0.01] is not None:
+                ratios.append(lv[0.01] / lv[0.10])
+        return len(ratios), round(statistics.median(ratios), 2)
+
+    def z10_of_station_17_from(page, rows):
+        for lowering in nygard.lowerings(rows):
+            if lowering[0]["station"] == 17 and lowering[0]["page"] == page:
+                return round(nygard.levels(lowering)[0.10], 1)
+
+    assert z10_of_station_17_from("I-66", rows) == 40.3
+    mended = [dict(r, q=146.0) if (r["page"], r["depth"], r["q"])
+              == ("I-66", 43.0, 46.0) else r for r in rows]
+    assert z10_of_station_17_from("I-66", mended) == 47.1
+    assert ib_median(mended) == (5, 1.95)
+    every_start = [dict(r, not_a_start=False) for r in rows]
+    assert sum(r["not_a_start"] for r in rows) == 4
+    assert ib_median(every_start) == (7, 1.95)
 
 
 def test_DATA_md_figures_for_the_tables_against_each_other():

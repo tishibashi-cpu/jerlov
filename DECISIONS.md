@@ -1807,3 +1807,39 @@ text layer.
 - A range in the monitor column is taken as its midpoint, and a reading
   with no monitor value takes the last one given before it in the same
   lowering.
+
+**Result.** The test is decided, and on the side of section 22: the
+measured water lost its light faster below the 10 percent level than any
+spectral Kd for IB in the package allows.
+
+- From the 19 stations, 48 lowerings start at 0 m with at least three
+  depths. 37 reach both levels; 10, at the clearest stations, turn back
+  before 1 percent, at 68 to 89 m; one turns before 10 percent.
+- Five are IB-like, at stations 3, 12 (two) and 15 (two). Their z(1) /
+  z(10) are 2.51, 1.89, 2.01, 1.73 and 1.95, median 1.95: 0.17 from
+  Table 2's 2.12 and 0.54 from the package's 2.49. With the monitor the
+  median is 1.99 (the first monitor value in a lowering stands for its
+  start when the 0 m reading has none).
+- Over all 37 lowerings that reach both levels the ratio runs from 1.59
+  to 2.51, median 2.05, beside Jerlov's 2.18 for all water masses. The
+  package's ratio for IB, 2.49, is at the top of what was measured.
+- The two printed slips do not change the test. With 146 for the 46 at
+  43.0 m, its lowering's 10 percent level moves from 40.3 to 47.1 m, not
+  IB-like either way; 14.9 for the 4.9 m changes nothing.
+- A first run had four lowerings that were not: a 0 m reading closing one
+  cast taken as the start of the next, which began 8 to 92 minutes later
+  or far below the surface (pp. I-13, I-53, I-59, I-80). Every real start
+  is followed within 5 minutes by a reading shallower than 11 m. They are
+  marked in the table and left out; two of them had been IB-like, and with
+  them the median was also 1.95.
+
+What this does not settle. The five lowerings come from three stations.
+The quanta meters' spectral response (vol. II, Fig. 3) was not read, but
+section 53 found that no tilt of the spectrum within (wavelength /
+550)^-2 to ^2 brings the package's IB ratio below 2.33. Why the water
+attenuated faster below 10 percent is not shown by quanta alone: R. C.
+Smith's spectral irradiance at the same stations (vol. II, section G)
+would show whether Kd at each wavelength rose with depth. The
+transcription and the analysis are `tools/nygard1973_quanta.csv` and
+`tools/nygard1973_levels.py`; `tests/test_quanta.py` recomputes the numbers
+above. DATA.md section 22 says so.

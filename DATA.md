@@ -1132,6 +1132,20 @@ fits of Solonenko & Mobley at 98.5 and 104.1 m (DECISIONS.md section 54).
 Every set of spectral Kd for IB in the package gives 93 to 104 m against
 the 70 of the 1977 paper.
 
+**Nygård's own profiles (DECISIONS.md section 55).** Two of the 1977
+paper's sources are in Tyler, J. E. (ed.) (1973), Data Report, SCOR
+Discoverer Expedition, May 1970, SIO Ref. 73-16 (no DOI). Nygård's direct
+measurements of quanta there (vol. II, section I) give 48 lowerings at 19
+stations. The five whose 10 percent level is IB-like, between 28.5 and 37
+m, reach 1 percent at 1.73 to 2.51 times that depth, median 1.95, against
+2.12 in Table 2 and 2.49 in the package; over all 37 that reach both
+levels the median is 2.05. So the faster loss below the 10 percent level
+is in the measurements themselves, not only in how the 1977 tables were
+formed, and a Kd that does not change with depth, from any of the tables
+here, does not reproduce it. Why is still open: the spectral irradiance
+measured at the same stations (vol. II, section G) has not been read.
+`tools/nygard1973_quanta.csv` is the transcription; it is not shipped.
+
 ## 23. Tyler's measured radiance distribution (note)
 
 `tyler1958_radiance.csv` is transcribed from Tyler, J. E. (1958),
