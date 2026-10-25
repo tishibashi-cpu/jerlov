@@ -4,6 +4,45 @@ Every release is archived on Zenodo under the concept DOI
 [10.5281/zenodo.22321312](https://doi.org/10.5281/zenodo.22321312), which
 always resolves to the latest version.
 
+## 0.21.0 — 2026-10-25
+
+A measured Kd's uncertainty carried through to PAR and to the nearest
+type, and the cause of the package's IB result looked for in the data of
+the cruise behind it. No shipped value changed.
+
+**Added.** `par_profile` takes the standard uncertainty of Kd from a
+`Water` built with `uncertainty={"kd": ...}`, or as `kd_uncertainty=`
+beside an array `kd`. `ParProfile.depth_of_fraction_bounds(fraction, k=1)`
+and `ParProfile.par_bounds(k=1)` repeat the calculation exactly with Kd
+plus and minus k uncertainties at every wavelength together: the widest
+range that errors within k uncertainties can give, and plus and minus k
+standard deviations if the errors are fully correlated and normal.
+`classify_kd(..., uncertainty=..., k=1)` lists in
+`nearest_within_uncertainty` every type that comes out nearest within
+that shift. The published types and `descend` carry no uncertainty and
+give no range; a Kd minus k uncertainties below zero is refused, not
+clipped (DECISIONS.md section 57).
+
+**Docs.** Why the package puts Jerlov IB's 1 percent level of quanta at
+93 m against the 70 m of Jerlov (1977), DECISIONS.md sections 53 to 56
+and DATA.md section 22:
+
+- Neither the sky's spectrum nor the meter's response explains it, and
+  neither does the Kd table: every set of spectral Kd for IB in the
+  package, Austin & Petzold's included, gives 93 to 104 m.
+- Nygård's measured profiles from the Discoverer expedition of 1970,
+  transcribed from the data report (SIO Ref. 73-16), lose their light
+  below the 10 percent level at least as fast as the 1977 table says:
+  z(1) / z(10)
+  has a median of 1.95 where the 10 percent level is IB-like, against
+  2.12 in the table and 2.49 in the package.
+- Smith's spectra at the same stations show the blue light's Kd rising
+  with depth at two of three of them.
+
+The measurements point to water that grew more turbid with depth, which
+a Kd that does not change with depth cannot describe. The transcriptions
+and analyses are in `tools/` and are not shipped.
+
 ## 0.20.0 — 2026-10-24
 
 An attenuation coefficient from a Secchi depth, by a rule the caller names.
