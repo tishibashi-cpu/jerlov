@@ -2055,3 +2055,63 @@ The transcriptions and analyses are `tools/morel1973_quanta.csv`,
 `tools/morel1973_levels.py`, `tools/baird1973_chlorophyll.csv` and
 `tools/baird1973_chlorophyll.py`; `tests/test_quanta.py` recomputes the
 numbers. DATA.md section 22 says so.
+
+## 59. Scalar PAR, from a mean cosine the caller gives
+
+`par_profile` integrates the planar irradiance Ed, and since section 29
+its docstring has said that PAR on scalar irradiance E0, what a spherical
+quantum sensor reads and what a cell suspended in the water receives, is
+larger by a factor the package cannot supply. The factor depends on the
+light field: the sun, the sky, the surface and the scattering of the
+water, none of which the package models (sections 12 and 38). It can be
+measured, or computed by radiative transfer, as
+`examples/radiance_distribution.py` does. So the caller gives it, as the
+backscatter ratio is given in section 4.
+
+**Now.** `ParProfile.scalar_par(*, mean_cosine, reflectance)` returns
+scalar PAR at `depths_m`, umol photons m-2 s-1, from the identity
+
+    E0 = (Ed - Eu) / mu = Ed (1 - R) / mu
+
+where `mu` is the mean cosine of the whole light field, (Ed - Eu) / E0,
+and R the irradiance reflectance Eu / Ed, both of the photon flux over
+`band_nm` (and of the weighted flux if a `photon_weight` was given). It
+is the definition of the mean cosine rearranged, not an approximation, so
+the only error in it is the caller's error in mu and R.
+
+- Both are keyword-only and have no default. R is asked for, rather than
+  dropped, because leaving out the upwelling light is a choice: passing
+  `reflectance=0` makes it, and its cost, a result too high by a factor
+  1 / (1 - R), is then one the caller knows they have accepted.
+- Each is a number, or one value per depth, of the shape of `depths_m`.
+  Nothing is interpolated between depths, and so there is no
+  `depth_of_fraction` for scalar PAR: it would need mu and R between the
+  depths given. With mu and R the same at every depth the depth of a
+  fraction is the planar one, and the docstring says so.
+- mu must lie in (0, 1] and R in [0, 1), and together they must satisfy
+  mu <= (1 - R) / (1 + R). That is E0 >= Ed + Eu, which holds for any
+  light field, since a radiance counts fully in E0 and by its cosine in
+  Ed or Eu; equality is light travelling only straight up and down. A
+  pair outside it describes no light field and is refused.
+- The mean cosine of the downwelling light alone, Ed / E0d, is a
+  different and larger number; given here with `reflectance=0` it gives
+  the downwelling part of scalar PAR only. The docstring says so.
+- The bounds of section 57 are not repeated: `par_bounds()` divided the
+  same way gives them, for mu and R taken as exact.
+
+**Checks.** The tests compute three light fields whose ratio is known
+without the package: a beam straight down (mu = 1, R = 0, scalar equals
+planar); downwelling radiance the same from every direction of the upper
+hemisphere and none from below (Ed = pi L, E0 = 2 pi L, so mu = 0.5,
+R = 0, scalar twice planar); and light travelling only straight up and
+down (E0 = Ed + Eu, at the limit mu = (1 - R) / (1 + R)). Per-depth
+values are applied depth by depth, and the refusals above are tested.
+
+**Rejected:** a default mean cosine, such as a value typical of clear
+water, for the reason of section 4: it would be defensible somewhere,
+wrong elsewhere, and invisible. Taking E0 / Ed directly, which is what
+the radiance example prints: it is the same number as (1 - R) / mu, but
+the mean cosine is the quantity measured and published, and taking it
+with R keeps the upwelling light a visible choice. Interpolating per-depth
+values to give a depth of a fraction: it would guess at the light field
+between the depths the caller described.
