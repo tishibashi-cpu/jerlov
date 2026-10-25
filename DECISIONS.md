@@ -1606,3 +1606,54 @@ range are used; a table of coefficients from other studies, whose papers
 have not been read here; and converting the other way, from K to a
 Secchi depth, which needs the contrast of the disc against the water as
 well as the attenuation and is a different model.
+
+## 53. Why IB's 1 percent level comes out 33 percent too deep: the plan
+
+DATA.md section 22 found the package's 1 percent level of quanta for IB at
+93 m against the 70 m of Jerlov (1977, Table 2), and IA at 100 m against
+87, while the top 10 m agree. It read Table 5's Kd rising with depth as the
+IB stations becoming more turbid below 15 m, and left two things open: why,
+and whether the sky's spectrum, for which D65 stands in, matters. This
+section is written before the computations below are run.
+
+**A reading of the paper to test first.** Jerlov fitted three equations to
+the means over water masses, z(30) = 0.50 z(10) - 0.0023 z(10)^2,
+z(3) = 1.65 z(10) and z(1) = 2.18 z(10), and says they "are also valid for
+the optical water types defined by the existing classification in terms
+of spectral transmittance. The characteristic values of the optical types
+are presented in Table 2" (p. 285). If the oceanic rows of Table 2 were made from z(10) with those
+equations, their 3 and 1 percent levels are the pooled fit for all water
+masses, not measurements of each type, and Tables 3 and 5, which follow
+Table 2 (section 22), inherit that. The rising Kd would then be a property
+of the fit rather than of the water.
+
+**Test 1, the paper against itself.** For the five oceanic types, I to
+III, compute z(30), z(3) and z(1) from the printed z(10) with Jerlov's
+equations. Passes if every z(30) is within the printed rounding (0.5 m)
+and every z(3) and z(1) within 3 percent, the "slight trend (+-3%)" Jerlov
+allows z(1) / z(10) (p. 284). Repeat for the coastal types 1 and 3 and
+report, without a criterion.
+
+**Test 2, the package's own ratio.** With the comparison of section 22
+unchanged (Jerlov 1976 Kd, D65, 350-700 nm, layer by layer where the
+profile goes), compute z(10), z(3), z(1) and z(1) / z(10) for every type.
+If Test 1 passes, IB's excess is explained by the ratio when the package's
+z(10) is within 2 m of 33 and its z(1) / z(10) is far enough above 2.18
+to account for the 23 m: the package's z(10) times 2.18 must then come
+within 3 m of 70.
+
+**Test 3, the sky.** Tilt D65 by (wavelength / 550 nm)^n for n from -2 to
+2 in steps of 1, a range that covers a reddened sun low in the sky and a
+blue overcast, and recompute IB's levels. The sky explains the excess only
+if some n brings z(1) within 3 m of 70 while z(10) stays within 2 m of 33.
+The same tilt applied as the quanta meter's response, through
+`photon_weight`, tests the meter in the same way, with the same criterion.
+Jerlov does not give the meters' response here, so this bounds it rather
+than models it.
+
+**What follows from each outcome.** If Test 1 passes, DATA.md section 22
+is corrected: the comparison below 10 m is with a fit, and the reading of
+Table 5 as water becoming more turbid is withdrawn. If it fails, that
+reading stands and Tests 2 and 3 say only how much the sky and the meter
+could move the result. Either way the numbers quoted are recomputed in
+`tests/test_quanta.py`.
