@@ -73,6 +73,7 @@ from .shortwave import (
 )
 from .sources import SOURCES, Source, get_source
 from .water import (
+    POOLE1929_SECCHI_COEFFICIENT,
     Descent,
     KdClassification,
     MeasuredPoints,
@@ -83,6 +84,7 @@ from .water import (
     classify_kd,
     descend,
     kd_spectrum,
+    k_from_secchi,
     measured_points,
     profile_depth,
     pure_water_absorption,
@@ -159,6 +161,8 @@ __all__ = [
     "AngleWarning",
     "ShortwaveParameters",
     "kd_spectrum",
+    "k_from_secchi",
+    "POOLE1929_SECCHI_COEFFICIENT",
     "b_from_c",
     "measured_points",
     "MeasuredPoints",
@@ -166,4 +170,4 @@ __all__ = [
     "MissingQuantityError",
 ]
 
-__version__ = "0.19.2"
+__version__ = "0.20.0"

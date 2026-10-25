@@ -141,6 +141,84 @@ def test_b_from_c_matches_the_ratio_table():
     assert lower < b < upper
 
 
+def test_k_from_secchi_is_the_coefficient_over_the_depth():
+    """K = coefficient / Secchi depth; Duarte (1991, p. 364) used 1.7."""
+    assert jerlov.POOLE1929_SECCHI_COEFFICIENT == 1.7
+    with pytest.warns(ProvenanceWarning, match="1.7 / Secchi depth"):
+        k = jerlov.k_from_secchi(
+            4.0, coefficient=jerlov.POOLE1929_SECCHI_COEFFICIENT)
+    assert isinstance(k, float)
+    assert k == pytest.approx(0.425)
+    with pytest.warns(ProvenanceWarning, match="1.44 / Secchi depth"):
+        assert jerlov.k_from_secchi(2.0, coefficient=1.44) == \
+            pytest.approx(0.72)
+
+
+# Poole & Atkins (1929), p. 310, Table III: the Secchi depth D, m, and the
+# attenuation coefficient from 0 to 20 m, 1/m, and their printed product.
+POOLE1929_TABLE_III = (
+    (14.0, 0.118, 1.65), (13.5, 0.151, 2.04), (10.0, 0.139, 1.39),
+    (18.0, 0.088, 1.58), (22.0, 0.090, 1.98), (14.0, 0.115, 1.61),
+    (11.5, 0.153, 1.76), (18.5, 0.118, 2.18), (17.5, 0.104, 1.82),
+    (10.0, 0.181, 1.81), (15.0, 0.112, 1.68), (16.5, 0.089, 1.47),
+    (6.5, 0.203, 1.32), (11.0, 0.136, 1.50),
+)
+
+
+def test_the_secchi_coefficient_is_poole_and_atkins_mean():
+    """1.70 is the mean of D times K over Table III; 1.32 to 2.18 its range,
+    as the warning says."""
+    products = [d * k for d, k, _ in POOLE1929_TABLE_III]
+    assert [round(x, 2) for x in products] == \
+        [printed for _, _, printed in POOLE1929_TABLE_III]
+    assert round(sum(products) / len(products), 2) == \
+        jerlov.POOLE1929_SECCHI_COEFFICIENT
+    assert (round(min(products), 2), round(max(products), 2)) == (1.32, 2.18)
+    with pytest.warns(ProvenanceWarning, match="from 1.32 to 2.18"):
+        jerlov.k_from_secchi(5.0, coefficient=1.7)
+
+
+def test_k_from_secchi_keeps_the_shape_of_the_depths():
+    depths = np.array([[2.0, 5.0], [10.0, 0.5]])
+    with pytest.warns(ProvenanceWarning):
+        k = jerlov.k_from_secchi(depths, coefficient=1.7)
+    assert k.shape == (2, 2)
+    np.testing.assert_allclose(k, [[0.85, 0.34], [0.17, 3.4]])
+    with pytest.warns(ProvenanceWarning):
+        assert jerlov.k_from_secchi([3.4], coefficient=1.7).shape == (1,)
+
+
+def test_k_from_secchi_warns_on_every_call():
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always")
+        for _ in range(3):
+            jerlov.k_from_secchi(5.0, coefficient=1.7)
+    assert [w.category for w in caught] == [ProvenanceWarning] * 3
+    assert all(w.filename == __file__ for w in caught)
+    assert "waveband" in str(caught[0].message)
+
+
+def test_k_from_secchi_needs_the_coefficient_named():
+    with pytest.raises(TypeError):
+        jerlov.k_from_secchi(5.0)  # type: ignore[call-arg]
+    with pytest.raises(TypeError):
+        jerlov.k_from_secchi(5.0, 1.7)  # type: ignore[misc]
+
+
+@pytest.mark.parametrize("depth", [0.0, -1.0, np.nan, np.inf, [2.0, 0.0]])
+def test_k_from_secchi_refuses_a_depth_that_is_not_positive(depth):
+    with pytest.raises(ValueError, match="secchi_depth_m"):
+        jerlov.k_from_secchi(depth, coefficient=1.7)
+
+
+@pytest.mark.parametrize("coefficient", [0.0, -1.7, np.nan, np.inf,
+                                         [1.7, 1.44]])
+def test_k_from_secchi_refuses_a_coefficient_that_is_not_one_positive(
+        coefficient):
+    with pytest.raises(ValueError, match="coefficient"):
+        jerlov.k_from_secchi(5.0, coefficient=coefficient)
+
+
 def test_sources_are_described():
     for key, source in jerlov.SOURCES.items():
         assert source.key == key
