@@ -574,11 +574,19 @@ class KdClassification:
     type at every wavelength compared, ``"more turbid"`` if above the most
     turbid one, else ``None``. The nearest type is then only an end of the
     classification, not a match."""
+    nearest_within_uncertainty: tuple[str, ...] | None = None
+    """With ``uncertainty`` given to :func:`classify_kd`: every type that
+    comes out nearest with the measurement as given or shifted by ``k``
+    uncertainties up or down at every wavelength together, the nearest
+    first. ``None`` without one."""
 
     def __repr__(self) -> str:
         (first, d1), *rest = self.distances
         runner = f", then {rest[0][0]} {rest[0][1]:.3f}" if rest else ""
         beyond = f"; {self.beyond} than every type" if self.beyond else ""
+        within = self.nearest_within_uncertainty
+        if within is not None and len(within) > 1:
+            beyond += f"; within the uncertainty also {', '.join(within[1:])}"
         n = self.wavelengths.size
         return (
             f"<KdClassification {first} {d1:.3f}{runner} ({self.source}, "
@@ -587,7 +595,8 @@ class KdClassification:
 
 
 def classify_kd(wavelengths, kd, *, source: str = "jerlov1976",
-                types=None) -> KdClassification:
+                types=None, uncertainty=None,
+                k: float = 1.0) -> KdClassification:
     """Find the Jerlov type whose Kd spectrum a measured one is closest to.
 
     Every type of ``source`` is compared with the measurement at the given
@@ -613,6 +622,15 @@ def classify_kd(wavelengths, kd, *, source: str = "jerlov1976",
         out wherever any compared type has no Kd, so leaving out types with
         gaps keeps more wavelengths: Solonenko & Mobley's 3C and 5C have
         none from 600 nm on.
+    uncertainty:
+        Optional standard uncertainty of ``kd``, 1/m, on ``wavelengths``.
+        The types are ranked again with the measurement shifted by ``k`` of
+        them up and down at every wavelength together, and
+        :attr:`~KdClassification.nearest_within_uncertainty` lists every
+        type that comes out nearest. A shift of the whole spectrum moves a
+        measurement between clear and turbid, along the types; a type only
+        an error in the spectrum's shape would make nearest is not found
+        (DECISIONS.md section 57).
 
     Notes
     -----
@@ -684,15 +702,41 @@ def classify_kd(wavelengths, kd, *, source: str = "jerlov1976",
             stacklevel=_data.caller_stacklevel(),
         )
 
+    logs = {t: np.log(values[usable]) for t, values in references.items()}
+
+    def ranked(log_kd):
+        out = [(t, float(np.sqrt(np.mean((log_kd - logs[t]) ** 2))))
+               for t in logs]
+        out.sort(key=lambda pair: pair[1])
+        return out
+
     log_measured = np.log(measured[usable])
-    distances = []
-    logs = {}
-    for water_type, values in references.items():
-        logs[water_type] = np.log(values[usable])
-        difference = log_measured - logs[water_type]
-        distances.append(
-            (water_type, float(np.sqrt(np.mean(difference ** 2)))))
-    distances.sort(key=lambda pair: pair[1])
+    distances = ranked(log_measured)
+    within = None
+    if uncertainty is not None:
+        sigma = np.array(uncertainty, dtype=float, ndmin=1)
+        if sigma.shape != wl.shape:
+            raise ValueError("uncertainty must be one value per wavelength")
+        _require_number(k, "k")
+        if not np.isfinite(k) or k < 0:
+            raise ValueError("k must be a finite number, not negative")
+        sigma = sigma[usable]
+        if np.any(np.isnan(sigma)):
+            raise MissingQuantityError(
+                "the uncertainty has a gap at a wavelength that is compared")
+        if np.any(sigma < 0) or np.any(np.isinf(sigma)):
+            raise ValueError("uncertainty must be finite and not negative")
+        lower = measured[usable] - k * sigma
+        if np.any(lower <= 0):
+            raise ValueError(
+                f"Kd minus {k:g} uncertainties is not positive at "
+                f"{wl[usable][np.argmin(lower)]:g} nm: the uncertainty is "
+                "as large as the value")
+        within = [distances[0][0]]
+        for shifted in (measured[usable] + k * sigma, lower):
+            nearest = ranked(np.log(shifted))[0][0]
+            if nearest not in within:
+                within.append(nearest)
 
     clearest = min(logs, key=lambda t: logs[t].mean())
     murkiest = max(logs, key=lambda t: logs[t].mean())
@@ -711,6 +755,7 @@ def classify_kd(wavelengths, kd, *, source: str = "jerlov1976",
         wavelengths=used,
         excluded_nm=tuple(float(w) for w in wl[~usable]),
         beyond=beyond,
+        nearest_within_uncertainty=None if within is None else tuple(within),
     )
 
 

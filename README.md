@@ -290,6 +290,21 @@ in that band, not PAR, and `p.band_nm` says which. `photon_weight=` weights
 each photon by its wavelength, for a pigment's absorption or a receptor's
 sensitivity, and the depths and Kd then follow the weighted flux.
 
+A measured Kd with a standard uncertainty gives a range as well:
+
+```python
+w = jerlov.Water.from_measurements(wl, kd=measured_kd,
+                                   uncertainty={"kd": sigma_kd})
+p = jerlov.par_profile(surface, wl, [0, 25, 50], kd=w, unit="energy")
+p.depth_of_fraction_bounds(0.01)   # (shallower, deeper), m, Kd +- 1 sigma
+p.par_bounds(k=2)                  # (lower, higher) PAR, Kd +- 2 sigma
+```
+
+`kd_uncertainty=` does the same beside an array `kd`. The errors are taken
+as fully correlated between wavelengths, the widest range any errors within
+k sigma can give (DECISIONS.md section 57). The published types carry no
+uncertainty, so they and `descend` give no range.
+
 Jerlov measured quanta irradiance, 350-700 nm, by water type, and his
 tables are shipped for checking against, with
 `band=jerlov.QUANTA_BAND_NM` to integrate over his band:
@@ -301,7 +316,8 @@ jerlov.jerlov1977_quanta("II")   # <QuantaLevels II: 30% 10.5 m, 10% 24 m, 3% 39
 From II to 3C the package agrees with them within 2 m at every level. For
 Jerlov I it agrees only through `descend`; for IB it puts the 1 percent
 level a third too deep, because Jerlov's IB water grew more turbid below
-15 m. DATA.md section 22.
+15 m; the profiles of quanta and the spectra measured at the stations he
+drew on show the same. DATA.md section 22; DECISIONS.md sections 53-56.
 
 Tyler measured the radiance from every direction at seven depths in a deep
 lake, and his tables are shipped too, for checking a radiative transfer
@@ -342,6 +358,8 @@ r = jerlov.classify_kd(wl, measured_kd)       # source="jerlov1976" by default
 r                 # <KdClassification II 0.064, then IB 0.412 (jerlov1976, 26 wavelengths)>
 r.distances       # every type, nearest first: rms of ln(measured / type)
 r.beyond          # "clearer" or "more turbid" than every type, or None
+jerlov.classify_kd(wl, measured_kd, uncertainty=sigma_kd
+                   ).nearest_within_uncertainty   # ("II", "IB"): either, within 1 sigma
 ```
 
 It ranks the types of one edition; it draws no boundaries, since those differ

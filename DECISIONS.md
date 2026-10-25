@@ -1606,3 +1606,376 @@ range are used; a table of coefficients from other studies, whose papers
 have not been read here; and converting the other way, from K to a
 Secchi depth, which needs the contrast of the disc against the water as
 well as the attenuation and is a different model.
+
+## 53. Why IB's 1 percent level comes out 33 percent too deep: the plan
+
+DATA.md section 22 found the package's 1 percent level of quanta for IB at
+93 m against the 70 m of Jerlov (1977, Table 2), and IA at 100 m against
+87, while the top 10 m agree. It read Table 5's Kd rising with depth as the
+IB stations becoming more turbid below 15 m, and left two things open: why,
+and whether the sky's spectrum, for which D65 stands in, matters. This
+section is written before the computations below are run.
+
+**A reading of the paper to test first.** Jerlov fitted three equations to
+the means over water masses, z(30) = 0.50 z(10) - 0.0023 z(10)^2,
+z(3) = 1.65 z(10) and z(1) = 2.18 z(10), and says they "are also valid for
+the optical water types defined by the existing classification in terms
+of spectral transmittance. The characteristic values of the optical types
+are presented in Table 2" (p. 285). If the oceanic rows of Table 2 were made from z(10) with those
+equations, their 3 and 1 percent levels are the pooled fit for all water
+masses, not measurements of each type, and Tables 3 and 5, which follow
+Table 2 (section 22), inherit that. The rising Kd would then be a property
+of the fit rather than of the water.
+
+**Test 1, the paper against itself.** For the five oceanic types, I to
+III, compute z(30), z(3) and z(1) from the printed z(10) with Jerlov's
+equations. Passes if every z(30) is within the printed rounding (0.5 m)
+and every z(3) and z(1) within 3 percent, the "slight trend (+-3%)" Jerlov
+allows z(1) / z(10) (p. 284). Repeat for the coastal types 1 and 3 and
+report, without a criterion.
+
+**Test 2, the package's own ratio.** With the comparison of section 22
+unchanged (Jerlov 1976 Kd, D65, 350-700 nm, layer by layer where the
+profile goes), compute z(10), z(3), z(1) and z(1) / z(10) for every type.
+If Test 1 passes, IB's excess is explained by the ratio when the package's
+z(10) is within 2 m of 33 and its z(1) / z(10) is far enough above 2.18
+to account for the 23 m: the package's z(10) times 2.18 must then come
+within 3 m of 70.
+
+**Test 3, the sky.** Tilt D65 by (wavelength / 550 nm)^n for n from -2 to
+2 in steps of 1, a range that covers a reddened sun low in the sky and a
+blue overcast, and recompute IB's levels. The sky explains the excess only
+if some n brings z(1) within 3 m of 70 while z(10) stays within 2 m of 33.
+The same tilt applied as the quanta meter's response, through
+`photon_weight`, tests the meter in the same way, with the same criterion.
+Jerlov does not give the meters' response here, so this bounds it rather
+than models it.
+
+**What follows from each outcome.** If Test 1 passes, DATA.md section 22
+is corrected: the comparison below 10 m is with a fit, and the reading of
+Table 5 as water becoming more turbid is withdrawn. If it fails, that
+reading stands and Tests 2 and 3 say only how much the sky and the meter
+could move the result. Either way the numbers quoted are recomputed in
+`tests/test_quanta.py`.
+
+**Result.** None of the three tests passes, so the reading of section 22
+stands and the cause is still open; what changed is how much is ruled out.
+
+- Test 1 fails, narrowly. Every oceanic z(30) is within 0.2 m of
+  Jerlov's equation and every z(3) within 2.4 percent, but the 1 percent
+  level of type I is 3.6 percent above the equation's (103 m against
+  106.8), outside the 3 percent set above. The other four are within 2.7
+  percent. So it is not shown that Table 2 was made from the equations,
+  and nothing in section 22 is withdrawn. That z(30) follows the
+  quadratic to 0.2 m for all five types is recorded as an observation; the
+  coastal types miss it by 0.37 and 0.38 m.
+- Test 2 fails at its first condition: the package puts IB's 10 percent
+  level at 37.4 m, not within 2 m of 33. The excess does not start below
+  the 10 percent level; it grows with depth, 4.4 m at 10 percent, 11.6 m
+  at 3 percent and 23.0 m at 1 percent. IB's z(1) / z(10) is 2.49 in the
+  package against 2.12 in Table 2.
+- Test 3 fails. Over n from -2 to 2 IB's 1 percent level moves from 98.9
+  to 84.7 m. At n = +1, the only tilt that keeps z(10) within 2 m of 33
+  (34.2 m), it is 89.2 m, 19 m too deep. The sky's spectrum, over that
+  range, is not the cause.
+- An error in the plan: the same tilt as the meter's response is not a
+  second test. A weight on the photons multiplies the spectrum at the
+  surface and at depth alike, so it gives exactly the levels of the same
+  tilt applied to the sky, as the run showed. What the run tests is the
+  product of the two, and neither alone nor together does it explain the
+  excess within that range.
+
+The numbers are recomputed in `tests/test_quanta.py`. DATA.md section 22
+now says that the sky and the meter were tested and in what range.
+
+## 54. IB's 1 percent level with Austin & Petzold's Kd: the plan
+
+Section 53 ruled out the sky's spectrum and the meter's response over a
+wide range, and found the package's IB already 4.4 m too deep at the 10
+percent level. Deep in clear water the light that is left is blue, so the
+levels depend most on Kd near 475 nm, and that is Jerlov's (1976) table.
+Austin & Petzold (1986) revised Jerlov's Kd for the oceanic types from
+other measurements (DATA.md), and `jerlov.water(t, source="austin1986")`
+carries their values for I to III and 1C at 350-700 nm. This section is
+written before the computation is run.
+
+**Test 4.** Repeat the comparison of section 53, Test 2 (D65, 350-700 nm,
+layer by layer with `descend`) with `source="austin1986"`. Austin &
+Petzold's Kd explains IB's excess if IB's 10 percent level is within 2 m
+of 33 and its 1 percent level within 3 m of 70, while II and III stay
+within 2 m of Table 2 at every level, as they are with Jerlov (1976).
+IA, against 41 and 87 m, and I, against 49 and 103 m, are reported with
+the same tolerances but are not part of the criterion.
+
+**Reported without a criterion.** The same with `source="solonenko2015"`,
+both its `kd` and its `kd_hydrolight`. Both are fitted to Jerlov's (1968)
+values (DATA.md section 19), so they are not an independent check, but
+they show how much a smooth model of the same types moves the levels.
+
+**What follows.** If Test 4 passes, DATA.md section 22 says that the
+difference lies in Jerlov's (1976) Kd for IB and not in the water below,
+and the reading of Table 5 as water becoming more turbid is withdrawn.
+If it fails, section 22 says that Austin & Petzold's Kd does not explain
+it either, and by how much.
+
+**Result.** Test 4 fails, and on both counts. With Austin & Petzold's Kd
+IB's levels are 14.7, 38.5, 67.7 and 95.8 m, deeper than with Jerlov
+(1976), not shallower: 5.5 m too deep at 10 percent and 25.8 m at 1
+percent. II's 1 percent level moves to 54.6 m, 2.6 m from Table 2, and
+III's to 33.2 m, 2.2 m, so the agreement from II down is also slightly
+worse. IA is 102.9 m against 87 and I 109.2 m against 103.
+
+The fits of Solonenko & Mobley put IB deeper still: 98.5 m with their
+`kd`, 104.1 m with `kd_hydrolight` (IB keeps its type to 200 m in the
+profile, so one Kd is the whole descent).
+
+So every published set of spectral Kd for IB that the package carries,
+from Jerlov's first and third editions to Austin & Petzold's revision and
+a radiative transfer model of the same types, puts the 1 percent level of
+quanta between 93 and 104 m (98.4 m with the first edition), against 70
+in Jerlov (1977). The difference
+is not in one table's values. What is left is the 1977 paper's own IB:
+which stations it was formed from, and how, which the paper does not
+give per type (section 22). The numbers are recomputed in
+`tests/test_quanta.py`, and DATA.md section 22 says so.
+
+## 55. IB's 1 percent level against Nygård's profiles: the plan
+
+Sections 53 and 54 left the 1977 paper's own IB as the only candidate:
+which profiles it was formed from, and how. Two of its sources are now at
+hand, in Tyler, J. E. (ed.) (1973), Data Report, SCOR Discoverer
+Expedition, May 1970, SIO Ref. 73-16, Visibility Laboratory, Scripps
+Institution of Oceanography, two volumes, which has no DOI: Morel's
+spectral and total irradiance (vol. I, section F) and Nygård's direct
+measurements of quanta (vol. II, section I). Jerlov's Table 1 counts 11
+of Nygård's observations off Ecuador and Panama, 7 in the Caribbean and 1
+in the Sargasso Sea. This section is written before any profile is read.
+
+**What is read.** Nygård's tables give, station by station, the time, the
+depth and the downwelling quantum irradiance Q, with Q at 0 m derived
+from the reading above the surface; they are not normalised to the deck
+monitor (vol. II, p. I-3). From the page images, not the text layer,
+every lowering is transcribed that starts at 0 m and has at least three
+depths. The station positions are taken from vol. I. Nothing is shipped
+in the package; the transcription stays with the analysis.
+
+**What is computed.** For each lowering, Q(z) / Q(0), and the depths of
+10 and 1 percent by linear interpolation of ln Q in depth between the
+readings that bracket them. A lowering that does not reach a level gives
+no value for it. Where Q was read several times at one depth, the mean
+of ln Q is used. The deck monitor is not used for the main result, as
+Nygård advises; the levels with each reading scaled by the monitor are
+reported beside it.
+
+**The test.** Jerlov's types are keyed on the 10 percent level, so a
+lowering counts as IB-like if its 10 percent level lies between the
+midpoints of Table 2's neighbours, above 28.5 m and at most 37 m (II at
+24, IB at 33, IA at 41). For the IB-like lowerings that reach 1 percent,
+the median of z(1) / z(10) is compared with Table 2's 2.12 and with the
+package's 2.49 (section 53). If it is nearer 2.12, the water measured
+did attenuate faster below the 10 percent level than any spectral Kd for
+IB allows, and the difference lies in the water, as section 22 read it.
+If it is nearer 2.49, the measurements agree with the package and the
+difference lies in how the 1977 paper formed its IB. Fewer than three
+IB-like lowerings that reach 1 percent decides nothing, and is reported
+as such. Every lowering's levels are reported, whatever its class.
+
+**Not in this test.** Morel's profiles in vol. I, which Jerlov also used,
+and the region of each station; both are reported if the test is
+undecided, without changing the criterion.
+
+**Rules settled while transcribing, before any level was computed.** The
+tables needed choices the plan did not make. All 79 pages (vol. II, pp.
+I-7 to I-85) were compared with their images, with a draft made from the
+text layer.
+
+- A lowering starts at the last 0 m reading before readings below the
+  surface, so that a 0 m reading closing the previous lowering, or one
+  taken on deck, is not mixed in. It ends where the depth first falls
+  more than 6 m below the deepest reading so far, or where the instrument
+  changes; within that, every reading counts, including one printed a
+  few metres out of order (p. I-18). This keeps the long stationary
+  series of the FC 31 meter, which go down in steps and come back up,
+  and the quick FC 5 casts, which go down and up, on the same footing.
+- Values printed in parentheses (p. I-12) are left out.
+- Two pages give upwelling irradiance (pp. I-77, I-84) and are left out.
+- Where the printed depth is plainly a slip it is kept as printed and
+  noted, since the plan reads the tables, not corrects them: 10.7 m
+  between 94.2 and 100.4 m (p. I-14), 4.9 m between 9.9 and 19.8 m (p.
+  I-41), and 46 between 159 and 120 at 43.0 m (p. I-66). The last
+  brackets the 10 percent level of its lowering; its effect is reported.
+- A range in the monitor column is taken as its midpoint, and a reading
+  with no monitor value takes the last one given before it in the same
+  lowering.
+
+**Result.** The test is decided, and on the side of section 22: the
+measured water lost its light faster below the 10 percent level than any
+spectral Kd for IB in the package allows.
+
+- From the 19 stations, 48 lowerings start at 0 m with at least three
+  depths. 37 reach both levels; 10, at the clearest stations, turn back
+  before 1 percent, at 68 to 89 m; one turns before 10 percent.
+- Five are IB-like, at stations 3, 12 (two) and 15 (two). Their z(1) /
+  z(10) are 2.51, 1.89, 2.01, 1.73 and 1.95, median 1.95: 0.17 from
+  Table 2's 2.12 and 0.54 from the package's 2.49. With the monitor the
+  median is 1.99 (the first monitor value in a lowering stands for its
+  start when the 0 m reading has none).
+- Over all 37 lowerings that reach both levels the ratio runs from 1.59
+  to 2.51, median 2.05, beside Jerlov's 2.18 for all water masses. The
+  package's ratio for IB, 2.49, is at the top of what was measured.
+- The two printed slips do not change the test. With 146 for the 46 at
+  43.0 m, its lowering's 10 percent level moves from 40.3 to 47.1 m, not
+  IB-like either way; 14.9 for the 4.9 m changes nothing.
+- A first run had four lowerings that were not: a 0 m reading closing one
+  cast taken as the start of the next, which began 8 to 92 minutes later
+  or far below the surface (pp. I-13, I-53, I-59, I-80). Every real start
+  is followed within 5 minutes by a reading shallower than 11 m. They are
+  marked in the table and left out; two of them had been IB-like, and with
+  them the median was also 1.95.
+
+What this does not settle. The five lowerings come from three stations.
+The quanta meters' spectral response (vol. II, Fig. 3) was not read, but
+section 53 found that no tilt of the spectrum within (wavelength /
+550)^-2 to ^2 brings the package's IB ratio below 2.33. Why the water
+attenuated faster below 10 percent is not shown by quanta alone: R. C.
+Smith's spectral irradiance at the same stations (vol. II, section G)
+would show whether Kd at each wavelength rose with depth. The
+transcription and the analysis are `tools/nygard1973_quanta.csv` and
+`tools/nygard1973_levels.py`; `tests/test_quanta.py` recomputes the numbers
+above. DATA.md section 22 says so.
+
+## 56. Does the blue light's attenuation rise with depth? The plan
+
+Section 55 found that Nygård's IB-like profiles of quanta lose their light
+below the 10 percent level faster than any spectral Kd for IB in the
+package allows: z(1) / z(10) 1.95 against 2.49. Deep in clear water the
+light that is left is blue, so a constant Kd can be wrong there only if
+the blue's own attenuation rises with depth, or if the light is not as
+blue as the model makes it. R. C. Smith measured spectral downwelling
+irradiance at the same stations (Tyler, ed., 1973, SIO Ref. 73-16, vol.
+II, section G), which can tell the first from the second. This section is
+written before any of Smith's spectra or attenuation coefficients is read.
+
+**What is read.** For stations 3, 12 and 15, the three with IB-like
+lowerings in section 55, every downwelling spectral table: depth, and
+irradiance at each printed wavelength, from the page images. Where a
+depth was scanned more than once, the mean of ln E is used at each
+wavelength. Upwelling tables are not used. Smith gives stations 3 as
+measured in clear weather and 12 and 15 as normalised to the deck monitor
+in variable weather, with errors that can reach a factor of two (vol. II,
+pp. G3-G4); that is reported with the result.
+
+**What is computed.** For each pair of consecutive depths, Kd at each
+wavelength printed at both, ln(E(z1) / E(z2)) / (z2 - z1). The blue Kd of
+a layer is the mean of those at 465 to 505 nm, the band that carries most
+of the quanta deep in IB water.
+
+**Test 1.** At each station with at least two layers, the blue Kd of the
+deepest layer over that of the shallowest. It rises with depth at a
+station if the ratio exceeds 1.2, and is taken as not rising if it is
+below 1.2. Blue attenuation rises with depth in this water if it rises
+at two or more of the three stations; it does not if it fails to at two
+or more. A station with fewer than two layers is reported and does not
+count.
+
+**Test 2, reported without a criterion.** Each layer's blue Kd over that
+of Jerlov's (1976) IB at the same wavelengths.
+
+**What follows.** If blue Kd rises, section 22's reading, water becoming
+more turbid with depth, has direct spectral support at these stations,
+and a Kd that does not change with depth cannot describe them. If it does
+not, the faster loss of quanta has another cause, and the spectra are
+examined for where the light deep down lies.
+
+**Result.** Test 1 passes by its rule: blue Kd rises with depth at two of
+the three stations.
+
+- Station 3, clear weather, two layers at 469-498 nm: 0.025 1/m from 28.9
+  to 57.4 m, 0.041 from 57.4 to 85.4 m, a ratio of 1.63. With only 479
+  and 498 nm, the wavelengths of the other two stations, 1.29.
+- Station 12, five layers at 479 and 498 nm: 0.046 1/m from 9.8 to 18.9
+  m, 0.072 from 49.3 to 62.6 m, a ratio of 1.56. The layers between do
+  not rise steadily: 0.063, 0.037, 0.065.
+- Station 15, five layers: 0.064 1/m from 10.2 to 19.2 m and 0.066 from
+  48.3 to 61.3 m, a ratio of 1.03, so it does not rise; but between them
+  it reaches 0.109 and 0.083, and at every depth it is above Jerlov's IB.
+- Test 2: against Jerlov's (1976) IB at the same wavelengths, 0.037 to
+  0.038 1/m, the layers run from 0.68 to 1.11 times it at station 3, 0.98
+  to 1.89 at 12 and 1.16 to 2.87 at 15. Every deepest layer is above it.
+
+So at these stations the blue light deep down was attenuated more than
+Jerlov's IB attenuates it, and at two of them more than in their own upper
+layers; a Kd that does not change with depth describes neither. That is
+the spectral side of section 55's quanta, and it supports section 22's
+reading that the water was more turbid below.
+
+Cautions. Stations 12 and 15 were normalised to the deck monitor in
+variable weather, where Smith puts the error as high as a factor of two,
+and give only two wavelengths in the band; their layer-to-layer swings
+are of that order. Station 3, the one measured in clear weather, rises
+on either set of wavelengths. What made the deeper water more turbid
+(chlorophyll, which the report also measured, or other particles) is not
+examined here. The transcription and the analysis are
+`tools/smith1973_blue.csv` and `tools/smith1973_blue.py`;
+`tests/test_quanta.py` recomputes the numbers.
+
+## 57. Carrying the uncertainty of a measured Kd through to PAR
+
+`Water.from_measurements(..., uncertainty={"kd": sigma})` has stored a
+standard uncertainty since section 26, but nothing used it: a 1 percent
+depth from a measured Kd came out as one number however good the
+measurement. Section 26 declined to propagate uncertainty into c because
+that needs the correlation between a and b, which only the caller knows.
+A calculation that starts from Kd alone does not meet that problem, but
+it meets a smaller one of the same kind: the correlation of the errors
+between wavelengths, which decides how they add up in an integral over
+the spectrum, and which is also only the caller's to know.
+
+**Now.** The errors are taken as fully correlated between wavelengths:
+the range reported is that of Kd shifted by k standard uncertainties at
+every wavelength together, k = 1 by default, and the calculation is
+repeated exactly with Kd + k sigma and Kd - k sigma, not linearised.
+That is the assumption `Water.uncertainty` already makes when it
+interpolates between wavelengths. It is also the safe one. PAR at any
+depth falls as Kd rises at any wavelength, so the two shifted spectra
+give the shallowest and the deepest depth that any errors within k sigma
+at every wavelength can give; errors correlated less than fully give a
+narrower range. When they are fully correlated and normal, the range is
+exactly the interval of plus and minus k standard deviations, 68 percent
+for k = 1.
+
+- `par_profile` takes the uncertainty from a `Water` that carries one for
+  Kd, or as `kd_uncertainty=`, an array on the wavelengths, beside an
+  array `kd`. A `Descent` and the packaged types carry none, since no
+  source publishes one; asking them for a range raises
+  `MissingQuantityError`, as does a gap (NaN) in the uncertainty within
+  the band.
+- `ParProfile.depth_of_fraction_bounds(fraction, k=1)` returns the
+  shallower and the deeper depth; `ParProfile.par_bounds(k=1)` the lower
+  and higher PAR at each depth asked for. The surface PAR does not depend
+  on Kd and has no range. A Kd minus k sigma below zero at any wavelength
+  in the band is refused, not clipped: the uncertainty is then larger
+  than the value, and the deeper bound would rest on a Kd that cannot be.
+- `classify_kd(..., uncertainty=sigma)` ranks the types again with the
+  measurement shifted by plus and minus k sigma, and
+  `KdClassification.nearest_within_uncertainty` lists every type that comes
+  out nearest in any of the three, the measurement's own nearest first.
+  A shift of the whole spectrum moves a measurement along the scale from
+  clear to turbid, which is where the types lie, but not across it; a
+  type that only an error in the spectrum's shape would make nearest is
+  not found. The docstring says so.
+
+**Checks.** With a Kd that is the same at every wavelength, the depth of
+a fraction f is ln(1 / f) / Kd whatever the spectrum, so the bounds must
+be ln(1 / f) / (Kd plus and minus k sigma); the tests compute it so.
+Zero uncertainty gives bounds equal to the depth; the bounds bracket it;
+k scales them; the refusals above are tested; and a `Water` built with an
+uncertainty gives the same bounds as the array it was built from. The
+README shows it on a measured Kd.
+
+**Rejected:** a first-order formula, which is exact only for small
+uncertainty and is no simpler to compute than the two shifted spectra; a
+Monte Carlo over independent errors, whose answer depends on how finely
+the spectrum is sampled, since independent errors average away over more
+samples; and a correlation argument, which would ask the caller for a
+matrix almost nobody has, to give a range narrower than the one here.

@@ -34,6 +34,7 @@ Three things are stated rather than hidden:
 from __future__ import annotations
 
 import warnings
+from collections.abc import Callable
 from dataclasses import dataclass
 
 import numpy as np
@@ -81,10 +82,10 @@ class ParProfile:
 
     __slots__ = ("depths_m", "par", "surface_par", "kd_from", "band_nm",
                  "weighted", "wavelengths_nm", "_grid", "_surface_q",
-                 "_weight", "_tau", "_deepest")
+                 "_weight", "_tau", "_deepest", "_shifted")
 
     def __init__(self, depths_m, band_nm, grid, surface_q, tau, deepest,
-                 kd_from, weight=None):
+                 kd_from, weight=None, shifted=None):
         self.band_nm = band_nm
         self.weighted = weight is not None
         """True if ``par`` was integrated against a ``photon_weight``."""
@@ -98,6 +99,7 @@ class ParProfile:
         self._surface_q = surface_q
         self._tau = tau
         self._deepest = deepest
+        self._shifted = shifted
         self.kd_from = kd_from
         """What the Kd came from, in words."""
         self.surface_par = self._par_at(0.0)
@@ -110,9 +112,10 @@ class ParProfile:
         for array in (self.depths_m, self.par):
             array.setflags(write=False)
 
-    def _par_at(self, depth: float) -> float:
+    def _par_at(self, depth: float, tau=None) -> float:
+        tau = self._tau if tau is None else tau
         return float(_data.trapezoid(
-            self._weight * self._surface_q * np.exp(-self._tau(depth)),
+            self._weight * self._surface_q * np.exp(-tau(depth)),
             self._grid))
 
     def _depth(self, depth_m, name: str) -> float:
@@ -206,6 +209,9 @@ class ParProfile:
             the descent cannot go further, there is no answer here: the
             typical profile says nothing about the water below.
         """
+        return self._depth_of(fraction, self._tau)
+
+    def _depth_of(self, fraction, tau) -> float:
         _require_number(fraction, "fraction")
         fraction = float(fraction)
         if not 0.0 < fraction < 1.0:
@@ -226,7 +232,7 @@ class ParProfile:
                     f"descent, so the depth of {fraction:.2%} is below it"
                 )
         else:
-            while self._par_at(high) > target:
+            while self._par_at(high, tau) > target:
                 low, high = high, high * 2.0
                 if high > 1e6:
                     raise ValueError(
@@ -237,13 +243,60 @@ class ParProfile:
         # PAR falls monotonically with depth, so bisection cannot miss.
         for _ in range(100):
             middle = 0.5 * (low + high)
-            if self._par_at(middle) > target:
+            if self._par_at(middle, tau) > target:
                 low = middle
             else:
                 high = middle
             if high - low < 1e-9 * max(high, 1.0):
                 break
         return 0.5 * (low + high)
+
+    def _taus(self, k) -> tuple:
+        """The optical depth with Kd plus and minus k uncertainties."""
+        _require_number(k, "k")
+        k = float(k)
+        if not np.isfinite(k) or k < 0:
+            raise ValueError("k must be a finite number, not negative")
+        if isinstance(self._shifted, str):
+            raise MissingQuantityError(self._shifted)
+        return self._shifted(k)
+
+    def depth_of_fraction_bounds(self, fraction: float = 0.01, *,
+                                 k: float = 1.0) -> tuple[float, float]:
+        """The depth of ``fraction`` with Kd shifted by ``k`` standard
+        uncertainties at every wavelength together: ``(shallower, deeper)``,
+        in m.
+
+        The errors are taken as fully correlated between wavelengths, so
+        this is the widest range any errors within ``k`` uncertainties at
+        every wavelength can give, and exactly plus and minus ``k`` standard
+        deviations if they are fully correlated and normal. DECISIONS.md
+        section 57.
+
+        Raises
+        ------
+        MissingQuantityError
+            If the Kd carries no uncertainty, as no published type does, or
+            has a gap in it within the band.
+        ValueError
+            If Kd minus ``k`` uncertainties is negative anywhere in the band.
+        """
+        more, less = self._taus(k)
+        return self._depth_of(fraction, more), self._depth_of(fraction, less)
+
+    def par_bounds(self, *, k: float = 1.0) -> tuple[np.ndarray, np.ndarray]:
+        """``(lower, higher)`` PAR at :attr:`depths_m`, with Kd shifted by
+        ``k`` standard uncertainties at every wavelength together, as in
+        :meth:`depth_of_fraction_bounds`. The surface has no range: PAR
+        there does not depend on Kd."""
+        more, less = self._taus(k)
+
+        def at_depths(tau) -> np.ndarray:
+            return np.array([self._par_at(z, tau)
+                             for z in self.depths_m.ravel()]
+                            ).reshape(self.depths_m.shape)
+
+        return at_depths(more), at_depths(less)
 
     def __repr__(self) -> str:
         lo, hi = self.band_nm
@@ -261,7 +314,7 @@ class ParProfile:
 
 def par_profile(surface_downwelling, wavelengths, depths_m, *, kd,
                 unit: str, band=PAR_RANGE_NM,
-                photon_weight=None) -> ParProfile:
+                photon_weight=None, kd_uncertainty=None) -> ParProfile:
     """PAR at ``depths_m`` below a surface downwelling spectrum.
 
     Parameters
@@ -302,6 +355,13 @@ def par_profile(surface_downwelling, wavelengths, depths_m, *, kd,
         per unit energy, as a thermopile's, is not a photon weight: divide
         it by the wavelength first, since a photon of wavelength l carries
         an energy proportional to 1 / l.
+    kd_uncertainty:
+        Optional, on ``wavelengths``, beside an array ``kd``: the standard
+        uncertainty of Kd, 1/m. A :class:`~jerlov.Water` built with
+        ``uncertainty={"kd": ...}`` carries its own and takes none here.
+        It is used only by :meth:`ParProfile.depth_of_fraction_bounds` and
+        :meth:`ParProfile.par_bounds`, which take the errors as fully
+        correlated between wavelengths (DECISIONS.md section 57).
 
     Example
     -------
@@ -356,6 +416,8 @@ def par_profile(surface_downwelling, wavelengths, depths_m, *, kd,
         raise ValueError("depths_m cannot be negative")
 
     deepest = None
+    sigma: np.ndarray | None = None
+    no_range = ""
     if isinstance(kd, Descent):
         if not np.array_equal(kd.wavelengths, wl):
             raise ValueError(
@@ -383,18 +445,48 @@ def par_profile(surface_downwelling, wavelengths, depths_m, *, kd,
 
         kd_values = (np.vstack([v[near] for v in kd._kd]) if kd._kd
                      else np.zeros_like(sub_wl))
+        if kd_uncertainty is not None:
+            raise ValueError(
+                "kd_uncertainty goes with an array kd; the Kd of a descent "
+                "is from published types, which publish no uncertainty")
+        no_range = ("the Kd of a descent is from published types, which "
+                    "publish no uncertainty; build a Water from your own "
+                    "measurements with one to get a range")
     else:
         if isinstance(kd, Water):
             kd_values = np.asarray(kd.kd(sub_wl), dtype=float)
             kd_from = f"Jerlov {kd.name}" if kd.name else "the given water"
             if kd.source is not None:
                 kd_from += f" ({kd.source.key})"
+            if kd_uncertainty is not None:
+                raise ValueError(
+                    "kd_uncertainty goes with an array kd; a Water carries "
+                    "its own: Water.from_measurements(..., "
+                    "uncertainty={'kd': ...})")
+            try:
+                sigma = np.asarray(kd.uncertainty("kd", sub_wl), dtype=float)
+            except MissingQuantityError as error:
+                no_range = f"{error}, so Kd has no range"
         else:
             kd_values = np.array(kd, dtype=float)
             kd_from = "the given Kd"
             if kd_values.shape != wl.shape:
                 raise ValueError("kd must have the same shape as wavelengths")
             kd_values = kd_values[near]
+            if kd_uncertainty is None:
+                no_range = "no kd_uncertainty was given, so Kd has no range"
+            else:
+                given = np.array(kd_uncertainty, dtype=float)
+                if given.shape != wl.shape:
+                    raise ValueError(
+                        "kd_uncertainty must have the same shape as "
+                        "wavelengths")
+                sigma = given[near]
+        if sigma is not None and (
+                np.any(sigma < 0) or np.any(np.isinf(sigma))):
+            raise ValueError(
+                "the uncertainty of Kd must be finite and not negative "
+                "(NaN marks a gap)")
         if np.any(kd_values < 0) or np.any(np.isinf(kd_values)):
             # inf times a depth of 0 is NaN, so PAR at the surface came out
             # NaN with only a NumPy RuntimeWarning.
@@ -436,8 +528,28 @@ def par_profile(surface_downwelling, wavelengths, depths_m, *, kd,
     def tau(z):
         return np.interp(grid, sub_wl, optical_depth(z))
 
+    shifted: str | Callable
+    if sigma is None:
+        shifted = no_range
+    else:
+        def shifted(k):
+            if np.any(np.isnan(sigma)):
+                raise MissingQuantityError(
+                    f"the uncertainty of Kd has a gap between {lo:g} and "
+                    f"{hi:g} nm, so its effect on the integral over all of "
+                    "it is not determined")
+            more, less = kd_values + k * sigma, kd_values - k * sigma
+            if np.any(less < 0):
+                worst = sub_wl[np.argmin(less)]
+                raise ValueError(
+                    f"Kd minus {k:g} uncertainties is negative at "
+                    f"{worst:g} nm: the uncertainty is larger than the "
+                    "value, and a Kd below zero cannot be")
+            return (lambda z: np.interp(grid, sub_wl, more * z),
+                    lambda z: np.interp(grid, sub_wl, less * z))
+
     return ParProfile(depths, band_nm, grid, surface_q, tau, deepest,
-                      kd_from, weight)
+                      kd_from, weight, shifted)
 
 
 def _band(band) -> tuple[float, float]:

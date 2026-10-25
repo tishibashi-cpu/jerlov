@@ -1118,9 +1118,40 @@ edition.
 stated. Jerlov's discussion (p. 286) notes that "ocean water is not
 optically homogenous as particle accumulations occur at different levels";
 a deep chlorophyll maximum would do it, but the paper does not say, and
-nothing is assumed here. The comparison uses D65 for the sky; the
-agreement in the top 10 m suggests that matters little for the levels, but
-it has not been tested.
+nothing is assumed here. The comparison uses D65 for the sky. Tilting it
+by (wavelength / 550 nm)^n, n from -2 to 2, moves IB's 1 percent level
+between 98.9 and 84.7 m, and where it keeps the 10 percent level within 2
+m of Jerlov's 33 it is 89.2 m; the same tilt stands for a quanta meter
+whose response differs from a flat one, and gives the same levels. So
+neither the sky's spectrum nor the meter's response explains the
+difference over that range (DECISIONS.md section 53). The package's IB is
+already 4.4 m too deep at the 10 percent level, 37.4 m against 33, and the
+difference grows with depth. Nor is it Jerlov's (1976) Kd for IB: Austin &
+Petzold's (1986) revision puts the 1 percent level at 95.8 m, and the
+fits of Solonenko & Mobley at 98.5 and 104.1 m (DECISIONS.md section 54).
+Every set of spectral Kd for IB in the package gives 93 to 104 m against
+the 70 of the 1977 paper.
+
+**Nygård's own profiles (DECISIONS.md section 55).** Two of the 1977
+paper's sources are in Tyler, J. E. (ed.) (1973), Data Report, SCOR
+Discoverer Expedition, May 1970, SIO Ref. 73-16 (no DOI). Nygård's direct
+measurements of quanta there (vol. II, section I) give 48 lowerings at 19
+stations. The five whose 10 percent level is IB-like, between 28.5 and 37
+m, reach 1 percent at 1.73 to 2.51 times that depth, median 1.95, against
+2.12 in Table 2 and 2.49 in the package; over all 37 that reach both
+levels the median is 2.05. So the faster loss below the 10 percent level
+is in the measurements themselves, not only in how the 1977 tables were
+formed, and a Kd that does not change with depth, from any of the tables
+here, does not reproduce it. Smith's spectral irradiance at three of
+those stations (vol. II, section G; DECISIONS.md section 56) shows why in
+part: Kd at 465-505 nm, where the deep light lies, rose with depth at two
+of them, by 1.63 and 1.56 times from the shallowest layer to the deepest,
+and in every deepest layer was above Jerlov's IB, up to 1.89 times. Two of
+the three were normalised in variable weather, with errors Smith puts as
+high as a factor of two; the one measured in clear weather rises either
+way. What made the deeper water more turbid is not examined.
+`tools/nygard1973_quanta.csv` and `tools/smith1973_blue.csv` are the
+transcriptions; they are not shipped.
 
 ## 23. Tyler's measured radiance distribution (note)
 
