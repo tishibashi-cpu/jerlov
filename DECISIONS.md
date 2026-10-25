@@ -1687,3 +1687,33 @@ stands and the cause is still open; what changed is how much is ruled out.
 
 The numbers are recomputed in `tests/test_quanta.py`. DATA.md section 22
 now says that the sky and the meter were tested and in what range.
+
+## 54. IB's 1 percent level with Austin & Petzold's Kd: the plan
+
+Section 53 ruled out the sky's spectrum and the meter's response over a
+wide range, and found the package's IB already 4.4 m too deep at the 10
+percent level. Deep in clear water the light that is left is blue, so the
+levels depend most on Kd near 475 nm, and that is Jerlov's (1976) table.
+Austin & Petzold (1986) revised Jerlov's Kd for the oceanic types from
+other measurements (DATA.md), and `jerlov.water(t, source="austin1986")`
+carries their values for I to III and 1C at 350-700 nm. This section is
+written before the computation is run.
+
+**Test 4.** Repeat the comparison of section 53, Test 2 (D65, 350-700 nm,
+layer by layer with `descend`) with `source="austin1986"`. Austin &
+Petzold's Kd explains IB's excess if IB's 10 percent level is within 2 m
+of 33 and its 1 percent level within 3 m of 70, while II and III stay
+within 2 m of Table 2 at every level, as they are with Jerlov (1976).
+IA, against 41 and 87 m, and I, against 49 and 103 m, are reported with
+the same tolerances but are not part of the criterion.
+
+**Reported without a criterion.** The same with `source="solonenko2015"`,
+both its `kd` and its `kd_hydrolight`. Both are fitted to Jerlov's (1968)
+values (DATA.md section 19), so they are not an independent check, but
+they show how much a smooth model of the same types moves the levels.
+
+**What follows.** If Test 4 passes, DATA.md section 22 says that the
+difference lies in Jerlov's (1976) Kd for IB and not in the water below,
+and the reading of Table 5 as water becoming more turbid is withdrawn.
+If it fails, section 22 says that Austin & Petzold's Kd does not explain
+it either, and by how much.
