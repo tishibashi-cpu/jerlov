@@ -1979,3 +1979,48 @@ Monte Carlo over independent errors, whose answer depends on how finely
 the spectrum is sampled, since independent errors average away over more
 samples; and a correlation argument, which would ask the caller for a
 matrix almost nobody has, to give a range narrower than the one here.
+
+## 58. IB against Morel's profiles, and the chlorophyll at the IB-like stations: the plan
+
+Sections 55 and 56 rest on Nygård's quanta and Smith's spectra. The 1977
+paper also drew on Morel's measurements on the same cruise, and the data
+report gives the chlorophyll at every station. This section asks two
+questions of them, and is written before either is read; while finding
+where they are in the report, Morel's table for station 22, set 1 (vol.
+I, p. F82), and the size-fractionated chlorophyll of section E for
+stations 13 to 21 were seen in passing. Neither is a measurement the
+tests below are decided on, except that station 22's lowering counts in
+Test A like any other.
+
+**Test A: Morel's profiles of quanta.** Morel's downwelling quanta-meter
+tables (vol. I, section F) give, for each station and experiment ("set"),
+the quanta at each depth as a percentage of the value above the surface,
+already corrected to a constant surface irradiance (p. F3). Every
+downwelling set with at least three depths below the surface is read from
+the page images; a depth printed twice, at two gain settings, is averaged
+in ln. The value just below the surface is taken as t times the value
+above it, with t = 0.96 for the light lost at the surface; the 10 and 1
+percent levels are then found as in section 55, by linear interpolation
+of ln Q in depth. A set is IB-like if its 10 percent level lies above
+28.5 m and at most at 37 m. For the IB-like sets that reach 1 percent,
+the median of z(1) / z(10) is compared with Table 2's 2.12 and the
+package's 2.49, as in section 55, and the result is taken only if it is
+the same for every t from 0.92 to 1.00; otherwise, or with fewer than
+three such sets, Test A decides nothing. Every set's levels are reported.
+
+**Test B: chlorophyll where the blue Kd rose.** From the routine
+fluorometric chlorophyll a of section C (vol. I, Table I), for stations 3,
+12 and 15: the mean of the samples whose depth lies within the shallowest
+and within the deepest of Smith's layers at that station (section 56).
+Chlorophyll rises with depth at a station if the deeper mean exceeds the
+shallower by more than 1.2 times. It is consistent with section 56 if it
+rises at both stations where the blue Kd rose, 3 and 12; at 15, where the
+blue Kd did not, it is reported. A layer with no sample in it leaves its
+station uncounted, and is reported.
+
+**What follows.** If Test A agrees with section 55, Morel's instrument and
+method, with its own surface correction, give the same answer as Nygård's,
+and the result does not rest on one instrument. If Test B is consistent,
+phytoplankton deeper down is a sufficient explanation for the rise of the
+blue Kd; if not, it is not shown to be one. Neither test gives a cause by
+itself; neither changes the package.
