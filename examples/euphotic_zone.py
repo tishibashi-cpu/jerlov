@@ -249,7 +249,8 @@ print("""  - The Kd spectrum is reconstructed from one reading by a model good t
     and the sea surface all change it, and with it PAR's colour.
   - This is planar PAR, from Ed. PAR on scalar irradiance, which is what
     a spherical quantum sensor reads, is larger by a factor that depends on
-    the light field and is not determined here.
+    the light field and is not determined here; `ParProfile.scalar_par`
+    applies one you give it.
   - Each layer's Kd is its type's surface Kd, and the profile is what was
     typical across more than 2500 campaigns, not what holds at your
     station in your season.

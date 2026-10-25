@@ -282,8 +282,18 @@ p.spectrum_at(25)          # photons per nm at 25 m, on p.wavelengths_nm
 
 `kd` is a `Water` carrying Kd, an array, or a `Descent`. `unit` has no
 default, because PAR counts photons and an energy spectrum read as photons is
-weighted wrongly with no sign of it. This is planar PAR, from Ed; PAR on
-scalar irradiance is larger by a factor this package cannot supply.
+weighted wrongly with no sign of it. This is planar PAR, from Ed. PAR on
+scalar irradiance, what a spherical sensor reads, is larger by a factor that
+depends on the light field, which the package does not model; give it as the
+mean cosine (Ed - Eu) / E0 and the reflectance Eu / Ed, neither of which has
+a default:
+
+```python
+p.scalar_par(mean_cosine=0.75, reflectance=0.02)   # E0 = Ed (1 - R) / mu
+```
+
+`reflectance=0` leaves out the upwelling light, as a choice you make
+(DECISIONS.md section 59).
 `band=(lo, hi)` integrates over another band instead, such as part of PAR
 for the share of one colour; outside 400-700 nm the result is a photon flux
 in that band, not PAR, and `p.band_nm` says which. `photon_weight=` weights
