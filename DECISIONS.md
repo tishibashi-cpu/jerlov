@@ -1843,3 +1843,46 @@ would show whether Kd at each wavelength rose with depth. The
 transcription and the analysis are `tools/nygard1973_quanta.csv` and
 `tools/nygard1973_levels.py`; `tests/test_quanta.py` recomputes the numbers
 above. DATA.md section 22 says so.
+
+## 56. Does the blue light's attenuation rise with depth? The plan
+
+Section 55 found that Nygård's IB-like profiles of quanta lose their light
+below the 10 percent level faster than any spectral Kd for IB in the
+package allows: z(1) / z(10) 1.95 against 2.49. Deep in clear water the
+light that is left is blue, so a constant Kd can be wrong there only if
+the blue's own attenuation rises with depth, or if the light is not as
+blue as the model makes it. R. C. Smith measured spectral downwelling
+irradiance at the same stations (Tyler, ed., 1973, SIO Ref. 73-16, vol.
+II, section G), which can tell the first from the second. This section is
+written before any of Smith's spectra or attenuation coefficients is read.
+
+**What is read.** For stations 3, 12 and 15, the three with IB-like
+lowerings in section 55, every downwelling spectral table: depth, and
+irradiance at each printed wavelength, from the page images. Where a
+depth was scanned more than once, the mean of ln E is used at each
+wavelength. Upwelling tables are not used. Smith gives stations 3 as
+measured in clear weather and 12 and 15 as normalised to the deck monitor
+in variable weather, with errors that can reach a factor of two (vol. II,
+p. G4); that is reported with the result.
+
+**What is computed.** For each pair of consecutive depths, Kd at each
+wavelength printed at both, ln(E(z1) / E(z2)) / (z2 - z1). The blue Kd of
+a layer is the mean of those at 465 to 505 nm, the band that carries most
+of the quanta deep in IB water.
+
+**Test 1.** At each station with at least two layers, the blue Kd of the
+deepest layer over that of the shallowest. It rises with depth at a
+station if the ratio exceeds 1.2, and is taken as not rising if it is
+below 1.2. Blue attenuation rises with depth in this water if it rises
+at two or more of the three stations; it does not if it fails to at two
+or more. A station with fewer than two layers is reported and does not
+count.
+
+**Test 2, reported without a criterion.** Each layer's blue Kd over that
+of Jerlov's (1976) IB at the same wavelengths.
+
+**What follows.** If blue Kd rises, section 22's reading, water becoming
+more turbid with depth, has direct spectral support at these stations,
+and a Kd that does not change with depth cannot describe them. If it does
+not, the faster loss of quanta has another cause, and the spectra are
+examined for where the light deep down lies.
