@@ -243,12 +243,16 @@ def test_no_spectral_kd_for_IB_reaches_jerlovs_70_m():
     assert (round(min(every)), round(max(every))) == (93, 104)
 
 
-def _nygard():
+def _tool(name):
     spec = importlib.util.spec_from_file_location(
-        "nygard1973_levels", ROOT / "tools" / "nygard1973_levels.py")
+        name, ROOT / "tools" / f"{name}.py")
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     return module
+
+
+def _nygard():
+    return _tool("nygard1973_levels")
 
 
 @source_tree
@@ -319,6 +323,40 @@ def test_nygards_slips_and_false_starts_do_not_change_the_test():
     every_start = [dict(r, not_a_start=False) for r in rows]
     assert sum(r["not_a_start"] for r in rows) == 4
     assert ib_median(every_start) == (7, 1.95)
+
+
+@source_tree
+def test_smiths_blue_kd_rises_with_depth_at_two_of_three_stations():
+    """DECISIONS.md section 56: deepest over shallowest blue Kd 1.63, 1.56
+    and 1.03 at stations 3, 12 and 15 (1.29 at station 3 on 479 and 498 nm
+    only); 0.025 and 0.041 1/m at station 3, 0.046 and 0.072 at 12, 0.064
+    and 0.066 at 15, with 0.109 and 0.083 between; against Jerlov's IB,
+    0.037-0.038 1/m, 0.68-1.11, 0.98-1.89 and 1.16-2.87, every deepest
+    layer above."""
+    smith = _tool("smith1973_blue")
+    spectra = smith.read()
+    found = {s: smith.layers(depths) for s, depths in spectra.items()}
+    ratio = {s: layers[-1][3] / layers[0][3] for s, layers in found.items()}
+    assert {s: round(r, 2) for s, r in ratio.items()} \
+        == {3: 1.63, 12: 1.56, 15: 1.03}
+    assert sum(r > smith.RISES for r in ratio.values()) == 2
+    two = smith.layers(spectra[3], wavelengths=(479, 498))
+    assert round(two[-1][3] / two[0][3], 2) == 1.29
+    ends = {s: (round(layers[0][3], 3), round(layers[-1][3], 3))
+            for s, layers in found.items()}
+    assert ends == {3: (0.025, 0.041), 12: (0.046, 0.072),
+                    15: (0.064, 0.066)}
+    assert [round(layer[3], 3) for layer in found[15][2:4]] == [0.109, 0.083]
+    ib = jerlov.water("IB", source="jerlov1976")
+    spans = {}
+    for s, layers in found.items():
+        reference = [float(np.mean(ib.kd(np.array(layer[2], dtype=float))))
+                     for layer in layers]
+        assert all(round(r, 3) in (0.037, 0.038) for r in reference)
+        relative = [layer[3] / r for layer, r in zip(layers, reference)]
+        spans[s] = (round(min(relative), 2), round(max(relative), 2))
+        assert relative[-1] > 1
+    assert spans == {3: (0.68, 1.11), 12: (0.98, 1.89), 15: (1.16, 2.87)}
 
 
 def test_DATA_md_figures_for_the_tables_against_each_other():

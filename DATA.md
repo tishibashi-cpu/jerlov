@@ -1142,9 +1142,16 @@ m, reach 1 percent at 1.73 to 2.51 times that depth, median 1.95, against
 levels the median is 2.05. So the faster loss below the 10 percent level
 is in the measurements themselves, not only in how the 1977 tables were
 formed, and a Kd that does not change with depth, from any of the tables
-here, does not reproduce it. Why is still open: the spectral irradiance
-measured at the same stations (vol. II, section G) has not been read.
-`tools/nygard1973_quanta.csv` is the transcription; it is not shipped.
+here, does not reproduce it. Smith's spectral irradiance at three of
+those stations (vol. II, section G; DECISIONS.md section 56) shows why in
+part: Kd at 465-505 nm, where the deep light lies, rose with depth at two
+of them, by 1.63 and 1.56 times from the shallowest layer to the deepest,
+and in every deepest layer was above Jerlov's IB, up to 1.89 times. Two of
+the three were normalised in variable weather, with errors Smith puts as
+high as a factor of two; the one measured in clear weather rises either
+way. What made the deeper water more turbid is not examined.
+`tools/nygard1973_quanta.csv` and `tools/smith1973_blue.csv` are the
+transcriptions; they are not shipped.
 
 ## 23. Tyler's measured radiance distribution (note)
 

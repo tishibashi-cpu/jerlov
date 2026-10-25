@@ -1863,7 +1863,7 @@ depth was scanned more than once, the mean of ln E is used at each
 wavelength. Upwelling tables are not used. Smith gives stations 3 as
 measured in clear weather and 12 and 15 as normalised to the deck monitor
 in variable weather, with errors that can reach a factor of two (vol. II,
-p. G4); that is reported with the result.
+pp. G3-G4); that is reported with the result.
 
 **What is computed.** For each pair of consecutive depths, Kd at each
 wavelength printed at both, ln(E(z1) / E(z2)) / (z2 - z1). The blue Kd of
@@ -1886,3 +1886,35 @@ more turbid with depth, has direct spectral support at these stations,
 and a Kd that does not change with depth cannot describe them. If it does
 not, the faster loss of quanta has another cause, and the spectra are
 examined for where the light deep down lies.
+
+**Result.** Test 1 passes by its rule: blue Kd rises with depth at two of
+the three stations.
+
+- Station 3, clear weather, two layers at 469-498 nm: 0.025 1/m from 28.9
+  to 57.4 m, 0.041 from 57.4 to 85.4 m, a ratio of 1.63. With only 479
+  and 498 nm, the wavelengths of the other two stations, 1.29.
+- Station 12, five layers at 479 and 498 nm: 0.046 1/m from 9.8 to 18.9
+  m, 0.072 from 49.3 to 62.6 m, a ratio of 1.56. The layers between do
+  not rise steadily: 0.063, 0.037, 0.065.
+- Station 15, five layers: 0.064 1/m from 10.2 to 19.2 m and 0.066 from
+  48.3 to 61.3 m, a ratio of 1.03, so it does not rise; but between them
+  it reaches 0.109 and 0.083, and at every depth it is above Jerlov's IB.
+- Test 2: against Jerlov's (1976) IB at the same wavelengths, 0.037 to
+  0.038 1/m, the layers run from 0.68 to 1.11 times it at station 3, 0.98
+  to 1.89 at 12 and 1.16 to 2.87 at 15. Every deepest layer is above it.
+
+So at these stations the blue light deep down was attenuated more than
+Jerlov's IB attenuates it, and at two of them more than in their own upper
+layers; a Kd that does not change with depth describes neither. That is
+the spectral side of section 55's quanta, and it supports section 22's
+reading that the water was more turbid below.
+
+Cautions. Stations 12 and 15 were normalised to the deck monitor in
+variable weather, where Smith puts the error as high as a factor of two,
+and give only two wavelengths in the band; their layer-to-layer swings
+are of that order. Station 3, the one measured in clear weather, rises
+on either set of wavelengths. What made the deeper water more turbid
+(chlorophyll, which the report also measured, or other particles) is not
+examined here. The transcription and the analysis are
+`tools/smith1973_blue.csv` and `tools/smith1973_blue.py`;
+`tests/test_quanta.py` recomputes the numbers.
