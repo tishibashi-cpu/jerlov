@@ -2024,3 +2024,34 @@ and the result does not rest on one instrument. If Test B is consistent,
 phytoplankton deeper down is a sufficient explanation for the rise of the
 blue Kd; if not, it is not shown to be one. Neither test gives a cause by
 itself; neither changes the package.
+
+**Result, Test A.** It agrees with section 55. All 53 downwelling sets,
+at 23 stations, were read (vol. I, pp. F33-F85); 41 reach both levels, 10
+turn back before 1 percent and 2 before 10 percent. With t = 0.96 four
+sets are IB-like and reach 1 percent: station 10 set 2, station 12 set 1
+and station 17 sets 3 and 4, with z(1) / z(10) of 2.16, 2.08, 2.18 and
+2.12, median 2.14, against 2.12 in Table 2 and 2.49 in the package. Over
+t from 0.92 to 1.00 the median runs from 2.08 to 2.17; at 0.92 and 0.94
+station 15 set 2 is IB-like too, with 1.83 and 1.84. Over all 41 sets
+the ratio runs from 1.86 to 2.89, median 2.16. So Morel's quanta meter,
+with its own correction for the light at the surface, gives the answer
+Nygård's did: in water whose 10 percent level is IB's, the 1 percent
+level lies about 2.1 times as deep, not 2.5.
+
+**Result, Test B.** It decides nothing, by its own rule. At station 12
+no chlorophyll sample lies within Smith's shallowest layer, 9.8 to
+18.9 m (the nearest are at 9 and 21 m), so the station is not counted,
+and consistency needed it. At station 3 the chlorophyll rose from 0.061
+mg m-3 in the shallowest layer to 0.172 in the deepest, 2.80 times, where
+the blue Kd rose too; at station 15 it rose from 0.141 to 0.200, 1.42
+times, where the blue Kd did not. At station 12 the deepest layer, 49.3
+to 62.6 m, holds 0.12 mg m-3 (one depth), below the 0.21 to 0.23 of the
+samples at 36 and 45 m. So chlorophyll is higher deep down at both
+stations that can be counted, including one where the blue Kd was not;
+a subsurface maximum of chlorophyll is consistent with the deeper water
+being more turbid, but these data do not show it is the cause.
+
+The transcriptions and analyses are `tools/morel1973_quanta.csv`,
+`tools/morel1973_levels.py`, `tools/baird1973_chlorophyll.csv` and
+`tools/baird1973_chlorophyll.py`; `tests/test_quanta.py` recomputes the
+numbers. DATA.md section 22 says so.
