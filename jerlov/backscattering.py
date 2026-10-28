@@ -25,7 +25,7 @@ from dataclasses import dataclass
 import numpy as np
 
 from . import _data
-from .water import ProvenanceWarning, _like_input
+from .water import ProvenanceWarning
 
 CITATION = (
     "Boss, E. and Pegau, W. S. (2001), 'Relationship of light scattering at "
@@ -96,8 +96,12 @@ def pure_water_vsf(angle_deg, wavelength_nm, salinity_psu: float = 37.0):
     angle = np.asarray(angle_deg, dtype=float)
     amplitude = _amplitude(wavelength_nm, salinity_psu)
     out = amplitude * (1 + _ratio() * np.cos(np.radians(angle)) ** 2)
-    # Angle and wavelength broadcast against each other; the answer is a
-    # float only when neither of them was an array.
+    return _number_or_array(out)
+
+
+def _number_or_array(out):
+    """The arguments broadcast against each other; the answer is a float
+    only when none of them was an array."""
     if np.ndim(out) == 0:
         return float(out)
     return out
@@ -113,7 +117,9 @@ def pure_water_backscattering(wavelength_nm, salinity_psu: float = 37.0):
     amplitude = _amplitude(wavelength_nm, salinity_psu)
     # integral of (1 + r cos^2) sin over 90..180 degrees is 1 + r/3
     out = 2.0 * math.pi * amplitude * (1 + r / 3.0)
-    return _like_input(np.atleast_1d(out), wavelength_nm)
+    # Not _like_input(out, wavelength_nm): with an array of salinities and
+    # one wavelength, that returned the first salinity's value alone.
+    return _number_or_array(out)
 
 
 def pure_water_scattering(wavelength_nm, salinity_psu: float = 37.0):
@@ -225,7 +231,8 @@ def bb_from_vsf(beta, angle_deg: float, wavelength_nm, *,
             stacklevel=_data.caller_stacklevel(),
         )
 
-    scalar = np.ndim(beta) == 0 and np.ndim(wavelength_nm) == 0
+    scalar = (np.ndim(beta) == 0 and np.ndim(wavelength_nm) == 0
+              and np.ndim(salinity_psu) == 0)
     beta = np.atleast_1d(np.asarray(beta, dtype=float))
     if np.any(beta < 0):
         raise ValueError("a volume scattering function cannot be negative")
@@ -249,10 +256,11 @@ def bb_from_vsf(beta, angle_deg: float, wavelength_nm, *,
         values = np.atleast_1d(values)
         return float(values[0]) if scalar else values
 
+    bb_w = np.broadcast_to(bb_w, particulate.shape)
     return Backscattering(
         bb=shape(particulate + bb_w),
         particulate=shape(particulate),
-        water=shape(np.broadcast_to(bb_w, particulate.shape)),
+        water=shape(bb_w),
         angle_deg=angle,
         chi_p=chi_p,
         quoted_error_percent=error,

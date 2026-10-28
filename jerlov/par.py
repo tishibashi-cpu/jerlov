@@ -89,10 +89,10 @@ class ParProfile:
     def __init__(self, depths_m, band_nm, grid, surface_q, tau, deepest,
                  kd_from, weight=None, shifted=None):
         self.band_nm = band_nm
+        """``(lo, hi)``, nm: the band integrated over."""
         self.weighted = weight is not None
         """True if ``par`` was integrated against a ``photon_weight``."""
         self._weight = np.ones_like(grid) if weight is None else weight
-        """``(lo, hi)``, nm: the band integrated over."""
         self._grid = grid
         self.wavelengths_nm = grid.copy()
         """The wavelengths integrated over, nm: every sample inside

@@ -63,8 +63,11 @@ QUESTIONABLE = frozenset({"suspect", "missing", "extrapolated",
                           "extrapolated_by_dataset"})
 
 #: Every status a spectrum can carry: the table in DATA.md, "The status
-#: column". A caller's own flags must be one of these.
-STATUSES = QUESTIONABLE | {"ok", "interpolated"}
+#: column". A caller's own flags must be one of these. The last three are
+#: those of Austin & Petzold's (1986) Kd, which the table did not list
+#: until DECISIONS.md section 60.
+STATUSES = QUESTIONABLE | {"ok", "interpolated", "model", "jerlov_original",
+                           "pure_seawater"}
 
 
 def _read(name: str) -> list[dict[str, str]]:

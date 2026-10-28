@@ -62,6 +62,9 @@ only; see section 16.
 | `interpolated` | Not printed: linearly interpolated between printed values by the dataset the table came through | Usable; no more precise than the printed neighbours |
 | `extrapolated_by_dataset` | Not printed: beyond the printed range, linearly extrapolated by the dataset the table came through | Usable, but rests on nobody's measurement; warns |
 | `read_from_figure` | Not printed as a number: read off a published figure, by the method its section gives | Usable to the reading's stated precision, which the accessor carries |
+| `model` | Computed by the source's own model, not measured at that wavelength: Austin & Petzold's (1986) Kd from K(475) by their Eq. (6) | Usable, as accurate as the model |
+| `jerlov_original` | Jerlov's own value, carried unchanged by a later source: Austin & Petzold's 475 nm column | Usable |
+| `pure_seawater` | Not a measurement of the type: the attenuation of pure sea water, which Austin & Petzold give as type I | Usable; read the source's caveat |
 
 ## Sources
 

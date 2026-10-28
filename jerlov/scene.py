@@ -225,6 +225,7 @@ class Scene:
         # Evaluated once; Water raises for wavelengths outside its data and
         # warns for any that rest on flagged values.
         self._c = water.c(self.wavelengths)
+        _refuse_negative(self._c, self.wavelengths, "c = a + b")
 
     @classmethod
     def at_depth(cls, water: Water, depth_m: float, surface_downwelling,
@@ -254,6 +255,9 @@ class Scene:
         """
         wavelengths = np.asarray(wavelengths, dtype=float)
         _require_number(depth_m, "depth_m")
+        if not np.isfinite(depth_m):
+            # An infinite depth with a Kd of 0 gave 0 * inf, NaN.
+            raise ValueError(f"depth_m must be finite, not {depth_m!r}")
         if depth_m < 0:
             raise ValueError("depth_m cannot be negative")
         surface = np.asarray(surface_downwelling, dtype=float)
@@ -279,6 +283,11 @@ class Scene:
             )
             if np.shape(kd_values) != wavelengths.shape:
                 raise ValueError("kd must have the same shape as wavelengths")
+            if np.any(np.isinf(kd_values)):
+                raise ValueError("kd must be finite (NaN marks a gap)")
+            # A negative Kd made the light brighter with depth; par_profile
+            # has always refused one. DECISIONS.md section 60.
+            _refuse_negative(kd_values, wavelengths, "Kd")
             downwelling = surface * np.exp(-kd_values * depth_m)
         return cls(water, downwelling, wavelengths, depth_m=depth_m)
 
@@ -286,6 +295,10 @@ class Scene:
 
     def transmittance(self, distance_m: float) -> np.ndarray:
         """``exp(-c*r)``. No approximation beyond the value of c itself."""
+        if np.size(distance_m) != 1:
+            raise ValueError(
+                f"distance_m must be a single distance, in m, not "
+                f"{distance_m!r}; call once for each distance")
         _require_number(distance_m, "distance_m")
         if distance_m < 0:
             raise ValueError("distance_m cannot be negative")
@@ -437,6 +450,24 @@ class Scene:
         )
 
 
+def _refuse_negative(values, wavelengths, name: str) -> None:
+    """Refuse a negative coefficient where a result would rest on it.
+
+    A water built with one has already warned (DECISIONS.md section 60);
+    this is where it would turn into a light that grows along the path.
+    NaN, a gap, passes.
+    """
+    negative = np.atleast_1d(values) < 0
+    if np.any(negative):
+        shown = ", ".join(f"{w:g}" for w in
+                          np.atleast_1d(wavelengths)[negative][:5])
+        raise ValueError(
+            f"{name} is negative at {shown} nm, which no water can be: the "
+            "light would grow along its path. A total "
+            "coefficient includes pure water; set a wavelength you cannot "
+            "trust to NaN to leave it out")
+
+
 def _face_ratio(value, shape) -> np.ndarray | float:
     """The face irradiance ratio, checked: a number or an array of ``shape``,
     finite and not negative."""
@@ -487,4 +518,6 @@ def veiling_radiance_estimate(water: Water, downwelling, wavelengths, *,
         raise ValueError("downwelling irradiance cannot be negative")
     bb = water.bb(wavelengths, backscatter_ratio=backscatter_ratio)
     c = water.c(wavelengths)
+    _refuse_negative(c, wavelengths, "c = a + b")
+    _refuse_negative(bb, wavelengths, "bb")
     return bb * ed / (2.0 * np.pi * c)
