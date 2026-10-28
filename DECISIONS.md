@@ -2115,3 +2115,88 @@ the mean cosine is the quantity measured and published, and taking it
 with R keeps the upwelling light a visible choice. Interpolating per-depth
 values to give a depth of a fraction: it would guess at the light field
 between the depths the caller described.
+
+## 60. A review of 0.22.0: what is broadcast, warned or refused
+
+The whole package was read, and every suspected fault was run before it
+was listed. Most gave a wrong result, or a result with no sign that it was
+wrong; the rest gave an unhelpful error or a misplaced docstring. One more
+turned up while planning the third fix. All are fixed in one release.
+
+**1. Salinity as an array.** `pure_water_backscattering`,
+`pure_water_scattering` and `bb_from_vsf` returned the value for the first
+salinity only when it was an array and the wavelength a number:
+`pure_water_scattering(500, salinity_psu=[0, 37])` gave the fresh-water
+value alone. `pure_water_vsf` already broadcast the two. All four now do,
+and return a float only when every argument was a single number.
+
+**2. A negative Kd in `Scene.at_depth`.** An array `kd` was used as given,
+so `kd=-0.1` made the light at 10 m e times brighter than at the surface.
+`par_profile` has refused that since it was written. `at_depth` now
+refuses a negative or infinite Kd, from an array or from a `Water`, as
+`par_profile` does. NaN is still allowed: it marks a gap, and the
+downwelling there comes out NaN, visibly. `depth_m` must also be finite:
+an infinite depth with a Kd of 0 gave 0 times infinity, NaN, with no word.
+
+**3. An unknown status given to `Water(...)`.** `from_measurements`
+refuses a status that is not in the table of DATA.md, since a misspelt
+flag would never warn. The constructor, which is public and documents the
+same `flags`, accepted any string. It now refuses one too. Planning this
+showed the shipped Kd of Austin & Petzold (1986) carries three statuses
+the table did not list, `model`, `jerlov_original` and `pure_seawater`,
+none of which warns. They are added to the table and to the statuses a
+spectrum can carry, so that the check accepts the shipped data. They are
+not questionable, so nothing that warns changes.
+
+**4. Negative a, b or Kd in a water.** a, b and Kd in a `Water` are the
+total coefficients, pure water included, and none can be negative. A
+measured value can come out negative, from noise near zero or, more often,
+because a was passed with the pure water already subtracted from it, as
+an absorption meter reports. Three ways to treat it were weighed:
+
+- *Set it to zero.* Rejected: that repairs data without a word, which the
+  package does not do (sections 6 and 8).
+- *Refuse it when the water is built.* Rejected: a single noisy
+  wavelength outside the band of interest would make the whole
+  measurement unusable, and its values could not even be read back.
+- *Accept it, say so, and refuse a result that rests on it.* Chosen, as
+  section 8 chose a warning over silence and over an error.
+
+So: building a `Water` with a negative a, b or Kd raises a
+`ProvenanceWarning` that names the quantity and the wavelengths, keeps the
+values as given, and says what a negative total coefficient usually
+means. `a()`, `b()`, `c()`, `kd()` and `bb()` return the values, as they
+return any flagged value. A calculation that would turn them into a
+result refuses: `Scene` if c is negative at any of its wavelengths,
+`veiling_radiance_estimate` if c or bb is, and `Scene.at_depth` and
+`par_profile` if Kd is, at the wavelengths each uses. A wavelength that
+cannot be trusted can be set to NaN, a gap, or marked `"suspect"`; both
+exist already.
+
+**5. Smaller things.**
+
+- `spectrum_to_srgb` refused a white with no power in X, Y or Z, but NaN
+  failed that test (NaN <= 0 is False), so a white with a gap gave NaN
+  with no word. A NaN white now raises.
+- `integrate_response` reported a response sampled at one wavelength as
+  fully covered, since its integral is zero; the result was zero. It now
+  needs two response wavelengths, as it already needed two spectrum
+  wavelengths, and both grids must be finite.
+- Arguments that take one number gave NumPy's "truth value of an array
+  is ambiguous" when given several: `Scene.transmittance(distance_m)` and
+  `Water.bb(backscatter_ratio=...)`. They now say what they take. The
+  wavelength queries of `Water` take a number or a 1-D array, and a 2-D
+  one, which failed the same way inside, is refused with a message.
+- `kd_spectrum` promises an answer of shape `kd.shape + at.shape`, but a
+  2-D `at` failed inside the flag check, and an array `kd` with a 2-D
+  `at` would not have broadcast to that shape. Both now work as promised.
+- In `ParProfile.__init__` the docstring of `band_nm` stood after the
+  line setting `_weight`. It is moved back.
+
+**Checks.** Each fault above becomes a test that failed before the fix:
+the salinity values against those computed one at a time, a negative and
+an infinite Kd and an infinite depth refused by `at_depth`, a misspelt
+status refused by the constructor and the shipped Austin types still
+built, the warning and each refusal of item 4, a NaN white, a
+one-wavelength response, the three shape errors, and `kd_spectrum` on a
+2-D `at` against the same values computed one at a time.
