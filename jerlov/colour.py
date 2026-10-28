@@ -160,6 +160,15 @@ def integrate_response(spectrum, wavelengths, response, response_wavelengths,
         raise ValueError("response must be aligned with response_wavelengths")
     if wavelengths.size < 2:
         raise ValueError("at least two wavelengths are needed to integrate")
+    if response_wavelengths.size < 2:
+        # One sample integrates to zero, which the coverage check read as
+        # nothing left out.
+        raise ValueError(
+            "at least two response wavelengths are needed to integrate")
+    for grid, label in ((wavelengths, "wavelengths"),
+                        (response_wavelengths, "response_wavelengths")):
+        if not np.all(np.isfinite(grid)):
+            raise ValueError(f"{label} must all be finite numbers")
     # Descending wavelengths make the integral negative and the coverage
     # zero, so a reversed spectrum came out as a negative colour.
     for grid, label in ((wavelengths, "wavelengths"),
@@ -270,6 +279,12 @@ def spectrum_to_srgb(spectrum, wavelengths, *, white, clip: bool = True):
 
     xyz = spectrum_to_xyz(spectrum, wavelengths)
     white_xyz = spectrum_to_xyz(white, wavelengths)
+    if np.any(np.isnan(white_xyz)):
+        # NaN <= 0 is False, so a white with a gap passed the test below and
+        # every colour came out NaN.
+        raise ValueError(
+            "the white reference has a gap (NaN) inside the observer's "
+            "range, so its X, Y and Z are not determined")
     if np.any(white_xyz <= 0):
         raise ValueError(
             "the white reference has no power in one of X, Y or Z, so it "

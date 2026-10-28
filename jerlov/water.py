@@ -162,6 +162,16 @@ class Water:
                     f"flags[{key!r}] has {len(statuses)} entries; it needs "
                     f"one per wavelength ({self.wavelengths.size})"
                 )
+            # from_measurements has always refused an unknown status; the
+            # constructor took any string, so a misspelt one never warned.
+            unknown = sorted(set(statuses) - _data.STATUSES)
+            if unknown:
+                raise ValueError(
+                    f"unknown status {', '.join(map(repr, unknown))} in "
+                    f"flags[{key!r}]; the statuses are "
+                    f"{', '.join(sorted(_data.STATUSES))}"
+                )
+        self._warn_if_negative()
         self._uncertainty: dict[str, np.ndarray] = {}
         for key, value in (uncertainty or {}).items():
             if key not in self._series:
@@ -180,6 +190,35 @@ class Water:
                 raise ValueError(f"uncertainty[{key!r}] cannot be negative")
             arr.setflags(write=False)
             self._uncertainty[key] = arr
+
+    def _warn_if_negative(self) -> None:
+        """Say so if a coefficient is negative, and keep it as given.
+
+        a, b and Kd here are totals, pure water included, so none can be
+        negative. A calculation that would rest on one refuses it;
+        DECISIONS.md section 60.
+        """
+        found = []
+        for key, values in self._series.items():
+            negative = values < 0       # NaN, a gap, is not negative
+            if np.any(negative):
+                shown = ", ".join(f"{w:g}" for w in
+                                  self.wavelengths[negative][:5])
+                more = (f" and {int(negative.sum()) - 5} more"
+                        if negative.sum() > 5 else "")
+                found.append(f"{key} at {shown}{more} nm")
+        if found:
+            warnings.warn(
+                f"{self._label()} has negative values: {'; '.join(found)}. "
+                "These are total coefficients, pure water included, and "
+                "cannot be negative. Usually the pure water was already "
+                "subtracted, as an absorption meter reports a, or the value "
+                "is noise near zero. They are kept as given; a Scene, PAR or "
+                "veiling estimate that would rest on them refuses. Set a "
+                "wavelength you cannot trust to NaN, or flag it 'suspect'.",
+                ProvenanceWarning,
+                stacklevel=_data.caller_stacklevel(),
+            )
 
     # -- construction ----------------------------------------------------
 
@@ -202,6 +241,11 @@ class Water:
             Optional ``{quantity: standard uncertainty}`` in 1/m, one value
             per wavelength, NaN where unknown. Read it back with
             :meth:`uncertainty`.
+
+        a, b and kd are totals, pure water included. A negative value,
+        which none of them can have, is kept as given with a
+        :class:`ProvenanceWarning`, and a calculation that would rest on
+        it refuses (DECISIONS.md section 60).
         """
         def keyed(mapping, what):
             out = {}
@@ -252,6 +296,12 @@ class Water:
                 f"(available: {available})"
             )
         query = _as_array(wl)
+        if query.ndim > 1:
+            # _support walks a 1-D query; a 2-D one failed inside it with
+            # NumPy's "truth value of an array is ambiguous".
+            raise ValueError(
+                "wavelength must be a number or a 1-D array of them, not an "
+                f"array of shape {query.shape}")
         # NaN < lo is False, so a NaN wavelength passed the range check and
         # came back as NaN, warned about the last sample of the table.
         _require_number(query, "wavelength")
@@ -391,6 +441,10 @@ class Water:
                 "for open ocean, 0.015-0.03 for coastal water). "
                 "See DATA.md section 10."
             )
+        if np.size(backscatter_ratio) != 1:
+            raise ValueError(
+                "backscatter_ratio must be a single number, bb/b, not "
+                f"{backscatter_ratio!r}")
         if not 0.0 < backscatter_ratio < 0.5:
             raise ValueError("backscatter_ratio must lie in (0, 0.5)")
         return self.b(wl) * backscatter_ratio
@@ -1111,7 +1165,9 @@ def kd_spectrum(kd, wavelength_nm: float, at):
 
     statuses = _data.austin_model_status()
     flagged: set[str] = set()
-    for samples in _support(wl, np.concatenate(([wavelength_nm], query))):
+    # _support walks a 1-D query; at may be of any shape.
+    for samples in _support(wl, np.concatenate(([wavelength_nm],
+                                                query.ravel()))):
         for j in samples:
             if statuses[j] in _data.QUESTIONABLE:
                 flagged.add(f"{statuses[j]} at {wl[j]:g} nm")
@@ -1125,8 +1181,9 @@ def kd_spectrum(kd, wavelength_nm: float, at):
         )
 
     ratio = np.interp(query, wl, m) / m1
-    result = (ratio * (kd_values[..., None] - kw1)
-              + np.interp(query, wl, kw))
+    # One axis per axis of at, so that the answer is kd.shape + at.shape.
+    per_kd = kd_values.reshape(kd_values.shape + (1,) * query.ndim)
+    result = ratio * (per_kd - kw1) + np.interp(query, wl, kw)
     if np.ndim(at) == 0:
         result = result[..., 0]
     if np.ndim(result) == 0:
