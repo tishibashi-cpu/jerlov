@@ -4,6 +4,49 @@ Every release is archived on Zenodo under the concept DOI
 [10.5281/zenodo.22321312](https://doi.org/10.5281/zenodo.22321312), which
 always resolves to the latest version.
 
+## 0.23.0 — 2026-10-28
+
+Fixes from a review of the whole package: values that were silently
+wrong, inputs that should have been refused, and errors that did not say
+what was wrong. No shipped value changed (DECISIONS.md section 60).
+
+**Fixed.**
+
+- `pure_water_backscattering`, `pure_water_scattering` and `bb_from_vsf`
+  returned the first salinity's value alone when `salinity_psu` was an
+  array and the wavelength a number. They now broadcast every argument,
+  as `pure_water_vsf` did, and return a float only when each was a single
+  number.
+- `Scene.at_depth` used a negative Kd as given, so the light grew with
+  depth. It now refuses a negative or infinite Kd, from an array or a
+  `Water`, as `par_profile` always has, and an infinite `depth_m`, which
+  with a Kd of 0 gave NaN.
+- `Water(...)` accepted any string as a status in `flags`, so a misspelt
+  one never warned. It now refuses an unknown status, as
+  `Water.from_measurements` does.
+- `kd_spectrum` failed with a 2-D `at`, and would not have given the
+  promised shape `kd.shape + at.shape` with an array `kd`. Both work now.
+- `spectrum_to_srgb` returned NaN without a word for a white with a gap.
+  It now raises.
+- `integrate_response` reported a response sampled at one wavelength as
+  fully covered and returned zero. It now needs two response
+  wavelengths, and finite wavelengths on both grids.
+- `Scene.transmittance`, `Water.bb` and the wavelength queries of `Water`
+  raised NumPy's "truth value of an array is ambiguous" for an array
+  where one number, or a 1-D array, is taken. They now say what they
+  take.
+
+**Changed.** A `Water` with a negative a, b or Kd, which as totals with
+pure water included none can be, raises a `ProvenanceWarning` when it is
+built and keeps the values as given. A calculation that would rest on
+them refuses: `Scene` and `veiling_radiance_estimate` for a negative c or
+bb, `Scene.at_depth` and `par_profile` for a negative Kd, at the
+wavelengths each uses.
+
+**Docs.** DATA.md's table of statuses lists `model`, `jerlov_original`
+and `pure_seawater`, which the shipped Kd of Austin & Petzold (1986) has
+always carried. They do not warn.
+
 ## 0.22.0 — 2026-10-25
 
 Scalar PAR, from a mean cosine and a reflectance the caller gives, and the

@@ -215,8 +215,7 @@ class Water:
                 "subtracted, as an absorption meter reports a, or the value "
                 "is noise near zero. They are kept as given; a Scene, PAR or "
                 "veiling estimate that would rest on them refuses. Set a "
-                "wavelength "
-                "you cannot trust to NaN, or flag it 'suspect'.",
+                "wavelength you cannot trust to NaN, or flag it 'suspect'.",
                 ProvenanceWarning,
                 stacklevel=_data.caller_stacklevel(),
             )
@@ -242,6 +241,11 @@ class Water:
             Optional ``{quantity: standard uncertainty}`` in 1/m, one value
             per wavelength, NaN where unknown. Read it back with
             :meth:`uncertainty`.
+
+        a, b and kd are totals, pure water included. A negative value,
+        which none of them can have, is kept as given with a
+        :class:`ProvenanceWarning`, and a calculation that would rest on
+        it refuses (DECISIONS.md section 60).
         """
         def keyed(mapping, what):
             out = {}
