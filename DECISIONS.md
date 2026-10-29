@@ -2361,3 +2361,39 @@ percent less than water at 37, is item 1's 30 percent seen the other way
 round; a first draft wrote 30 for both, and the examples now compute it.
 CI runs the examples with `FutureWarning` an error as well as
 `ProvenanceWarning`, so that none comes to show a replaced way of calling.
+
+## 62. 1.0.0
+
+1.0.0 makes the promise of section 61, under the rules CONTRIBUTING.md
+sets out under "Compatibility". It changes one thing and keeps the rest of
+0.24.0 as it is.
+
+**The salinity becomes required.** Section 61 item 1 removed the default
+of 37 in two steps; this is the second. Leaving `salinity_psu` out of
+`pure_water_vsf`, `pure_water_backscattering`, `pure_water_scattering` or
+`bb_from_vsf` raises `MissingQuantityError`, which says what the number
+does and that 37 is what was assumed up to 1.0. `None` stays in the
+signatures, meaning "not given", as section 61 made the pattern for an
+argument with no defensible default.
+
+**What stays.** Every other `FutureWarning` that 0.24.0 added is kept
+until 2.0, as rule 3 of section 61 requires: a wavelength passed by
+keyword, a salinity passed by position, and `gernez2009_cv_by_sun_zenith()`.
+They are part of what 1.0 promises to keep working.
+
+**Rejected:** removing those as well in 1.0, on the grounds that 1.0
+starts the promise rather than continuing one. They have been out for
+one release only, and removing them buys nothing a user would notice.
+
+**The classifier** in `pyproject.toml` moves from "4 - Beta" to
+"5 - Production/Stable". It says only that the interface is now held
+stable; it says nothing about the data, whose doubts stay where they
+were, in DATA.md and in the flags.
+
+**Checks.** No shipped value changes, so every example's output must be
+identical to its output under 0.24.0 apart from the version in the
+banner, with `ProvenanceWarning` and `FutureWarning` errors as CI runs
+them. The four functions must refuse an omitted salinity with
+`MissingQuantityError` and no warning, and still give 0.24.0's values
+when it is given; the other old ways of calling must still warn and
+still work.
