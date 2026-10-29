@@ -71,7 +71,8 @@ jobs:
       - name: The examples must still run, without resting on flagged values
         # An example that has stopped working should be a failed build, not
         # something a reader discovers. So should one that comes to rest on a
-        # flagged value without saying so. `-W error::...` cannot name a
+        # flagged value without saying so, or that shows a way of calling
+        # the package has replaced (FutureWarning, DECISIONS.md section 61). `-W error::...` cannot name a
         # jerlov class before jerlov is imported, hence the filter in code.
         # wave_focusing.py takes about ten minutes, and the test job runs it
         # under the same filter (DECISIONS.md section 47).
@@ -82,7 +83,7 @@ jobs:
               continue
             fi
             echo "--- $f"
-            python -c "import runpy, sys, warnings, jerlov; warnings.simplefilter('error', jerlov.ProvenanceWarning); runpy.run_path(sys.argv[1], run_name='__main__')" "$f" > /dev/null
+            python -c "import runpy, sys, warnings, jerlov; warnings.simplefilter('error', jerlov.ProvenanceWarning); warnings.simplefilter('error', FutureWarning); runpy.run_path(sys.argv[1], run_name='__main__')" "$f" > /dev/null
           done
 
   lint:

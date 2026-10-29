@@ -382,7 +382,8 @@ class ParProfile:
         )
 
 
-def par_profile(surface_downwelling, wavelengths, depths_m, *, kd,
+@_data.positional_only()
+def par_profile(surface_downwelling, wavelengths, /, depths_m, *, kd,
                 unit: str, band=PAR_RANGE_NM,
                 photon_weight=None, kd_uncertainty=None) -> ParProfile:
     """PAR at ``depths_m`` below a surface downwelling spectrum.

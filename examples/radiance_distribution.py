@@ -56,6 +56,7 @@ def _banner():
 
 
 N_WATER = 1.34              # sea water against air, in the visible
+SALINITY_PSU = 37.0         # for pure water's scattering; not the type's
 WATER_TYPE = "II"
 WAVELENGTHS = (450.0, 500.0, 550.0)
 DEPTHS = np.array([2.0, 5.0, 10.0, 20.0])
@@ -86,26 +87,28 @@ def particle_phase(station):
     first = p.angles_deg[[s == "ok" for s in p.statuses]][0]
     grid = np.geomspace(first, 180.0, 3000)
     grid[-1] = 180.0
-    particles = p.vsf_at(grid) - jerlov.pure_water_vsf(grid, p.wavelength_nm)
+    particles = p.vsf_at(grid) - jerlov.pure_water_vsf(
+        grid, p.wavelength_nm, salinity_psu=SALINITY_PSU)
     if np.any(particles <= 0):
         raise ValueError(f"{station}: pure water exceeds the measurement")
     cdf, cos_angle, measured = inverse_cdf(grid, particles)
-    b_particles = p.b - float(jerlov.pure_water_scattering(p.wavelength_nm))
+    b_particles = p.b - float(jerlov.pure_water_scattering(
+        p.wavelength_nm, salinity_psu=SALINITY_PSU))
     return dict(cdf=cdf, cos=cos_angle, straight=1 - measured / b_particles,
                 first_deg=float(first), b=p.b)
 
 
-def water_phase(wavelength, salinity=37.0):
+def water_phase(wavelength, salinity=SALINITY_PSU):
     grid = np.linspace(0.0, 180.0, 1801)
     cdf, cos_angle, _ = inverse_cdf(
-        grid, jerlov.pure_water_vsf(grid, wavelength, salinity))
+        grid, jerlov.pure_water_vsf(grid, wavelength, salinity_psu=salinity))
     return dict(cdf=cdf, cos=cos_angle)
 
 
 def coefficients(water_type, wavelength):
     w = jerlov.water(water_type)
     return (float(w.a(wavelength)), float(w.b(wavelength)),
-            float(jerlov.pure_water_scattering(wavelength)))
+            float(jerlov.pure_water_scattering(wavelength, salinity_psu=SALINITY_PSU)))
 
 
 # -- the photons -------------------------------------------------------------
@@ -495,7 +498,7 @@ function. What the model is given, all fixed before it was run
     sun on the surface in its direction (DATA.md section 23).""")
 
     depths = np.array(LAKE_DEPTHS)
-    bw = float(jerlov.pure_water_scattering(LAKE_WAVELENGTH, 0.0))
+    bw = float(jerlov.pure_water_scattering(LAKE_WAVELENGTH, salinity_psu=0.0))
     fresh = water_phase(LAKE_WAVELENGTH, 0.0)
     lake = {}
     for station, light in ((near, sun_zenith), (near, None),
@@ -689,11 +692,17 @@ check is in tests/test_quoted_figures.py.""")
 
     # ----------------------------------------------------------------------
     rule("Before you use any of this")
+    fresh_less = 100 * (1 - jerlov.pure_water_scattering(
+        500.0, salinity_psu=0.0) / jerlov.pure_water_scattering(
+        500.0, salinity_psu=SALINITY_PSU))
 
     print(f"""  - The water is the same at every depth and has no bottom; its a and b
     are Williamson & Hollins's for {WATER_TYPE}, and the phase function is
     measured at one place and one wavelength, 530 nm, and used at all.
   - Scattering below Petzold's first measured angle goes straight on.
+  - Pure water scatters as Morel's formula gives for a salinity of
+    {SALINITY_PSU:g}, a choice of this script (0 in the lake). At 0 it scatters
+    {fresh_less:.0f} percent less.
   - The surface is flat, with a refractive index of {N_WATER} ({LAKE_N} in the
     lake). Waves focus and spread the sunbeam, and roughen the radiance
     near the surface.

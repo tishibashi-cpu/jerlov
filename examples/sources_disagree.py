@@ -12,7 +12,7 @@ import warnings
 import numpy as np
 
 import jerlov
-from jerlov.sources import HALTRIN1999
+from jerlov import HALTRIN1999
 
 WAVELENGTHS = np.array([412.0, 440.0, 488.0, 510.0, 555.0, 650.0])
 SHARED = ["IB", "II", "III", "1C", "3C", "5C"]

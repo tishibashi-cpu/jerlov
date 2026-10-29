@@ -71,7 +71,13 @@ from .shortwave import (
     shortwave_parameters,
     solar_fraction,
 )
-from .sources import SOURCES, Source, get_source
+from .sources import (
+    HALTRIN1999,
+    SOURCES,
+    ScatteringConstants,
+    Source,
+    get_source,
+)
 from .water import (
     POOLE1929_SECCHI_COEFFICIENT,
     Descent,
@@ -108,6 +114,8 @@ __all__ = [
     "CoverageWarning",
     "Source",
     "get_source",
+    "ScatteringConstants",
+    "HALTRIN1999",
     "Water",
     "water",
     "water_type_at_depth",
@@ -170,4 +178,4 @@ __all__ = [
     "MissingQuantityError",
 ]
 
-__version__ = "0.23.0"
+__version__ = "0.24.0"

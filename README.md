@@ -197,14 +197,15 @@ Two silent errors are checked rather than assumed:
 you do not have to:
 
 ```python
-r = jerlov.bb_from_vsf(beta=0.0021, angle_deg=140, wavelength_nm=532)
+r = jerlov.bb_from_vsf(0.0021, 140, 532, salinity_psu=37.0)  # beta, angle, nm
 r.bb, r.particulate, r.water     # 1/m
 r.chi_p, r.quoted_error_percent  # 1.18, 3.5
 ```
 
 Boss & Pegau (2001). The pure sea water terms are analytic and are checked
 against the definition of bb rather than transcribed; only the particle
-conversion is tabulated. Angles outside 90-170 degrees are refused, and 170
+conversion is tabulated. The salinity has no default from 1.0: pure sea
+water at 37 scatters 30 percent more than fresh water. Angles outside 90-170 degrees are refused, and 170
 warns: its quoted spread is **34.8 percent** against 2.6-6.4 from 90 to 160.
 
 This gives the bb of the water your instrument was in. It still gives no bb
@@ -348,7 +349,7 @@ conditions and the precision of the reading:
 ```python
 jerlov.darecki2011_irradiance_cv()     # CV of Ed, 0.86-9.58 m, 443/532/670 nm
 jerlov.darecki2011_radiance_cv("a")    # CV of radiance, 13 angles in the sun's plane
-jerlov.gernez2009_cv_by_sun_zenith()   # CV of Ed at 510 nm against the sun's zenith angle
+jerlov.gernez2009_cv_by("sun_zenith_deg")  # CV of Ed at 510 nm against the sun's zenith angle
 jerlov.darecki2011_spectral_cv()       # CV of Ed at 410-670 nm on five days of wind
 jerlov.gernez2009_cv_by("kd490_per_m") # ... against wave height, wind or Kd(490)
 jerlov.gernez2009_cv_by("wind_m_s", sky="overcast")    # overcast; or irradiance="Eu"
@@ -382,11 +383,11 @@ have gaps.
 
 ```python
 # Reconstruct a Kd spectrum from one measured value (Austin & Petzold 1986).
-jerlov.kd_spectrum(kd=0.06, wavelength_nm=490, at=[440, 550, 650])
+jerlov.kd_spectrum(0.06, 490, [440, 550, 650])   # Kd, its nm, the nm wanted
 
 # Estimate b from a transmissometer's c (Smart 2007).
-jerlov.b_from_c(c=0.5, wavelength_nm=555, bw=0.0019, cw=0.0659)
-jerlov.pure_water_scattering(555)   # Morel's bw, if that is what c was corrected with
+jerlov.b_from_c(0.5, 555, bw=0.0019, cw=0.0659)   # c, its nm
+jerlov.pure_water_scattering(555, salinity_psu=37.0)  # Morel's bw, if c was corrected with it
 
 # An attenuation coefficient from a Secchi depth, by a rule you name; warns.
 jerlov.k_from_secchi(4.0, coefficient=jerlov.POOLE1929_SECCHI_COEFFICIENT)  # 1.7 / 4 m
@@ -476,7 +477,8 @@ this package can receive.** `DATA.md` exists because several such
 disagreements turned out to be defects in the literature rather than here.
 Issues: <https://github.com/tishibashi-cpu/jerlov/issues>
 
-`CHANGELOG.md` covers every release.
+`CHANGELOG.md` covers every release. What a release may and may not change,
+from 1.0 on, is under "Compatibility" in `CONTRIBUTING.md`.
 
 ## Licence
 

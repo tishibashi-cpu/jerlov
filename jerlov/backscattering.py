@@ -78,11 +78,34 @@ def _amplitude(wavelength_nm, salinity_psu) -> np.ndarray:
             * (1 + 0.3 * salinity / 37.0) * 1e-4)
 
 
+def _salinity(salinity_psu):
+    """The salinity to use, warning when the caller left it out.
+
+    Up to 0.23.0 it defaulted to 37 without saying why, and the factor
+    (1 + 0.3 S / 37) makes that 30 percent more scattering than fresh water
+    (DECISIONS.md section 61). Leaving it out still means 37 until 1.0.
+    """
+    if salinity_psu is None:
+        warnings.warn(
+            "salinity_psu was not given, so 37 was used, as before 0.24.0. "
+            "Pure sea water at 37 scatters 30 percent more than fresh water "
+            "(salinity 0); pass the salinity of your water, salinity_psu=37.0 "
+            "to keep this result. From jerlov 1.0 leaving it out is an error "
+            "(DECISIONS.md section 61).",
+            FutureWarning,
+            stacklevel=_data.caller_stacklevel(),
+        )
+        return 37.0
+    return salinity_psu
+
+
 def _ratio() -> float:
     return (1 - DEPOLARISATION_RATIO) / (1 + DEPOLARISATION_RATIO)
 
 
-def pure_water_vsf(angle_deg, wavelength_nm, salinity_psu: float = 37.0):
+@_data.positional_only(also_by_position=("salinity_psu",))
+def pure_water_vsf(angle_deg, wavelength_nm, /, *,
+                   salinity_psu: float | None = None):
     """Volume scattering function of pure sea water, 1/(m sr).
 
     Morel's formula as given by Boss & Pegau Eqs. (4) and (5)::
@@ -92,7 +115,13 @@ def pure_water_vsf(angle_deg, wavelength_nm, salinity_psu: float = 37.0):
 
     The amplitude carries about 15 percent uncertainty, which the authors give
     as the agreement between measurement and theory.
+
+    ``salinity_psu`` has no default from 1.0: pure sea water at 37 scatters
+    30 percent more than fresh water, and only the caller knows which water
+    it is. Leaving it out in 0.24.0 uses 37, as before, with a
+    ``FutureWarning``. The same holds for the other functions here.
     """
+    salinity_psu = _salinity(salinity_psu)
     angle = np.asarray(angle_deg, dtype=float)
     amplitude = _amplitude(wavelength_nm, salinity_psu)
     out = amplitude * (1 + _ratio() * np.cos(np.radians(angle)) ** 2)
@@ -107,12 +136,16 @@ def _number_or_array(out):
     return out
 
 
-def pure_water_backscattering(wavelength_nm, salinity_psu: float = 37.0):
+@_data.positional_only(also_by_position=("salinity_psu",))
+def pure_water_backscattering(wavelength_nm, /, *,
+                              salinity_psu: float | None = None):
     """``bb_w``, the backscattering coefficient of pure sea water, 1/m.
 
     Obtained by integrating :func:`pure_water_vsf` over the backward
-    hemisphere, which for this angular shape is analytic.
+    hemisphere, which for this angular shape is analytic. ``salinity_psu``
+    as for :func:`pure_water_vsf`.
     """
+    salinity_psu = _salinity(salinity_psu)
     r = _ratio()
     amplitude = _amplitude(wavelength_nm, salinity_psu)
     # integral of (1 + r cos^2) sin over 90..180 degrees is 1 + r/3
@@ -122,7 +155,9 @@ def pure_water_backscattering(wavelength_nm, salinity_psu: float = 37.0):
     return _number_or_array(out)
 
 
-def pure_water_scattering(wavelength_nm, salinity_psu: float = 37.0):
+@_data.positional_only(also_by_position=("salinity_psu",))
+def pure_water_scattering(wavelength_nm, /, *,
+                          salinity_psu: float | None = None):
     """``b_w``, the total scattering coefficient of pure sea water, 1/m.
 
     :func:`pure_water_vsf` integrated over all directions. Its shape is
@@ -133,9 +168,12 @@ def pure_water_scattering(wavelength_nm, salinity_psu: float = 37.0):
     It is the ``bw`` that :func:`~jerlov.b_from_c` asks for, from the same
     formula as the rest of this module. Other tabulations of pure water
     scattering differ from Morel's by several percent; pass whichever one
-    your c measurement was corrected with.
+    your c measurement was corrected with. ``salinity_psu`` as for
+    :func:`pure_water_vsf`.
     """
-    return 2.0 * pure_water_backscattering(wavelength_nm, salinity_psu)
+    salinity_psu = _salinity(salinity_psu)
+    return 2.0 * pure_water_backscattering(wavelength_nm,
+                                           salinity_psu=salinity_psu)
 
 
 def _chi_table():
@@ -191,8 +229,9 @@ class Backscattering:
                 f"+-{self.quoted_error_percent:.1f}%>")
 
 
-def bb_from_vsf(beta, angle_deg: float, wavelength_nm, *,
-                salinity_psu: float = 37.0) -> Backscattering:
+@_data.positional_only()
+def bb_from_vsf(beta, angle_deg: float, wavelength_nm, /, *,
+                salinity_psu: float | None = None) -> Backscattering:
     """Convert a measured volume scattering function to ``bb``.
 
     Parameters
@@ -205,7 +244,8 @@ def bb_from_vsf(beta, angle_deg: float, wavelength_nm, *,
         The instrument's nominal scattering angle. 90 to 170 degrees.
     wavelength_nm, salinity_psu:
         Needed for the pure sea water terms, which are subtracted and then
-        added back as ``bb_w``.
+        added back as ``bb_w``. ``salinity_psu`` as for
+        :func:`pure_water_vsf`: no default from 1.0.
 
     Notes
     -----
@@ -218,6 +258,7 @@ def bb_from_vsf(beta, angle_deg: float, wavelength_nm, *,
     of the water term carries a further 15 percent, and your instrument's own
     calibration is on top of both.
     """
+    salinity_psu = _salinity(salinity_psu)
     angle = float(angle_deg)
     chi_p = particulate_chi(angle)
     error = _quoted_error(angle)
@@ -236,9 +277,10 @@ def bb_from_vsf(beta, angle_deg: float, wavelength_nm, *,
     beta = np.atleast_1d(np.asarray(beta, dtype=float))
     if np.any(beta < 0):
         raise ValueError("a volume scattering function cannot be negative")
-    beta_w = np.atleast_1d(pure_water_vsf(angle, wavelength_nm, salinity_psu))
+    beta_w = np.atleast_1d(
+        pure_water_vsf(angle, wavelength_nm, salinity_psu=salinity_psu))
     bb_w = np.atleast_1d(
-        pure_water_backscattering(wavelength_nm, salinity_psu))
+        pure_water_backscattering(wavelength_nm, salinity_psu=salinity_psu))
 
     particulate = 2.0 * math.pi * chi_p * (beta - beta_w)
     if np.any(particulate < 0):

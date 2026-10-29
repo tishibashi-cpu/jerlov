@@ -37,6 +37,7 @@ from dataclasses import dataclass
 
 import numpy as np
 
+from . import _data
 from .water import (
     Descent,
     MissingQuantityError,
@@ -203,7 +204,8 @@ class Scene:
         horizontal path the depth enters only through ``downwelling``.
     """
 
-    def __init__(self, water: Water, downwelling, wavelengths,
+    @_data.positional_only()
+    def __init__(self, water: Water, downwelling, wavelengths, /,
                  *, depth_m: float | None = None) -> None:
         if not (water.has("a") and water.has("b")):
             raise MissingQuantityError(
@@ -228,8 +230,9 @@ class Scene:
         _refuse_negative(self._c, self.wavelengths, "c = a + b")
 
     @classmethod
+    @_data.positional_only()
     def at_depth(cls, water: Water, depth_m: float, surface_downwelling,
-                 wavelengths, *, kd) -> "Scene":
+                 wavelengths, /, *, kd) -> "Scene":
         """Build a scene by attenuating a surface spectrum down to ``depth_m``.
 
         ``kd`` says how the light got there. Either:
@@ -488,7 +491,8 @@ def _face_ratio(value, shape) -> np.ndarray | float:
     return float(ratio) if ratio.ndim == 0 else ratio
 
 
-def veiling_radiance_estimate(water: Water, downwelling, wavelengths, *,
+@_data.positional_only()
+def veiling_radiance_estimate(water: Water, downwelling, wavelengths, /, *,
                               backscatter_ratio: float) -> np.ndarray:
     """Single-scattering estimate of the veiling radiance B_inf.
 

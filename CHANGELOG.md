@@ -4,6 +4,60 @@ Every release is archived on Zenodo under the concept DOI
 [10.5281/zenodo.22321312](https://doi.org/10.5281/zenodo.22321312), which
 always resolves to the latest version.
 
+## 0.24.0 — 2026-10-29
+
+The last changes before 1.0, so that what 1.0 promises is worth keeping
+(DECISIONS.md section 61). No shipped value changed. Every old way of
+calling that this release changes still works, with a `FutureWarning`
+that says what to write instead; leaving out the salinity becomes an
+error in 1.0, and the rest stop working in 2.0.
+
+**Changed.**
+
+- `pure_water_vsf`, `pure_water_backscattering`, `pure_water_scattering`
+  and `bb_from_vsf` defaulted to a salinity of 37 with no reason given,
+  though pure sea water at 37 scatters 30 percent more than fresh water.
+  Leaving `salinity_psu` out now warns and still uses 37; from 1.0 it
+  raises `MissingQuantityError`. It is keyword-only in all four; passing
+  it by position warns.
+- The wavelength and spectrum arguments are positional-only, with the
+  arguments before them: `Water(...)`, `Water.from_measurements`, the
+  wavelength queries of `Water` (`a`, `b`, `c`, `kd`, `kd_hydrolight`,
+  `bb`, `uncertainty`), `pure_water_absorption`, the four functions
+  above, `b_from_c`, `kd_spectrum`, `spectrum_to_xyz`, `spectrum_to_srgb`,
+  `integrate_response`, `Scene(...)`, `Scene.at_depth`,
+  `veiling_radiance_estimate`, `descend`, `par_profile` and
+  `classify_kd`. Their names differed (`wavelengths`, `wl`,
+  `wavelength_nm`, `at`), and positional-only takes them out of what 1.0
+  promises. Passing one by keyword warns and gives the same answer.
+- `gernez2009_cv_by`, `gernez2009_band_cv` and `gernez2009_spectral_cv`
+  raise `ValueError`, not `KeyError`, for an unknown `variable`, `sky` or
+  `irradiance`. The rule is now one for the whole package: `KeyError` for
+  an unknown record (a water type, a source, a station, a panel, a
+  depth), `ValueError` for an option outside its set.
+- `gernez2009_cv_by("sun_zenith_deg")` returns Gernez & Antoine's Figure
+  8a, the same values as `gernez2009_cv_by_sun_zenith()`, as a
+  `ConditionFluctuation` like the other panels, and
+  `GERNEZ2009_PLOTS[("clear", "Ed")]` lists it first.
+  `gernez2009_cv_by_sun_zenith()` warns that it is replaced.
+
+**Added.** `HALTRIN1999` and its type `ScatteringConstants`, the type of
+`Source.scattering`, are exported. An example had imported them from
+`jerlov.sources`.
+
+**Examples.** `radiance_distribution.py`, `painted_sphere.py` and
+`wave_focusing.py` pass the salinity of 37 they had taken from the
+default, and list it under "Before you use any of this". The examples
+call in the new way, so they raise no `FutureWarning`; their numbers are
+unchanged.
+
+**Docs.** CONTRIBUTING.md has a section on compatibility: what 1.0
+promises (the names in `jerlov.__all__`, imported from `jerlov`; reading
+what the functions return; the arguments, defaults and exceptions), that
+correcting a shipped value is not a breaking change, that no default is
+added where there is none, and that nothing public is removed or renamed
+before 2.0. README points to it, and its calls are in the new form.
+
 ## 0.23.0 — 2026-10-28
 
 Fixes from a review of the whole package: values that were silently

@@ -24,7 +24,7 @@ def test_salinities_are_each_computed(function):
     one_at_a_time = [function(500.0, salinity_psu=s) for s in salinities]
     assert np.shape(together) == (3,)
     assert np.allclose(together, one_at_a_time, rtol=1e-15)
-    assert isinstance(function(500.0, 37.0), float)
+    assert isinstance(function(500.0, salinity_psu=37.0), float)
 
 
 def test_bb_from_vsf_with_salinities():
@@ -180,8 +180,8 @@ def test_single_number_arguments_say_so():
 def test_kd_spectrum_on_a_2d_grid():
     at = np.array([[450.0, 500.0], [550.0, 600.0]])
     kd = [0.05, 0.08, 0.1]
-    result = jerlov.kd_spectrum(kd, 490.0, at=at)
-    one_at_a_time = np.array([[[jerlov.kd_spectrum(k, 490.0, at=float(a))
+    result = jerlov.kd_spectrum(kd, 490.0, at)
+    one_at_a_time = np.array([[[jerlov.kd_spectrum(k, 490.0, float(a))
                                 for a in row] for row in at] for k in kd])
     assert result.shape == (3, 2, 2)
     assert np.allclose(result, one_at_a_time, rtol=0, atol=1e-15)

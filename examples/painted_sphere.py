@@ -77,6 +77,7 @@ def write_png(path, pixels):
 
 
 N_WATER = 1.34              # sea water against air, in the visible
+SALINITY_PSU = 37.0         # for pure water's scattering; not the type's
 WATER_TYPE = "II"
 DEPTH = 10.0                # the sphere's depth, m
 DISTANCE = 2.0              # from the eye, m
@@ -137,26 +138,28 @@ def particle_phase(station):
     first = p.angles_deg[[s == "ok" for s in p.statuses]][0]
     grid = np.geomspace(first, 180.0, 3000)
     grid[-1] = 180.0
-    particles = p.vsf_at(grid) - jerlov.pure_water_vsf(grid, p.wavelength_nm)
+    particles = p.vsf_at(grid) - jerlov.pure_water_vsf(
+        grid, p.wavelength_nm, salinity_psu=SALINITY_PSU)
     if np.any(particles <= 0):
         raise ValueError(f"{station}: pure water exceeds the measurement")
     cdf, cos_angle, measured = inverse_cdf(grid, particles)
-    b_particles = p.b - float(jerlov.pure_water_scattering(p.wavelength_nm))
+    b_particles = p.b - float(jerlov.pure_water_scattering(
+        p.wavelength_nm, salinity_psu=SALINITY_PSU))
     return dict(cdf=cdf, cos=cos_angle, straight=1 - measured / b_particles,
                 first_deg=float(first), b=p.b)
 
 
-def water_phase(wavelength, salinity=37.0):
+def water_phase(wavelength, salinity=SALINITY_PSU):
     grid = np.linspace(0.0, 180.0, 1801)
     cdf, cos_angle, _ = inverse_cdf(
-        grid, jerlov.pure_water_vsf(grid, wavelength, salinity))
+        grid, jerlov.pure_water_vsf(grid, wavelength, salinity_psu=salinity))
     return dict(cdf=cdf, cos=cos_angle)
 
 
 def coefficients(water_type, wavelength):
     w = jerlov.water(water_type)
     return (float(w.a(wavelength)), float(w.b(wavelength)),
-            float(jerlov.pure_water_scattering(wavelength)))
+            float(jerlov.pure_water_scattering(wavelength, salinity_psu=SALINITY_PSU)))
 
 
 def fresnel(mu, n1, n2):
@@ -400,9 +403,10 @@ def particle_vsf(field, angle_deg, station):
     Monte Carlo uses, Petzold's measured curve less pure water's."""
     p = jerlov.petzold_scattering(station)
     shape = (float(p.vsf_at(angle_deg))
-             - float(jerlov.pure_water_vsf(angle_deg, p.wavelength_nm)))
-    shape /= p.b - float(jerlov.pure_water_scattering(p.wavelength_nm))
-    water = np.array([float(jerlov.pure_water_vsf(angle_deg, wl))
+             - float(jerlov.pure_water_vsf(angle_deg, p.wavelength_nm, salinity_psu=SALINITY_PSU)))
+    shape /= p.b - float(jerlov.pure_water_scattering(
+        p.wavelength_nm, salinity_psu=SALINITY_PSU))
+    water = np.array([float(jerlov.pure_water_vsf(angle_deg, wl, salinity_psu=SALINITY_PSU))
                       for wl in MC_WAVELENGTHS])
     return (field["b"] - field["bw"]) * shape + water
 
@@ -812,10 +816,16 @@ still fills the column, and is left as it was.""")
 
     # ----------------------------------------------------------------------
     rule("Before you use any of this")
+    fresh_less = 100 * (1 - jerlov.pure_water_scattering(
+        500.0, salinity_psu=0.0) / jerlov.pure_water_scattering(
+        500.0, salinity_psu=SALINITY_PSU))
 
     print(f"""  - The paint is a perfect diffuser, under a coat that reflects like a
     perfect mirror in part 6. Real paint and coats are rougher, and spread
     the sun's mirror image into a highlight this leaves out.
+  - Pure water scatters as Morel's formula gives for a salinity of
+    {SALINITY_PSU:g}, a choice of this script. At 0 it scatters {fresh_less:.0f} percent
+    less.
   - The shadow (part 7) removes only light scattered once; the sphere also
     takes from the water the light it blocks, which is left in.
   - The radiance is the Monte Carlo's, binned in {D_ZENITH:g} by {D_AZIMUTH:g} degree cells, at
