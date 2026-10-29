@@ -25,7 +25,7 @@ from dataclasses import dataclass
 import numpy as np
 
 from . import _data
-from .water import ProvenanceWarning
+from .water import MissingQuantityError, ProvenanceWarning
 
 CITATION = (
     "Boss, E. and Pegau, W. S. (2001), 'Relationship of light scattering at "
@@ -79,23 +79,20 @@ def _amplitude(wavelength_nm, salinity_psu) -> np.ndarray:
 
 
 def _salinity(salinity_psu):
-    """The salinity to use, warning when the caller left it out.
+    """The salinity the caller gave, refusing to guess one.
 
     Up to 0.23.0 it defaulted to 37 without saying why, and the factor
-    (1 + 0.3 S / 37) makes that 30 percent more scattering than fresh water
-    (DECISIONS.md section 61). Leaving it out still means 37 until 1.0.
+    (1 + 0.3 S / 37) makes that 30 percent more scattering than fresh water.
+    0.24.0 warned when it was left out; 1.0 refuses (DECISIONS.md sections
+    61 and 62).
     """
     if salinity_psu is None:
-        warnings.warn(
-            "salinity_psu was not given, so 37 was used, as before 0.24.0. "
-            "Pure sea water at 37 scatters 30 percent more than fresh water "
-            "(salinity 0); pass the salinity of your water, salinity_psu=37.0 "
-            "to keep this result. From jerlov 1.0 leaving it out is an error "
-            "(DECISIONS.md section 61).",
-            FutureWarning,
-            stacklevel=_data.caller_stacklevel(),
+        raise MissingQuantityError(
+            "salinity_psu has no default: pure sea water at 37 scatters 30 "
+            "percent more than fresh water (salinity 0), and only you know "
+            "which water it is. Pass it, for example salinity_psu=35.0; "
+            "releases before 1.0 assumed 37.0 (DECISIONS.md section 62)."
         )
-        return 37.0
     return salinity_psu
 
 
@@ -116,10 +113,11 @@ def pure_water_vsf(angle_deg, wavelength_nm, /, *,
     The amplitude carries about 15 percent uncertainty, which the authors give
     as the agreement between measurement and theory.
 
-    ``salinity_psu`` has no default from 1.0: pure sea water at 37 scatters
-    30 percent more than fresh water, and only the caller knows which water
-    it is. Leaving it out in 0.24.0 uses 37, as before, with a
-    ``FutureWarning``. The same holds for the other functions here.
+    ``salinity_psu`` has no default: pure sea water at 37 scatters 30
+    percent more than fresh water, and only the caller knows which water it
+    is. Leaving it out raises :class:`~jerlov.MissingQuantityError`;
+    releases before 1.0 assumed 37. The same holds for the other functions
+    here.
     """
     salinity_psu = _salinity(salinity_psu)
     angle = np.asarray(angle_deg, dtype=float)
@@ -245,7 +243,7 @@ def bb_from_vsf(beta, angle_deg: float, wavelength_nm, /, *,
     wavelength_nm, salinity_psu:
         Needed for the pure sea water terms, which are subtracted and then
         added back as ``bb_w``. ``salinity_psu`` as for
-        :func:`pure_water_vsf`: no default from 1.0.
+        :func:`pure_water_vsf`: no default.
 
     Notes
     -----

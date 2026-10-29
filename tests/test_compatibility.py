@@ -41,23 +41,27 @@ SALINITY = [
 
 
 @pytest.mark.parametrize("function, args", SALINITY)
-def test_leaving_out_the_salinity_warns_and_uses_37(function, args):
-    value, caught = _quietly(lambda: function(*args))
-    assert value == function(*args, salinity_psu=37.0)
-    assert len(caught) == 1
-    assert "salinity_psu was not given, so 37 was used" in str(
-        caught[0].message)
-    assert caught[0].filename == __file__
-
-
-def test_leaving_out_the_salinity_of_bb_from_vsf_warns_and_uses_37():
+def test_leaving_out_the_salinity_is_refused(function, args):
+    """0.24.0 warned and used 37; 1.0 refuses (DECISIONS.md section 62)."""
     with warnings.catch_warnings():
-        warnings.simplefilter("ignore", jerlov.AngleWarning)
-        value, caught = _quietly(
-            lambda: jerlov.bb_from_vsf(0.002, 140.0, 532.0))
-        given = jerlov.bb_from_vsf(0.002, 140.0, 532.0, salinity_psu=37.0)
-    assert value.bb == given.bb and len(caught) == 1
-    assert caught[0].filename == __file__
+        warnings.simplefilter("error")
+        with pytest.raises(jerlov.MissingQuantityError,
+                           match="salinity_psu has no default"):
+            function(*args)
+
+
+def test_leaving_out_the_salinity_of_bb_from_vsf_is_refused():
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        with pytest.raises(jerlov.MissingQuantityError,
+                           match="assumed 37.0"):
+            jerlov.bb_from_vsf(0.002, 140.0, 532.0)
+
+
+def test_a_given_salinity_gives_what_0_24_0_gave():
+    """The value 0.24.0 returned at 37, to the last digit."""
+    assert jerlov.pure_water_scattering(500.0, salinity_psu=37.0) \
+        == 0.002881780058942822
 
 
 @pytest.mark.parametrize("function, args", SALINITY)

@@ -204,8 +204,8 @@ r.chi_p, r.quoted_error_percent  # 1.18, 3.5
 
 Boss & Pegau (2001). The pure sea water terms are analytic and are checked
 against the definition of bb rather than transcribed; only the particle
-conversion is tabulated. The salinity has no default from 1.0: pure sea
-water at 37 scatters 30 percent more than fresh water. Angles outside 90-170 degrees are refused, and 170
+conversion is tabulated. The salinity has no default: pure sea water at
+37 scatters 30 percent more than fresh water. Angles outside 90-170 degrees are refused, and 170
 warns: its quoted spread is **34.8 percent** against 2.6-6.4 from 90 to 160.
 
 This gives the bb of the water your instrument was in. It still gives no bb
