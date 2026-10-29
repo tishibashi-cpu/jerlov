@@ -16,11 +16,11 @@ from dataclasses import dataclass, field
 
 @dataclass(frozen=True)
 class ScatteringConstants:
-    """Constants of the two-component scattering model.
+    """Constants of the two-component scattering model::
 
-    b(lam) = bw_coeff * (400/lam)**bw_exponent
-           + Cs * small_coeff * (400/lam)**small_exponent
-           + Cl * large_coeff * (400/lam)**large_exponent
+        b(lam) = bw_coeff * (400/lam)**bw_exponent
+               + Cs * small_coeff * (400/lam)**small_exponent
+               + Cl * large_coeff * (400/lam)**large_exponent
 
     ``Cs`` and ``Cl`` are the small- and large-particle concentrations
     (g/m3). Note that Haltrin writes these as Cs, Cl and reserves Bs, Bl

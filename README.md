@@ -7,6 +7,9 @@ provenance.
 
 https://github.com/tishibashi-cpu/jerlov
 
+Documentation, with guides and the API reference:
+https://tishibashi-cpu.github.io/jerlov/
+
 ```
 pip install jerlov
 ```

@@ -98,7 +98,7 @@ class Water:
     name:
         Jerlov water type, when the object came from one.
     source:
-        The :class:`~jerlov.sources.Source` the coefficients came from.
+        The :class:`~jerlov.Source` the coefficients came from.
     flags:
         Per-wavelength status strings, parallel to ``wavelengths``, keyed by
         quantity (``"a"``, ``"b"``, ``"Kd"``, ``"KdH"``).
@@ -245,6 +245,8 @@ class Water:
             per wavelength, NaN where unknown. Read it back with
             :meth:`uncertainty`.
 
+        Notes
+        -----
         a, b and kd are totals, pure water included. A negative value,
         which none of them can have, is kept as given with a
         :class:`ProvenanceWarning`, and a calculation that would rest on

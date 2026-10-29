@@ -192,7 +192,7 @@ class Scene:
     Parameters
     ----------
     water:
-        The :class:`~jerlov.water.Water` between them. Must carry both a
+        The :class:`~jerlov.Water` between them. Must carry both a
         and b, since the beam attenuation c = a + b drives everything.
     downwelling:
         Downwelling irradiance at that depth, on ``wavelengths``. Any unit;
@@ -237,14 +237,14 @@ class Scene:
 
         ``kd`` says how the light got there. Either:
 
-        - a :class:`~jerlov.water.Water` carrying Kd, such as
+        - a :class:`~jerlov.Water` carrying Kd, such as
           ``jerlov.water("III", source="austin1986")``, or an array on
           ``wavelengths``. Then ``Ed(z) = Ed(0) * exp(-Kd * z)``, which
           assumes Kd is constant with depth. Jerlov's classification is
           defined over the upper 10 m, so this is reasonable there and
           increasingly rough below it. The default IOP source has no Kd of
           its own, so it must come from somewhere explicit.
-        - a :class:`~jerlov.water.Descent` to ``depth_m`` on the same
+        - a :class:`~jerlov.Descent` to ``depth_m`` on the same
           wavelengths, from :func:`~jerlov.descend`, which changes the type
           layer by layer::
 

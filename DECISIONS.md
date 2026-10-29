@@ -2471,3 +2471,15 @@ guides' code and checks the API page against `__all__`; the full test
 suite, the wheel's tests outside the source tree and the oldest NumPy
 pass; and every example's output is identical to its output under 1.0.0
 apart from the version in the banner.
+
+**Added while building the site.** A third docstring did not render:
+`ScatteringConstants`, whose formula's continuation lines begin with "+"
+and became a bulleted list; it is now a literal block, its text
+unchanged. Alabaster's default page, 940 px, cut the docstrings'
+79-character lines, so the page is widened to 1140 px. `pyproject.toml`
+gains `[project.urls]` (documentation, source, changelog, issues), which
+changes the metadata PyPI shows and nothing in the wheel's files. In the
+guide on colours, the backscatter ratio was first written as 0.015 and
+called typical of the ocean; the package's own docstrings put 0.015 at the
+bottom of the coastal range, so the guide uses 0.01, the top of the
+open-ocean one, and says so.

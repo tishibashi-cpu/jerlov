@@ -330,6 +330,8 @@ class ParProfile:
             upwelling light, and the result is then too high by a factor
             ``1 / (1 - R)`` for the true reflectance R.
 
+        Notes
+        -----
         Each is a number, or one value per depth with the shape of
         :attr:`depths_m`. Nothing is interpolated between depths, so there
         is no depth of a fraction of scalar PAR here; with the same values

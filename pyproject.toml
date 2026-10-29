@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "jerlov"
-version = "1.0.0"
+version = "1.0.1"
 description = "Inherent optical properties of Jerlov water types, with provenance"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -26,6 +26,12 @@ classifiers = [
   "Topic :: Scientific/Engineering :: Physics",
   "Typing :: Typed",
 ]
+
+[project.urls]
+Documentation = "https://tishibashi-cpu.github.io/jerlov/"
+Source = "https://github.com/tishibashi-cpu/jerlov"
+Changelog = "https://github.com/tishibashi-cpu/jerlov/blob/main/CHANGELOG.md"
+Issues = "https://github.com/tishibashi-cpu/jerlov/issues"
 
 [project.optional-dependencies]
 test = ["pytest"]
