@@ -8,11 +8,15 @@ silently cleaned up on the way in.
 from __future__ import annotations
 
 import csv
+import functools
+import inspect
 import os
 import sys
+import warnings
 from functools import lru_cache
 from importlib import resources
 from types import FrameType
+from typing import Any, Callable, TypeVar
 
 import numpy as np
 
@@ -44,6 +48,68 @@ def caller_stacklevel() -> int:
         frame = frame.f_back
         level += 1
     return level
+
+
+_F = TypeVar("_F", bound=Callable[..., Any])
+
+
+def positional_only(*, also_by_position: tuple[str, ...] = ()
+                    ) -> Callable[[_F], _F]:
+    """Keep the calls that 0.24.0 changed working, with a FutureWarning.
+
+    The wavelength and spectrum arguments became positional-only in 0.24.0
+    so that their names, which differ from function to function, are not
+    part of what 1.0 promises (DECISIONS.md section 61). A call that still
+    passes one by keyword gets the same answer and a warning; so does one
+    that passes by position an argument named in ``also_by_position``,
+    which became keyword-only. Both ways stop working in 2.0.
+    """
+    def decorate(function: _F) -> _F:
+        parameters = inspect.signature(function).parameters.values()
+        names = [p.name for p in parameters if p.kind is p.POSITIONAL_ONLY]
+        positional = sum(p.kind in (p.POSITIONAL_ONLY, p.POSITIONAL_OR_KEYWORD)
+                         for p in parameters)
+        name = function.__qualname__.replace(".__init__", "")
+
+        @functools.wraps(function)
+        def wrapper(*args: Any, **kwargs: Any) -> Any:
+            if also_by_position and len(args) > positional:
+                extra = args[positional:]
+                if len(extra) > len(also_by_position):
+                    raise TypeError(f"{name}() takes {positional} "
+                                    f"positional arguments but "
+                                    f"{len(args)} were given")
+                given = also_by_position[:len(extra)]
+                for key, value in zip(given, extra):
+                    if key in kwargs:
+                        raise TypeError(f"{name}() got multiple values "
+                                        f"for argument {key!r}")
+                    kwargs[key] = value
+                args = args[:positional]
+                warnings.warn(
+                    f"{name}(): pass {', '.join(given)} by keyword. Passing "
+                    "it by position will stop working in jerlov 2.0 "
+                    "(DECISIONS.md section 61).",
+                    FutureWarning, stacklevel=caller_stacklevel())
+            moved = []
+            for i, key in enumerate(names):
+                if i < len(args):
+                    continue
+                if key not in kwargs:
+                    break
+                args = (*args, kwargs.pop(key))
+                moved.append(key)
+            if moved:
+                warnings.warn(
+                    f"{name}(): pass {', '.join(moved)} by position, not by "
+                    "keyword. The keyword will stop working in jerlov 2.0 "
+                    "(DECISIONS.md section 61).",
+                    FutureWarning, stacklevel=caller_stacklevel())
+            return function(*args, **kwargs)
+
+        return wrapper  # type: ignore[return-value]
+
+    return decorate
 
 
 def _frozen(array: np.ndarray) -> np.ndarray:

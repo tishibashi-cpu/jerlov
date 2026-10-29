@@ -2353,3 +2353,11 @@ Planned before the code was written:
   `gernez2009_cv_by_sun_zenith()` value for value, and the old function's
   warning; `HALTRIN1999` and `ScatteringConstants` in `__all__`; and no
   example importing from a module of the package.
+
+**Added while making the changes.** The three examples' new line under
+"Before you use any of this" is new output, so the comparison with 0.23.0
+allows it beside the banner. Its figure, that fresh water scatters 23
+percent less than water at 37, is item 1's 30 percent seen the other way
+round; a first draft wrote 30 for both, and the examples now compute it.
+CI runs the examples with `FutureWarning` an error as well as
+`ProvenanceWarning`, so that none comes to show a replaced way of calling.

@@ -346,6 +346,14 @@ def test_CI_runs_the_examples_with_provenance_warnings_as_errors():
 
 
 @source_tree
+def test_CI_runs_the_examples_with_future_warnings_as_errors():
+    """An example shows how to call the package, so it must not show a way
+    that 0.24.0 replaced (DECISIONS.md section 61)."""
+    workflow = (ROOT / ".github" / "workflows" / "test.yml").read_text()
+    assert "simplefilter('error', FutureWarning)" in workflow
+
+
+@source_tree
 def test_CI_runs_the_examples_on_the_versions_it_tests():
     """The examples run in a job of their own beside the tests (DECISIONS.md
     section 49); it must cover the same Python and numpy versions."""

@@ -67,6 +67,7 @@ def _banner():
 
 
 N_WATER = 1.34              # sea water against air, in the visible
+SALINITY_PSU = 37.0         # for pure water's scattering; not the type's
 D_ZENITH, D_AZIMUTH = 10.0, 45.0
 PHOTONS, BATCHES = 50_000, 4
 G = 9.81                    # m s-2
@@ -143,19 +144,21 @@ def particle_phase(station):
     first = p.angles_deg[[s == "ok" for s in p.statuses]][0]
     grid = np.geomspace(first, 180.0, 3000)
     grid[-1] = 180.0
-    particles = p.vsf_at(grid) - jerlov.pure_water_vsf(grid, p.wavelength_nm)
+    particles = p.vsf_at(grid) - jerlov.pure_water_vsf(
+        grid, p.wavelength_nm, salinity_psu=SALINITY_PSU)
     if np.any(particles <= 0):
         raise ValueError(f"{station}: pure water exceeds the measurement")
     cdf, cos_angle, measured = inverse_cdf(grid, particles)
-    b_particles = p.b - float(jerlov.pure_water_scattering(p.wavelength_nm))
+    b_particles = p.b - float(jerlov.pure_water_scattering(
+        p.wavelength_nm, salinity_psu=SALINITY_PSU))
     return dict(cdf=cdf, cos=cos_angle, straight=1 - measured / b_particles,
                 first_deg=float(first), b=p.b)
 
 
-def water_phase(wavelength, salinity=37.0):
+def water_phase(wavelength, salinity=SALINITY_PSU):
     grid = np.linspace(0.0, 180.0, 1801)
     cdf, cos_angle, _ = inverse_cdf(
-        grid, jerlov.pure_water_vsf(grid, wavelength, salinity))
+        grid, jerlov.pure_water_vsf(grid, wavelength, salinity_psu=salinity))
     return dict(cdf=cdf, cos=cos_angle)
 
 
@@ -968,11 +971,17 @@ sun at {SUN_ZENITH:g} degrees. For each atmosphere the sky's share at
               f"{'marine' if atm[1] == 1 else 'continental'} air:")
 
     rule("Before you use any of this")
+    fresh_less = 100 * (1 - jerlov.pure_water_scattering(
+        500.0, salinity_psu=0.0) / jerlov.pure_water_scattering(
+        500.0, salinity_psu=SALINITY_PSU))
     print(f"""  - The surface is linear, random and frozen; the variation is taken over
     positions, where Darecki's is over time at one point. Waves longer
     than {SIDE:g} m are left out (3 above suggests they matter little).
   - The sea is fully developed, the wind blows along the sun's plane, and
     the wind's height is taken as 10 m; Darecki gives none of these.
+  - The pure water taken from Petzold's measurement, to leave the particles'
+    scattering, is Morel's formula for a salinity of {SALINITY_PSU:g}, a choice
+    of this script. At 0 it scatters {fresh_less:.0f} percent less.
   - Rays that would meet the surface again are not followed, and the sun's
     disc is applied as a shift of the whole pattern, which holds to first
     order.

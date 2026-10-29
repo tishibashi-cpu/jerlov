@@ -120,8 +120,9 @@ def _coverage(spectrum_wl, weight_wl, weight) -> float:
     return float(_trapezoid(weight[inside], weight_wl[inside]) / total)
 
 
+@_data.positional_only()
 def integrate_response(spectrum, wavelengths, response, response_wavelengths,
-                       *, name: str = "response") -> np.ndarray:
+                       /, *, name: str = "response") -> np.ndarray:
     """Integrate a spectrum against one or more spectral sensitivities.
 
     Parameters
@@ -200,7 +201,8 @@ def integrate_response(spectrum, wavelengths, response, response_wavelengths,
     return _trapezoid(spectrum[:, None] * resampled, wavelengths, axis=0)
 
 
-def spectrum_to_xyz(spectrum, wavelengths) -> np.ndarray:
+@_data.positional_only()
+def spectrum_to_xyz(spectrum, wavelengths, /) -> np.ndarray:
     """Integrate a spectrum against the CIE 1931 2-degree observer.
 
     The result is unnormalised: it carries the units of the spectrum. Divide
@@ -242,7 +244,8 @@ def xyz_to_srgb(xyz, *, clip: bool = True) -> np.ndarray:
         )
 
 
-def spectrum_to_srgb(spectrum, wavelengths, *, white, clip: bool = True):
+@_data.positional_only()
+def spectrum_to_srgb(spectrum, wavelengths, /, *, white, clip: bool = True):
     """Convert a spectrum to sRGB, relative to a stated white.
 
     Parameters

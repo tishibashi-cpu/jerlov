@@ -132,11 +132,11 @@ def test_the_published_R_values_are_what_the_docs_print():
 def test_the_worst_chi_p_spread_is_the_stated_figure():
     """README and DATA.md section 18 both say 34.8 percent at 170 degrees."""
     with pytest.warns(jerlov.AngleWarning, match="34.8"):
-        result = jerlov.bb_from_vsf(0.002, 170.0, 532.0)
+        result = jerlov.bb_from_vsf(0.002, 170.0, 532.0, salinity_psu=37.0)
     assert result.quoted_error_percent == pytest.approx(34.8)
     # The other tabulated angles. This once said "3-6" and checked only the
     # upper end, which let the 2.6 at 100 degrees through.
-    others = [jerlov.bb_from_vsf(0.002, a, 532.0).quoted_error_percent
+    others = [jerlov.bb_from_vsf(0.002, a, 532.0, salinity_psu=37.0).quoted_error_percent
               for a in np.arange(90.0, 161.0, 10.0)]
     assert min(others) == pytest.approx(2.6)
     assert max(others) == pytest.approx(6.4)
@@ -211,7 +211,7 @@ def test_the_readme_quotes_a_chi_p_the_package_produces():
     match = re.search(r"r\.chi_p, r\.quoted_error_percent\s*#\s*([\d.]+),\s*([\d.]+)",
                       readme)
     assert match, "the README no longer shows chi_p with its value"
-    result = jerlov.bb_from_vsf(0.0021, 140.0, 532.0)
+    result = jerlov.bb_from_vsf(0.0021, 140.0, 532.0, salinity_psu=37.0)
     assert result.chi_p == pytest.approx(float(match.group(1)))
     assert result.quoted_error_percent == pytest.approx(float(match.group(2)))
 
@@ -1316,13 +1316,14 @@ def waves_example(waves_module):
 
     CI's loop over the examples skips this one and leaves it to this
     fixture, so that it runs once rather than twice; it is run here as the
-    loop runs the others, with ProvenanceWarning an error (DECISIONS.md
-    section 47).
+    loop runs the others, with ProvenanceWarning and FutureWarning errors
+    (DECISIONS.md sections 47 and 61).
     """
     import contextlib
     import io
     with contextlib.redirect_stdout(io.StringIO()), warnings.catch_warnings():
         warnings.simplefilter("error", jerlov.ProvenanceWarning)
+        warnings.simplefilter("error", FutureWarning)
         return waves_module["main"]()
 
 

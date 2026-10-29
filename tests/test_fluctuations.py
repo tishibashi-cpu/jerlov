@@ -63,8 +63,8 @@ def test_darecki_radiance_panels():
 def test_gernez_as_read():
     """'maximal at 25% ... down to 5% when the sun approaches the horizon',
     Tmax 'from 1s to 3s' (p. 7)."""
-    g = jerlov.gernez2009_cv_by_sun_zenith()
-    assert g.sun_zenith_deg.tolist() == list(range(20, 90, 5))
+    g = jerlov.gernez2009_cv_by("sun_zenith_deg")
+    assert g.figure == "8" and g.x.tolist() == list(range(20, 90, 5))
     assert round(g.cv[0], 4) == 0.2445 and round(g.cv[-1], 4) == 0.0481
     assert round(100 * g.cv[0]) in (24, 25) and round(100 * g.cv[-1]) == 5
     assert (round(g.tmax_s[0]), round(g.tmax_s[-1])) == (1, 3)
@@ -116,7 +116,7 @@ def test_gernez_conditions_as_read():
     h = jerlov.gernez2009_cv_by("wave_height_m")
     assert h.x.tolist() == [0.25 * i for i in range(10)]
     assert not np.any(np.isnan(h.cv_sd))
-    with pytest.raises(KeyError, match="known: wave_height_m"):
+    with pytest.raises(ValueError, match="known: sun_zenith_deg, wave_height_m"):
         jerlov.gernez2009_cv_by("wind")
 
 
@@ -132,7 +132,7 @@ def test_gernez_overcast_and_upwelling_as_read():
     with the sun, Tmax 3.2 s at 20 degrees and 4.3 s at 85; and the
     standard deviations left out where the bar is not at its symbol."""
     assert jerlov.GERNEZ2009_PLOTS[("clear", "Ed")] \
-        == jerlov.GERNEZ2009_VARIABLES
+        == ("sun_zenith_deg",) + jerlov.GERNEZ2009_VARIABLES
     for key in (("overcast", "Ed"), ("clear", "Eu")):
         assert jerlov.GERNEZ2009_PLOTS[key] == (
             "sun_zenith_deg", "wave_height_m", "wind_m_s", "kd490_per_m")
@@ -151,9 +151,9 @@ def test_gernez_overcast_and_upwelling_as_read():
     assert np.isnan(jerlov.gernez2009_cv_by(
         "kd490_per_m", irradiance="Eu").cv_sd).sum() == 1
     assert round(100 * up.cv_reading, 3) == 0.026
-    with pytest.raises(KeyError, match="known: clear/Ed"):
+    with pytest.raises(ValueError, match="known: clear/Ed"):
         jerlov.gernez2009_cv_by("wind_m_s", sky="overcast", irradiance="Eu")
-    with pytest.raises(KeyError, match="known: sun_zenith_deg"):
+    with pytest.raises(ValueError, match="known: sun_zenith_deg"):
         jerlov.gernez2009_cv_by("sqrt_wind", sky="overcast")
 
 
@@ -176,7 +176,7 @@ def test_gernez_spectral_as_read():
     assert round(100 * eu.cv_reading, 3) == 0.030
     assert repr(eu) == ("<SkySpectralFluctuation Gernez 2009 Figure 14, Eu, "
                         "412-683 nm>")
-    with pytest.raises(KeyError, match="known: Ed, Eu"):
+    with pytest.raises(ValueError, match="known: Ed, Eu"):
         jerlov.gernez2009_spectral_cv("Lu")
 
 
@@ -187,8 +187,8 @@ def test_gernez_bands_as_read():
     falling; 683 nm off the axes at 2.25 m; one pixel 0.115 percent."""
     assert jerlov.GERNEZ2009_BAND_VARIABLES == (
         "sun_zenith_deg", "wave_height_m", "wind_m_s", "kd490_per_m")
-    fig8 = {"sun_zenith_deg": jerlov.gernez2009_cv_by_sun_zenith().cv}
-    for v in ("wave_height_m", "kd490_per_m"):
+    fig8 = {}
+    for v in ("sun_zenith_deg", "wave_height_m", "kd490_per_m"):
         fig8[v] = jerlov.gernez2009_cv_by(v).cv
     for v in jerlov.GERNEZ2009_BAND_VARIABLES:
         b = jerlov.gernez2009_band_cv(v)
@@ -207,7 +207,7 @@ def test_gernez_bands_as_read():
     assert jerlov.gernez2009_band_cv("wind_m_s").x.tolist() == list(range(10))
     assert repr(waves) == ("<BandConditionFluctuation Gernez 2009 Figure "
                            "10, against wave_height_m, 443-683 nm>")
-    with pytest.raises(KeyError, match="known: sun_zenith_deg"):
+    with pytest.raises(ValueError, match="known: sun_zenith_deg"):
         jerlov.gernez2009_band_cv("sqrt_wind")
 
 

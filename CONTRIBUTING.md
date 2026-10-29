@@ -151,6 +151,47 @@ If you change what the package can do, update `.zenodo.json` as well. It is
 read only when Zenodo archives a release, so nothing else notices when it goes
 stale. It went stale four times before a test was added.
 
+## Compatibility
+
+From 1.0, a release does not break the way the package is used until 2.0.
+`DECISIONS.md` section 61 records why each rule is as it is.
+
+**What is promised.**
+
+- The names in `jerlov.__all__`, imported from `jerlov` itself. The
+  modules inside the package (`jerlov.water` and the rest) are not.
+- Reading the attributes of what the functions return. Building those
+  types yourself is not promised; the ones meant to be built are `Water`,
+  `Scene` and `Source`.
+- The arguments, their defaults, the default source of each function, and
+  the exceptions raised. An argument with no defensible value takes `None`
+  for "not given" and refuses it with a `MissingQuantityError` that says
+  what to pass.
+- The behaviour at run time, not the type annotations, which are still
+  being filled in.
+
+**Not a breaking change.**
+
+- Correcting a shipped value, or its status, that is wrong against its
+  source. It goes in a minor release, and the CHANGELOG says so at the top
+  of that release's entry. A value that is newly flagged, and so starts to
+  warn, is treated the same way.
+- Raising the minimum Python or NumPy. It goes in a minor release, under
+  Packaging.
+
+**Never done in 1.x.**
+
+- Adding a default to an argument that has none. A new choice gets a new
+  argument or a new function.
+- Removing or renaming anything public. The old name or way of calling
+  keeps working with a `FutureWarning` for at least one minor release, and
+  goes in 2.0.
+
+Exceptions follow one rule: an unknown name of a record (a water type, a
+source, a station, a figure's panel, a table's depth) raises `KeyError`;
+an argument that names a quantity or an option outside its fixed set raises
+`ValueError`.
+
 ## Pull requests
 
 Small and focused is easier to review than complete. Say in the description

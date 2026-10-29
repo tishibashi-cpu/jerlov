@@ -18,6 +18,7 @@ compare with, with the conditions they were made under.
 
 from __future__ import annotations
 
+import warnings
 from dataclasses import dataclass
 from typing import Any
 
@@ -31,10 +32,11 @@ DARECKI2011_PANELS = ("a", "b", "c")
 GERNEZ2009_VARIABLES = ("wave_height_m", "sqrt_wind", "kd490_per_m")
 """What Gernez & Antoine's (2009) Figures 8b, 8c and 8d are plotted
 against: the wave height, m; the square root of the wind speed, the wind in
-m/s; and Kd at 490 nm, 1/m."""
+m/s; and Kd at 490 nm, 1/m. Figure 8a, against the sun's zenith angle, is
+not among them: :data:`GERNEZ2009_PLOTS` lists all four panels."""
 
 GERNEZ2009_PLOTS = {
-    ("clear", "Ed"): GERNEZ2009_VARIABLES,
+    ("clear", "Ed"): ("sun_zenith_deg",) + GERNEZ2009_VARIABLES,
     ("overcast", "Ed"): ("sun_zenith_deg", "wave_height_m", "wind_m_s",
                          "kd490_per_m"),
     ("clear", "Eu"): ("sun_zenith_deg", "wave_height_m", "wind_m_s",
@@ -127,7 +129,8 @@ class SunZenithFluctuation:
     coefficient of variation of the downwelling irradiance at 510 nm, its
     standard deviation, and the median period of the strongest
     fluctuation, against the sun's zenith angle. Built by
-    :func:`gernez2009_cv_by_sun_zenith`; CV as a ratio."""
+    :func:`gernez2009_cv_by_sun_zenith`, which is superseded by
+    ``gernez2009_cv_by("sun_zenith_deg")``; CV as a ratio."""
 
     sun_zenith_deg: np.ndarray
     cv: np.ndarray
@@ -285,6 +288,11 @@ def gernez2009_cv_by_sun_zenith() -> SunZenithFluctuation:
     and the period of its strongest fluctuation, against the sun's zenith
     angle, under clear skies.
 
+    Superseded in 0.24.0 by ``gernez2009_cv_by("sun_zenith_deg")``, which
+    gives the same values as a :class:`ConditionFluctuation`, like the
+    other panels. This raises a ``FutureWarning`` and will be removed in
+    2.0 (DECISIONS.md section 61).
+
     Gernez, P. and Antoine, D. (2009), "Field characterization of
     wave-induced underwater light field fluctuations", J. Geophys. Res. 114,
     C06025, doi:10.1029/2008JC005059, Figure 8a, p. 9.
@@ -293,6 +301,12 @@ def gernez2009_cv_by_sun_zenith() -> SunZenithFluctuation:
     standard deviation of the period is in the figure but cannot be read:
     its dashed bars end between dashes.
     """
+    warnings.warn(
+        "gernez2009_cv_by_sun_zenith() is replaced by "
+        "gernez2009_cv_by(\"sun_zenith_deg\"), which gives the same values "
+        "as the other panels of Figure 8 do. This one will be removed in "
+        "jerlov 2.0 (DECISIONS.md section 61).",
+        FutureWarning, stacklevel=_data.caller_stacklevel())
     rows = _data._rows("gernez2009_sun_zenith.csv")
 
     def column(name, scale=1.0):
@@ -333,28 +347,37 @@ def gernez2009_cv_by(variable: str, sky: str = "clear",
                      irradiance: str = "Ed") -> ConditionFluctuation:
     """The coefficient of variation of the irradiance at 510 nm at the upper
     depth, and the period of its strongest fluctuation, against one of the
-    conditions: the wave height, the wind, Kd(490) or, for ``sky`` and
-    ``irradiance`` other than the defaults, the sun's zenith angle.
+    conditions: the sun's zenith angle, the wave height, the wind or
+    Kd(490).
 
     ``sky`` is ``"clear"`` or ``"overcast"`` and ``irradiance`` ``"Ed"`` or
     ``"Eu"``; :data:`GERNEZ2009_PLOTS` gives the variables for each pair
-    the paper plots. Gernez & Antoine (2009), as for
-    :func:`gernez2009_cv_by_sun_zenith`: Figures 8b-8d (clear, Ed, p. 9), 7
-    (overcast, Ed, p. 8) and 13 (clear, Eu, p. 12). Read off the figures'
-    pixels: DATA.md section 25. The values are the medians of each class;
-    the period's standard deviation is not read, and that of CV only where
-    its bar is clear.
+    the paper plots. Gernez, P. and Antoine, D. (2009), "Field
+    characterization of wave-induced underwater light field fluctuations",
+    J. Geophys. Res. 114, C06025, doi:10.1029/2008JC005059: Figures 8a-8d
+    (clear, Ed, p. 9), 7 (overcast, Ed, p. 8) and 13 (clear, Eu, p. 12).
+    Read off the figures' pixels: DATA.md section 25. The values are the
+    medians of each class; the period's standard deviation is not read,
+    and that of CV only where its bar is clear.
+
+    An unknown ``variable``, ``sky`` or ``irradiance`` raises
+    ``ValueError``; up to 0.23.0 it raised ``KeyError`` (DECISIONS.md
+    section 61).
     """
     key = (sky, irradiance)
     if key not in GERNEZ2009_PLOTS:
         known = ", ".join(f"{a}/{b}" for a, b in GERNEZ2009_PLOTS)
-        raise KeyError(f"the paper plots no {irradiance} under a {sky} sky "
-                       f"against the conditions (known: {known})")
+        raise ValueError(f"the paper plots no {irradiance} under a {sky} "
+                         f"sky against the conditions (known: {known})")
     if variable not in GERNEZ2009_PLOTS[key]:
-        raise KeyError(f"Figure {_FIGURE[key]} is not plotted against "
-                       f"{variable!r} (known: "
-                       f"{', '.join(GERNEZ2009_PLOTS[key])})")
-    if key == ("clear", "Ed"):
+        raise ValueError(f"Figure {_FIGURE[key]} is not plotted against "
+                         f"{variable!r} (known: "
+                         f"{', '.join(GERNEZ2009_PLOTS[key])})")
+    if key == ("clear", "Ed") and variable == "sun_zenith_deg":
+        # Figure 8a, shipped on its own since 0.16.0.
+        rows = [dict(r, x=r["sun_zenith_deg"]) for r in
+                _data._rows("gernez2009_sun_zenith.csv")]
+    elif key == ("clear", "Ed"):
         rows = [r for r in _data._rows("gernez2009_conditions.csv")
                 if r["variable"] == variable]
     else:
@@ -412,15 +435,16 @@ def gernez2009_spectral_cv(irradiance: str = "Ed") -> SkySpectralFluctuation:
     or of the upwelling at the lower depth, 8 to 8.7 m (``"Eu"``, Figure 14,
     p. 13).
 
-    Gernez & Antoine (2009), as for :func:`gernez2009_cv_by_sun_zenith`.
-    Read off the figures' pixels: DATA.md section 25. The captions call
-    these averages, not medians. The overcast standard deviations are
-    drawn dotted and not read.
+    Gernez & Antoine (2009), as for :func:`gernez2009_cv_by`. Read off
+    the figures' pixels: DATA.md section 25. The captions call these
+    averages, not medians. The overcast standard deviations are drawn
+    dotted and not read. An unknown ``irradiance`` raises ``ValueError``
+    (``KeyError`` up to 0.23.0).
     """
     figure = {"Ed": "11", "Eu": "14"}.get(irradiance)
     if figure is None:
-        raise KeyError(f"no spectral figure for {irradiance!r} "
-                       f"(known: Ed, Eu)")
+        raise ValueError(f"no spectral figure for {irradiance!r} "
+                         f"(known: Ed, Eu)")
     rows = [r for r in _data._rows("gernez2009_spectral.csv")
             if r["figure"] == figure]
     wls = sorted({float(r["wavelength_nm"]) for r in rows})
@@ -476,15 +500,16 @@ def gernez2009_band_cv(variable: str) -> BandConditionFluctuation:
     443, 490, 510, 560, 670 and 683 nm, at the upper depth under clear
     skies, against the sun's zenith angle, the wave height, the wind speed
     or Kd(490): Gernez & Antoine (2009), Figure 10 (p. 11), as for
-    :func:`gernez2009_cv_by_sun_zenith`.
+    :func:`gernez2009_cv_by`.
 
     Read off the figure's coloured lines: DATA.md section 25. The 510 nm
     line is Figure 8's medians. The periods, drawn in the same colours, are
-    not read.
+    not read. An unknown ``variable`` raises ``ValueError`` (``KeyError``
+    up to 0.23.0).
     """
     if variable not in GERNEZ2009_BAND_VARIABLES:
-        raise KeyError(f"Figure 10 is not plotted against {variable!r} "
-                       f"(known: {', '.join(GERNEZ2009_BAND_VARIABLES)})")
+        raise ValueError(f"Figure 10 is not plotted against {variable!r} "
+                         f"(known: {', '.join(GERNEZ2009_BAND_VARIABLES)})")
     rows = [r for r in _data._rows("gernez2009_bands.csv")
             if r["variable"] == variable]
     xs = sorted({float(r["x"]) for r in rows})

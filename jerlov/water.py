@@ -107,9 +107,11 @@ class Water:
         where it is not known. See :meth:`uncertainty`.
     """
 
+    @_data.positional_only()
     def __init__(
         self,
         wavelengths,
+        /,
         a=None,
         b=None,
         *,
@@ -223,7 +225,8 @@ class Water:
     # -- construction ----------------------------------------------------
 
     @classmethod
-    def from_measurements(cls, wavelengths, a=None, b=None, *, kd=None,
+    @_data.positional_only()
+    def from_measurements(cls, wavelengths, /, a=None, b=None, *, kd=None,
                           name: str | None = None, flags=None,
                           uncertainty=None) -> "Water":
         """Build a :class:`Water` from the caller's own measurements.
@@ -357,15 +360,18 @@ class Water:
                          support: list[tuple[int, ...]]) -> None:
         self._warn(quantity, self._flag_hits(quantity, support))
 
-    def a(self, wl):
+    @_data.positional_only()
+    def a(self, wl, /):
         """Absorption coefficient in 1/m."""
         return self._interp("a", wl)
 
-    def b(self, wl):
+    @_data.positional_only()
+    def b(self, wl, /):
         """Scattering coefficient in 1/m."""
         return self._interp("b", wl)
 
-    def c(self, wl):
+    @_data.positional_only()
+    def c(self, wl, /):
         """Beam attenuation coefficient ``a + b`` in 1/m.
 
         One warning covers both terms: a wavelength flagged in a and in b
@@ -378,11 +384,13 @@ class Water:
                          for h in self._flag_hits(q, support)})
         return a + b
 
-    def kd(self, wl):
+    @_data.positional_only()
+    def kd(self, wl, /):
         """Downwelling diffuse attenuation coefficient in 1/m."""
         return self._interp("Kd", wl)
 
-    def kd_hydrolight(self, wl):
+    @_data.positional_only()
+    def kd_hydrolight(self, wl, /):
         """Kd recomputed by HydroLight from this water's a and b, in 1/m.
 
         Only Solonenko & Mobley (2015) publish it, as K_d^H in Tables 4-8.
@@ -402,7 +410,8 @@ class Water:
         """
         return self._interp("KdH", wl)
 
-    def uncertainty(self, quantity: str, wl):
+    @_data.positional_only()
+    def uncertainty(self, quantity: str, wl, /):
         """The standard uncertainty of ``quantity`` at ``wl``, in 1/m.
 
         Only measurements carry one: pass it to :meth:`from_measurements`.
@@ -420,7 +429,8 @@ class Water:
         return self._interp(quantity, wl, warn=False,
                             values=self._uncertainty[quantity])
 
-    def bb(self, wl, *, backscatter_ratio: float | None = None):
+    @_data.positional_only()
+    def bb(self, wl, /, *, backscatter_ratio: float | None = None):
         """Backscattering coefficient in 1/m.
 
         ``backscatter_ratio`` is bb/b and has no default. It is not determined
@@ -648,7 +658,8 @@ class KdClassification:
         )
 
 
-def classify_kd(wavelengths, kd, *, source: str = "jerlov1976",
+@_data.positional_only()
+def classify_kd(wavelengths, kd, /, *, source: str = "jerlov1976",
                 types=None, uncertainty=None,
                 k: float = 1.0) -> KdClassification:
     """Find the Jerlov type whose Kd spectrum a measured one is closest to.
@@ -901,7 +912,8 @@ class Descent:
         )
 
 
-def descend(surface_water_type: str, depth_m: float, wavelengths, *,
+@_data.positional_only()
+def descend(surface_water_type: str, depth_m: float, wavelengths, /, *,
             source: str = "jerlov1976") -> Descent:
     """Attenuate downwelling irradiance through the typical depth profile.
 
@@ -1041,7 +1053,8 @@ _NO_AW = {
 }
 
 
-def pure_water_absorption(wavelength_nm, source: str = "williamson2022"):
+@_data.positional_only()
+def pure_water_absorption(wavelength_nm, /, source: str = "williamson2022"):
     """The absorption of pure water that ``source`` computed its a with, 1/m.
 
     A Jerlov type's a is that of pure water plus what is dissolved and
@@ -1081,7 +1094,8 @@ def pure_water_absorption(wavelength_nm, source: str = "williamson2022"):
 AUSTIN_KD490_LIMIT = 0.16
 
 
-def kd_spectrum(kd, wavelength_nm: float, at):
+@_data.positional_only()
+def kd_spectrum(kd, wavelength_nm: float, at, /):
     """Reconstruct a Kd spectrum from a single measured value.
 
     Uses the model of Austin & Petzold (1986), Eq. (6)::
@@ -1259,7 +1273,8 @@ def k_from_secchi(secchi_depth_m, *, coefficient: float):
     return result.reshape(np.shape(secchi_depth_m))
 
 
-def b_from_c(c, wavelength_nm, *, bw, cw, bound: str = "average"):
+@_data.positional_only()
+def b_from_c(c, wavelength_nm, /, *, bw, cw, bound: str = "average"):
     """Estimate the scattering coefficient from the beam attenuation.
 
     Uses the measured ratios of Smart (2007) Table 1::

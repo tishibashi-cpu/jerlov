@@ -20,9 +20,9 @@ def test_pure_water_backscattering_is_the_integral_of_its_own_vsf():
     """bb_w must be what Eq. (3) gives when applied to Eq. (4)."""
     for nm in (440.0, 532.0, 650.0):
         theta = np.radians(np.linspace(90.0, 180.0, 90001))
-        vsf = jerlov.pure_water_vsf(np.degrees(theta), nm)
+        vsf = jerlov.pure_water_vsf(np.degrees(theta), nm, salinity_psu=37.0)
         integrated = 2 * math.pi * float(trapezoid(vsf * np.sin(theta), theta))
-        assert jerlov.pure_water_backscattering(nm) == pytest.approx(
+        assert jerlov.pure_water_backscattering(nm, salinity_psu=37.0) == pytest.approx(
             integrated, rel=1e-6
         )
 
@@ -31,17 +31,17 @@ def test_chi_w_gives_the_same_answer_at_every_angle():
     """The water conversion is exact, so it cannot depend on where you look."""
     r = (1 - DEPOLARISATION_RATIO) / (1 + DEPOLARISATION_RATIO)
     nm = 532.0
-    expected = jerlov.pure_water_backscattering(nm)
+    expected = jerlov.pure_water_backscattering(nm, salinity_psu=37.0)
     for angle in (90.0, 110.0, 130.0, 150.0, 170.0):
         chi_w = (1 + r / 3) / (1 + r * math.cos(math.radians(angle)) ** 2)
-        recovered = 2 * math.pi * jerlov.pure_water_vsf(angle, nm) * chi_w
+        recovered = 2 * math.pi * jerlov.pure_water_vsf(angle, nm, salinity_psu=37.0) * chi_w
         assert recovered == pytest.approx(expected, rel=1e-9)
 
 
 def test_pure_water_scattering_rises_steeply_towards_the_blue():
     """Morel's exponent is -4.32, close to Rayleigh's -4."""
-    blue = jerlov.pure_water_backscattering(400.0)
-    red = jerlov.pure_water_backscattering(700.0)
+    blue = jerlov.pure_water_backscattering(400.0, salinity_psu=37.0)
+    red = jerlov.pure_water_backscattering(700.0, salinity_psu=37.0)
     assert blue / red == pytest.approx((700.0 / 400.0) ** 4.32, rel=1e-9)
 
 
@@ -92,11 +92,11 @@ def test_angles_outside_the_measurements_are_refused():
 
 def test_it_reproduces_the_published_equation():
     beta, angle, nm = 0.0021, 140.0, 532.0
-    result = jerlov.bb_from_vsf(beta, angle, nm)
+    result = jerlov.bb_from_vsf(beta, angle, nm, salinity_psu=37.0)
     chi_p = jerlov.particulate_chi(angle)
     expected = (2 * math.pi * chi_p
-                * (beta - jerlov.pure_water_vsf(angle, nm))
-                + jerlov.pure_water_backscattering(nm))
+                * (beta - jerlov.pure_water_vsf(angle, nm, salinity_psu=37.0))
+                + jerlov.pure_water_backscattering(nm, salinity_psu=37.0))
     assert result.bb == pytest.approx(expected)
     assert result.particulate + result.water == pytest.approx(result.bb)
 
@@ -104,16 +104,16 @@ def test_it_reproduces_the_published_equation():
 def test_water_alone_gives_the_water_answer():
     """Measuring pure sea water must return bb_w and no particles."""
     nm = 532.0
-    beta = jerlov.pure_water_vsf(130.0, nm)
-    result = jerlov.bb_from_vsf(beta, 130.0, nm)
+    beta = jerlov.pure_water_vsf(130.0, nm, salinity_psu=37.0)
+    result = jerlov.bb_from_vsf(beta, 130.0, nm, salinity_psu=37.0)
     assert result.particulate == pytest.approx(0.0, abs=1e-12)
-    assert result.bb == pytest.approx(jerlov.pure_water_backscattering(nm))
+    assert result.bb == pytest.approx(jerlov.pure_water_backscattering(nm, salinity_psu=37.0))
 
 
 def test_more_scattering_gives_more_backscattering():
     previous = -1.0
     for beta in (0.0005, 0.001, 0.002, 0.005):
-        value = jerlov.bb_from_vsf(beta, 140.0, 532.0).bb
+        value = jerlov.bb_from_vsf(beta, 140.0, 532.0, salinity_psu=37.0).bb
         assert value > previous
         previous = value
 
@@ -126,14 +126,14 @@ def test_a_typical_coastal_reading_lands_in_the_reported_range():
 
 def test_170_degrees_warns_about_its_own_error():
     with pytest.warns(AngleWarning, match="34.8%"):
-        jerlov.bb_from_vsf(0.002, 170.0, 532.0)
+        jerlov.bb_from_vsf(0.002, 170.0, 532.0, salinity_psu=37.0)
 
 
 def test_the_recommended_angles_do_not_warn():
     with warnings.catch_warnings():
         warnings.simplefilter("error")
         for angle in (110.0, 120.0, 130.0, 140.0, 150.0, 160.0):
-            jerlov.bb_from_vsf(0.002, angle, 532.0)
+            jerlov.bb_from_vsf(0.002, angle, 532.0, salinity_psu=37.0)
 
 
 def test_a_reading_below_pure_water_warns_rather_than_passing():
@@ -141,25 +141,25 @@ def test_a_reading_below_pure_water_warns_rather_than_passing():
     AngleWarning, so filtering out angle advice silenced it too."""
     with pytest.warns(jerlov.ProvenanceWarning,
                       match="below that of pure sea water") as caught:
-        jerlov.bb_from_vsf(1e-6, 140.0, 400.0)
+        jerlov.bb_from_vsf(1e-6, 140.0, 400.0, salinity_psu=37.0)
     assert not any(issubclass(w.category, AngleWarning) for w in caught)
 
 
 def test_negative_scattering_is_refused():
     with pytest.raises(ValueError, match="cannot be negative"):
-        jerlov.bb_from_vsf(-0.001, 140.0, 532.0)
+        jerlov.bb_from_vsf(-0.001, 140.0, 532.0, salinity_psu=37.0)
 
 
 def test_the_result_carries_the_quoted_error():
-    result = jerlov.bb_from_vsf(0.002, 140.0, 532.0)
+    result = jerlov.bb_from_vsf(0.002, 140.0, 532.0, salinity_psu=37.0)
     assert result.chi_p == pytest.approx(1.18)
     assert result.quoted_error_percent == pytest.approx(3.5)
     assert result.angle_deg == 140.0
 
 
 def test_scalar_in_scalar_out():
-    assert isinstance(jerlov.bb_from_vsf(0.002, 140.0, 532.0).bb, float)
-    array = jerlov.bb_from_vsf([0.001, 0.002], 140.0, 532.0).bb
+    assert isinstance(jerlov.bb_from_vsf(0.002, 140.0, 532.0, salinity_psu=37.0).bb, float)
+    array = jerlov.bb_from_vsf([0.001, 0.002], 140.0, 532.0, salinity_psu=37.0).bb
     assert isinstance(array, np.ndarray) and array.shape == (2,)
 
 
@@ -175,18 +175,18 @@ def test_it_says_nothing_about_a_jerlov_type():
 def test_one_angle_many_wavelengths_gives_one_value_per_wavelength():
     """A scalar angle used to return the first wavelength's value alone."""
     nms = [450.0, 532.0, 700.0]
-    vsf = jerlov.pure_water_vsf(124.0, nms)
+    vsf = jerlov.pure_water_vsf(124.0, nms, salinity_psu=37.0)
     assert np.shape(vsf) == (3,)
     for value, nm in zip(vsf, nms):
-        assert value == pytest.approx(jerlov.pure_water_vsf(124.0, nm))
+        assert value == pytest.approx(jerlov.pure_water_vsf(124.0, nm, salinity_psu=37.0))
 
 
 def test_an_array_of_wavelengths_matches_one_call_per_wavelength():
     """The water term must be subtracted at each wavelength, not the first."""
     nms = [450.0, 532.0, 700.0]
-    together = jerlov.bb_from_vsf([0.001] * 3, 124.0, nms)
+    together = jerlov.bb_from_vsf([0.001] * 3, 124.0, nms, salinity_psu=37.0)
     for k, nm in enumerate(nms):
-        alone = jerlov.bb_from_vsf(0.001, 124.0, nm)
+        alone = jerlov.bb_from_vsf(0.001, 124.0, nm, salinity_psu=37.0)
         assert together.bb[k] == pytest.approx(alone.bb)
         assert together.particulate[k] == pytest.approx(alone.particulate)
         assert together.water[k] == pytest.approx(alone.water)
@@ -195,35 +195,35 @@ def test_an_array_of_wavelengths_matches_one_call_per_wavelength():
 def test_total_pure_water_scattering_is_morels():
     """b_w = 16.06 beta_w(90) in Morel's form, and twice bb_w by symmetry."""
     for nm in (440.0, 550.0, 650.0):
-        b_w = jerlov.pure_water_scattering(nm)
-        assert b_w == pytest.approx(2 * jerlov.pure_water_backscattering(nm))
-        assert b_w / jerlov.pure_water_vsf(90.0, nm) == pytest.approx(16.06, abs=0.01)
+        b_w = jerlov.pure_water_scattering(nm, salinity_psu=37.0)
+        assert b_w == pytest.approx(2 * jerlov.pure_water_backscattering(nm, salinity_psu=37.0))
+        assert b_w / jerlov.pure_water_vsf(90.0, nm, salinity_psu=37.0) == pytest.approx(16.06, abs=0.01)
         theta = np.radians(np.linspace(0.0, 180.0, 180001))
-        vsf = jerlov.pure_water_vsf(np.degrees(theta), nm)
+        vsf = jerlov.pure_water_vsf(np.degrees(theta), nm, salinity_psu=37.0)
         integrated = 2 * math.pi * float(trapezoid(vsf * np.sin(theta), theta))
         assert b_w == pytest.approx(integrated, rel=1e-6)
-    assert isinstance(jerlov.pure_water_scattering(550.0), float)
-    assert jerlov.pure_water_scattering([440.0, 550.0]).shape == (2,)
+    assert isinstance(jerlov.pure_water_scattering(550.0, salinity_psu=37.0), float)
+    assert jerlov.pure_water_scattering([440.0, 550.0], salinity_psu=37.0).shape == (2,)
 
 
 def test_a_salinity_that_is_not_one_is_refused():
     for bad in (-1.0, float("nan")):
-        for call in (lambda s: jerlov.pure_water_vsf(120.0, 532.0, s),
-                     lambda s: jerlov.pure_water_backscattering(532.0, s),
-                     lambda s: jerlov.pure_water_scattering(532.0, s),
+        for call in (lambda s: jerlov.pure_water_vsf(120.0, 532.0, salinity_psu=s),
+                     lambda s: jerlov.pure_water_backscattering(532.0, salinity_psu=s),
+                     lambda s: jerlov.pure_water_scattering(532.0, salinity_psu=s),
                      lambda s: jerlov.bb_from_vsf(0.0021, 140.0, 532.0,
                                                   salinity_psu=s)):
             with pytest.raises(ValueError, match="salinity_psu"):
                 call(bad)
-    jerlov.pure_water_vsf(120.0, 532.0, 0.0)   # fresh water is fine
+    jerlov.pure_water_vsf(120.0, 532.0, salinity_psu=0.0)   # fresh water is fine
 
 
 def test_a_wavelength_that_is_not_one_is_refused():
     for bad in (0.0, -500.0, float("nan"), float("inf")):
-        for call in (lambda w: jerlov.pure_water_vsf(120.0, w),
-                     lambda w: jerlov.pure_water_backscattering(w),
-                     lambda w: jerlov.pure_water_scattering(w),
-                     lambda w: jerlov.bb_from_vsf(0.0021, 140.0, w)):
+        for call in (lambda w: jerlov.pure_water_vsf(120.0, w, salinity_psu=37.0),
+                     lambda w: jerlov.pure_water_backscattering(w, salinity_psu=37.0),
+                     lambda w: jerlov.pure_water_scattering(w, salinity_psu=37.0),
+                     lambda w: jerlov.bb_from_vsf(0.0021, 140.0, w, salinity_psu=37.0)):
             with warnings.catch_warnings():
                 warnings.simplefilter("error")
                 with pytest.raises(ValueError, match="wavelength_nm"):
