@@ -55,7 +55,8 @@ _F = TypeVar("_F", bound=Callable[..., Any])
 
 def positional_only(*, also_by_position: tuple[str, ...] = ()
                     ) -> Callable[[_F], _F]:
-    """Keep the calls that 0.24.0 changed working, with a FutureWarning.
+    """Keep the calls that 0.24.0 changed working, with a FutureWarning,
+    until 2.0.
 
     The wavelength and spectrum arguments became positional-only in 0.24.0
     so that their names, which differ from function to function, are not

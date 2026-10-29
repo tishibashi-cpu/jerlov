@@ -4,6 +4,39 @@ Every release is archived on Zenodo under the concept DOI
 [10.5281/zenodo.22321312](https://doi.org/10.5281/zenodo.22321312), which
 always resolves to the latest version.
 
+## 1.0.0 — 2026-10-29
+
+From this release the way the package is used does not break until 2.0.
+No shipped value changed (DECISIONS.md section 62).
+
+**What 1.0 promises.** The rules are under "Compatibility" in
+CONTRIBUTING.md, and DECISIONS.md section 61 says why each is as it is.
+
+- What is promised: the names in `jerlov.__all__`, imported from `jerlov`
+  itself (not from its modules); reading the attributes of what the
+  functions return; the arguments, their defaults, each function's default
+  source, and the exceptions raised.
+- Correcting a shipped value or its status that is wrong against its
+  source is not a breaking change. It goes in a minor release, and the
+  release's entry here says so at the top.
+- No default is added to an argument that has none.
+- Nothing public is removed or renamed before 2.0. An old name or way of
+  calling keeps working with a `FutureWarning`.
+
+**Changed.** `pure_water_vsf`, `pure_water_backscattering`,
+`pure_water_scattering` and `bb_from_vsf` raise `MissingQuantityError` when
+`salinity_psu` is left out. 0.24.0 warned and used 37; pass
+`salinity_psu=37.0` to keep that result. Pure sea water at 37 scatters 30
+percent more than fresh water, so the package does not choose.
+
+**Kept.** The other ways of calling that 0.24.0 replaced still work, with a
+`FutureWarning`, until 2.0: a wavelength or spectrum passed by keyword, a
+salinity passed by position, and `gernez2009_cv_by_sun_zenith()`.
+
+**Packaging.** The classifier is "Development Status :: 5 -
+Production/Stable", for the interface; the doubts about the data stay in
+DATA.md and in the flags.
+
 ## 0.24.0 — 2026-10-29
 
 The last changes before 1.0, so that what 1.0 promises is worth keeping
