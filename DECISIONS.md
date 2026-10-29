@@ -2200,3 +2200,156 @@ status refused by the constructor and the shipped Austin types still
 built, the warning and each refusal of item 4, a NaN white, a
 one-wavelength response, the three shape errors, and `kd_spectrum` on a
 2-D `at` against the same values computed one at a time.
+
+## 61. What 1.0 promises, and the changes made before it
+
+1.0 is a promise not to break the way the package is used until 2.0. It
+is worth making only once what is promised has been looked at, so the
+whole public surface of 0.23.0 was listed, 75 names in `jerlov.__all__`
+(38 functions, 22 types, four warnings, one error, ten constants), and
+each doubtful point was run before it was listed. This section records
+what will be promised, and the changes 0.24.0 makes so that the promise
+is one worth keeping. 1.0.0 follows as its own release.
+
+### What is promised
+
+- **The names in `jerlov.__all__`**, imported from `jerlov` itself.
+  `jerlov.<module>` is not promised: `import jerlov.water` already gives
+  the function `water`, not the module, because the function is bound to
+  the package under the module's name. The one example that imported from
+  a module, `from jerlov.sources import HALTRIN1999`, did so because the
+  name was not exported; `HALTRIN1999` and its type `ScatteringConstants`
+  (the type of `Source.scattering`) are added to `__all__`.
+- **Reading the attributes of the types the package returns.** Building
+  them is not promised: `ParProfile`, `Observation`, `Descent` and the
+  rest take their internal values as arguments, and `Descent` has a
+  private field `_kd`. The types a caller builds are `Water` (and
+  `Water.from_measurements`), `Scene` and `Source`.
+- **The arguments, their defaults and the exceptions**, under the rules
+  below. The behaviour at run time is promised, not the type annotations,
+  which are incomplete and will be filled in during 1.x.
+- **The default source of each function** (`williamson2022` for `water`
+  and `pure_water_absorption`, section 3; `jerlov1976` for `descend` and
+  `classify_kd`). Changing one would change the numbers a call returns
+  with no change to the call, so it waits for 2.0.
+- **`None` meaning "not given".** `Water.bb(backscatter_ratio=None)` and
+  `Scene.observe(face_irradiance_ratio=None)` refuse the omission with a
+  `MissingQuantityError` that says what to pass and what passing 1.0 or a
+  typical ratio would assume. Removing the `None` would turn that into a
+  bare `TypeError`, so it stays, and is the pattern for any argument with
+  no defensible default.
+
+Not promised: writing to `SOURCES` (a dict, so it can be written, and
+`get_source` would then find the entry), and anything whose name starts
+with an underscore.
+
+### The compatibility policy
+
+1. **Correcting a shipped value is not a breaking change.** A number or a
+   status that is wrong against its source is corrected in a minor
+   release, and the CHANGELOG says so at the top of that release's entry,
+   where "No shipped value changed." otherwise stands. Fidelity to the
+   source comes before keeping a wrong number stable. A status that
+   becomes `suspect`, and so starts to warn, is treated the same way.
+2. **No default is added to an argument that has none.** Adding one
+   would not break a call, but it would put a guessed value where the
+   package now refuses to guess. A new choice gets a new argument or a new
+   function instead.
+3. **Nothing public is removed or renamed in 1.x.** An old name or way of
+   calling keeps working with a `FutureWarning` (shown to users, unlike
+   `DeprecationWarning`) for at least one minor release before 2.0, and is
+   removed only in 2.0.
+4. **Raising the minimum Python or NumPy is not a breaking change.** It
+   goes in a minor release, under Packaging in the CHANGELOG.
+
+The policy is written for contributors in CONTRIBUTING.md, and README
+points to it in one line.
+
+### The changes in 0.24.0
+
+**1. Salinity has no default.** `pure_water_vsf`,
+`pure_water_backscattering`, `pure_water_scattering` and `bb_from_vsf`
+defaulted to `salinity_psu=37.0`, and nothing said why. It is not a small
+choice: Morel's factor (1 + 0.3 S / 37) makes pure sea water at 37 scatter
+30 percent more than fresh water. It is the kind of default section 4
+refused for bb. As sections 33 and 34 did for `face_irradiance_ratio`,
+it is removed in two steps. In 0.24.0, omitting it still uses 37 and
+raises a `FutureWarning` that says what the number does and to pass it;
+in 1.0.0 the omission raises `MissingQuantityError`. It also becomes
+keyword-only in all four, as it already was in `bb_from_vsf`; passing it
+by position still works, with a `FutureWarning`, until 2.0. The three
+examples that relied on the default (`radiance_distribution.py`,
+`painted_sphere.py`, `wave_focusing.py`) pass 37 explicitly and list it
+under "Before you use any of this".
+
+**2. One rule for the type of error.** An unknown name of a *record*
+(a water type, a source, a Petzold station, a panel of a figure, a depth
+of Tyler's tables) raises `KeyError`, as a lookup does. An argument that
+names a *quantity or an option* outside its fixed set (`unit`, `bound`,
+`quantity`) raises `ValueError`. `gernez2009_cv_by` and
+`gernez2009_band_cv` raised `KeyError` for an unknown `variable`, and
+`gernez2009_cv_by` and `gernez2009_spectral_cv` for an unknown `sky` or
+`irradiance`, though these name quantities and options; they now raise
+`ValueError`. This is done before 1.0 because a changed exception breaks
+an `except` clause with no warning that could have been given. The one
+`RuntimeError`, for a shipped CSV whose wavelength grids disagree, stays:
+it reports a fault in the package, not in the call.
+
+**3. Gernez & Antoine's Figure 8a joins the other panels.**
+`gernez2009_cv_by_sun_zenith()` was written in 0.16.0, before
+`gernez2009_cv_by`, and stayed the only way to reach Figure 8a; the clear,
+downwelling entry of `GERNEZ2009_PLOTS` left the sun's zenith angle out.
+`gernez2009_cv_by("sun_zenith_deg")` now returns Figure 8a as a
+`ConditionFluctuation` with the same values, and that entry of
+`GERNEZ2009_PLOTS` gains `"sun_zenith_deg"` at the front, as the other two
+entries have it. The old function keeps working, returning its
+`SunZenithFluctuation`, with a `FutureWarning`, until 2.0.
+`GERNEZ2009_VARIABLES` keeps its value, the variables of Figures 8b-8d.
+
+**4. The wavelength and spectrum arguments are positional-only.** The
+same thing has four names: `wavelengths`, `wl`, `wavelength_nm` and, for
+the wavelengths `kd_spectrum` evaluates at, `at`. Renaming them would
+break every caller who passes them by keyword, and so would leaving them,
+since each name is then part of the promise. Making them positional-only
+(`/`) takes the names out of the promise. The parameters before them in
+each signature become positional-only with them, since `/` covers a
+prefix. A caller passing one by keyword still gets the same answer, with
+a `FutureWarning` naming the change, until 2.0. The functions are
+`Water(...)`, `Water.from_measurements`, `Water.a`, `b`, `c`, `kd`,
+`kd_hydrolight`, `bb` and `uncertainty`, `pure_water_absorption`,
+`pure_water_vsf`, `pure_water_backscattering`, `pure_water_scattering`,
+`bb_from_vsf`, `b_from_c`, `kd_spectrum`, `spectrum_to_xyz`,
+`spectrum_to_srgb`, `integrate_response`, `Scene(...)`, `Scene.at_depth`,
+`veiling_radiance_estimate`, `descend`, `par_profile` and `classify_kd`.
+The attribute names (`wavelengths` on `Descent`, `wavelengths_nm` on the
+fluctuation types) are left as they are: they differ, but each is
+documented and none is ambiguous.
+
+**Left as they are, and recorded here.** `Scene(water, downwelling,
+wavelengths)` and `Scene.at_depth(water, depth_m, surface_downwelling,
+wavelengths)` put the depth in different places; `Water.range_nm` and
+`Source.wavelength_range_nm` name the same thing differently;
+`Water.caveats()` is a method and `Source.caveats` an attribute.
+`solar_fraction(t, z)` and `shortwave_parameters(t).fraction_at(z)` give
+the same number, the first as a short way in. The attribute names that
+follow a paper's symbols (`beta_D`, `B_inf`, `R`, `zeta1_m`) stay. None of
+these is worth a deprecation.
+
+### Checks
+
+Planned before the code was written:
+
+- **No number changes.** Every example's output is compared with its
+  output under 0.23.0, captured before any change, and must be identical
+  apart from the version in the banner. The examples must raise no
+  `FutureWarning`, so they show the new way of calling, as well as no
+  `ProvenanceWarning` as before.
+- Each change becomes a test: the four salinity functions warn when it is
+  omitted and give the value at 37, and warn when it is passed by
+  position and give the same value; every function in item 4 has its
+  wavelength positional-only in its signature, and a keyword call gives
+  the same value as a positional one, with a `FutureWarning`; the
+  `ValueError`s of item 2; `gernez2009_cv_by("sun_zenith_deg")` against
+  `gernez2009_cv_by_sun_zenith()` value for value, and the old function's
+  warning; `HALTRIN1999` and `ScatteringConstants` in `__all__`; and no
+  example importing from a module of the package.
