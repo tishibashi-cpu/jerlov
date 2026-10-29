@@ -147,6 +147,17 @@ tested.
 choice goes, including the alternatives that were rejected and why; it is
 append-only, and a reversal is a new entry saying so rather than an edit.
 
+The site, <https://tishibashi-cpu.github.io/jerlov/>, is built from `docs/`
+with Sphinx, and its API reference from the docstrings, which are therefore
+written in reStructuredText. Every number a guide prints comes from a `>>>`
+block that `tests/test_docs.py` runs, and a new public name needs an entry
+in `docs/api.rst`; a test checks both. To build it as CI does:
+
+```bash
+python -m pip install "sphinx==9.0.4"
+sphinx-build -W --keep-going -b html docs docs/_build/html
+```
+
 If you change what the package can do, update `.zenodo.json` as well. It is
 read only when Zenodo archives a release, so nothing else notices when it goes
 stale. It went stale four times before a test was added.

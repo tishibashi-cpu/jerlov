@@ -4,6 +4,37 @@ Every release is archived on Zenodo under the concept DOI
 [10.5281/zenodo.22321312](https://doi.org/10.5281/zenodo.22321312), which
 always resolves to the latest version.
 
+## 1.0.1 — 2026-10-29
+
+A documentation site, https://tishibashi-cpu.github.io/jerlov/, with three
+guides and a reference of the whole API (DECISIONS.md section 63). No
+shipped value changed, and nothing in the API.
+
+**Docs.**
+
+- The site is built from `docs/` with Sphinx and published to GitHub Pages
+  from `main` by a new workflow, `docs.yml`, which also builds it on every
+  pull request and fails on any warning.
+- Three guides, each for one question: the colour of the light at depth,
+  the euphotic zone against Jerlov's measurements, and how colours turn
+  towards the water's own light along a horizontal path. Every number they
+  print is computed by the package when `tests/test_docs.py` runs them.
+- The API reference has an entry for each name in `jerlov.__all__`, built
+  from the docstrings; a test checks that it covers `__all__` exactly.
+- An About page, on why the package was started and how to report a wrong
+  number.
+- Three docstrings did not render, and are mended without changing their
+  text: those of `Water.from_measurements` and `ParProfile.scalar_par`,
+  whose closing paragraphs were read as part of their parameters, and that
+  of `ScatteringConstants`, whose formula became a list. Four
+  cross-references named a module path, `jerlov.water.Water` and the like,
+  and now name the type as `jerlov` exports it.
+- README and CONTRIBUTING.md point to the site; CONTRIBUTING.md says how to
+  build it.
+
+**Packaging.** `pyproject.toml` lists the documentation, source, changelog
+and issues, which PyPI shows beside the description.
+
 ## 1.0.0 — 2026-10-29
 
 From this release the way the package is used does not break until 2.0.

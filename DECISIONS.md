@@ -2397,3 +2397,89 @@ them. The four functions must refuse an omitted salinity with
 `MissingQuantityError` and no warning, and still give 0.24.0's values
 when it is given; the other old ways of calling must still warn and
 still work.
+
+## 63. A documentation site
+
+README.md has grown to one long page, and nothing lists the 77 public
+names with their arguments. A site on GitHub Pages
+(`https://tishibashi-cpu.github.io/jerlov/`) adds guides by purpose and a
+reference of the API. It is a change to the project, not to the package:
+the wheel carries nothing new, and the release is 1.0.1.
+
+**Sphinx**, pinned at 9.0.4 in the workflow as ruff and mypy are (section
+43). The docstrings are already written for it, in its roles (`:func:`,
+`:class:`, `:data:`) and NumPy's sections, which `sphinx.ext.napoleon`
+reads; MkDocs would show the roles as text. Only the built-in theme is
+used. Sphinx is needed to build the site, never to use the package, so
+the package still depends on NumPy alone.
+
+**The pages.**
+
+- *Home*: what the package is for and what it will not do, how to install
+  it, a first calculation, and where to go next.
+- *Three guides*, each for one reader and one question: the colour of the
+  light at depth in each water type; the euphotic zone, where PAR falls to
+  1 percent; and how far apart two colours stay under water. They use only
+  the public API, and every number they show is printed by a code block
+  that runs as a test (below). A number in the prose is either avoided or
+  tested with the rest of `tests/test_quoted_figures.py`.
+- *API reference*, one entry for each name in `jerlov.__all__`, under
+  `jerlov.` as section 61 promises, built from the docstrings. A test
+  checks that it covers `__all__` exactly. The constants' docstrings live
+  in the modules that define them, where autodoc does not look for
+  `jerlov.SOURCES`; the configuration finds them there, so that a dict
+  does not show the docstring of `dict`.
+- *Examples*: the seventeen scripts, with what each is for, linking to
+  their source.
+- *About*: why the package was started, written by its author, and how to
+  report a wrong number. The author chose the wording; it names lure
+  fishing as the hobby the first question came from.
+- Compatibility, DECISIONS.md, DATA.md and the CHANGELOG are linked, not
+  copied: a copy would drift from the file it copies.
+
+**README stays whole** for now. It is the page PyPI shows, and
+`tests/test_quoted_figures.py` checks the numbers it quotes; shortening it
+would move those checks for no gain to a reader of either. It gains a
+link to the site near the top. Whether to cut it down to an introduction
+is left until the site has been read for a while.
+
+**The numbers in the guides are tested.** Each guide is a reStructuredText
+file whose `>>>` blocks `tests/test_docs.py` runs with `doctest`, from the
+source tree, as the other tests run the examples. The outputs are
+formatted (`print(f"{x:.3f}")`) rather than left to NumPy's repr, which
+changed between NumPy 1 and 2.
+
+**The build fails on any warning** (`sphinx-build -W --keep-going`), so a
+docstring that does not render is a failed build, as a broken example is.
+Cross-references are not checked strictly ("nitpicky"): in that mode
+NumPy's own types and the free text of NumPy-style sections give some 140
+false alarms, and quieting them would mean rewriting docstrings for the
+tool's sake. The four references that name a module path
+(`~jerlov.water.Water` and the like), which the promise of section 61 no
+longer stands behind, are changed to the top-level name, and the two
+docstrings that do not render are mended. No text in a docstring
+changes otherwise.
+
+**The workflow** (`.github/workflows/docs.yml`) builds the site on every
+pull request and push, and deploys it to Pages only from `main`, with
+`actions/upload-pages-artifact@v5` and `actions/deploy-pages@v5`, the
+versions that run on Node.js 24 (section 43). The repository's Pages
+source was set to GitHub Actions by its owner.
+
+**Checks.** The site builds with no warning; `tests/test_docs.py` runs the
+guides' code and checks the API page against `__all__`; the full test
+suite, the wheel's tests outside the source tree and the oldest NumPy
+pass; and every example's output is identical to its output under 1.0.0
+apart from the version in the banner.
+
+**Added while building the site.** A third docstring did not render:
+`ScatteringConstants`, whose formula's continuation lines begin with "+"
+and became a bulleted list; it is now a literal block, its text
+unchanged. Alabaster's default page, 940 px, cut the docstrings'
+79-character lines, so the page is widened to 1140 px. `pyproject.toml`
+gains `[project.urls]` (documentation, source, changelog, issues), which
+changes the metadata PyPI shows and nothing in the wheel's files. In the
+guide on colours, the backscatter ratio was first written as 0.015 and
+called typical of the ocean; the package's own docstrings put 0.015 at the
+bottom of the coastal range, so the guide uses 0.01, the top of the
+open-ocean one, and says so.

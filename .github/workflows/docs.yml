@@ -1,0 +1,50 @@
+name: docs
+
+# The documentation site, https://tishibashi-cpu.github.io/jerlov/
+# (DECISIONS.md section 63). Built on every push and pull request, so that a
+# docstring that does not render fails like a broken example; deployed to
+# GitHub Pages only from main. The numbers the guides print are checked by
+# tests/test_docs.py in the test workflow, not here.
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pages-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+      # Pinned, as ruff and mypy are, so that a new release cannot turn the
+      # build red without anything here having changed (section 43).
+      - run: pip install -e . "sphinx==9.0.4"
+      - run: sphinx-build -W --keep-going -b html docs docs/_build/html
+      - uses: actions/upload-pages-artifact@v5
+        if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+        with:
+          path: docs/_build/html
+
+  deploy:
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v5
