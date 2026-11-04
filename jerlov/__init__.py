@@ -71,6 +71,7 @@ from .shortwave import (
     shortwave_parameters,
     solar_fraction,
 )
+from .vision import receptor_noise_distance, visual_pigment_template
 from .sources import (
     HALTRIN1999,
     SOURCES,
@@ -176,6 +177,8 @@ __all__ = [
     "MeasuredPoints",
     "ProvenanceWarning",
     "MissingQuantityError",
+    "visual_pigment_template",
+    "receptor_noise_distance",
 ]
 
-__version__ = "1.0.1"
+__version__ = "1.1.0"

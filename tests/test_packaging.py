@@ -84,7 +84,7 @@ _SPELLED = ["zero", "one", "two", "three", "four", "five", "six", "seven",
             "eight", "nine", "ten", "eleven", "twelve", "thirteen", "fourteen",
             "fifteen", "sixteen", "seventeen", "eighteen", "nineteen",
             "twenty", "twenty-one", "twenty-two", "twenty-three",
-            "twenty-four", "twenty-five"]
+            "twenty-four", "twenty-five", "twenty-six"]
 WORDS = {word: value for value, word in enumerate(_SPELLED)}
 WORDS.update({word.capitalize(): value
               for value, word in enumerate(_SPELLED)})
@@ -173,6 +173,7 @@ def test_the_zenodo_record_names_every_shipped_module():
         ("backscattering.py", "backscattering coefficient"),
         ("water.py", "scattering coefficients"),
         ("par.py", "photosynthetically available radiation"),
+        ("vision.py", "visual pigment"),
     ):
         assert (ROOT / "jerlov" / module).exists()
         assert phrase in described, (

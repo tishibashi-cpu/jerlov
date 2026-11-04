@@ -3,7 +3,7 @@
 What every shipped table is, where it came from, what was verified, and what
 is known to be wrong with it.
 
-Twenty-five entries are recorded below. Nine are confirmed defects, three were
+Twenty-six entries are recorded below. Ten are confirmed defects, three were
 open questions that the first edition of Jerlov settled, and the rest are
 notes rather than defects. None of them is repaired silently: values that
 could be recovered carry `status = reconstructed` and say how, values that
@@ -1452,3 +1452,54 @@ speed as CV / CV(0) = a + b sqrt(w) + exp(-(sqrt(w) - c)^2 / 2 s^2) /
 image has it. As printed, the equation gives 0.945 at w = 0, not the 1
 that CV(0) means. It is recorded here and not shipped.
 
+
+## 26. Visual pigment templates and receptor noise: a misprint in eq. (4) of Vorobyev & Osorio (confirmed)
+
+No table is shipped for either; the constants are written into
+`jerlov/vision.py`, read from the page images of the two papers, and each
+is checked by reproducing something the paper prints (DECISIONS.md section
+64, `tests/test_vision.py`).
+
+**The template.** Govardovskii, V. I., Fyhrquist, N., Reuter, T., Kuzmin,
+D. G. and Donner, K. (2000), "In search of the visual pigment template",
+*Visual Neuroscience* 17, 509-528, doi:10.1017/S0952523800174036; obtained
+by the author. The text layer of the PDF reads "=" as "5", "+" as "1" and
+brackets as "@" and "#", so nothing was taken from it.
+
+| Constant | A1 | A2 | Where |
+|---|---|---|---|
+| A | 69.7 | 62.7 + 1.834 exp[(lambda_max - 625)/54.2] | p. 515; eq. (6a), p. 517 |
+| a | 0.8795 + 0.0459 exp[-(lambda_max - 300)^2/11940] | 0.875 + 0.0268 exp[(lambda_max - 665)/40.7] | eq. (2), p. 515; eq. (6b) |
+| B, b | 28, 0.922 | 20.85, 0.9101 | p. 515; p. 517 |
+| C, c | -14.9, 1.104 | -10.37, 1.1123 | p. 515; p. 517 |
+| D | 0.674 | 0.5343 | p. 515; p. 517 |
+| A_beta | 0.26 | 0.37, not a regression (below) | p. 516; p. 517 |
+| lambda_mbeta | 189 + 0.315 lambda_max | 216.7 + 0.287 lambda_max | eq. (5a), p. 516; eq. (8a), p. 517 |
+| beta bandwidth | -40.5 + 0.195 lambda_max | 317 - 1.149 lambda_max + 0.00124 lambda_max^2 | eq. (5b); eq. (8b) |
+
+What was checked: the beta-band regressions give the "most accurate
+point" of p. 516 (lambda_max 502.6 nm: 347.3 and 57.5 nm); the paper's
+relations between lambda_max and the long-wave half-maximum, eqs. (3) and
+(7), hold for the template within 0.5 nm across the peaks it measured,
+357-569 nm (A1) and 444-619 nm (A2, Table 1); and the alpha-band peaks
+within 0.5 nm of lambda_max at a height within 0.2 percent of 1.
+
+**A2's beta amplitude.** The paper gives no equation for it: it "shows no
+correlation with lambda_max", and was fixed at 0.37 where the beta-peak lay
+outside the recording (p. 517); Fig. 10 fits 0.37 and 0.38 where it could
+be fitted. The package uses 0.37, the value the authors used, and says so.
+
+**The noise model.** Vorobyev, M. and Osorio, D. (1998), "Receptor noise as
+a determinant of colour thresholds", *Proc. R. Soc. Lond. B* 265, 351-358,
+doi:10.1098/rspb.1998.0302; obtained by the author.
+
+**Eq. (4) is misprinted (confirmed).** The distance for three receptor
+types is printed (p. 353) with a last term e_3^2 (Delta q_1 - q_2)^2, with
+no Delta on q_2. The paper derives eqs. (3) to (5) from its general form
+(A7) (Appendix 1, p. 356). Computed from (A7) for random catches and noise,
+eqs. (3) and (5) as printed, and eq. (4) with the Delta restored, agree
+with it to within 2e-9. Read as printed, with q_2 the catch itself (1 at
+the background, eq. 2), eq. (4) is not a distance between the two stimuli:
+its last term does not vanish when they are identical. The package computes
+(A7), and `tests/test_vision.py` checks it against all three equations, eq.
+(4) corrected, and checks the misprint for that fault.

@@ -2593,3 +2593,11 @@ moves if lambda_max moves by 15 nm.
   fewer than two receptors, and catches and noise of different lengths. A
   warning outside the measured ranges.
 - No example's output changes.
+
+**Corrected while writing the tests.** The misprint was said above to be
+wrong "by orders of magnitude" when read as printed. How far off it is
+varies widely with the catches, and for some it is less than twice the
+distance, so that overstated it. What is true in
+every case is simpler: read as printed, the last term holds the catch q_2
+itself, so two identical stimuli come out a positive distance apart. DATA.md
+section 26 says that, and the test checks it.
