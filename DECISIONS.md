@@ -2483,3 +2483,113 @@ guide on colours, the backscatter ratio was first written as 0.015 and
 called typical of the ocean; the package's own docstrings put 0.015 at the
 bottom of the coastal range, so the guide uses 0.01, the top of the
 open-ocean one, and says so.
+
+## 64. Visual pigments and receptor noise
+
+The direction agreed in 2026-10 was to take from pavo, the R package for
+colour vision, only its core: a template for the absorbance of a visual
+pigment, with the wavelength of its peak given by the caller, and the
+receptor-noise model of colour discrimination, with the noise given by the
+caller. Both come from the primary papers, which the author obtained, and
+every constant below was read from the page images.
+
+**The template.** Govardovskii, V. I., Fyhrquist, N., Reuter, T., Kuzmin,
+D. G. and Donner, K. (2000), "In search of the visual pigment template",
+Visual Neuroscience 17, 509-528, doi:10.1017/S0952523800174036.
+
+- The alpha-band is Lamb's (1995) form, eq. (1), p. 515:
+  S(x) = 1 / (exp[A(a - x)] + exp[B(b - x)] + exp[C(c - x)] + D), x =
+  lambda_max / lambda.
+  For A1 pigments, A = 69.7, B = 28, b = 0.922, C = -14.9, c = 1.104,
+  D = 0.674, and a = 0.8795 + 0.0459 exp[-(lambda_max - 300)^2 / 11940],
+  eq. (2), p. 515. For A2, B = 20.85, b = 0.9101, C = -10.37,
+  c = 1.1123, D = 0.5343, A = 62.7 + 1.834 exp[(lambda_max - 625) / 54.2]
+  and a = 0.875 + 0.0268 exp[(lambda_max - 665) / 40.7], eqs. (6a) and
+  (6b), p. 517.
+- The beta-band is a Gaussian, eq. (4), p. 516:
+  A_beta exp{-[(lambda - lambda_mbeta) / b]^2}. For A1,
+  lambda_mbeta = 189 + 0.315 lambda_max and b = -40.5 + 0.195 lambda_max,
+  eqs. (5a) and (5b), with A_beta = 0.26 (p. 516). For A2,
+  lambda_mbeta = 216.7 + 0.287 lambda_max and
+  b = 317 - 1.149 lambda_max + 0.00124 lambda_max^2, eqs. (8a) and (8b),
+  p. 517.
+- **A2's beta amplitude has no equation.** The paper says it "shows no
+  correlation with lambda_max" and that it was fixed at 0.37 where the
+  beta-peak lay outside the recording (p. 517); its Fig. 10 fits 0.37 and
+  0.38 where it could be fitted. The template uses 0.37, the value the
+  authors used, and the docstring and DATA.md say that it is that value and
+  not a regression (decided with the author).
+- The function is `visual_pigment_template(wavelengths, /, *, lambda_max,
+  chromophore)`. Neither `lambda_max` nor `chromophore` ("A1" or "A2") has
+  a default: the first is the species' and the cell's, the second differs
+  between fish and between seasons, and both change the answer. It returns
+  the sum of the two bands, which the paper calls a complete description
+  of the absorbance (p. 525); `beta=False` gives the alpha-band alone.
+- **Limits.** The paper states the templates for wavelengths above 330 nm
+  (p. 525) and the full template for lambda_max above 350 nm (abstract);
+  outside either is refused. The paper's own measurements span lambda_max
+  357 to 569 nm for A1 and 444 to 619 nm for A2 (Table 1, p. 519). It
+  claims the A1 template for "the whole range of lambda_max" (p. 525), so
+  a lambda_max outside the measured range is returned, as a value its
+  source extrapolated, with a `ProvenanceWarning` (section 5).
+- **Not renormalised.** The alpha-band as printed peaks within 0.2
+  percent of 1, not at exactly 1, and within 0.5 nm of lambda_max. It is
+  returned as printed, as the package returns any published value.
+
+**The receptor noise model.** Vorobyev, M. and Osorio, D. (1998),
+"Receptor noise as a determinant of colour thresholds", Proc. R. Soc. Lond.
+B 265, 351-358, doi:10.1098/rspb.1998.0302.
+
+- Quantum catches are scaled so that the background gives 1 in every
+  receptor (eqs. 1 and 2, p. 353). Two stimuli are separated by a distance
+  Delta S, in units of the receptor noise, given for two, three and four
+  receptor types by eqs. (3) to (5) (p. 353), all of which follow from the
+  general form (A7) (p. 356) with the opponent channels left unspecified
+  (A8) and the noise independent between receptors (A9).
+- The function is `receptor_noise_distance(catches_a, catches_b, /, *,
+  noise)`: the catches already scaled to the background, and `noise` the
+  standard deviation e_i of each receptor channel. The noise has no
+  default; the paper derives it from the noise of a single cell and the
+  number of cells, e_i = nu_i / sqrt(eta_i) (eq. 7), both of which are the
+  species'. It computes (A7) in closed form for any number of receptor
+  types, from two upwards.
+- **A misprint in eq. (4).** The last term of the trichromat's equation is
+  printed e_3^2 (Delta q_1 - q_2)^2, without the Delta on q_2. Computed
+  from (A7), as the paper says it is, the term is e_3^2 (Delta q_1 - Delta
+  q_2)^2: with the Delta the printed equation agrees with (A7) to 2e-9 for
+  random catches and noise, and read as printed it is wrong by orders of
+  magnitude. Eqs. (3) and (5) agree with (A7) as printed.
+- **The paper's form only.** The model is linear in the differences of the
+  scaled catches, valid for stimuli close to the background, in bright
+  light, for large static targets on an achromatic background (p. 353).
+  The logarithmic form that pavo and later papers use comes from later
+  work, which the package does not have; it is not added under this
+  citation. The docstring says what the paper says the model is for, and
+  that the distance at threshold depends on the criterion adopted.
+- Scaling the catches to the background is done with `integrate_response`,
+  which already integrates a spectrum against sensitivities; the docstring
+  shows how, rather than adding a function for a division.
+
+**Not added.** No species' values. The fish of NEXT_STEPS (*Dicentrarchus
+labrax*, Brill et al. 2019) is left for an example in a later release,
+where its values are quoted, not shipped, with how much the conclusion
+moves if lambda_max moves by 15 nm.
+
+**Checks.** Planned before the code:
+
+- Each constant is tested against the page it was read from, by
+  reproducing a number the paper prints from them: eqs. (5a) and (5b) at
+  lambda_max = 502.6 nm give the "most accurate point" of p. 516, 347.3 and
+  57.5 nm; eqs. (3) (A1) and (7) (A2), the paper's relations between
+  lambda_max and the long-wave half-maximum, hold for the template within
+  0.5 nm across the measured ranges; the alpha-band peaks within 0.5 nm of
+  lambda_max at a height within 0.2 percent of 1.
+- `receptor_noise_distance` against eqs. (3) and (5) as printed and eq. (4)
+  as corrected, for random catches and noise; against (A7) computed
+  directly with random opponent matrices F; and it gives zero for stimuli
+  that differ from each other only in intensity (assumption 2).
+- Refusals: a wavelength at or below 330 nm, a lambda_max at or below 350
+  nm, an unknown chromophore, a noise that is not positive and finite,
+  fewer than two receptors, and catches and noise of different lengths. A
+  warning outside the measured ranges.
+- No example's output changes.
