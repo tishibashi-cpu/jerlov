@@ -8,8 +8,9 @@ Jerlov's classification sorts sea water into a handful of types, from the
 clearest oceanic water, type I, to turbid coastal water, 9C. This package
 gives each type's absorption, scattering and diffuse attenuation from the
 papers that published them, and builds on them: the light at depth, the
-euphotic zone, how a coloured object looks through water, and the heating of
-the upper ocean.
+euphotic zone, how a coloured object looks through water, the heating of
+the upper ocean, and, with a visual pigment template and a model of receptor
+noise, how far apart two colours are to an eye.
 
 Every coefficient carries the source it came from. Values that a published
 table got wrong are flagged rather than quietly repaired, and quantities

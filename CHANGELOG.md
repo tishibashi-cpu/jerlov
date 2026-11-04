@@ -4,6 +4,39 @@ Every release is archived on Zenodo under the concept DOI
 [10.5281/zenodo.22321312](https://doi.org/10.5281/zenodo.22321312), which
 always resolves to the latest version.
 
+## 1.1.0 — 2026-11-04
+
+Visual pigments and receptor noise, the core of what pavo offers for colour
+vision, each from its primary paper and with what belongs to a species left
+to the caller (DECISIONS.md section 64). No shipped value changed.
+
+**Added.**
+
+- `visual_pigment_template(wavelengths, lambda_max=..., chromophore=...)`:
+  the absorbance of a visual pigment, alpha- and beta-bands, by the A1 and
+  A2 templates of Govardovskii et al. (2000), Visual Neuroscience 17,
+  509-528. Neither the peak nor the chromophore has a default. Wavelengths
+  at or below 330 nm and peaks at or below 350 nm, outside the range the
+  paper made the templates for, are refused; a peak outside the range of
+  the pigments the paper measured warns. A2's beta-band amplitude has no
+  equation in the paper, and the 0.37 the authors fixed it at is used.
+- `receptor_noise_distance(catches_a, catches_b, noise=...)`: the distance
+  between two colours in units of receptor noise, by the model of
+  Vorobyev & Osorio (1998), Proc. R. Soc. Lond. B 265, 351-358, for any
+  number of receptor types, from quantum catches scaled to the background.
+  The noise has no default. The model is the paper's, linear in the
+  catches; the logarithmic form of later work is not included.
+
+**Docs.**
+
+- DATA.md section 26 records every constant with the page it was read
+  from, and a confirmed misprint: Vorobyev & Osorio's eq. (4), for three
+  receptor types, lacks a Delta in its last term. The package computes the
+  general form the paper derives its equations from, which agrees with
+  eqs. (3) and (5) as printed and with eq. (4) corrected.
+- README has a section on the two functions, the API reference lists
+  them, and the Zenodo record cites both papers.
+
 ## 1.0.1 — 2026-10-29
 
 A documentation site, https://tishibashi-cpu.github.io/jerlov/, with three

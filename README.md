@@ -194,6 +194,29 @@ Two silent errors are checked rather than assumed:
 - **Gamut.** Underwater colours often fall outside sRGB. Clipping changes
   them, so `GamutWarning` says so.
 
+## How far apart two colours are to an eye
+
+Two pieces of visual ecology, each from its primary paper, with what
+belongs to a species left to you:
+
+```python
+wl = np.arange(331.0, 701.0, 1.0)
+# Govardovskii et al. (2000): the absorbance of a pigment with its peak at
+# lambda_max, for an A1 or A2 chromophore. Neither has a default.
+s = jerlov.visual_pigment_template(wl, lambda_max=500.0, chromophore="A1")
+
+# Vorobyev & Osorio (1998): the distance between two colours in units of
+# receptor noise, from quantum catches scaled to the background. The noise
+# of each receptor channel has no default either.
+catch = (jerlov.integrate_response(target, wl, sensitivities, wl)
+         / jerlov.integrate_response(background, wl, sensitivities, wl))
+jerlov.receptor_noise_distance(catch, other_catch, noise=noise)
+```
+
+The model is the paper's: linear in the catches, for colours close to the
+background, in bright light. Its eq. (4) is misprinted; the package computes
+the general form the paper derives it from (DATA.md section 26).
+
 ## If you measured backscattering
 
 `Water.bb` refuses to guess a backscattering ratio. If you have an instrument
@@ -462,8 +485,8 @@ made.
 ## Provenance and design
 
 `DATA.md` records, for every shipped table, where it came from, what was
-verified, and what is known to be wrong with it. Twenty-five entries are
-documented there: nine confirmed defects in the source literature, three
+verified, and what is known to be wrong with it. Twenty-six entries are
+documented there: ten confirmed defects in the source literature, three
 questions the first edition of Jerlov settled, and the rest notes.
 
 `DECISIONS.md` records why the package is shaped the way it is, including the

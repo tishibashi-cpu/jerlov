@@ -201,6 +201,13 @@ Measured light fields
    :members:
    :undoc-members:
 
+Visual pigments and receptor noise
+----------------------------------
+
+.. autofunction:: visual_pigment_template
+
+.. autofunction:: receptor_noise_distance
+
 Solar heating
 -------------
 
