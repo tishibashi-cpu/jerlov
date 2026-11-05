@@ -1423,3 +1423,83 @@ def test_the_shafts_under_a_flat_surface(waves_module):
                    * step / up for z in np.arange(eye - step / 2, 0, -step))
     assert seen.all()
     assert np.allclose(radiance, expected, rtol=1e-9)
+
+
+# -- colour differences for a fish (fish_colour_differences.py, section 65) --
+
+
+@pytest.fixture(scope="module")
+def fish_module():
+    import runpy
+    return runpy.run_path(str(ROOT / "examples" / "fish_colour_differences.py"),
+                          run_name="fish_colour_differences")
+
+
+@pytest.fixture(scope="module")
+def fish_example(fish_module):
+    import contextlib
+    import io
+    with contextlib.redirect_stdout(io.StringIO()), warnings.catch_warnings():
+        warnings.simplefilter("error", jerlov.ProvenanceWarning)
+        warnings.simplefilter("error", FutureWarning)
+        return fish_module["main"]()
+
+
+@source_tree
+def test_the_fish_peaks_are_brill_et_al_table_4(fish_module):
+    """Table 4, p. 12, "Tri, alpha": GFRKD 388, 501, 603; SSH 389, 512,
+    611 nm."""
+    assert fish_module["BRILL_GFRKD"] == (388.0, 501.0, 603.0)
+    assert fish_module["BRILL_SSH"] == (389.0, 512.0, 611.0)
+
+
+@source_tree
+def test_the_backscatter_ratio_and_the_face_cancel(fish_module):
+    """Section 65: both scale the difference and the background alike, so
+    the distance at which the difference halves does not depend on them."""
+    sets = {"GFRKD": fish_module["BRILL_GFRKD"]}
+    noises = {"equal": np.ones(3)}
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", jerlov.ProvenanceWarning)
+        base = fish_module["compute"](0.01, 0.3, sets, noises)["halves"]
+        other = fish_module["compute"](0.03, 1.0, sets, noises)["halves"]
+    assert base.keys() == other.keys()
+    for key in base:
+        assert other[key] == pytest.approx(base[key], rel=1e-9)
+
+
+@source_tree
+def test_every_finding_holds_in_every_variant(fish_module, fish_example):
+    """An ordering is called a finding only if all 32 variants give it, and
+    is otherwise said to depend on the assumptions (section 65)."""
+    sets = fish_module["lambda_max_sets"]()
+    noises = fish_module["noise_settings"]()
+    assert len(sets) * len(noises) == 32
+    order = fish_module["orderings"](fish_example["halves"], sets, noises)
+    for (kind, subject), verdict in fish_example["judged"].items():
+        given = {order[(kind, subject, s, n)] for s in sets for n in noises}
+        assert verdict["holds"] == (len(given) == 1)
+        assert verdict["holds"] == (not verdict["broken_by"])
+
+
+@source_tree
+def test_the_template_warned_only_beyond_the_measured_peaks(fish_module,
+                                                          fish_example):
+    """The example says the template warned for these peaks, all beyond
+    569 nm, the longest A1 peak Govardovskii et al. measured."""
+    peaks = {p for s in fish_module["lambda_max_sets"]().values() for p in s}
+    assert fish_example["caught"] == sorted(p for p in peaks if p > 569.0)
+
+
+@source_tree
+def test_little_light_is_lost_beyond_700_nm(fish_example):
+    """The cut at 700 nm: 680-700 nm is a fraction of a percent of the
+    long-wave cone's catch of the water's own light."""
+    assert max(fish_example["margin"].values()) < 0.01
+
+
+@source_tree
+def test_every_ordering_the_fish_example_reports_holds(fish_example):
+    """CHANGELOG 1.1.1: "every ordering it reports holds in all of them"."""
+    assert fish_example["judged"]
+    assert all(v["holds"] for v in fish_example["judged"].values())
