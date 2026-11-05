@@ -2601,3 +2601,93 @@ distance, so that overstated it. What is true in
 every case is simpler: read as printed, the last term holds the catch q_2
 itself, so two identical stimuli come out a positive distance apart. DATA.md
 section 26 says that, and the test checks it.
+
+## 65. An example: colour differences as a fish's cones count them
+
+1.1.0 added a visual pigment template and the receptor-noise distance.
+No example yet runs the chain they make: a pigment's absorbance, the
+quantum catches of a fish's cones, and the distance between two colours
+in units of receptor noise, through water. This is that example, for a
+reader in fish vision or visual ecology. NEXT_STEPS has asked for it
+since the fish data were first looked at; section 64 decided that the
+species' values are quoted in an example, not shipped.
+
+**The fish.** Brill, R. W., Horodysky, A. Z., Place, A. R., Larkin,
+M. E. M. and Reimschuessel, R. (2019), "Effects of dietary taurine level
+on visual function in European sea bass (*Dicentrarchus labrax*)", PLOS
+ONE 14(6), e0214347, doi:10.1371/journal.pone.0214347, read from its PDF.
+They fitted A1 templates, the chromophore assumed and not measured, to
+the photopic spectral sensitivity of whole-animal corneal ERG from
+hatchery-reared juveniles (pp. 3-5). For fish fed 0 and 1.5 percent
+taurine, combined, three pigments fit best (Table 4, p. 12): with the
+template of Govardovskii et al. (GFRKD), 388, 501 and 603 nm, alpha-band
+only ("Tri, alpha"); with that of Stavenga et al. (SSH), which fitted
+better, 389, 512 and 611 nm. The example uses the GFRKD values in the
+GFRKD template, `visual_pigment_template(..., beta=False)`, since that is
+how they were fitted; the SSH values in the same template are one of the
+variants below. The ERG gives the sensitivity of the whole eye, not of
+single cones, and the fish were juveniles on experimental diets. The
+example says all of this. (The table prints -log(L) for the SSH
+trichromat as +120.7 where every other row is negative; that column is
+not used.) No cone ratio or receptor noise has been measured for the
+species.
+
+**The water.** A horizontal path at 5 m in Jerlov II, 1C and 7C, the
+light brought down by Jerlov's (1976) Kd. Along the path, a and b are
+Solonenko & Mobley's (2015), not Williamson & Hollins's: the short-wave
+cone needs light from 332 nm, and Williamson & Hollins's coefficients
+below 412 nm are their model's extrapolation, while Solonenko & Mobley's
+cover 300-700 nm, unflagged in these three types, and are fitted to the
+same Kd. They are inverted from Kd, not measured (section 3), and the
+example says so. The long-wave cone's tail beyond 700 nm is cut off; at
+5 m there is almost no light there, and the example says so too. The sky
+is D65, converted to photons, since a catch counts photons.
+
+**What is computed.** Two painted surfaces side by side at the same
+distance d, their catches scaled to those of the water's own light, the
+background a fish looking along the path sees. The receptor-noise
+distance between them, Delta S(d), as a share of Delta S at 0.5 m, and
+the distance at which it falls to half, d_half. Three pairs of smooth
+reflectances: a red and a green; a blue and a green; and two whites that
+differ only below 400 nm, which only the short-wave cone can tell apart.
+
+Because both surfaces receive the same veiling light, and both catches
+are divided by the water's own, Delta S(d) / Delta S(0.5 m) does not
+depend on the backscatter ratio, nor on the light on the face. The two
+values the package refuses to guess cancel. The example states the
+values it uses and says that they cancel, and a test checks that they do.
+
+**Only what holds is said.** Before running it, the variants are fixed:
+the lambda_max sets are the GFRKD values, the SSH values, and each of the
+three GFRKD values moved by -15 and +15 nm (eight sets); the noise is
+equal in the three cones, or one of them twice as noisy as the others
+(four settings), so 32 variants in all. The noise enters only through
+its ratios, so no absolute level is assumed. The example reports, for
+each water and pair, the range of d_half over the variants, and two
+orderings: of the pairs within each water, and of the waters for each
+pair. An ordering is stated as a finding only if it is the same in all 32
+variants; otherwise the example says it depends on the assumptions, and
+on which.
+
+**What it does not say.** Nothing about what a fish notices, or at what
+distance it can tell two colours apart: that is visibility, which the
+package does not predict (sections 17 and 21), and it would need a
+threshold Delta S and a noise level, neither of which is known for the
+species. Vorobyev & Osorio's model is for stimuli near the background, in
+bright light, for large static targets (p. 353); close to the surfaces the
+first is not met, and the example says so. Nothing ties it to fishing;
+the targets are painted surfaces.
+
+**Warnings.** Every long-wave lambda_max here lies above 569 nm, the
+longest A1 peak Govardovskii et al. measured, so the template warns. The
+example catches that `ProvenanceWarning` by type and says why, as section
+37 requires.
+
+**Version.** An example changes no API: 1.1.1.
+
+**Checks.** The example's own numbers come from f-strings. A test runs it
+and checks: that d_half is the same for two backscatter ratios and two
+face ratios, to rounding; that every ordering it calls a finding holds in
+all 32 variants, and every one it calls assumption-dependent fails in at
+least one; and the quoted Table 4 values against the script's constants.
+No other example's output changes.
