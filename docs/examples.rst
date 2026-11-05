@@ -1,7 +1,7 @@
 Examples
 ========
 
-Seventeen scripts, each for one kind of reader. Each runs against the
+Eighteen scripts, each for one kind of reader. Each runs against the
 installed package, needs nothing beyond NumPy, and prints what it
 computes. CI runs every one of them, so an example that has stopped
 working is a failed build rather than something a reader discovers. They
@@ -53,3 +53,5 @@ are in the repository, not in the installed package; from a clone:
      - `painted_sphere.py <https://github.com/tishibashi-cpu/jerlov/blob/main/examples/painted_sphere.py>`_
    * - work with the flicker of light under waves, near the surface
      - `wave_focusing.py <https://github.com/tishibashi-cpu/jerlov/blob/main/examples/wave_focusing.py>`_
+   * - study fish vision, or how water changes colour differences for an animal
+     - `fish_colour_differences.py <https://github.com/tishibashi-cpu/jerlov/blob/main/examples/fish_colour_differences.py>`_

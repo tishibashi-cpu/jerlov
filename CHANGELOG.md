@@ -4,6 +4,33 @@ Every release is archived on Zenodo under the concept DOI
 [10.5281/zenodo.22321312](https://doi.org/10.5281/zenodo.22321312), which
 always resolves to the latest version.
 
+## 1.1.1 — 2026-11-05
+
+A new example on fish vision, built on what 1.1.0 added (DECISIONS.md
+section 65). No shipped value changed, and nothing in the API.
+
+**Examples.** `fish_colour_differences.py` follows the difference between
+two colours as the cones of *Dicentrarchus labrax* count it, by the receptor-noise model of Vorobyev & Osorio (1998), along a
+horizontal path at 5 m in Jerlov II, III and 1C.
+
+- The cones are the peaks Brill et al. (2019), PLOS ONE 14(6), e0214347,
+  fitted to the whole eye's ERG (Table 4, p. 12), in the template they
+  were fitted with; the values are quoted in the script, not shipped.
+- It shows how fast the difference shrinks for three pairs of painted
+  surfaces, one of which only the short-wave cone can tell apart, and
+  calls an ordering a finding only if all 32 variants give it: the
+  published peaks, the other template's peaks, each peak moved 15 nm
+  either way, and one cone at a time twice as noisy. In this release every
+  ordering it reports holds in all of them.
+- The backscatter ratio and the light on the faces cancel from what it
+  reports, and a test checks that they do.
+- It says nothing about what a fish notices or at what distance. Turbid
+  water is not covered: Jerlov's Kd for 7C and 9C has no values below
+  350 nm, where the short-wave cone needs them.
+
+**Docs.** README, `examples/README.md` and the site's examples page list
+it; there are now eighteen examples.
+
 ## 1.1.0 — 2026-11-04
 
 Visual pigments and receptor noise, the core of what pavo offers for colour

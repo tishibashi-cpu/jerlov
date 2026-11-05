@@ -2691,3 +2691,11 @@ face ratios, to rounding; that every ordering it calls a finding holds in
 all 32 variants, and every one it calls assumption-dependent fails in at
 least one; and the quoted Table 4 values against the script's constants.
 No other example's output changes.
+
+**Changed on the first run, before any result.** Jerlov's (1976) Kd for 7C,
+and for 9C, has no values below 350 nm, so the light coming down cannot
+reach the short-wave cone in either; the first run stopped there, before
+it computed anything. The types complete in both Jerlov's Kd and Solonenko
+& Mobley's a and b from 332 to 700 nm are IB, II, III and 1C. The example
+uses II, III and 1C, from clear oceanic water to the clearest coastal
+type, and says that turbid water is not covered.

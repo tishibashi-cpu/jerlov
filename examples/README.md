@@ -1,6 +1,6 @@
 # Examples
 
-Seventeen scripts. Each runs against the installed package and needs nothing beyond
+Eighteen scripts. Each runs against the installed package and needs nothing beyond
 NumPy.
 
 ```
@@ -21,6 +21,7 @@ python examples/ultraviolet.py
 python examples/radiance_distribution.py
 python examples/painted_sphere.py
 python examples/wave_focusing.py
+python examples/fish_colour_differences.py
 ```
 
 CI runs all of them on every push, so an example that has stopped working is a
@@ -52,6 +53,7 @@ copy of the package silently wins over the working tree. In a clone, run
 | need the radiance distribution, the mean cosine or scalar irradiance | `radiance_distribution.py` |
 | render or photograph objects under water, from any direction | `painted_sphere.py` |
 | work with the flicker of light under waves, near the surface | `wave_focusing.py` |
+| study fish vision, or how water changes colour differences for an animal | `fish_colour_differences.py` |
 
 ## What each shows
 
@@ -235,6 +237,19 @@ clearest sky and 0.86-1.20 under the haziest, where the shallow ones rise
 to 1.16-1.87: the sky accounts for part of the shortfall. `--png` draws the light
 shafts seen looking up towards the sun, beside a flat surface's. Takes about
 ten minutes.
+
+**`fish_colour_differences.py`** — the difference between two colours as
+the cones of *Dicentrarchus labrax* count it, by the receptor-noise model of
+Vorobyev & Osorio (1998), along a horizontal path in Jerlov II, III and 1C.
+The cones are the peaks Brill et al. (2019) fitted to the ERG of juveniles,
+in the template of Govardovskii et al. (2000), quoted in the script and not
+shipped. It shows how fast the difference shrinks with distance for three
+pairs of painted surfaces, one of which only the short-wave cone can tell
+apart, and which orderings survive 32 variants: the published peaks, the
+other template's peaks, each peak moved 15 nm either way, and one cone at a
+time twice as noisy. The backscatter ratio and the light on the faces cancel
+from what it reports. It says nothing about what a fish notices or at what
+distance.
 
 ## What they do not show
 
