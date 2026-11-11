@@ -61,6 +61,15 @@ def _like_input(result: np.ndarray, original) -> np.ndarray | float:
     return result
 
 
+def _check_ratio(ratio, name: str, meaning: str) -> None:
+    """A backscattering ratio is one number in (0, 0.5)."""
+    if np.size(ratio) != 1:
+        raise ValueError(
+            f"{name} must be a single number, {meaning}, not {ratio!r}")
+    if not 0.0 < ratio < 0.5:
+        raise ValueError(f"{name} must lie in (0, 0.5)")
+
+
 def _support(grid: np.ndarray, query: np.ndarray) -> list[tuple[int, ...]]:
     """The indices of the samples of ``grid`` each query's answer rests on.
 
@@ -432,34 +441,68 @@ class Water:
                             values=self._uncertainty[quantity])
 
     @_data.positional_only()
-    def bb(self, wl, /, *, backscatter_ratio: float | None = None):
+    def bb(self, wl, /, *, backscatter_ratio: float | None = None,
+           particle_backscatter_ratio: float | None = None):
         """Backscattering coefficient in 1/m.
 
-        ``backscatter_ratio`` is bb/b and has no default. It is not determined
-        by the Jerlov classification: deriving it from the particle
-        concentrations of Solonenko & Mobley and of Williamson & Hollins gives
-        answers that differ by up to a factor of 31. See DATA.md section 10.
+        Give exactly one of two ratios; neither has a default. Neither is
+        determined by the Jerlov classification: deriving bb from the
+        particle concentrations of Solonenko & Mobley and of Williamson &
+        Hollins gives answers that differ by up to a factor of 31. See
+        DATA.md section 10.
+
+        ``backscatter_ratio`` is bb/b for the whole water, pure water
+        included, and returns ``backscatter_ratio * b``. In clear water this
+        can be less than pure water's own backscattering.
+
+        ``particle_backscatter_ratio`` is bbp/bp, the particles' ratio, and
+        returns ``0.5 * b_w + particle_backscatter_ratio * (b - b_w)``, where
+        b_w is the pure water term of the source's own scattering model
+        (``Water.source.scattering``; Haltrin 1999, whose Eq. (3) gives the
+        water's backscattering as 0.5 b_w). A :class:`Water` made from
+        measurements has no such model and is refused. See DECISIONS.md
+        section 68.
 
         Reported ranges are roughly 0.005-0.01 for open ocean and 0.015-0.03
         for coastal water; the Petzold average-particle phase function gives
-        about 0.0183. Petzold's eight measured waters give 0.013 to 0.044;
-        :func:`~jerlov.petzold_scattering` returns each with its own, so that
-        a ratio can be taken from a measured water rather than invented.
+        about 0.0183, a particles' ratio. Petzold's eight measured waters give
+        0.013 to 0.044; :func:`~jerlov.petzold_scattering` returns each with
+        its own, so that a ratio can be taken from a measured water rather
+        than invented.
         """
-        if backscatter_ratio is None:
+        if backscatter_ratio is None and particle_backscatter_ratio is None:
             raise MissingQuantityError(
                 "bb is not determined by the water type. Pass "
-                "backscatter_ratio=... explicitly (bb/b; roughly 0.005-0.01 "
-                "for open ocean, 0.015-0.03 for coastal water). "
-                "See DATA.md section 10."
+                "backscatter_ratio=... (bb/b, pure water included) or "
+                "particle_backscatter_ratio=... (bbp/bp) explicitly; "
+                "roughly 0.005-0.01 for open ocean, 0.015-0.03 for coastal "
+                "water. See DATA.md section 10."
             )
-        if np.size(backscatter_ratio) != 1:
+        if backscatter_ratio is not None and \
+                particle_backscatter_ratio is not None:
             raise ValueError(
-                "backscatter_ratio must be a single number, bb/b, not "
-                f"{backscatter_ratio!r}")
-        if not 0.0 < backscatter_ratio < 0.5:
-            raise ValueError("backscatter_ratio must lie in (0, 0.5)")
-        return self.b(wl) * backscatter_ratio
+                "pass backscatter_ratio or particle_backscatter_ratio, "
+                "not both")
+        if backscatter_ratio is not None:
+            _check_ratio(backscatter_ratio, "backscatter_ratio", "bb/b")
+            return self.b(wl) * backscatter_ratio
+        _check_ratio(particle_backscatter_ratio, "particle_backscatter_ratio",
+                     "bbp/bp")
+        b = self.b(wl)          # a water without b says so first
+        model = self.source.scattering if self.source is not None else None
+        if model is None:
+            raise MissingQuantityError(
+                "particle_backscatter_ratio needs the pure water scattering "
+                "that this water's b contains, and this water has no "
+                "scattering model to say which (a Water made from "
+                "measurements has none). Compute "
+                "0.5 b_w + r (b - b_w) with your own b_w, or pass "
+                "backscatter_ratio=... (bb/b). See DECISIONS.md section 68."
+            )
+        bw = model.bw_coeff * (400.0 / np.asarray(wl, dtype=float)) \
+            ** model.bw_exponent
+        out = 0.5 * bw + particle_backscatter_ratio * (b - bw)
+        return float(out) if np.ndim(wl) == 0 else out
 
     # -- description -----------------------------------------------------
 

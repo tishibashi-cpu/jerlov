@@ -57,7 +57,8 @@ paper's own constant, so constants are attached to sources.
 - **Supply bb.** The backscattering coefficient is not determined by the
   Jerlov classification. Deriving it from the particle concentrations of the
   two sources gives answers differing by up to a factor of 31, so
-  `Water.bb` requires an explicit `backscatter_ratio`.
+  `Water.bb` requires an explicit ratio: `backscatter_ratio` (bb/b, pure
+  water included) or `particle_backscatter_ratio` (bbp/bp).
 
 ## Provenance warnings
 

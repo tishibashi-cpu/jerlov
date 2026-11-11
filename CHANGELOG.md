@@ -4,6 +4,30 @@ Every release is archived on Zenodo under the concept DOI
 [10.5281/zenodo.22321312](https://doi.org/10.5281/zenodo.22321312), which
 always resolves to the latest version.
 
+## 1.4.0 — 2026-11-11
+
+bb from the particles' backscattering ratio (DECISIONS.md section 68).
+No shipped value changed; no public name is added, and
+`backscatter_ratio` means what it did.
+
+**Added.**
+
+- `Water.bb(wl, particle_backscatter_ratio=r)`: r is bbp/bp, the
+  particles' ratio, and bb is 0.5 b_w + r (b - b_w), with b_w the pure
+  water term of the source's own scattering model (Haltrin 1999, as
+  Williamson & Hollins 2022 and Solonenko & Mobley 2015 print it). The
+  existing `backscatter_ratio` applies its ratio to the whole b, pure
+  water included, which in clear water can give a bb below what the
+  water alone backscatters: for Solonenko & Mobley's type IB at 450 nm,
+  0.0183 gives 1.24e-3 1/m against the water's 1.75e-3, and the new
+  keyword 2.93e-3. Published ratios,
+  such as Petzold's average particle's 0.0183, are mostly the particles'.
+- Exactly one of the two ratios must be given. A `Water` made from
+  measurements has no scattering model to say which b_w its b contains,
+  and the new keyword refuses it with `MissingQuantityError`.
+
+**Docs.** README's "Supply bb" names both ratios.
+
 ## 1.3.0 — 2026-11-11
 
 The inverse of 1.2.0's reflectance: the quasi-analytical algorithm, from

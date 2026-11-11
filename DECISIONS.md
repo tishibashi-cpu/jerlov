@@ -3083,3 +3083,17 @@ own Bs and Bl are not used for the same reason.
 - The refusals above, with NaN, inf, negative, zero, 0.5, arrays.
 - The section 66 example keeps its own Morel-based construction (it
   states its b_w and salinity); its output does not change.
+
+**Changed while writing the code.**
+
+- *The example of the problem was a flagged value.* The plan's
+  opening figures, Solonenko & Mobley's type I at 450 nm (bb 7.0e-5 1/m
+  against the water's 1.75e-3), are arithmetically right, but every b of
+  their type I is flagged `suspect`. The CHANGELOG and the test use their
+  type IB, unflagged, at 450 nm: 0.0183 of the whole b gives 1.24e-3 1/m,
+  below the water's 1.75e-3; the particles' ratio gives 2.93e-3.
+  Williamson & Hollins's IB is not an example: there 0.0183 b is 2.47e-3.
+- *A water without b says so first.* For a Kd-only source the new
+  keyword raises b's own `MissingQuantityError` ("'b' is not available"),
+  not the one about the scattering model, which would have described it
+  as made from measurements.
