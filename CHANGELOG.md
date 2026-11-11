@@ -6,7 +6,8 @@ always resolves to the latest version.
 
 ## 1.4.0 — 2026-11-11
 
-bb from the particles' backscattering ratio (DECISIONS.md section 68).
+bb from the particles' backscattering ratio (DECISIONS.md sections 68
+and 69).
 No shipped value changed; no public name is added, and
 `backscatter_ratio` means what it did.
 
@@ -25,6 +26,9 @@ No shipped value changed; no public name is added, and
 - Exactly one of the two ratios must be given. A `Water` made from
   measurements has no scattering model to say which b_w its b contains,
   and the new keyword refuses it with `MissingQuantityError`.
+- `veiling_radiance_estimate(..., particle_backscatter_ratio=r)`, passed
+  to `Water.bb` (DECISIONS.md section 69). Calling it with neither ratio
+  raised `TypeError` and now raises `MissingQuantityError`.
 
 **Docs.** README's "Supply bb" names both ratios.
 

@@ -153,3 +153,43 @@ def test_flagged_values_still_warn():
     w = jerlov.water("I", source="solonenko2015")
     with pytest.warns(ProvenanceWarning, match="suspect"):
         w.bb(450.0, particle_backscatter_ratio=0.0183)
+
+
+# -- veiling_radiance_estimate (DECISIONS.md section 69) ------------------
+
+def _veiling_inputs():
+    w = jerlov.water("IB", source="solonenko2015")
+    wl = np.array([425.0, 475.0, 550.0, 625.0])
+    ed = np.array([1.0, 1.2, 1.1, 0.9])
+    return w, ed, wl
+
+
+def test_veiling_with_the_particles_ratio_written_out():
+    w, ed, wl = _veiling_inputs()
+    got = jerlov.veiling_radiance_estimate(
+        w, ed, wl, particle_backscatter_ratio=0.0183)
+    bb = w.bb(wl, particle_backscatter_ratio=0.0183)
+    assert np.allclose(got, bb * ed / (2.0 * np.pi * w.c(wl)), rtol=1e-14)
+
+
+def test_veiling_with_the_whole_ratio_is_unchanged():
+    w, ed, wl = _veiling_inputs()
+    got = jerlov.veiling_radiance_estimate(w, ed, wl, backscatter_ratio=0.02)
+    assert np.array_equal(
+        got, w.b(wl) * 0.02 * ed / (2.0 * np.pi * w.c(wl)))
+
+
+def test_veiling_neither_both_or_a_measured_water():
+    w, ed, wl = _veiling_inputs()
+    with pytest.raises(MissingQuantityError,
+                       match="particle_backscatter_ratio"):
+        jerlov.veiling_radiance_estimate(w, ed, wl)
+    with pytest.raises(ValueError, match="not both"):
+        jerlov.veiling_radiance_estimate(
+            w, ed, wl, backscatter_ratio=0.01,
+            particle_backscatter_ratio=0.01)
+    m = jerlov.Water.from_measurements([400.0, 700.0],
+                                       a=[0.1, 0.1], b=[0.2, 0.2])
+    with pytest.raises(MissingQuantityError, match="section 68"):
+        jerlov.veiling_radiance_estimate(
+            m, ed, wl, particle_backscatter_ratio=0.01)

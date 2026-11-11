@@ -493,7 +493,9 @@ def _face_ratio(value, shape) -> np.ndarray | float:
 
 @_data.positional_only()
 def veiling_radiance_estimate(water: Water, downwelling, wavelengths, /, *,
-                              backscatter_ratio: float) -> np.ndarray:
+                              backscatter_ratio: float | None = None,
+                              particle_backscatter_ratio: float | None = None,
+                              ) -> np.ndarray:
     """Single-scattering estimate of the veiling radiance B_inf.
 
     ::
@@ -506,9 +508,13 @@ def veiling_radiance_estimate(water: Water, downwelling, wavelengths, /, *,
     so the result should be treated as an order of magnitude rather than a
     value.
 
-    It also inherits everything uncertain about ``backscatter_ratio``, which
-    is not determined by the Jerlov water type; reported ranges are roughly
-    0.005-0.01 for open ocean and 0.015-0.03 for coastal water.
+    bb is :meth:`Water.bb` with whichever ratio is given, exactly one of
+    ``backscatter_ratio`` (bb/b, pure water included) and
+    ``particle_backscatter_ratio`` (bbp/bp, the particles'; DECISIONS.md
+    sections 68 and 69). In clear water the first can give a bb below pure
+    water's own. The result inherits everything uncertain about the ratio,
+    which is not determined by the Jerlov water type; reported ranges are
+    roughly 0.005-0.01 for open ocean and 0.015-0.03 for coastal water.
 
     Provided so that a caller with no measurement is not stuck, but it must be
     called deliberately: :meth:`Scene.observe` will not reach for it.
@@ -520,7 +526,8 @@ def veiling_radiance_estimate(water: Water, downwelling, wavelengths, /, *,
     if np.any(ed < 0):
         # Scene refuses this too; a negative irradiance gave a negative B_inf.
         raise ValueError("downwelling irradiance cannot be negative")
-    bb = water.bb(wavelengths, backscatter_ratio=backscatter_ratio)
+    bb = water.bb(wavelengths, backscatter_ratio=backscatter_ratio,
+                  particle_backscatter_ratio=particle_backscatter_ratio)
     c = water.c(wavelengths)
     _refuse_negative(c, wavelengths, "c = a + b")
     _refuse_negative(bb, wavelengths, "bb")
