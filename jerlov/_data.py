@@ -230,6 +230,21 @@ def austin_model_status() -> tuple[str, ...]:
 
 
 @lru_cache(maxsize=None)
+def morel2001() -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray,
+                         tuple[str, ...]]:
+    """Return ``(wavelengths, Kw, e, chi, statuses)`` from Morel &
+    Maritorena (2001) Table 2."""
+    rows = sorted(_rows("morel2001_kd.csv"),
+                  key=lambda r: float(r["wavelength_nm"]))
+    wl = np.array([float(r["wavelength_nm"]) for r in rows])
+    kw = np.array([float(r["Kw_per_m"]) for r in rows])
+    e = np.array([float(r["e_exponent"]) for r in rows])
+    chi = np.array([float(r["chi_per_m"]) for r in rows])
+    return (_frozen(wl), _frozen(kw), _frozen(e), _frozen(chi),
+            tuple(r["status"] for r in rows))
+
+
+@lru_cache(maxsize=None)
 def b_from_c_ratio() -> tuple[np.ndarray, dict[str, np.ndarray]]:
     """Return ``(wavelengths, {statistic: ratio})`` from Smart (2007)
     Table 1."""

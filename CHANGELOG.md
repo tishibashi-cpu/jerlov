@@ -4,6 +4,53 @@ Every release is archived on Zenodo under the concept DOI
 [10.5281/zenodo.22321312](https://doi.org/10.5281/zenodo.22321312), which
 always resolves to the latest version.
 
+## 1.2.0 — 2026-11-11
+
+Ways in that do not start from a Jerlov type, the colour of the sea from
+above, and the Secchi depth (DECISIONS.md section 66). No shipped value
+changed; one table and eight public names are added.
+
+**Added.**
+
+- `morel2001_kd(wavelengths, chlorophyll_mg_m3=...)`: Kd of case 1 water
+  from its chlorophyll, Kd = Kw + chi [Chl]^e, Morel & Maritorena (2001)
+  Table 2, 350-700 nm, shipped as `morel2001_kd.csv`. Below 400 nm the
+  values are Morel & Antoine's (1994) extrapolation and warn; so does a
+  chlorophyll outside the 0.02-30 mg m^-3 of the data.
+- `lee2005_kd(a, bb, sun_zenith_deg=...)` and `lee2013_kd(a, bb,
+  bb_water=..., sun_zenith_deg=...)`: Kd from the absorption and
+  backscattering coefficients and the sun, Lee et al. (2005) eq. (11) and
+  Lee et al. (2013) eq. (5). A sun, or a Kd, outside what each was fitted
+  to warns.
+- `subsurface_rrs(a, bb, coefficients=...)`, with
+  `GORDON1988_RRS_COEFFICIENTS` and `LEE2002_RRS_COEFFICIENTS`, and
+  `above_surface_rrs(rrs)`: the remote sensing reflectance from a and bb,
+  Gordon et al. (1988) eq. (2) and Lee et al. (2002) eqs. (1) and (8), for
+  optically deep water seen from straight above.
+- `lee2015_secchi_depth(wavelengths, kd, rrs)`: the Secchi depth by Lee
+  et al.'s (2015) eq. (33), from the smallest Kd in the visible and the
+  reflectance there; a depth outside the 0.1-30 m of their check warns.
+- None of the new arguments has a default: chlorophyll, the sun, pure
+  water's backscattering and the coefficients are the caller's.
+
+**Changed.** Remote sensing reflectance was out of scope (DECISIONS.md
+section 12); the forward relations are now in, on the test of section 19,
+that their provenance can be traced and checked. The inverse, from Rrs to
+a and bb, is planned for the next release. Reading satellite files and
+atmospheric correction stay out.
+
+**Data.** DATA.md section 27 records the sources and two notes: Table 2's
+Kw at 380 nm is not the Pope & Fry value the text gives, and the 0.14 in
+Lee et al.'s eq. (33) is less than the 0.146 its own figures give.
+
+**Examples.** `ocean_colour_and_secchi.py` checks Lee et al.'s Kd against
+the Kd Solonenko & Mobley computed with Hydrolight from the same a and b,
+computes the reflectance and the Secchi depth for Jerlov IB, II, III and
+1C and says which orderings hold whatever the backscatter ratio, sets the
+model beside Poole & Atkins's 1.7, and finds the Jerlov type nearest to
+Morel & Maritorena's Kd for six chlorophyll concentrations. Nineteen
+examples now.
+
 ## 1.1.1 — 2026-11-05
 
 A new example on fish vision, built on what 1.1.0 added (DECISIONS.md

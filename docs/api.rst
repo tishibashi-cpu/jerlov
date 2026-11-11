@@ -208,6 +208,25 @@ Visual pigments and receptor noise
 
 .. autofunction:: receptor_noise_distance
 
+Kd without a water type, Rrs and the Secchi depth
+-------------------------------------------------
+
+.. autofunction:: morel2001_kd
+
+.. autofunction:: lee2005_kd
+
+.. autofunction:: lee2013_kd
+
+.. autofunction:: subsurface_rrs
+
+.. autodata:: GORDON1988_RRS_COEFFICIENTS
+
+.. autodata:: LEE2002_RRS_COEFFICIENTS
+
+.. autofunction:: above_surface_rrs
+
+.. autofunction:: lee2015_secchi_depth
+
 Solar heating
 -------------
 

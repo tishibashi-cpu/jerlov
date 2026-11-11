@@ -2857,3 +2857,27 @@ all three bb/b; the rest is said to depend on bb/b.
   negative, empty, scalar and array inputs.
 - The example's numbers from f-strings, recomputed by a test; no other
   example's output changes.
+
+**Changed while writing the code, before any result was read.**
+
+- *0.14 is not within rounding of its derivation.* The plan said the
+  paper's 0.85 / pi x 0.54 = 0.146 was "printed 0.14", as if rounded. It
+  rounds to 0.15. The package keeps 0.14, as eq. (33) prints it and as the
+  validation used it; DATA.md section 27 records the difference, and what
+  0.146 would change (Z_SD 1.8 to 2.0 percent deeper), and a test checks
+  both.
+- *The example's a and b are Solonenko & Mobley's, not Williamson &
+  Hollins's.* The latter flag their a at 400 nm as a model extrapolation,
+  which warns, and CI runs the examples with that warning as an error.
+  Solonenko & Mobley's are unflagged from 400 to 700 nm for IB, II, III and
+  1C, so IB is added. Their a and b also come with the Kd Solonenko &
+  Mobley computed from them with Hydrolight, using Petzold's
+  average-particle phase function, which gives a check on Lee et al.'s Kd
+  with nothing else changed: part 1 of the example.
+- *bb is built from the particles' ratio.* bb/b applied to the total b, as
+  `Water.bb` does, can give a bb below pure water's own backscattering in
+  clear water, which `lee2013_kd` refuses. The example takes bb = bb_w +
+  r (b - b_w), with b_w and bb_w Morel's at 35 psu and r = bbp/bp of
+  0.005, 0.0183 (Petzold's average particle, Hydrolight's) and 0.03, and
+  both pairs of reflectance coefficients: six variants for the Secchi
+  depth.

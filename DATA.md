@@ -3,7 +3,7 @@
 What every shipped table is, where it came from, what was verified, and what
 is known to be wrong with it.
 
-Twenty-six entries are recorded below. Ten are confirmed defects, three were
+Twenty-seven entries are recorded below. Ten are confirmed defects, three were
 open questions that the first edition of Jerlov settled, and the rest are
 notes rather than defects. None of them is repaired silently: values that
 could be recovered carry `status = reconstructed` and say how, values that
@@ -41,6 +41,7 @@ could not are `missing`, and values that are used but doubtful are `suspect`.
 | `gernez2009_spectral.csv` | Average CV and period of the strongest fluctuation at seven wavelengths, clear and overcast skies, of Ed at the upper depth (Figure 11) and Eu at the lower (Figure 14); **read from a figure** | 28 |
 | `gernez2009_bands.csv` | Median CV of Ed at six bands, 443-683 nm, clear skies, against the sun's zenith angle, wave height, wind speed and Kd(490) (Figure 10); **read from a figure** | 282 |
 | `gernez2009_diffuse_share.csv` | Share of diffuse light in the downwelling irradiance above the water, sun 20-90 degrees, as printed on Figures 8a and 10a from a model of the sky | 8 |
+| `morel2001_kd.csv` | Kw, e and chi of Kd = Kw + chi [Chl]^e for case 1 water. 5 nm, 350-700 nm | 71 |
 
 The four tables drawn from the two Dstl datasets (`williamson2022_iop`,
 `williamson2022_measured`, `solonenko2015_iop` and `williamson2023_depth`)
@@ -1503,3 +1504,69 @@ the background, eq. 2), eq. (4) is not a distance between the two stimuli:
 its last term does not vanish when they are identical. The package computes
 (A7), and `tests/test_vision.py` checks it against all three equations, eq.
 (4) corrected, and checks the misprint for that fault.
+
+## 27. Kd from chlorophyll and from a and bb, Rrs and the Secchi depth (note)
+
+DECISIONS.md section 66. One table is shipped; the other constants are
+written into `jerlov/ocean_colour.py`. All were read from page images of
+the primary papers, the text layers used only to cross-check.
+
+**Morel & Maritorena (2001).** Morel, A. and Maritorena, S., "Bio-optical
+properties of oceanic waters: A reappraisal", *J. Geophys. Res.* 106(C4),
+7163-7180, doi:10.1029/2000JC000319; the copies on HAL and at UCSD.
+`morel2001_kd.csv` is Table 2 (p. 7168), all 71 rows, written by
+`tools/build_morel2001.py` from literals, which first checks Kw(420) =
+0.00758 against p. 7167 and chi and e at 390 and 350 nm (0.119, 0.67 and
+0.153, 0.778) against the caption of Figure 7 (p. 7170).
+
+- Below 400 nm the rows repeat the chi and e that Morel & Antoine (1994)
+  extrapolated below 400 nm; the authors find them "a kind of lower limit"
+  for oligotrophic water, matching their Pacific data but not their
+  Mediterranean data (p. 7170). They are marked `extrapolated`.
+- The paper says its new data could not be used beyond 590-600 nm, so
+  those values are Morel's (1988), not revised (p. 7168). The rows from
+  595 nm say so in `note`; they are `ok`, as the paper presents them.
+- From 560 nm, as below 400 nm, e and chi are printed rounded to two or
+  three digits, where 400-555 nm have five. The paper does not say why.
+- The text gives Kw at 380 nm from Pope & Fry (1997) as 0.0167 (p. 7169);
+  Table 2 has 0.01510 there. The table is used as printed.
+- Kd here is the attenuation of the upper layer, from the surface to the
+  first good irradiance spectrum, about one penetration depth (pp.
+  7165-7166).
+
+**Lee, Du & Arnone (2005)**, *J. Geophys. Res.* 110, C02016,
+doi:10.1029/2004JC002275, the copy in the University of Maine's course
+readings: eq. (11), p. 7 of 10, Kd(E10%) = (1 + 0.005 theta) a + 4.18 (1 -
+0.52 exp(-10.8 a)) bb, for the layer down to 10 percent of the surface
+irradiance. The text calls the angle theta_0 where the equation prints
+theta_a; both are the sun's zenith angle above the surface in degrees.
+
+**Lee et al. (2013)**, *J. Geophys. Res. Oceans* 118, 4241-4255,
+doi:10.1002/jgrc.20308, obtained by the author: eq. (5) with eq. (3) and
+Table 1 (pp. 4242-4243): m0 = 0.005, gamma = 0.265, m1 = 4.259, m2 =
+0.52, m3 = 10.8.
+
+**Gordon et al. (1988)**, *J. Geophys. Res.* 93(D9), 10909-10924,
+doi:10.1029/JD093iD09p10909, obtained by the author: eq. (2), p. 10910,
+R/Q = l1 u + l2 u^2 with l1 = 0.0949 and l2 = 0.0794, for a sun at least
+20 degrees from the zenith. **Lee, Carder & Arnone (2002)**, *Appl. Opt.*
+41, 5755-5772, doi:10.1364/AO.41.005755, the University of Maine copy:
+g0 = 0.0895 and g1 = 0.1247, the mean of Gordon et al.'s and a coastal
+pair (p. 5756), and eq. (8), rrs = Rrs / (T + gamma Q Rrs), with T = 0.52
+and gamma Q = 1.7 (p. 5757). The coastal pair, 0.084 and 0.17, is from a
+paper not read here and is not shipped.
+
+**Lee et al. (2015)**, *Remote Sens. Environ.* 169, 139-149,
+doi:10.1016/j.rse.2015.08.002, the NOAA repository copy: eq. (33), p. 146,
+Z_SD = ln(|0.14 - Rrs_tr| / 0.013) / (2.5 Kd_tr); 0.013 sr^-1 on p. 147;
+the validation, N = 338, 0.1 to 30 m, 18.2 percent, on p. 147.
+
+**0.14 is not the product it is derived from (note).** The paper takes
+the white disc as R_T = 0.85, so r_T = R_T / pi, about 0.27 sr^-1, and
+t^2 / n^2 about 0.54, "Eq. (32) then becomes" eq. (33) with 0.14 (p. 146).
+0.85 / pi x 0.54 is 0.146, and 0.27 x 0.54 is 0.146: either rounds to
+0.15, not 0.14. The package uses 0.14, as eq. (33) prints and as the
+validation used. With 0.146 instead, for Rrs_tr from 0 to 0.01 sr^-1, the
+argument of the logarithm would be 4.4 to 4.7 percent larger and Z_SD 1.8
+to 2.0 percent deeper.
+

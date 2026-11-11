@@ -84,7 +84,7 @@ _SPELLED = ["zero", "one", "two", "three", "four", "five", "six", "seven",
             "eight", "nine", "ten", "eleven", "twelve", "thirteen", "fourteen",
             "fifteen", "sixteen", "seventeen", "eighteen", "nineteen",
             "twenty", "twenty-one", "twenty-two", "twenty-three",
-            "twenty-four", "twenty-five", "twenty-six"]
+            "twenty-four", "twenty-five", "twenty-six", "twenty-seven"]
 WORDS = {word: value for value, word in enumerate(_SPELLED)}
 WORDS.update({word.capitalize(): value
               for value, word in enumerate(_SPELLED)})
@@ -421,7 +421,7 @@ def test_every_optional_extra_is_used_by_something():
 
 WORD_COUNTS = {"Eight": 8, "Nine": 9, "Ten": 10, "Eleven": 11, "Twelve": 12,
                "Thirteen": 13, "Fourteen": 14, "Fifteen": 15, "Sixteen": 16,
-               "Seventeen": 17, "Eighteen": 18}
+               "Seventeen": 17, "Eighteen": 18, "Nineteen": 19}
 
 
 @source_tree
