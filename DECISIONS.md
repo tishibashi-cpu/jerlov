@@ -2881,3 +2881,135 @@ all three bb/b; the rest is said to depend on bb/b.
   0.005, 0.0183 (Petzold's average particle, Hydrolight's) and 0.03, and
   both pairs of reflectance coefficients: six variants for the Secchi
   depth.
+
+## 67. The quasi-analytical algorithm, from Rrs to a and bb: the plan
+
+Section 66 put the inverse in reach and left it to a section of its own.
+This is it. Two versions, chosen by the author: the one IOCCG Report 5
+documents and tested, which can be checked against its published
+statistics, and the current one, QAA_v6, which can be checked against
+its author's own spreadsheet.
+
+**The sources.**
+
+- IOCCG (2006), *Remote Sensing of Inherent Optical Properties:
+  Fundamentals, Tests of Algorithms, and Applications*, Lee, Z.-P. (ed.),
+  Reports of the International Ocean-Colour Coordinating Group No. 5,
+  IOCCG, Dartmouth, Canada; chapter 10 (Lee, Carder and Arnone), pp.
+  73-77, and the synthetic data set of chapter 2, pp. 15-18, distributed
+  by the IOCCG as `IOP_AOP_Sun30.xls` and `IOP_AOP_Sun60.xls`.
+- Lee, Z. P., "Steps and calculations of the Quasi-Analytical Algorithm
+  (QAA_v6)", IOCCG, `qaa_v6_202011.pdf` (6 pp., 2020; the algorithm was
+  updated in March 2009 and November 2014), and the spreadsheet the IOCCG
+  distributes with it, `QAA_v6-202011.xlsm`: its formulas, its macro (read
+  as text, never run) and the results it stored for 12 example stations.
+- Lee, Carder & Arnone (2002), already cited in section 66, for the
+  algorithm's form.
+
+**What the documents disagree on.** The v6 document's table of steps and
+its text, and the spreadsheet, give three versions of three things:
+
+| | table of steps | text | spreadsheet |
+|---|---|---|---|
+| g0, g1 | 0.089, 0.1245 | 0.0895, 0.1247 (eq. 1) | 0.08945, 0.1247 |
+| exponent of xi | S (442.5 - 415.5) | S (443 - 411) (eq. 12) | S (443 - 412) |
+| h0, h1, h2 | -1.146, -1.366, -0.469 | same | the same to 16 digits |
+
+The package follows the spreadsheet: it is the computation its author
+distributes, its stored results can be reproduced exactly, and its h are
+the table's to the digits the table prints. DATA.md records the three
+versions. The spreadsheet's aw at 555 nm is 0.0596 on its QAA sheet and
+0.0595 ("Lee et al. (2015)") on its decomposition sheet; a header reads
+530 nm over a column computed at 510 nm.
+
+**The functions.** `qaa_ioccg2006(wavelengths, rrs, /, *, bands,
+pure_water)` and `qaa_v6(wavelengths, rrs, /, *, bands, pure_water)`, one
+per source (section 1).
+
+- `rrs` is the remote sensing reflectance above the surface, sr^-1, at
+  `wavelengths`, along its last axis; other axes are spectra.
+- `bands` names the wavelengths that play each role: for v6 "412",
+  "443", "490", "55x" and "670"; for 2006 "410", "440", "490", "510",
+  "555" and "670". Each must be one of `wavelengths`. No default: the
+  sensor decides (the v6 table gives 547 nm for MODIS, the text 550 or 555;
+  Report 5 averaged 550 and 560 nm for its 555). The formulas use these
+  wavelengths, not their names, wherever a wavelength enters (the power
+  law of bbp, xi).
+- `pure_water` is `(wavelengths, aw, bbw)`, interpolated linearly, and
+  must cover every wavelength used, including 640 nm for 2006. No
+  default: Report 5 used Pope & Fry's aw and Morel's bbw, the
+  spreadsheet its own values, and `pure_water_absorption` and
+  `pure_water_backscattering` give the package's.
+- It returns a `QAAResult`: `a`, `bbp`, `adg` and `aph` at `wavelengths`,
+  `eta` (Report 5's Y), and `reference_nm`, the reference wavelength each
+  spectrum used (for 2006, NaN where the 555 and 640 nm solutions were
+  blended, eq. 10.11).
+- v6: a(55x) from chi = log10((rrs443 + rrs490) / (rrs55x + 5 rrs670 /
+  rrs490 rrs670)) when Rrs(670) < 0.0015 sr^-1, else a(670) = aw(670) +
+  0.39 (rrs670 / (rrs443 + rrs490))^1.14; eta = 2.0 (1 - 1.2 exp(-0.9
+  rrs443 / rrs55x)); zeta = 0.74 + 0.2 / (0.8 + ratio); S = 0.015 +
+  0.002 / (0.6 + ratio); adg(lambda) = adg(443) exp(-S (lambda - 443)).
+- 2006: a(555) from Kd(555), eqs. 10.2-10.3; a(640) from eq. 10.4 with
+  Rrs(640) from eq. 10.5; Y = 2.2 (1 - 1.2 exp(-0.9 rrs440 / rrs555));
+  the blend of eq. 10.11; zeta = 0.71 + 0.06 / (0.8 + ratio); S = 0.015;
+  xi = exp(S (440 - 410)).
+- Nothing is filtered. Report 5 counts 476 of 500 decompositions as valid
+  without saying by what rule, so a negative or NaN result is returned as
+  computed, and the docstring says so.
+
+**Out, still.** Reading satellite files and atmospheric correction
+(section 66). The Rrs(670) limits and estimate of the v6 text, eqs. 7-9,
+which the spreadsheet does not apply and which are for satellite data.
+
+**The test data.** `tests/data/ioccg2006_sun30.csv`: of the 500 synthetic
+spectra with the sun at 30 degrees, Rrs at the wavelengths used, the true
+a, bb, adg and aph where compared, and the pure water values of the data
+set; and `tests/data/qaa_v6_spreadsheet.csv`: the 12 stations' Rrs and the
+stored results. Written by `tools/build_qaa_test_data.py` from the IOCCG
+files in `sources/`, which needs `xlrd` and `openpyxl`, for the tools only
+(section 10). Not in the wheel. The IOCCG asks that the data set be cited
+as Report 5; DATA.md and the test do. Shipping the subset in the repository
+was the author's decision.
+
+**Checks.** Planned before the code. A prototype of the 2006 version, the
+equations above as printed, was run on the synthetic data before this
+section was written, to see whether a check against Table 10.1 was
+possible at all; its numbers are the ones quoted here.
+
+- v6 reproduces the spreadsheet's stored eta, bbp(555) and a at five
+  wavelengths for all 12 stations, both branches, to a relative 1e-12
+  (the prototype: 4e-16), and its decomposition to the same.
+- 2006 against Table 10.1 (p. 76), on the synthetic data with the sun at
+  30 degrees, Rrs(555) the mean of 550 and 560 nm as the report did: RMSE
+  and bias in log10 (eq. 2.1, p. 18) for a(410), a(440), a(490),
+  bbp(440) and bbp(555) within 0.002 of the table (the prototype: 0.000
+  to 0.002). Slope and intercept are not tested: "Type II" (p. 17) does not
+  say which regression, and the geometric mean and ordinary least squares
+  give results that straddle the table's by up to 0.005; DATA.md records
+  them. The decomposition rows are reported, not tested: the prototype
+  counts 475 valid where the table has 476, by a rule the report does not
+  give.
+- Each step against its equation written out in the test; refusals for a
+  missing or unknown band, a band not among the wavelengths, pure water
+  that does not cover them, and spectra of the wrong length; NaN in Rrs
+  passes through.
+- An example shows the round trip: Rrs from the package's forward relation
+  (section 66) for known a and bb, inverted by both versions.
+
+**Version.** New public names: 1.3.0.
+
+**Changed while writing the code.**
+
+- *The script is `tools/qaa_test_data.py`, not `build_qaa_test_data.py`.*
+  A `build_` script must write a table into `jerlov/data/`, and a test
+  checks that; this one writes `tests/data/`.
+- *The regressions were misdescribed.* The plan said the geometric mean
+  and ordinary least squares "straddle" Table 10.1's slopes and intercepts
+  "by up to 0.005". Computed for all five rows, the geometric mean is
+  within 0.004 of the table everywhere; ordinary least squares matches the
+  a rows to 0.003 but is off by up to 0.015 for bbp. DATA.md section 28
+  gives the numbers. Neither is tested, as planned.
+- *The round trip is a fifth part of `ocean_colour_and_secchi.py`*, not a
+  new example: it starts from that example's waters and reflectance.
+- `tools/README.md` still said eleven scripts read no file; with
+  `build_morel2001.py` (section 66) it is twelve, and it says so now.

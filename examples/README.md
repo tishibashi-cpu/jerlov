@@ -263,7 +263,9 @@ by Lee et al.'s (2015) model for IB, II, III and 1C, says which orderings
 of the types hold whatever the backscatter ratio and coefficients, and
 sets the model beside Poole & Atkins's 1.7. Last, Morel & Maritorena's
 (2001) Kd for six chlorophyll concentrations and the Jerlov type nearest
-each.
+each. A fifth part inverts the reflectance again by both versions of the
+quasi-analytical algorithm and compares the a they recover with the a it
+started from.
 
 ## What they do not show
 

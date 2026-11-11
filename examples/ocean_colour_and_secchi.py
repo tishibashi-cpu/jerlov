@@ -13,7 +13,9 @@ computed with Hydrolight from the same a and b; computes the remote
 sensing reflectance and, from it, the Secchi depth by Lee et al.'s (2015)
 model; sets that beside Poole & Atkins's (1929) rule; and finds the Jerlov
 type nearest to Morel & Maritorena's (2001) Kd for a range of chlorophyll
-concentrations (DECISIONS.md section 66).
+concentrations (DECISIONS.md section 66). Last, it inverts the reflectance
+again by the quasi-analytical algorithm, both versions, and sets the a and
+bbp they recover against the ones it started from (section 67).
 """
 
 import warnings
@@ -219,6 +221,65 @@ all the same, since Kd alone does not say which kind of water it is.""")
     return nearest
 
 
+#: The bands of the round trip, a SeaWiFS-like set.
+QAA_NM = np.array([412.0, 443.0, 490.0, 510.0, 555.0, 670.0])
+V6_BANDS = {"412": 412, "443": 443, "490": 490, "55x": 555, "670": 670}
+R5_BANDS = {"410": 412, "440": 443, "490": 490, "510": 510, "555": 555,
+            "670": 670}
+COMPARED_NM = (412.0, 443.0, 490.0, 555.0)
+
+
+def qaa_part():
+    rule("5. Back again: the quasi-analytical algorithm")
+    print(f"""Rrs computed from known a and bb, as in part 2 with Lee et al.'s (2002)
+coefficients, at {', '.join(f'{w:g}' for w in QAA_NM)} nm, then inverted by QAA_v6 and by
+the version of IOCCG Report 5 (2006). Pure water for the inversion is the
+package's: Williamson & Hollins's aw and Morel's bbw at {SALINITY_PSU:g} psu. The
+largest departure, in percent, of the a recovered at {', '.join(f'{w:g}' for w in COMPARED_NM)} nm
+from the a the reflectance was computed from:
+""")
+    pw_nm = np.arange(400.0, 701.0, 1.0)
+    pure_water = (pw_nm, jerlov.pure_water_absorption(pw_nm),
+                  jerlov.pure_water_backscattering(
+                      pw_nm, salinity_psu=SALINITY_PSU))
+    cols = [QAA_NM.tolist().index(w) for w in COMPARED_NM]
+    worst = {"v6": 0.0, "ioccg2006": 0.0}
+    head = "".join(f" {r:>8g}" for r in PARTICLE_RATIOS)
+    print(f"  {'type':>5} {'version':<10}{head}   (bbp/bp)")
+    for t in TYPES:
+        water = jerlov.water(t, source="solonenko2015")
+        a = water.a(QAA_NM)
+        bbw = jerlov.pure_water_backscattering(QAA_NM,
+                                               salinity_psu=SALINITY_PSU)
+        bp = water.b(QAA_NM) - jerlov.pure_water_scattering(
+            QAA_NM, salinity_psu=SALINITY_PSU)
+        rows = {"v6": [], "ioccg2006": []}
+        for r in PARTICLE_RATIOS:
+            bb = bbw + r * bp
+            rrs = jerlov.above_surface_rrs(jerlov.subsurface_rrs(
+                a, bb, coefficients=jerlov.LEE2002_RRS_COEFFICIENTS))
+            for version, q in (
+                    ("v6", jerlov.qaa_v6(QAA_NM, rrs, bands=V6_BANDS,
+                                         pure_water=pure_water)),
+                    ("ioccg2006", jerlov.qaa_ioccg2006(
+                        QAA_NM, rrs, bands=R5_BANDS,
+                        pure_water=pure_water))):
+                off = float(np.max(np.abs(q.a[cols] / a[cols] - 1)))
+                rows[version].append(off)
+                worst[version] = max(worst[version], off)
+        for version, offs in rows.items():
+            print(f"  {t:>5} {version:<10}"
+                  + "".join(f" {100 * x:>7.0f}%" for x in offs))
+    print(f"""
+QAA_v6 recovers a within {100 * worst['v6']:.0f} percent here, the 2006 version within
+{100 * worst['ioccg2006']:.0f}. Neither is told the backscatter ratio: both estimate a at a
+reference wavelength from the colour alone, by relations fitted to other
+water. This is a check that the pieces fit together, not a measure of
+either algorithm on real water; IOCCG Report 5 gives that, for the 2006
+version, against its synthetic and field data.""")
+    return worst
+
+
 def main():
     _banner()
     caught = set()
@@ -227,6 +288,7 @@ def main():
                                                                     caught)
     products = poole_part(depths, tr)
     nearest = chlorophyll_part()
+    recovered = qaa_part()
     if caught:
         rule("Warnings")
         print("Raised along the way, each a ProvenanceWarning:")
@@ -248,6 +310,7 @@ def main():
 """)
     return dict(worst=worst, depths=depths, findings=findings,
                 depends=depends, by_pair=by_pair, by_ratio=by_ratio, products=products, nearest=nearest,
+                recovered=recovered,
                 caught=caught)
 
 

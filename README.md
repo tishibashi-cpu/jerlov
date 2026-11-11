@@ -448,14 +448,23 @@ Rrs = jerlov.above_surface_rrs(rrs)
 
 # The Secchi depth from one Kd and one Rrs spectrum, 400-700 nm (Lee et al. 2015).
 jerlov.lee2015_secchi_depth(wavelengths, kd, Rrs)
+
+# And back: a and bbp from Rrs by the quasi-analytical algorithm, either version.
+q = jerlov.qaa_v6(bands_nm, Rrs, bands={"412": 412, "443": 443, "490": 490,
+                                        "55x": 555, "670": 670},
+                  pure_water=(pw_nm, aw, bbw))      # q.a, q.bbp, q.adg, q.aph
+jerlov.qaa_ioccg2006(...)   # the version IOCCG Report 5 tested; same arguments
 ```
 
 These are forward relations, each from its paper and each with the
 conditions it was fitted for: Morel & Maritorena's for case 1 water only,
 the reflectance for deep water seen from straight above. A result outside
-what the paper fitted or checked comes with a `ProvenanceWarning`. Nothing
-here reads satellite data; the inverse, from Rrs to a and bb, is planned
-(DECISIONS.md section 66).
+what the paper fitted or checked comes with a `ProvenanceWarning`. The
+inverse comes in two versions: QAA_v6 reproduces the results its author's
+spreadsheet stored, and the IOCCG Report 5 version reproduces that report's
+statistics on its synthetic data (DATA.md section 28). Nothing here reads
+satellite files; pass the Rrs you have read (DECISIONS.md sections 66 and
+67).
 
 ## Solar heating of the upper ocean
 
@@ -512,7 +521,7 @@ made.
 ## Provenance and design
 
 `DATA.md` records, for every shipped table, where it came from, what was
-verified, and what is known to be wrong with it. Twenty-seven entries are
+verified, and what is known to be wrong with it. Twenty-eight entries are
 documented there: ten confirmed defects in the source literature, three
 questions the first edition of Jerlov settled, and the rest notes.
 

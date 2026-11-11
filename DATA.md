@@ -3,7 +3,7 @@
 What every shipped table is, where it came from, what was verified, and what
 is known to be wrong with it.
 
-Twenty-seven entries are recorded below. Ten are confirmed defects, three were
+Twenty-eight entries are recorded below. Ten are confirmed defects, three were
 open questions that the first edition of Jerlov settled, and the rest are
 notes rather than defects. None of them is repaired silently: values that
 could be recovered carry `status = reconstructed` and say how, values that
@@ -1569,4 +1569,64 @@ t^2 / n^2 about 0.54, "Eq. (32) then becomes" eq. (33) with 0.14 (p. 146).
 validation used. With 0.146 instead, for Rrs_tr from 0 to 0.01 sr^-1, the
 argument of the logarithm would be 4.4 to 4.7 percent larger and Z_SD 1.8
 to 2.0 percent deeper.
+
+## 28. The quasi-analytical algorithm: three versions of QAA_v6, and Table 10.1 reproduced (note)
+
+DECISIONS.md section 67. No table is shipped; the constants are in
+`jerlov/qaa.py`. The test data, from files the IOCCG distributes, are in
+`tests/data/`, written by `tools/qaa_test_data.py`, and not in the wheel.
+
+**QAA_v6.** Lee, Z. P., "Steps and calculations of the Quasi-Analytical
+Algorithm (QAA_v6)", `qaa_v6_202011.pdf`, and its spreadsheet
+`QAA_v6-202011.xlsm`, both from https://ioccg.org/resources/software/. The
+spreadsheet's formulas and macro were read as text; the macro was not run.
+The document's table of steps, its text, and the spreadsheet disagree:
+
+| | table of steps (p. 1) | text (pp. 2-5) | spreadsheet |
+|---|---|---|---|
+| g0, g1 | 0.089, 0.1245 | 0.0895, 0.1247 (eq. 1, as -0.0895 + sqrt(0.008 + 0.499 rrs) over 0.249) | 0.08945, 0.1247 |
+| xi | exp[S (442.5 - 415.5)] | exp[S (443 - 411)] (eq. 12) | exp[S (443 - 412)] |
+| h0, h1, h2 | -1.146, -1.366, -0.469 | the same | -1.145902927834082, -1.365828264291757, -0.4692660279445807 |
+| 55x for MODIS | 547 nm | 550 nm (p. 5) | 555 nm in its example |
+
+The package follows the spreadsheet. With its own pure water values, it
+reproduces the eta, bbp(555) and a at 412, 443, 489, 510 and 555 nm that
+the spreadsheet stored for its 12 example stations, both reference
+wavelengths among them, to a relative 1e-12, and their split into adg and
+aph. Two smaller things in the spreadsheet: aw(555) is 0.0596 on its QAA
+sheet and 0.0595, labelled "Lee et al. (2015)", on its decomposition
+sheet; and a column header reads 530 nm over values computed at 510 nm.
+
+**IOCCG Report 5.** IOCCG (2006), *Remote Sensing of Inherent Optical
+Properties: Fundamentals, Tests of Algorithms, and Applications*, Lee,
+Z.-P. (ed.), Reports of the International Ocean-Colour Coordinating Group
+No. 5, IOCCG, Dartmouth, Canada; chapter 10, pp. 73-77, and the synthetic
+data set of chapter 2 (pp. 15-18), `IOP_AOP_Sun30.xls`: 500 spectra from
+Hydrolight, 400-800 nm every 10 nm, with the sun 30 degrees from the
+zenith. Of it, `tests/data/ioccg2006_sun30.csv` keeps Rrs at the seven
+wavelengths the algorithm used and the true a, bb, adg (a_g + a_dm) and aph
+where compared, and `ioccg2006_pure_water.csv` the data set's aw and bbw,
+400-700 nm.
+
+Run as the report describes (p. 76: Rrs at 410, 440, 490, 510 and 670 nm,
+Rrs(555) the mean of 550 and 560 nm), the package gives, against Table
+10.1 (p. 76), RMSE and bias in log10 (eq. 2.1, p. 18):
+
+| | RMSE, table | RMSE, here | bias, table | bias, here |
+|---|---|---|---|---|
+| a(410) | 0.061 | 0.060 | 0.016 | 0.016 |
+| a(440) | 0.060 | 0.059 | 0.016 | 0.015 |
+| a(490) | 0.062 | 0.062 | -0.005 | -0.007 |
+| bbp(440) | 0.081 | 0.081 | 0.008 | 0.007 |
+| bbp(555) | 0.079 | 0.079 | -0.029 | -0.030 |
+
+N = n = 500 for each, as in the table. The table's slopes and intercepts
+come from a "Type II" regression (p. 17) that is not specified further.
+The geometric mean regression gives slopes and intercepts within 0.004 of
+the table's for all five rows; ordinary least squares within 0.003 for the
+three rows of a and up to 0.015 off for bbp.
+
+The table counts 476 of 500 decompositions as valid without giving the
+rule. Taking those with adg(440), aph(440) and aph(490) all positive gives
+475.
 

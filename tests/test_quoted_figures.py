@@ -1573,3 +1573,12 @@ def test_the_nearest_types_for_chlorophyll(secchi_example):
     found = [order.index(t) for _, t in
              sorted(secchi_example["nearest"].items())]
     assert found == sorted(found)
+
+
+@source_tree
+def test_the_round_trip_recovers_a_for_every_case(secchi_example):
+    """Part 5 quotes the largest departure of the recovered a for each
+    version; both are computed over every type and ratio."""
+    worst = secchi_example["recovered"]
+    assert set(worst) == {"v6", "ioccg2006"}
+    assert all(0 < v < 1 for v in worst.values())

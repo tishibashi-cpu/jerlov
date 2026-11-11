@@ -4,6 +4,41 @@ Every release is archived on Zenodo under the concept DOI
 [10.5281/zenodo.22321312](https://doi.org/10.5281/zenodo.22321312), which
 always resolves to the latest version.
 
+## 1.3.0 — 2026-11-11
+
+The inverse of 1.2.0's reflectance: the quasi-analytical algorithm, from
+Rrs to a and bb (DECISIONS.md section 67). No shipped value changed; three
+public names are added.
+
+**Added.**
+
+- `qaa_v6(wavelengths, rrs, bands=..., pure_water=...)`: QAA_v6 as the
+  spreadsheet its author distributes through the IOCCG computes it. It
+  reproduces the results the spreadsheet stored for its 12 example
+  stations to a relative 1e-12.
+- `qaa_ioccg2006(wavelengths, rrs, bands=..., pure_water=...)`: the
+  version IOCCG Report 5 (2006), chapter 10, describes and tested. On the
+  report's synthetic data it reproduces Table 10.1's RMSE and bias for a
+  at 410, 440 and 490 nm and bbp at 440 and 555 nm to within 0.002.
+- `QAAResult`: a, bbp, adg and aph at the wavelengths given, the exponent
+  of bbp, and the reference wavelength each spectrum used.
+- The bands that play each role, and pure water's aw and bbw, are the
+  caller's: neither has a default.
+
+**Data.** DATA.md section 28: the v6 document's table of steps, its text
+and its spreadsheet give three different g0 and three different
+wavelength spans for xi; the package follows the spreadsheet. Part of the
+IOCCG synthetic data set, cited as Report 5, and the spreadsheet's stored
+results are in `tests/data/` for the tests, written by
+`tools/qaa_test_data.py`; they are not in the wheel.
+
+**Examples.** `ocean_colour_and_secchi.py` gains a fifth part: Rrs from
+known a and bb, inverted again by both versions, and the a they recover
+set against the a it started from.
+
+**Docs.** `tools/README.md` counted eleven scripts that read no file;
+since 1.2.0 there are twelve.
+
 ## 1.2.0 — 2026-11-11
 
 Ways in that do not start from a Jerlov type, the colour of the sea from
