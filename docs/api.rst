@@ -227,6 +227,16 @@ Kd without a water type, Rrs and the Secchi depth
 
 .. autofunction:: lee2015_secchi_depth
 
+From Rrs to a and bb
+--------------------
+
+.. autofunction:: qaa_ioccg2006
+
+.. autofunction:: qaa_v6
+
+.. autoclass:: QAAResult
+   :members:
+
 Solar heating
 -------------
 

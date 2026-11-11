@@ -2997,3 +2997,19 @@ possible at all; its numbers are the ones quoted here.
   (section 66) for known a and bb, inverted by both versions.
 
 **Version.** New public names: 1.3.0.
+
+**Changed while writing the code.**
+
+- *The script is `tools/qaa_test_data.py`, not `build_qaa_test_data.py`.*
+  A `build_` script must write a table into `jerlov/data/`, and a test
+  checks that; this one writes `tests/data/`.
+- *The regressions were misdescribed.* The plan said the geometric mean
+  and ordinary least squares "straddle" Table 10.1's slopes and intercepts
+  "by up to 0.005". Computed for all five rows, the geometric mean is
+  within 0.004 of the table everywhere; ordinary least squares matches the
+  a rows to 0.003 but is off by up to 0.015 for bbp. DATA.md section 28
+  gives the numbers. Neither is tested, as planned.
+- *The round trip is a fifth part of `ocean_colour_and_secchi.py`*, not a
+  new example: it starts from that example's waters and reflectance.
+- `tools/README.md` still said eleven scripts read no file; with
+  `build_morel2001.py` (section 66) it is twelve, and it says so now.

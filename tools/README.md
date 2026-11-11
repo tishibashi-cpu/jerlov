@@ -11,7 +11,7 @@ for f in tools/build_*.py; do python "$f" || break; done
 git diff --stat jerlov/data/     # must be empty
 ```
 
-Eleven of the scripts read no file and will run immediately: ten carry
+Twelve of the scripts read no file and will run immediately: eleven carry
 their numbers as literals, and `build_cie.py` takes the CIE tables from
 `colour-science`. The others stop with a message naming the file to fetch
 and its DOI.
@@ -39,3 +39,13 @@ quanta checked against Jerlov's IB, and `smith1973_blue.py` with
 stations; `morel1973_levels.py` and `baird1973_chlorophyll.py`, with their
 CSVs, those of section 58, Morel's profiles and the chlorophyll. The
 transcriptions are not shipped.
+
+## Test data, not shipped
+
+`qaa_test_data.py` writes `tests/data/`, the data the tests of the
+quasi-analytical algorithm check against (DECISIONS.md section 67): part of
+the synthetic data set of IOCCG Report 5 (2006) and the results stored in
+the QAA_v6 spreadsheet, both distributed by the IOCCG and placed in
+`sources/ioccg/`. It needs `xlrd` and `openpyxl`. Its output is not in the
+wheel. Running it must reproduce `tests/data/` byte for byte.
+
