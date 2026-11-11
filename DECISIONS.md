@@ -3013,3 +3013,73 @@ possible at all; its numbers are the ones quoted here.
   new example: it starts from that example's waters and reflectance.
 - `tools/README.md` still said eleven scripts read no file; with
   `build_morel2001.py` (section 66) it is twelve, and it says so now.
+
+## 68. bb from the particles' backscattering ratio: the plan
+
+`Water.bb(wl, backscatter_ratio=r)` returns r b, with b the total
+scattering, pure water's included. In clear water this can put bb below
+pure water's own backscattering: Solonenko & Mobley's type I is nearly
+all water, and r = 0.0183 gives bb at 450 nm of 7.0e-5 1/m where the
+water alone backscatters 1.75e-3. `lee2013_kd` refuses such a bb.
+Section 66 met this in its example, which built bb = bb_w + r (b - b_w)
+by hand with Morel's b_w and bb_w at 35 psu. Measured and published
+ratios (Petzold's average particle, 0.0183; the 0.005-0.03 ranges in the
+docstring) are mostly ratios for the particles, bbp/bp, not for the
+whole water.
+
+**The meaning of `backscatter_ratio` does not change** (section 61, the
+compatibility rules). A second keyword is added:
+`Water.bb(wl, /, *, particle_backscatter_ratio=r)`, which returns
+
+    bb = 0.5 b_w + r (b - b_w)
+
+**b_w is the source's own.** Both sources that give b built it from
+Haltrin's (1999) two-component model, whose first term is pure water,
+b_w = bw_coeff (400/lambda)^bw_exponent, with the constants each source
+prints (`Source.scattering`). Subtracting that, and not Morel's or a
+salinity-dependent b_w, leaves the particles' part of the source's own
+b, for the same reason `pure_water_absorption` returns the source's aw
+(section 20 of DATA.md): the difference must be within one source, not
+between two tabulations. Haltrin's Eq. (3) gives 0.5 b_w as the water's
+backscattering; the model's water term is symmetric. No salinity is
+asked for, because none enters the source's b_w.
+
+Checked before writing this: b - b_w is positive at every wavelength,
+1 nm apart, of every type in both sources. The smallest margin is
+Solonenko & Mobley's type I at 300 nm, where b exceeds b_w by 2.9
+percent; for Williamson & Hollins it is a factor of 8.8 (IB, 300 nm).
+
+**Refusals.**
+
+- Both keywords, or neither: neither raises `MissingQuantityError` as
+  now, its message naming both; both raise `ValueError`.
+- A `Water` with no scattering model, made by `Water(...)` or
+  `Water.from_measurements`, raises `MissingQuantityError` for the new
+  keyword: its b_w is unknown, and is not guessed. The caller who
+  measured b knows which b_w they removed and can compute bb themselves.
+- r must be one number in (0, 0.5), as for `backscatter_ratio`.
+- b's own refusals and warnings (range, extrapolated values) pass
+  through unchanged, since b is read the same way.
+
+**Linear interpolation.** `Water.b` interpolates the tabulated b
+linearly; b_w is the formula at the wavelength asked. Between Solonenko
+& Mobley's 17 wavelengths the interpolated b of a convex spectrum lies
+above the true curve, so the margin above stays positive; the test
+checks it at 1 nm.
+
+**Out.** The particles' ratio is still the caller's: nothing here
+derives it from the water type (DATA.md section 10 stands). Haltrin's
+own Bs and Bl are not used for the same reason.
+
+**Version.** A new keyword, no new public name: 1.4.0.
+
+**Checks.** Planned before the code:
+
+- The formula written out in the test with the source's constants, for
+  scalars and arrays, both sources, several types.
+- With r equal to 0.5, bb = 0.5 b (the water and the particles both
+  symmetric); bb is never below 0.5 b_w for r in (0, 0.5).
+- `backscatter_ratio` returns exactly what it did in 1.3.0.
+- The refusals above, with NaN, inf, negative, zero, 0.5, arrays.
+- The section 66 example keeps its own Morel-based construction (it
+  states its b_w and salinity); its output does not change.
