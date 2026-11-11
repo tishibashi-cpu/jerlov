@@ -2699,3 +2699,161 @@ it computed anything. The types complete in both Jerlov's Kd and Solonenko
 & Mobley's a and b from 332 to 700 nm are IB, II, III and 1C. The example
 uses II, III and 1C, from clear oceanic water to the clearest coastal
 type, and says that turbid water is not covered.
+
+## 66. Kd from chlorophyll and from a and bb, remote sensing reflectance, and the Secchi depth: the plan
+
+Two ways into the package that do not start from a Jerlov type, and two
+quantities seen from above the water. The 2026 Jerlov Medal went to Z.
+Lee for the work on the Secchi depth and on Kd from a and bb used below;
+the chlorophyll route was already planned. Every constant below was read
+from a page image of the primary paper.
+
+**Section 12 is narrowed.** It lists remote sensing reflectance as out of
+scope. As in section 19, the line was drawn on subject matter rather
+than on whether a number's provenance can be established and checked,
+and here it can: each relation below is printed with its constants, and
+each paper says for which conditions they were fitted. So:
+
+- In, now: the forward relations, from a and bb (and the sun) to Kd and
+  to Rrs, and from Kd and Rrs to the Secchi depth.
+- In, next (1.3.0, a section of its own before the code): the inverse,
+  from Rrs to a and bb, by the quasi-analytical algorithm of Lee, Carder
+  & Arnone (2002) as the IOCCG documents it, with its empirical steps
+  named by version and checked against a published data set.
+- Still out: reading satellite files and atmospheric correction. They
+  need dependencies beyond NumPy (section 10) and are SeaDAS's and
+  ACOLITE's work. The caller reads Rrs and passes arrays; an example may
+  show how.
+
+**1. Kd from chlorophyll.** Morel, A. and Maritorena, S. (2001),
+"Bio-optical properties of oceanic waters: A reappraisal", J. Geophys.
+Res. 106(C4), 7163-7180, doi:10.1029/2000JC000319.
+
+- Kd = Kw + chi [Chl]^e, eqs. (3) and (5), pp. 7166-7167, with Kw, e and
+  chi from Table 2 (p. 7168), 350 to 700 nm every 5 nm. [Chl] is
+  chlorophyll a plus divinyl chlorophyll a, mg m^-3, by HPLC (p. 7164).
+  Kd is that of the upper layer, from the surface to the first good
+  irradiance spectrum, about one penetration depth (pp. 7165-7166).
+- `tools/build_morel2001.py` writes `morel2001_kd.csv` from literals, after
+  checking them against the text: Kw(420) = 0.00758 (p. 7167); chi and e
+  at 390 and 350 nm, 0.119 and 0.67, 0.153 and 0.778 (Figure 7 caption,
+  p. 7170).
+- Rows below 400 nm repeat the values Morel & Antoine (1994) extrapolated
+  below 400 nm (pp. 7169-7170), which the authors call "a kind of lower
+  limit" for oligotrophic water and not appropriate for their
+  Mediterranean data. They carry the status `extrapolated`, so a request
+  there warns. Above 590-600 nm the 1988 values are kept unrevised (p.
+  7168); DATA.md says so, without a flag, since the paper presents them
+  as its values. The text's own Pope & Fry Kw at 380 nm, 0.0167 (p.
+  7169), is not the table's 0.01510; DATA.md records that too.
+- `morel2001_kd(wavelengths, /, *, chlorophyll_mg_m3)` returns Kd at the
+  wavelengths, interpolating Kd computed on the table's grid. Chlorophyll
+  has no default and is a single finite positive number. Outside 350-700
+  nm is refused. The pooled data spanned 0.02 to over 30 mg m^-3 (p.
+  7164); outside 0.02-30 the result is returned with a warning. The
+  docstring says it is for case 1 water only, a statistical mean about
+  which individual waters scatter (p. 7164).
+
+**2. Kd from a, bb and the sun.** Lee, Z.-P., Du, K.-P. and Arnone, R.
+(2005), "A model for the diffuse attenuation coefficient of downwelling
+irradiance", J. Geophys. Res. 110, C02016, doi:10.1029/2004JC002275; and
+Lee, Z., Hu, C., Shang, S., Du, K., Lewis, M., Arnone, R. and Brewin, R.
+(2013), "Penetration of UV-visible solar radiation in the global oceans:
+Insights from ocean color remote sensing", J. Geophys. Res. Oceans 118,
+4241-4255, doi:10.1002/jgrc.20308.
+
+- Lee et al. (2005) eq. (11), p. 7 of 10: Kd(E10%) = (1 + 0.005 theta) a
+  + 4.18 (1 - 0.52 exp(-10.8 a)) bb, theta the solar zenith angle above
+  the surface in degrees; Kd(E10%) is the mean from the surface to the
+  depth of 10 percent of the surface irradiance. Fitted to Hydrolight runs
+  with the sun at 10 to 60 degrees; good for Kd of about 0.05 to 5.7 m^-1
+  (p. 6 of 10).
+- Lee et al. (2013) eqs. (3) and (5) and Table 1, pp. 4242-4243: Kd =
+  (1 + 0.005 theta) a + (1 - 0.265 eta_w) 4.259 (1 - 0.52 exp(-10.8 a)) bb,
+  eta_w = bbw / bb, the share of pure sea water in the backscattering; the
+  same layer; fitted with the sun at 5, 30 and 60 degrees, 360-560 nm;
+  good for Kd of about 0.02 to 5.0 m^-1 (p. 4243). It corrects the 2005
+  model's overestimate in clear water and the UV (p. 4243).
+- `lee2005_kd(a, bb, /, *, sun_zenith_deg)` and `lee2013_kd(a, bb, /, *,
+  bb_water, sun_zenith_deg)`, one function per paper since their inputs
+  differ (section 1). The sun has no default. bb_water has no default
+  either; `pure_water_backscattering` gives one for a stated salinity.
+  a, bb and bb_water broadcast; each must be finite, a and bb positive,
+  bb_water not negative and not above bb. A sun outside 0-90 degrees is
+  refused; outside the fitted angles, or a Kd outside the stated range,
+  is returned with a warning.
+
+**3. Remote sensing reflectance from a and bb.** Gordon, H. R., Brown,
+O. B., Evans, R. H., Brown, J. W., Smith, R. C., Baker, K. S. and Clark,
+D. K. (1988), "A semianalytic radiance model of ocean color", J. Geophys.
+Res. 93(D9), 10909-10924, doi:10.1029/JD093iD09p10909; and Lee, Z.,
+Carder, K. L. and Arnone, R. A. (2002), "Deriving inherent optical
+properties from water color: a multiband quasi-analytical algorithm for
+optically deep waters", Appl. Opt. 41, 5755-5772,
+doi:10.1364/AO.41.005755.
+
+- Below the surface, rrs = g0 u + g1 u^2, u = bb / (a + bb): Gordon et
+  al. eq. (2), p. 10910, as R/Q with l1 = 0.0949 and l2 = 0.0794, error
+  "significantly less than 10%" for realistic phase functions, and for a
+  sun at 20 degrees or more from the zenith; Lee et al. (2002) eq. (1), p.
+  5756, who average Gordon's with Lee et al.'s coastal values to g0 =
+  0.0895, g1 = 0.1247 (p. 5756). The coefficients are a required argument,
+  with the two pairs as constants `GORDON1988_RRS_COEFFICIENTS` and
+  `LEE2002_RRS_COEFFICIENTS`; the third pair Lee et al. quote, for coastal
+  water, is from a paper not read here and is not shipped.
+- Above the surface, Rrs = 0.52 rrs / (1 - 1.7 rrs), the inverse of Lee et
+  al. (2002) eq. (8), p. 5757, fitted to Hydrolight for optically deep
+  water and a sensor looking straight down.
+- `subsurface_rrs(a, bb, /, *, coefficients)` and
+  `above_surface_rrs(rrs, /)`. The docstrings say what neither includes:
+  a bottom, Raman scattering, fluorescence, and any view but nadir.
+
+**4. The Secchi depth.** Lee, Z., Shang, S., Hu, C., Du, K., Weidemann,
+A., Hou, W., Lin, J. and Lin, G. (2015), "Secchi disk depth: A new theory
+and mechanistic model for underwater visibility", Remote Sens. Environ.
+169, 139-149, doi:10.1016/j.rse.2015.08.002.
+
+- Eq. (33), p. 146: Z_SD = ln(|0.14 - Rrs_tr| / 0.013) / (2.5 Kd_tr), with
+  Kd_tr the smallest Kd in the visible, Rrs_tr the Rrs (sr^-1, above the
+  surface) at that wavelength, 0.013 sr^-1 the eye's contrast threshold
+  (p. 146-147), 2.5 = 1 + 1.5 for the upwelling path (p. 145), and 0.14
+  for a white disc of reflectance 0.85 seen through the surface (0.85 /
+  pi times 0.54, p. 146; that is 0.146, printed 0.14).
+- `lee2015_secchi_depth(wavelengths, kd, rrs, /)`: one Kd and one Rrs
+  spectrum on the same wavelengths, all inside 400-700 nm; the paper used
+  443-665 nm. The validation spanned Z_SD of 0.1 to 30 m (N = 338, about
+  18 percent, pp. 146-147); a result outside that is returned with a
+  warning. |0.14 - Rrs_tr| at or below 0.013 gives no positive depth and
+  is refused.
+- Section 52 rejected converting K to a Secchi depth because that needs
+  the contrast of the disc against the water. This model supplies the
+  contrast from Rrs, which is the difference; section 52's rejection of a
+  bare ratio stands. Unlike Poole & Atkins's 1.7, which carries no
+  information beyond the Secchi depth, this is a model with a stated
+  validation, so it warns only outside it.
+
+**An example.** `ocean_colour_and_secchi.py`: for II, III and 1C (the
+types complete from 400 to 700 nm in Williamson & Hollins's a and b),
+bb from a stated bb/b of 0.005, 0.01 and 0.02 and Morel's pure water
+backscattering at 35 psu, the sun at 30 degrees: Lee 2013 Kd against
+Jerlov's (1976) Kd; Rrs; the Secchi depth by Lee 2015 and the K that
+Poole & Atkins's 1.7 would give from it; and, from chlorophyll, Morel &
+Maritorena's Kd and the Jerlov type `classify_kd` finds nearest. A
+statement about the comparison is called a finding only if it holds for
+all three bb/b; the rest is said to depend on bb/b.
+
+**Version.** New public names: 1.2.0.
+
+**Checks.** Planned before the code:
+
+- The build script's checks above, and the CSV reproduced byte for byte.
+- Each function against its equation written out by hand in the test,
+  for scalars and arrays; `lee2013_kd` with bb_water = 0 against the same
+  form with 4.259; `above_surface_rrs` round-tripped through eq. (8) as
+  printed; `subsurface_rrs` round-tripped through Lee et al. (2002) eq.
+  (3), which returns u.
+- 0.85 / pi x 0.54 = 0.146, within rounding of the 0.14 used.
+- Refusals and warnings at every limit stated above, with NaN, inf,
+  negative, empty, scalar and array inputs.
+- The example's numbers from f-strings, recomputed by a test; no other
+  example's output changes.
