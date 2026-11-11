@@ -3208,3 +3208,11 @@ calibration used 700 nm and below (p. 8716); they are kept as `ok` and
 the docstring and DATA.md say so.
 
 **Version.** A new public name: 1.4.0, with sections 68 and 69.
+
+**Corrected before the code.** Three page numbers above were written
+before they were checked against the page footers. Pope & Fry's
+percent rule is on p. 8719, not 8718; their statement that the
+calibration used 700 nm and below is on p. 8717, not 8716; Lee et al.'s
+Table 1 and "a simple average between the shoulders" are on p. 555, not
+554. Pope & Fry's Table 3 is on pp. 8718-8719, Smith & Baker's Table I
+on p. 182 and Table II on p. 183, Mason et al.'s Table 2 on p. 7170.
