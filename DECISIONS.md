@@ -3097,3 +3097,34 @@ own Bs and Bl are not used for the same reason.
   keyword raises b's own `MissingQuantityError` ("'b' is not available"),
   not the one about the scattering model, which would have described it
   as made from measurements.
+
+## 69. The particles' ratio for the veiling radiance estimate: the plan
+
+`veiling_radiance_estimate(water, downwelling, wavelengths, /, *,
+backscatter_ratio)` computes bb as `water.bb(wavelengths,
+backscatter_ratio=...)`, so it has the defect section 68 removed from
+`Water.bb`: a bb below pure water's own in clear water, and the veiling
+radiance with it, since B_inf is proportional to bb. Section 68 left it
+out of scope; the user asked for it on 2026-11-11, in the same 1.4.0.
+
+**The change.** A second keyword, `particle_backscatter_ratio`, passed
+to `Water.bb` unchanged. `backscatter_ratio` keeps its meaning. Both
+become optional in the signature, and `Water.bb` enforces section 68's
+rule: neither raises `MissingQuantityError`, both raise `ValueError`.
+
+**What a caller sees change.** Omitting both used to raise `TypeError`
+(a required keyword missing) and now raises `MissingQuantityError`,
+saying what to pass. No call that worked behaves differently; the
+compatibility rules (section 61) do not count a different exception for
+a call that already failed.
+
+**Version.** 1.4.0, with section 68.
+
+**Checks.** Planned before the code:
+
+- With the new keyword, the result equals bb * Ed / (2 pi c) with bb from
+  `Water.bb(..., particle_backscatter_ratio=...)`, written out in the
+  test.
+- With `backscatter_ratio`, exactly the 1.3.0 result.
+- Neither, both, and a measured `Water` refused as `Water.bb` refuses.
+- No example's output changes (none passes the new keyword).
