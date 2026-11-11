@@ -3128,3 +3128,83 @@ a call that already failed.
 - With `backscatter_ratio`, exactly the 1.3.0 result.
 - Neither, both, and a measured `Water` refused as `Water.bb` refuses.
 - No example's output changes (none passes the new keyword).
+
+## 70. Published pure water absorption spectra: the plan
+
+`pure_water_absorption(wl, source=...)` returns the aw a Jerlov source
+built its a on, so that `w.a(l) - pure_water_absorption(l)` is a
+difference within one source; only Williamson & Hollins publish theirs.
+Since 1.3.0 `qaa_v6` and `qaa_ioccg2006` require `pure_water` and have no
+default, but a caller who wants the aw IOCCG Report 5 used, Pope & Fry
+(1997), cannot get it from the package. This section adds the published
+laboratory and in-situ spectra.
+
+**A separate function, not more keys** (the user's choice, 2026-11-11).
+These are not Jerlov sources: `water(..., source="pope1997")` could never
+work, and mixing the keys would break the meaning of the existing
+function and its default, which section 61 keeps. The new function has
+no default: which aw to use is the caller's choice, as for `qaa_v6`.
+
+    pure_water_absorption_table(wavelength_nm, /, *, source)
+
+**The sources.** All four obtained by the user as PDFs; the DOIs
+resolved at doi.org to the volume, issue and first page below.
+
+| key | paper | what | range |
+|---|---|---|---|
+| `pope1997` | Pope & Fry, Appl. Opt. 36(33), 8710-8723, 10.1364/AO.36.008710, Table 3 | pure water, integrating cavity, 22 C | 380-727.5 nm, 2.5 nm |
+| `smith1981` | Smith & Baker, Appl. Opt. 20(2), 177-184, 10.1364/AO.20.000177, Table I | pure water, from K of the clearest natural waters | 200-800 nm, 10 nm |
+| `mason2016` | Mason, Cone & Fry, Appl. Opt. 55(25), 7163-7172, 10.1364/AO.55.007163, Table 2 | pure water, integrating cavity, 23 C | 250-550 nm; 10 nm to 300, then 2 nm |
+| `lee2015` | Lee et al., Appl. Opt. 54(3), 546-558, 10.1364/AO.54.000546, Table 1 | "pure" seawater, inverted from Rrs in the clearest oceans | 350-550 nm, 5 nm |
+| `lee2015_smoothed` | the same, with its "Smoothed aw" column at the five wavelengths that have one | | |
+
+Lee et al. smooth four dips between 350 and 400 nm that they attribute
+to imperfect removal of Raman scattering, and print the result as a
+separate column at 360, 370, 385, 395 and 400 nm. Both are offered as
+keys rather than one chosen silently (section 1).
+
+**Behaviour.** Linear interpolation between printed wavelengths, no
+extrapolation (`ValueError`), NaN refused, a float for a scalar, as
+`pure_water_absorption`. An unknown key raises `KeyError` naming the
+others. A value with a questionable status warns.
+
+**The tables.** One CSV per paper, transcribed by one script,
+`tools/build_pure_water_aw.py`, with the numbers as literals as printed
+(Pope & Fry's standard deviation and percent, Mason's sigma, Lee's
+smoothed column and Delta aw are carried, not used). Smith & Baker's is
+a 1981 scan: read from the page image; the other three from the text,
+compared with the image for Pope & Fry.
+
+**Checks inside the papers, run before anything is written.**
+
+- Pope & Fry: the percent column is sigma combined in quadrature with a
+  2 percent calibration error and rounded up (p. 8718). All 140 rows
+  satisfy it within the rounding of the printed aw and sigma (checked
+  before writing this). The minimum is 0.00442 at 417.5 nm; Mason et
+  al. quote Pope & Fry's minimum as 0.0044 at 418 nm.
+- Smith & Baker: their Eq. (6), K = aw + bsw/2, holds for every row
+  within rounding except 710 nm, where aw (0.839) exceeds K (0.834) as
+  printed on the page; aw at 710 nm is kept as printed and marked
+  `suspect`. Table II repeats K and aw every 50 nm and must agree.
+- Mason et al.: the abstract gives the minimum as 0.000811 +/- 0.000227
+  at 344 nm; the table's minimum is 0.81e-3 +/- 0.23e-3 there.
+- Lee et al.: each smoothed value is "a simple average between the
+  shoulders" (p. 554): the mean of the unsmoothed values either side of
+  the dip, within rounding.
+
+**Checks against other documents, in the tests.**
+
+- The aw of the IOCCG synthetic data set (`tests/data/`), which Report 5
+  attributes to Pope & Fry, against `pope1997` at its 31 wavelengths,
+  400-700 nm.
+- The aw the QAA_v6 spreadsheet labels "Lee et al (2015)" (412, 443,
+  489, 510, 555 nm) is recorded in DATA.md against `lee2015`, not
+  asserted: 555 nm lies outside the table.
+
+**Out.** The uncertainties are carried in the CSVs but not returned;
+salinity and temperature corrections of aw are not applied. Pope &
+Fry's values beyond 700 nm are printed in their Table 3 but their
+calibration used 700 nm and below (p. 8716); they are kept as `ok` and
+the docstring and DATA.md say so.
+
+**Version.** A new public name: 1.4.0, with sections 68 and 69.
