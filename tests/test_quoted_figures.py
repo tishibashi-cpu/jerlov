@@ -1503,3 +1503,73 @@ def test_every_ordering_the_fish_example_reports_holds(fish_example):
     """CHANGELOG 1.1.1: "every ordering it reports holds in all of them"."""
     assert fish_example["judged"]
     assert all(v["holds"] for v in fish_example["judged"].values())
+
+
+# -- Kd, Rrs and the Secchi depth (ocean_colour_and_secchi.py, section 66) --
+
+
+@pytest.fixture(scope="module")
+def secchi_module():
+    import runpy
+    return runpy.run_path(str(ROOT / "examples" / "ocean_colour_and_secchi.py"),
+                          run_name="ocean_colour_and_secchi")
+
+
+@pytest.fixture(scope="module")
+def secchi_example(secchi_module):
+    import contextlib
+    import io
+    with contextlib.redirect_stdout(io.StringIO()), warnings.catch_warnings():
+        warnings.simplefilter("error", jerlov.ProvenanceWarning)
+        warnings.simplefilter("error", FutureWarning)
+        return secchi_module["main"]()
+
+
+@source_tree
+def test_the_secchi_example_quotes_poole_and_atkins(secchi_module):
+    """Table III, p. 310: K times the Secchi depth from 1.32 to 2.18."""
+    assert secchi_module["POOLE_RANGE"] == (1.32, 2.18)
+    assert secchi_module["PETZOLD_RATIO"] == 0.0183
+
+
+@source_tree
+def test_hydrolights_own_ratio_agrees_best_overall(secchi_example):
+    """Part 1 says Lee et al.'s Kd stays closer to Hydrolight's with
+    Hydrolight's own bbp/bp than it can with the others; that is only
+    worth saying if the largest departures order that way."""
+    worst = secchi_example["worst"]
+    petzold = max(v for (t, r), v in worst.items() if r == 0.0183)
+    others = max(v for (t, r), v in worst.items() if r != 0.0183)
+    assert petzold < others
+
+
+@source_tree
+def test_every_secchi_ordering_is_a_finding_or_depends(secchi_example):
+    """Each pair of types is reported once, as holding in all six variants
+    or as depending on them, and a finding holds in all of them."""
+    depths = secchi_example["depths"]
+    types = ("IB", "II", "III", "1C")
+    assert len(secchi_example["findings"]) + len(secchi_example["depends"]) \
+        == len(types) * (len(types) - 1) // 2
+    for finding in secchi_example["findings"]:
+        deeper, _, _, shallower = finding.split()
+        assert all(depths[deeper, n, r] > depths[shallower, n, r]
+                   for (t, n, r) in depths if t == deeper)
+
+
+@source_tree
+def test_the_secchi_example_warns_only_as_it_reports(secchi_example):
+    """Every warning it caught is printed; none is about anything but the
+    depths of the check (and so came from lee2015_secchi_depth)."""
+    for message in secchi_example["caught"]:
+        assert "0.1 to 30 m" in message
+
+
+@source_tree
+def test_the_nearest_types_for_chlorophyll(secchi_example):
+    """Part 4: Kd grows with chlorophyll, so the nearest type must not go
+    back to a clearer one as chlorophyll rises."""
+    order = ["I", "IA", "IB", "II", "III", "1C", "3C", "5C", "7C", "9C"]
+    found = [order.index(t) for _, t in
+             sorted(secchi_example["nearest"].items())]
+    assert found == sorted(found)

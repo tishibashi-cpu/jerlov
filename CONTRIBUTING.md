@@ -214,12 +214,14 @@ NumPy, and every example. All of it should be green before review.
 ## Scope
 
 `DECISIONS.md` section 12 lists what is deliberately out: solving the
-radiative transfer equation, remote sensing reflectance, machine-learning
-image restoration, and deriving new coefficients from primary observations.
+radiative transfer equation, machine-learning image restoration, and
+deriving new coefficients from primary observations. Reading satellite
+files and atmospheric correction are out too (section 66).
 
-That list has been wrong once. Shortwave heating was ruled out on a
+That list has been wrong twice. Shortwave heating was ruled out on a
 similarity of subject matter rather than on whether the provenance could be
-established, and was reversed in section 19. **If you think something on the
+established, and was reversed in section 19; remote sensing reflectance,
+for the same reason, in section 66. **If you think something on the
 list belongs in, the argument to make is that its numbers can be traced and
 checked**, not that it is related.
 

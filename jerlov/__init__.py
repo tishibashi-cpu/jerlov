@@ -72,6 +72,16 @@ from .shortwave import (
     solar_fraction,
 )
 from .vision import receptor_noise_distance, visual_pigment_template
+from .ocean_colour import (
+    GORDON1988_RRS_COEFFICIENTS,
+    LEE2002_RRS_COEFFICIENTS,
+    above_surface_rrs,
+    lee2005_kd,
+    lee2013_kd,
+    lee2015_secchi_depth,
+    morel2001_kd,
+    subsurface_rrs,
+)
 from .sources import (
     HALTRIN1999,
     SOURCES,
@@ -179,6 +189,14 @@ __all__ = [
     "MissingQuantityError",
     "visual_pigment_template",
     "receptor_noise_distance",
+    "morel2001_kd",
+    "lee2005_kd",
+    "lee2013_kd",
+    "subsurface_rrs",
+    "above_surface_rrs",
+    "GORDON1988_RRS_COEFFICIENTS",
+    "LEE2002_RRS_COEFFICIENTS",
+    "lee2015_secchi_depth",
 ]
 
-__version__ = "1.1.1"
+__version__ = "1.2.0"

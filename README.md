@@ -432,6 +432,31 @@ w = jerlov.Water.from_measurements(
 )
 ```
 
+## Without a water type: chlorophyll, a and bb, the Secchi depth
+
+```python
+# Kd of case 1 water from its chlorophyll, mg m^-3 (Morel & Maritorena 2001).
+jerlov.morel2001_kd([443, 490, 555], chlorophyll_mg_m3=0.3)
+
+# Kd from a, bb and the sun (Lee et al. 2005, 2013); bb has no default.
+bbw = jerlov.pure_water_backscattering(490, salinity_psu=35.0)
+jerlov.lee2013_kd(0.03, 0.004, bb_water=bbw, sun_zenith_deg=30.0)
+
+# The remote sensing reflectance, below and above the surface.
+rrs = jerlov.subsurface_rrs(a, bb, coefficients=jerlov.GORDON1988_RRS_COEFFICIENTS)
+Rrs = jerlov.above_surface_rrs(rrs)
+
+# The Secchi depth from one Kd and one Rrs spectrum, 400-700 nm (Lee et al. 2015).
+jerlov.lee2015_secchi_depth(wavelengths, kd, Rrs)
+```
+
+These are forward relations, each from its paper and each with the
+conditions it was fitted for: Morel & Maritorena's for case 1 water only,
+the reflectance for deep water seen from straight above. A result outside
+what the paper fitted or checked comes with a `ProvenanceWarning`. Nothing
+here reads satellite data; the inverse, from Rrs to a and bb, is planned
+(DECISIONS.md section 66).
+
 ## Solar heating of the upper ocean
 
 Ocean circulation models absorb shortwave radiation as a sum of two
@@ -476,9 +501,10 @@ python examples/radiance_distribution.py       radiance from every direction
 python examples/painted_sphere.py              a sphere seen from four directions
 python examples/wave_focusing.py               flicker under waves, against Darecki
 python examples/fish_colour_differences.py     colour differences for a fish's cones
+python examples/ocean_colour_and_secchi.py      Kd from chlorophyll or a and bb, the Secchi depth
 ```
 
-Eighteen scripts, each aimed at a different reader; `examples/README.md` says
+Nineteen scripts, each aimed at a different reader; `examples/README.md` says
 which to start with. CI runs all of them on every push, so an example that has
 stopped working is a failed build. Every one ends with the assumptions it
 made.
@@ -486,7 +512,7 @@ made.
 ## Provenance and design
 
 `DATA.md` records, for every shipped table, where it came from, what was
-verified, and what is known to be wrong with it. Twenty-six entries are
+verified, and what is known to be wrong with it. Twenty-seven entries are
 documented there: ten confirmed defects in the source literature, three
 questions the first edition of Jerlov settled, and the rest notes.
 

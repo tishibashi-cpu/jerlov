@@ -1,6 +1,6 @@
 # Examples
 
-Eighteen scripts. Each runs against the installed package and needs nothing beyond
+Nineteen scripts. Each runs against the installed package and needs nothing beyond
 NumPy.
 
 ```
@@ -22,6 +22,7 @@ python examples/radiance_distribution.py
 python examples/painted_sphere.py
 python examples/wave_focusing.py
 python examples/fish_colour_differences.py
+python examples/ocean_colour_and_secchi.py
 ```
 
 CI runs all of them on every push, so an example that has stopped working is a
@@ -54,6 +55,7 @@ copy of the package silently wins over the working tree. In a clone, run
 | render or photograph objects under water, from any direction | `painted_sphere.py` |
 | work with the flicker of light under waves, near the surface | `wave_focusing.py` |
 | study fish vision, or how water changes colour differences for an animal | `fish_colour_differences.py` |
+| have a chlorophyll concentration, or a and bb, rather than a water type; or want a Secchi depth | `ocean_colour_and_secchi.py` |
 
 ## What each shows
 
@@ -250,6 +252,18 @@ other template's peaks, each peak moved 15 nm either way, and one cone at a
 time twice as noisy. The backscatter ratio and the light on the faces cancel
 from what it reports. It says nothing about what a fish notices or at what
 distance.
+
+**`ocean_colour_and_secchi.py`** — four published relations that start
+from something other than a water type. Lee et al.'s (2013) Kd, from a,
+bb and the sun, is checked against the Kd Solonenko & Mobley computed with
+Hydrolight from the same a and b, for three particle backscatter ratios,
+one of them Hydrolight's own. From the remote sensing reflectance
+(Gordon et al. 1988; Lee et al. 2002) and Kd it computes the Secchi depth
+by Lee et al.'s (2015) model for IB, II, III and 1C, says which orderings
+of the types hold whatever the backscatter ratio and coefficients, and
+sets the model beside Poole & Atkins's 1.7. Last, Morel & Maritorena's
+(2001) Kd for six chlorophyll concentrations and the Jerlov type nearest
+each.
 
 ## What they do not show
 
