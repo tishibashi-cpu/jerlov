@@ -3,7 +3,7 @@
 What every shipped table is, where it came from, what was verified, and what
 is known to be wrong with it.
 
-Thirty-three entries are recorded below. Eleven are confirmed defects, three were
+Thirty-four entries are recorded below. Twelve are confirmed defects, three were
 open questions that the first edition of Jerlov settled, and the rest are
 notes rather than defects. None of them is repaired silently: values that
 could be recovered carry `status = reconstructed` and say how, values that
@@ -1866,3 +1866,41 @@ sun angle or the sky they were measured under, so no D0 can be assigned
 to them without an assumption; `gordon1989_kd` takes both D0 from the
 caller.
 
+## 34. A slanted line of sight: a sign misprinted in Duntley's (1963) eq. (12) (confirmed)
+
+`Scene.observe_slant` (DECISIONS.md section 75) rests on Duntley, S. Q.
+(1963), "Light in the sea", J. Opt. Soc. Am. 53(2), 214-233, DOI
+`10.1364/JOSA.53.000214`, eqs. (8)-(16), pp. 229-231. The PDF is a scan
+with a text layer that garbles the equations; they were read from the
+page images at 300 dpi.
+
+**The misprint.** Eq. (12), p. 230, gives the apparent radiance of a
+target as its own radiance times exp[-alpha(z) r] plus
+
+    N(zt,theta,phi) exp[+K(z,theta,phi) r cos(theta)]
+        x {1 - exp[-alpha(z) r + K(z,theta,phi) r cos(theta)]}.
+
+The sign of the first exponent is wrong. With it, a target that is the
+water itself (tN0 = N(zt)) does not read as the background radiance that
+eq. (9) gives at the observer, N(zt) exp[-K r cos(theta)], and eq. (14),
+which the text says follows from eq. (12) and the definitions of
+contrast, cannot be derived from it. With exp[-K r cos(theta)] both
+hold, and eqs. (9), (13), (14), (15) and (16) agree. Checked numerically
+(alpha 0.3, K 0.1, cos(theta) 0.6, r 7: printed sign 2.722, corrected
+1.314, eq. (9) 1.314); `tests/test_slant.py` checks eqs. (13)-(15)
+against the corrected form.
+
+**Smaller things.** Eq. (16), p. 231, prints an unmatched parenthesis,
+exp[-alpha + K cos(theta))]r; eq. (15) makes the meaning plain. The
+relation r cos(theta) = zt - z (p. 229) comes from Duntley, Boileau and
+Preisendorfer (1957), where z is altitude, and the 1963 paper does not
+restate which way theta points with z as depth. The package takes the
+two depths and the distance instead of an angle, and writes K r
+cos(theta) as -K (zt - z), with K = -d ln Nw / dz positive when the
+water's radiance falls with depth.
+
+**What the package cannot supply.** The water's radiance along the line
+of sight and its K depend on the light field as well as the water; both
+are the caller's. Duntley takes K as constant along the path, which he
+found seldom matters beyond the first metres below the surface, as
+sighting ranges rarely exceed 2/K (p. 230).

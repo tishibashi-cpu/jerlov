@@ -4,6 +4,27 @@ Every release is archived on Zenodo under the concept DOI
 [10.5281/zenodo.22321312](https://doi.org/10.5281/zenodo.22321312), which
 always resolves to the latest version.
 
+## 1.9.0 — 2026-11-12
+
+A slanted line of sight for `Scene`, after Duntley (1963) (DECISIONS.md
+section 75). No shipped value changed and no top-level name is added.
+
+**Added.**
+
+- `Scene.observe_slant(reflectance, distance_m, target_depth_m=...,
+  kd=..., water_radiance=..., radiance_attenuation=...,
+  face_irradiance_ratio=...)`: a target above or below the observer in
+  uniform water. The direct light falls as exp(-c r) and the path
+  radiance is Nw (1 - exp[-c r - K (zt - z)]), Duntley's eq. (12) with
+  its sign corrected. The observer is at the scene's `depth_m`; the
+  target is lit by Kd from there. The water's radiance along the line
+  of sight and its K have no default. A horizontal line gives `observe`
+  exactly, and `Observation.contrast` gives eqs. (13)-(15).
+
+**Data.** DATA.md section 34 (confirmed): eq. (12) prints the wrong sign
+in front of the path radiance; the corrected form is the one the paper's
+own eqs. (9), (14) and (15) need.
+
 ## 1.8.0 — 2026-11-12
 
 The downwelling distribution function D0, and Kd under another light
