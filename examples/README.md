@@ -1,6 +1,6 @@
 # Examples
 
-Twenty scripts. Each runs against the installed package and needs nothing beyond
+Twenty-one scripts. Each runs against the installed package and needs nothing beyond
 NumPy.
 
 ```
@@ -24,6 +24,7 @@ python examples/wave_focusing.py
 python examples/fish_colour_differences.py
 python examples/ocean_colour_and_secchi.py
 python examples/sunlight_and_d65.py
+python examples/looking_up_and_down.py
 ```
 
 CI runs all of them on every push, so an example that has stopped working is a
@@ -58,6 +59,7 @@ copy of the package silently wins over the working tree. In a clone, run
 | study fish vision, or how water changes colour differences for an animal | `fish_colour_differences.py` |
 | have a chlorophyll concentration, or a and bb, rather than a water type; or want a Secchi depth | `ocean_colour_and_secchi.py` |
 | have used D65 as the light above the sea, or need the sun's spectrum at the surface | `sunlight_and_d65.py` |
+| see under water along a slanted line, looking up or down | `looking_up_and_down.py` |
 
 ## What each shows
 
@@ -284,6 +286,18 @@ channel. It also gives the level D65 does not have, PAR from 43 to 454 W
 m-2 at 10 km visibility, and, through Gordon's (1989) D0, shows Jerlov
 II's Kd(490) spanning **17 percent** between the sun overhead and 60
 degrees from it under this sky.
+
+**`looking_up_and_down.py`** — a black target seen from 41.3 m in Lake
+Pend Oreille along five lines, straight up to straight down, by
+`Scene.observe_slant` (Duntley 1963), with the radiance of the water and
+its K taken from Tyler's (1958) measured radiance distribution in the same
+lake rather than guessed. Over about 12 m, looking up leaves **7.0 times**
+the contrast a horizontal line does and looking down **1/7.5** of it; the
+distance at which the contrast falls to 2 percent is 16.4 m up, 9.9 m
+across and 7.0 m down. Tyler's K differs by direction by a factor of 2.0
+near the surface and agrees within 12 percent from 16.6 to 53.7 m, as
+Duntley's asymptotic light field has it. Duntley's eq. (12) as printed
+would make the open water read 46 times what Tyler measured.
 
 ## What they do not show
 

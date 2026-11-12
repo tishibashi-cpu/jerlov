@@ -6,8 +6,9 @@ always resolves to the latest version.
 
 ## 1.10.1 — 2026-11-12
 
-A new example, the clear sky against D65 (DECISIONS.md section 77). No
-shipped value changed, and nothing in the API.
+Two new examples: the clear sky against D65 (DECISIONS.md section 77),
+and looking up and down (section 78). No shipped value changed, and
+nothing in the API.
 
 **Examples.** `sunlight_and_d65.py` sets the surface irradiance of Gregg
 & Carder (1990), for one stated maritime atmosphere and four suns, beside
@@ -26,8 +27,23 @@ CIE D65, which twelve of the examples use for the light above the sea.
   tables do not record their sun; the example says the 30 degrees it
   starts from is an assumption.
 
+`looking_up_and_down.py` (DECISIONS.md section 78) sees a black target
+from 41.3 m in Lake Pend Oreille along five lines, straight up to straight
+down, with `Scene.observe_slant` and the water's radiance and K from
+Tyler's (1958) measured radiance distribution in that lake.
+
+- Over about 12 m, looking up leaves 7.0 times the contrast of a
+  horizontal line, and looking down 1/7.5 of it.
+- The distance at which the contrast falls to 2 percent: 16.4 m up, 9.9 m
+  across, 7.0 m down.
+- Tyler's K differs by direction by a factor of 2.0 near the surface and
+  agrees within 12 percent from 16.6 to 53.7 m, Duntley's asymptotic light
+  field.
+- Duntley's eq. (12) as printed would make the open water read 46 times
+  what Tyler measured; the corrected form reads it exactly.
+
 **Docs.** README, `examples/README.md` and the site's examples page list
-it; there are now twenty examples.
+both; there are now twenty-one examples.
 
 ## 1.10.0 — 2026-11-12
 

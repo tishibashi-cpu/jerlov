@@ -433,7 +433,7 @@ def test_the_READMEs_count_the_examples():
     """Both said "Eight scripts", and a ninth was about to make them wrong."""
     scripts = len(list((ROOT / "examples").glob("*.py")))
     for readme in (ROOT / "README.md", ROOT / "examples" / "README.md"):
-        match = re.search(r"\b(\w+) scripts[,.]", readme.read_text())
+        match = re.search(r"\b([\w-]+) scripts[,.]", readme.read_text())
         assert match, f"{readme.name} no longer counts the examples"
         assert WORD_COUNTS.get(match.group(1)) == scripts, (
             f"{readme.relative_to(ROOT)} says {match.group(1)} scripts; "

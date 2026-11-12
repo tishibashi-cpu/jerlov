@@ -1682,3 +1682,65 @@ def test_the_sky_example_reports_what_it_was_warned_of(sky_example):
     gamut, both reported in its Warnings part."""
     caught = sky_example["caught"]
     assert caught and all(("covered" in m) or ("gamut" in m) for m in caught)
+
+
+# -- Looking up and down (looking_up_and_down.py, section 78) ------------
+
+
+@pytest.fixture(scope="module")
+def slant_example():
+    import contextlib
+    import io
+    import runpy
+    module = runpy.run_path(
+        str(ROOT / "examples" / "looking_up_and_down.py"),
+        run_name="looking_up_and_down")
+    with contextlib.redirect_stdout(io.StringIO()), warnings.catch_warnings():
+        warnings.simplefilter("error", jerlov.ProvenanceWarning)
+        warnings.simplefilter("error", FutureWarning)
+        return module["main"]()
+
+
+@source_tree
+def test_examples_README_figures_for_looking_up_and_down(slant_example):
+    text = (ROOT / "examples" / "README.md").read_text()
+    for quoted in ("7.0 times", "1/7.5", "16.4 m up, 9.9 m", "7.0 m down",
+                   "factor of 2.0", "within 12 percent", "46 times"):
+        assert quoted in text, quoted
+    seen = slant_example["seen"]
+    up = seen[("up", 29.0)]
+    down = seen[("down", 53.7)]
+    assert round(up["contrast"] / up["flat"], 1) == 7.0
+    assert round(down["flat"] / down["contrast"], 1) == 7.5
+    ranges = slant_example["ranges"]
+    assert [round(ranges[n], 1) for n in ("up", "horizontal", "down")] == [
+        16.4, 9.9, 7.0]
+    assert round(slant_example["printed"]) == 46
+
+
+def test_the_measured_water_is_read_back_exactly(slant_example):
+    """observe_slant with Tyler's Nw and K over the path gives, for the
+    open water itself, Tyler's radiance at the observer."""
+    for row in slant_example["seen"].values():
+        obs = row["observation"]
+        water = row["nw_target"] * obs.transmittance + obs.veiling
+        assert float(water[0]) == pytest.approx(row["nw"], rel=1e-12)
+    assert slant_example["corrected"] == pytest.approx(1.0, rel=1e-12)
+
+
+def test_up_beats_across_beats_down(slant_example):
+    seen = slant_example["seen"]
+    for up, down in (((("up", 29.0)), ("down", 53.7)),
+                     ((("up", 16.6)), ("down", 66.1))):
+        flat = seen[up]["flat"]
+        assert abs(seen[up]["contrast"]) > abs(flat)
+        assert abs(seen[down]["contrast"]) < abs(seen[down]["flat"])
+    across = seen[("horizontal", 41.3)]
+    assert across["contrast"] == pytest.approx(across["flat"], rel=1e-12)
+
+
+def test_the_slant_example_uses_no_suspect_cell(slant_example):
+    """Every warning it reports names cells in the sun's direction or the
+    overstruck digit, none at the azimuth it reads (80 degrees)."""
+    for message in slant_example["caught"]:
+        assert "azimuth 80" not in message

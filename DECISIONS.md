@@ -3872,3 +3872,14 @@ horizontal's, looking down it falls short, at both distances.
 
 **Version.** Part of 1.10.1, with section 77's example; nothing in the
 API.
+
+**Differences from the plan, noted after the example was written.** The
+plan expected Tyler's K to agree across directions "within about a
+tenth" at depth. From 16.6 to 53.7 m it agrees within 12 percent; in the
+deepest interval, 53.7 to 66.1 m, the directions part again by 22
+percent, and the example says so rather than choosing the interval that
+agrees. The first draft of part 4 wrote the corrected eq. (12) with a
+sign wrong inside the bracket and read 1452 for Tyler's 1380; caught by
+the plan's own check that the corrected form gives the measurement, and
+fixed before anything was committed. The tilted lines reach the same
+target depths at 16.1 to 32.4 m.
