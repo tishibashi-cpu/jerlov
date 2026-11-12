@@ -3216,3 +3216,74 @@ calibration used 700 nm and below is on p. 8717, not 8716; Lee et al.'s
 Table 1 and "a simple average between the shoulders" are on p. 555, not
 554. Pope & Fry's Table 3 is on pp. 8718-8719, Smith & Baker's Table I
 on p. 182 and Table II on p. 183, Mason et al.'s Table 2 on p. 7170.
+
+## 71. Removing Raman scattering from Rrs: the plan
+
+`subsurface_rrs` and `above_surface_rrs` (section 66) give the
+reflectance of elastic scattering alone, and both QAA versions (section
+67) invert that. A measured Rrs also holds light Raman-scattered by the
+water, which in clear water is a sizeable share in the green and red;
+inverted as it is, it biases a and bb. Lee et al. (2013), already a
+source of section 66, give an empirical correction.
+
+**The source.** Lee, Z., Hu, C., Shang, S., Du, K., Lewis, M., Arnone,
+R. and Brewin, R. (2013), J. Geophys. Res. Oceans 118, 4241-4255, DOI
+`10.1002/jgrc.20308`; section 3.2, p. 4244, and Table 2, p. 4245:
+
+    RF(l) = alpha(l) Rrs_T(440) / Rrs_T(550) + beta1(l) Rrs_T(550)^beta2(l)   (11)
+    Rrs = Rrs_T / (1 + RF)                                                (13)
+
+Rrs_T is the reflectance as measured, Raman included; RF is the ratio of
+the Raman part to the rest (eq. 12). Table 2 gives alpha, beta1 and
+beta2 at the six MODIS bands 412, 443, 488, 531, 551 and 667 nm, from
+Hydrolight runs of the case 1 model of Morel & Maritorena (2001) with
+chlorophyll 0.02 to 3 mg m-3. beta1 carries the unit of Rrs (sr-1). The
+signs of beta2 are lost from the PDF's text and were read from the page
+image: all six are negative, as the text says (p. 4244).
+
+**The function.** `lee2013_raman_correction(wavelengths, rrs, /, *,
+bands)`, returning `RamanCorrection` with `wavelengths`,
+`raman_factor` and `rrs` (corrected). Two public names (the user's
+choice, 2026-11-12: both RF and the corrected Rrs).
+
+- `rrs` is Rrs_T above the surface, sr-1, along the last axis, as for
+  the QAA functions; `bands` names the wavelengths playing "440" and
+  "550", each one of `wavelengths`. No default: MODIS has 443 and 547 or
+  551 nm, other sensors other bands.
+- RF is computed at the six bands and **interpolated linearly in
+  wavelength between them**, as the paper does with hyperspectral data
+  (p. 4246). Wavelengths outside 412-667 nm raise `ValueError`.
+- **Not offered: the paper's extension** (the user's choice). For its
+  hyperspectral validation the paper "interpolated and extrapolated" RF
+  to 350-550 nm without saying how, and set RF to 0 below 400 nm "to
+  represent the assumed low Raman-scattering contribution". The first
+  would need an extrapolation rule the paper does not give, the second
+  is an assumption rather than a result, and neither can be checked
+  against a published number. The docstring says what the paper did, so
+  a caller can do it explicitly.
+- Rrs_T must not be negative or infinite (as for QAA); NaN passes
+  through. Rrs_T at the "550" band must be positive: it is raised to a
+  negative power and divides.
+- No warning for chlorophyll outside 0.02-3 mg m-3: it cannot be told
+  from Rrs. The docstring states the range of the simulations.
+
+**Checks.** Planned before the code:
+
+- Table 2 transcribed as printed, checked against the page image; at the
+  six bands RF equals eq. (11) written out by hand.
+- Between bands, RF is the linear interpolation of the RFs at the bands.
+- eq. (13) and its inverse: Rrs (1 + RF) returns Rrs_T.
+- A plausibility check, not a validation: on the 500 spectra of the
+  IOCCG Report 5 synthetic data set (`tests/data/`), which exclude
+  inelastic scattering (Report 5, p. 15), so are Rrs rather than Rrs_T,
+  RF is below the paper's "generally less than 0.20" at every spectrum
+  for 440, 490, 510, 550 and 560 nm (maximum 0.135 at 560 nm; computed
+  before writing this) and rises with wavelength.
+- Refusals at every limit above; NaN, inf, negative, zero, empty,
+  scalar and array inputs.
+
+**Version.** New public names: 1.5.0.
+
+**Corrected before the code.** Report 5 says the synthetic data exclude
+inelastic scattering on p. 17, not p. 15 (p. 15 is where it says their
+aw "were taken from Pope and Fry (1997)").

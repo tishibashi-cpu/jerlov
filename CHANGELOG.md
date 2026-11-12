@@ -4,6 +4,28 @@ Every release is archived on Zenodo under the concept DOI
 [10.5281/zenodo.22321312](https://doi.org/10.5281/zenodo.22321312), which
 always resolves to the latest version.
 
+## 1.5.0 — 2026-11-12
+
+Removing Raman scattering from a measured reflectance (DECISIONS.md
+section 71). No shipped value changed; two public names are added.
+
+**Added.**
+
+- `lee2013_raman_correction(wavelengths, rrs, bands=...)`: the empirical
+  correction of Lee et al. (2013), eqs. (11)-(13). From Rrs as measured,
+  Raman scattering included, it gives the Raman factor RF and the
+  corrected Rrs, Rrs_T / (1 + RF), which is what the package's forward
+  relations and both QAA versions describe. `bands` names the wavelengths
+  playing 440 and 550 nm and has no default.
+- `RamanCorrection`: the wavelengths, RF and the corrected Rrs.
+- The coefficients are Table 2's, at the six MODIS bands 412-667 nm. RF is
+  interpolated linearly between them, as the paper does; outside, the
+  function refuses. The paper's own extension of RF to 350 nm, and its RF
+  of 0 below 400 nm, are described in the docstring but not applied.
+
+**Data.** DATA.md section 30: Table 2's minus signs are missing from the
+PDF's text and were read from the page image.
+
 ## 1.4.0 — 2026-11-12
 
 bb from the particles' backscattering ratio, and four published spectra

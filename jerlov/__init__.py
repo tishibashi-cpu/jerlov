@@ -82,7 +82,8 @@ from .ocean_colour import (
     morel2001_kd,
     subsurface_rrs,
 )
-from .qaa import QAAResult, qaa_ioccg2006, qaa_v6
+from .qaa import (QAAResult, RamanCorrection, lee2013_raman_correction,
+                  qaa_ioccg2006, qaa_v6)
 from .sources import (
     HALTRIN1999,
     SOURCES,
@@ -201,8 +202,10 @@ __all__ = [
     "LEE2002_RRS_COEFFICIENTS",
     "lee2015_secchi_depth",
     "qaa_ioccg2006",
+    "lee2013_raman_correction",
+    "RamanCorrection",
     "qaa_v6",
     "QAAResult",
 ]
 
-__version__ = "1.4.0"
+__version__ = "1.5.0"

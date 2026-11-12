@@ -238,6 +238,11 @@ From Rrs to a and bb
 .. autoclass:: QAAResult
    :members:
 
+.. autofunction:: lee2013_raman_correction
+
+.. autoclass:: RamanCorrection
+   :members:
+
 Solar heating
 -------------
 
