@@ -4,6 +4,27 @@ Every release is archived on Zenodo under the concept DOI
 [10.5281/zenodo.22321312](https://doi.org/10.5281/zenodo.22321312), which
 always resolves to the latest version.
 
+## 1.7.0 — 2026-11-12
+
+The remote sensing reflectance with molecular and particle backscattering
+kept apart, for seven viewing geometries (DECISIONS.md section 73). No
+shipped value changed; two public names are added.
+
+**Added.**
+
+- `lee2011_rrs(a, bb, bb_water=..., coefficients=...)`: eq. (14) of Lee
+  et al. (2011), Rrs above the surface from the water's and the
+  particles' shares of bb, each with its own coefficients.
+- `LEE2011_RRS_COEFFICIENTS`: the seven sets of (G0w, G1w, G0p, G1p) their
+  Table 2 prints, by sun zenith, viewing zenith and relative azimuth,
+  among them straight down with the sun overhead, the set Lee et al.
+  (2013) quote. The paper derived many more geometries but prints only
+  these; no interpolation is done.
+- Outside the bb/(a + bb) of the data the coefficients were fitted to,
+  0.0002-0.37, it warns.
+
+**Data.** DATA.md section 32.
+
 ## 1.6.0 — 2026-11-12
 
 From chlorophyll to absorption by phytoplankton and backscattering by

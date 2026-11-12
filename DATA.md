@@ -3,7 +3,7 @@
 What every shipped table is, where it came from, what was verified, and what
 is known to be wrong with it.
 
-Thirty-one entries are recorded below. Eleven are confirmed defects, three were
+Thirty-two entries are recorded below. Eleven are confirmed defects, three were
 open questions that the first edition of Jerlov settled, and the rest are
 notes rather than defects. None of them is repaired silently: values that
 could be recovered carry `status = reconstructed` and say how, values that
@@ -1801,4 +1801,38 @@ m-3, the "l^-1" and "neutral" the text describes; its unit is printed
 "mg-3". Eq. (9), bp550 = 0.30 [Chl]^0.62, is used as printed; the
 paper's (9'), which subtracts pure water's scattering, it calls
 negligible.
+
+## 32. Rrs with water and particles apart: seven of Lee et al.'s (2011) coefficient sets (note)
+
+`lee2011_rrs` and `LEE2011_RRS_COEFFICIENTS` (DECISIONS.md section 73)
+carry eq. (14) of Lee et al. (2011), Appl. Opt. 50(19), 3155-3167, DOI
+`10.1364/AO.50.003155`, p. 3158, and the coefficients of its Table 2, p.
+3159. They are literals in `jerlov/ocean_colour.py`, not a shipped
+table; a test repeats them.
+
+**Only seven geometries are printed.** The paper derived coefficients for
+"(6 x 7 x 13 + 6)" geometries: six sun angles from 0 to 75 degrees,
+seven viewing angles from 10 to 70 at thirteen azimuths from 0 to 180,
+and nadir for each sun angle, which is the count the text gives. Table 2
+prints "a few samples", seven columns. The paper does not say where the
+others can be obtained; the package offers the seven and does not
+interpolate.
+
+**Checks.** The PDF has a text layer from typesetting; the table agrees
+with the page image. Its nadir column, (0.0604, 0.0406, 0.0402, 0.1310),
+is the set Lee et al. (2013) quote "for nadir-viewed Rrs" (p. 4244).
+Two cells repeat a neighbour's value as printed: G1w is 0.0581, equal to
+G0w, at (0, 40, 135), and 0.0524 at both (15, 40, 135) and (30, 40, 135).
+Nothing in the paper says whether these are coincidences or errors; they
+are used as printed.
+
+**What the fit rests on.** Hydrolight runs on the 500 IOP sets of IOCCG
+Report 5, bb/(a + bb) 0.0002-0.37, sun angles extended to 0-75 degrees,
+with a particle phase function blended from Petzold's average and a
+Fournier-Forand of backscattering ratio 1 percent (p. 3159). The
+function warns outside that range of bb/(a + bb).
+
+**Not claimed.** The notes this work started from said the form was
+more accurate than Gordon et al.'s (1988) in clear water. Lee et al.
+(2011) do not compare the two, and the package does not say so.
 
