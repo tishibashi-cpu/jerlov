@@ -87,7 +87,7 @@ _SPELLED = ["zero", "one", "two", "three", "four", "five", "six", "seven",
             "twenty-four", "twenty-five", "twenty-six", "twenty-seven", "twenty-eight",
             "twenty-nine", "thirty",
             "thirty-one", "thirty-two",
-            "thirty-three", "thirty-four"]
+            "thirty-three", "thirty-four", "thirty-five"]
 WORDS = {word: value for value, word in enumerate(_SPELLED)}
 WORDS.update({word.capitalize(): value
               for value, word in enumerate(_SPELLED)})

@@ -65,6 +65,7 @@ from .scene import (
     Scene,
     veiling_radiance_estimate,
 )
+from .sky import SurfaceIrradiance, gregg1990_irradiance
 from .shortwave import (
     ShortwaveParameters,
     jerlov1968_solar_fraction,
@@ -218,6 +219,8 @@ __all__ = [
     "RamanCorrection",
     "qaa_v6",
     "QAAResult",
+    "gregg1990_irradiance",
+    "SurfaceIrradiance",
 ]
 
-__version__ = "1.9.0"
+__version__ = "1.10.0"

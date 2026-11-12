@@ -3620,3 +3620,130 @@ about the surface or a window ([n(z)/n(zt)]^2, p. 229, is 1 underwater).
 
 **Version.** A new method on `Scene`, no new top-level name: 1.9.0.
 DATA.md gains a section for the source and the two misprints.
+
+## 76. The clear-sky irradiance at the sea surface, Gregg and Carder (1990): the plan
+
+Most examples stand in D65 for the light above the sea, and every
+depth calculation starts from a surface spectrum the caller has to find
+(NEXT_STEPS section 0b, item 5). Gregg and Carder (1990) give the
+direct and diffuse irradiance just above and just below the sea surface
+under a cloudless maritime sky, at 1 nm from 350 to 700 nm, with a table
+of everything spectral the model needs. Section 48 already used its
+diffuse share in `examples/wave_focusing.py`, leaving out the gases and
+the sun's spectrum because they cancel in the share. This section ships
+the whole model. The user chose the design below on 2026-11-12.
+
+**The source.** Gregg, W. W. and Carder, K. L. (1990), "A simple
+spectral solar irradiance model for cloudless maritime atmospheres",
+Limnol. Oceanogr. 35(8), 1657-1675, DOI `10.4319/lo.1990.35.8.1657`. A
+scan with an OCR text layer, supplied by the user; the equations and
+Table 1 were read from the page images at 300 dpi. The PDF's page n is
+the journal's page 1656 + n, checked on each page used.
+
+- Eqs. (2)-(7), p. 1660: direct and diffuse (Rayleigh and aerosol)
+  irradiance above the surface; the ground-air term (8) is left out by
+  the paper itself (p. 1660-1661).
+- Eqs. (9)-(11), p. 1660: the same just below the surface, through the
+  direct and diffuse surface reflectances.
+- Eqs. (12)-(19), p. 1661: the sun's distance, the air masses, Rayleigh,
+  ozone, oxygen and water vapour.
+- Eqs. (20)-(36), pp. 1664-1666: the Navy aerosol model reduced to a
+  Junge distribution, the Angstrom exponent, the optical thickness from
+  the visibility, and the aerosol's forward scattering and
+  single-scattering albedo.
+- Eqs. (37)-(47), pp. 1666-1667: the sea surface's reflectance, specular
+  and foam, for the direct and the diffuse light.
+- Table 1, pp. 1662-1663: H0, the mean extraterrestrial irradiance (W
+  m-2 nm-1), and the ozone, water vapour and oxygen absorption
+  coefficients (cm-1), at every nm from 350 to 700. Water vapour and
+  oxygen are printed from 560 nm; below that the paper has none.
+
+**Table 1, transcribed.** 351 rows, as printed, to
+`jerlov/data/gregg1990_table1.csv` by `tools/build_gregg1990.py`, every
+value read against the page images. The OCR layer misreads four oxygen
+entries (676, 677, 681 and 685 nm), which the page prints as 0.000, and
+splits 689 nm across two lines. Water vapour and oxygen below 560 nm are
+written as 0, stated in the file's note, since the paper prints nothing
+there and its eqs. (18) and (19) give a transmittance of 1 for a zero
+coefficient.
+
+Checked before writing: 351 consecutive wavelengths; every coefficient
+not negative; H0 averaged over 11 nm against Bird and Riordan's (1984)
+Table 2-1 (SERI/TR-215-2436, the same Neckel and Labs revised spectrum
+in 122 bands), within 5 percent at each of their wavelengths from 350 to
+690 nm (it is within 1.5 percent except at 350 nm, the edge, and 430 nm,
+the G band).
+
+**The misprint in eq. (44).** The Fresnel reflectance is printed as
+1/2 [1/2 sin2(theta - theta_r) / sin2(theta + theta_r) + tan2(...) /
+tan2(...)], with a second 1/2 inside the bracket. As printed it gives
+0.0159 at normal incidence, where Fresnel's law gives ((n-1)/(n+1))^2 =
+0.0212 for n = 1.341, and 0.0143 at 40 degrees, where eq. (46) takes
+over at 0.0253; without the inner 1/2 it gives 0.0254 there. The
+package uses Fresnel's law without it.
+
+**The function.** `gregg1990_irradiance(wavelength_nm, /, *,
+sun_zenith_deg, day_of_year, pressure_hpa, air_mass_type,
+relative_humidity, precipitable_water_cm, wind_speed_24h,
+wind_speed, ozone_du, visibility_km=None,
+aerosol_optical_thickness_550=None)`, returning a `SurfaceIrradiance`
+with the direct and diffuse irradiance just above and just below the
+surface, in W m-2 nm-1, the Angstrom exponent and the aerosol optical
+thickness at each wavelength.
+
+- **No input has a default** (the user's choice). Exactly one of the
+  visibility and the aerosol optical thickness at 550 nm (the user's
+  choice): the paper uses the visibility, tau(550) = 3.91 / V with a 1
+  km scale height (eqs. 28, 29); a measured tau(550) replaces that step
+  and nothing else.
+- Wavelengths: whole nanometres from 350 to 700, the rows of Table 1.
+  Anything else is refused rather than interpolated, so that no
+  absorption coefficient is invented; the caller can interpolate the
+  result.
+- No ozone climatology (Van Heuklon 1979) and no sun position from
+  place and time: both are the caller's.
+- Refused: a sun at or below the horizon, relative humidity of 100
+  percent or more (eq. 24 divides by zero there), air-mass type outside
+  1-10, negative amounts, NaN.
+- The ranges the paper's observations covered (Table 2, p. 1667) are in
+  the docstring; outside them nothing warns, as the paper states no
+  limit of validity.
+
+**Checks.** Planned before the code:
+
+- Table 5 (p. 1670), at its standard conditions (sun at 60 degrees,
+  1013.25 hPa, AM 1, RH 80, WV 1.5, WM 3, W 5, V 10 km, 300 DU): the
+  share of diffuse light in the global irradiance above the surface,
+  56 percent, and at both ends of each of the eight ranges (sixteen
+  values, 34 to 79 percent), to the printed whole percent. The rms and
+  largest deviations in the same table are checked for their sign, for
+  the wavelength of the largest within 10 nm and their size within 25
+  percent; the paper does not define its rms closely enough to do more
+  (a prototype matches the shares exactly and the deviations to 0.1 to
+  3 points).
+- Table 4 (p. 1669): V = 16 km with AM = 10, and V = 8 km with AM = 1,
+  at 60 degrees with the other conditions as in Table 5: direct and
+  diffuse 59:41 and 37:63, the Angstrom exponent 1.2 and 0.2, and the
+  global irradiance over 350-700 nm about 2 W m-2 lower in the second.
+- Eq. (44) at normal incidence gives ((n-1)/(n+1))^2; the direct
+  reflectance is continuous at 40 degrees to within the paper's own
+  rounding (0.0254 against 0.0253); foam reflectance at 20 m/s about 2.3
+  percent, as Fig. 2 shows.
+- The equations written out in a test at one set of conditions.
+
+**Not done here.** Clouds; the ground-air multiple reflections
+(dropped by the paper); the radiance distribution of the sky; changing
+`wave_focusing.py`, whose share of the sky section 48 already checked.
+
+**Version.** New public names: 1.10.0. DATA.md gains a section for the
+source, the transcription and the misprint.
+
+**Changed after the first run of the tests.** The plan checks the
+wavelength of Table 5's largest deviation within 10 nm for all eight
+inputs. For the 24 h mean wind that failed: the paper prints 358 nm and
+the model's largest is at 381 nm. The deviation lies between 0.15 and
+0.27 percent at every wavelength, and at 358 nm it is 0.261 against the
+largest, 0.269, so where its largest falls is not a property of the
+model worth checking. Its wavelength is
+no longer checked; its sign and size still are, and pass. The other
+seven inputs pass as planned.

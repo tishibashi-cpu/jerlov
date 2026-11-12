@@ -4,6 +4,30 @@ Every release is archived on Zenodo under the concept DOI
 [10.5281/zenodo.22321312](https://doi.org/10.5281/zenodo.22321312), which
 always resolves to the latest version.
 
+## 1.10.0 — 2026-11-12
+
+The clear-sky irradiance at the sea surface, after Gregg and Carder
+(1990) (DECISIONS.md section 76). No shipped value changed; two public
+names are added.
+
+**Added.**
+
+- `gregg1990_irradiance(wavelength_nm, sun_zenith_deg=..., day_of_year=...,
+  pressure_hpa=..., air_mass_type=..., relative_humidity=...,
+  precipitable_water_cm=..., wind_speed_24h=..., wind_speed=...,
+  ozone_du=..., visibility_km=... or aerosol_optical_thickness_550=...)`:
+  the direct and diffuse downwelling irradiance just above and just below
+  the sea surface under a cloudless sky, W m-2 nm-1, at whole nm from 350
+  to 700. No input has a default. Returns a `SurfaceIrradiance`.
+- `jerlov/data/gregg1990_table1.csv`: the paper's Table 1, the sun's
+  spectrum and the ozone, water vapour and oxygen absorption, 351 rows,
+  transcribed from the page images by `tools/build_gregg1990.py`.
+
+**Data.** DATA.md section 35 (confirmed): eq. (44) prints a second 1/2
+inside Fresnel's law; the package uses Fresnel's law. The model
+reproduces the diffuse shares of Table 5 to the printed percent and the
+direct-to-diffuse splits of Table 4.
+
 ## 1.9.0 — 2026-11-12
 
 A slanted line of sight for `Scene`, after Duntley (1963) (DECISIONS.md

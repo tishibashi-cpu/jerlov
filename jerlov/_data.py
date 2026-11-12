@@ -256,6 +256,18 @@ def bricaud1995() -> tuple[np.ndarray, np.ndarray, np.ndarray]:
 
 
 @lru_cache(maxsize=None)
+def gregg1990() -> tuple[np.ndarray, ...]:
+    """Return ``(wavelengths, H0, a_ozone, a_water_vapour, a_oxygen)`` from
+    Gregg and Carder (1990) Table 1: W m-2 nm-1 and cm-1."""
+    rows = sorted(_rows("gregg1990_table1.csv"),
+                  key=lambda r: float(r["wavelength_nm"]))
+    columns = ("wavelength_nm", "H0_W_m2_nm", "a_ozone_per_cm",
+               "a_water_vapour_per_cm", "a_oxygen_per_cm")
+    return tuple(_frozen(np.array([float(r[c]) for r in rows]))
+                 for c in columns)
+
+
+@lru_cache(maxsize=None)
 def b_from_c_ratio() -> tuple[np.ndarray, dict[str, np.ndarray]]:
     """Return ``(wavelengths, {statistic: ratio})`` from Smart (2007)
     Table 1."""

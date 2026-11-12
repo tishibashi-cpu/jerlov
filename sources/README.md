@@ -43,6 +43,11 @@ carried as literals and checked against each paper; see DATA.md section
 2 is carried as literals and checked against the paper's text; see
 DATA.md section 31.
 
+`tools/build_gregg1990.py` needs no input: Gregg & Carder (1990) Table 1
+is carried as literals, read from the page images, and checked against
+Bird & Riordan's (1984) Table 2-1 (SERI/TR-215-2436, NREL); see DATA.md
+section 35.
+
 ## Read but not machine-processed
 
 These were read to establish provenance and are cited in `DATA.md`. They are
