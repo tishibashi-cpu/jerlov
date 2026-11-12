@@ -3814,3 +3814,61 @@ reports are the coverage of the colour matching functions and, from
 `gordon1989_d0` gives above 60 degrees is silenced for the 80 degree
 row, which the example labels as the formula's rather than a
 measurement's. Everything else is as planned.
+
+## 78. An example: looking up and looking down
+
+`Scene.observe_slant` (section 75) takes the radiance of the water along
+the line of sight, Nw, and how fast it falls with depth, K; neither has a
+default. The package already ships a measurement of both: Tyler's (1958)
+radiance distribution in Lake Pend Oreille (DATA.md section 23), at seven
+depths and every direction, with the lake's beam attenuation. It is also
+the lake whose measurements Duntley (1963) draws on. The user chose this
+example on 2026-11-12, after section 77's, in the same release.
+
+**`examples/looking_up_and_down.py`.** An observer at 41.3 m, one of
+Tyler's depths, chosen so that the targets at the depths above (29.0 and
+16.6 m) and below (53.7 and 66.1 m) lie at nearly the same distances,
+12.3 to 12.4 m and 24.7 to 24.8 m. Directions: straight up (tilt 0),
+40 degrees from it, horizontal, 40 degrees from straight down (tilt 140)
+and straight down, at an azimuth of 80 degrees from the sun so that no
+cell near the sun's direction is used. Along a tilted line the distance
+to a target at another of Tyler's depths is the difference of the depths
+over the cosine of the tilt.
+
+- **Nw and K from the tables, not fitted.** Nw is Tyler's radiance at the
+  observer in that direction; K over each path is ln(Nw(z) / Nw(zt)) / (zt
+  - z), from his values at the two ends, so `observe_slant` reproduces
+  the measured background radiance at the observer exactly. A table of K
+  by direction and depth shows Duntley's statement (p. 231) that in the
+  asymptotic light field K is the same in every direction: near the
+  surface it differs by direction by a factor of about two, at depth the
+  directions agree within about a tenth.
+- **The target** is black, so its inherent contrast against the water
+  behind it is -1 and its lighting does not enter; `kd` is still required
+  and is given as 0, with a comment saying it cannot matter here. The
+  contrast left at the observer is `Observation.contrast` against the
+  water's own radiance at the target's depth (Duntley's eq. 15).
+- **The water.** `Scene` needs a and b; only c = a + b enters a black
+  target's contrast and the path. Tyler gives c (0.396 1/m at the
+  surface, p. 8) and no split, so the example passes a = c and b = 0 and
+  says that the split is not used. One wavelength, 488 nm, the middle of
+  Tyler's band (430-546 nm); the band is broad and the example says so.
+- **A yardstick.** The distance at which the contrast falls to 2 percent
+  of its start, from Duntley's eq. (16) with K at the observer held
+  constant, beside the horizontal 3.91 / c. A yardstick, not a claim about
+  what an eye or a camera can see.
+- **The misprint**, in one line: Duntley's eq. (12) as printed would make
+  the open water, looked at upward over 12.3 m, read a stated factor away
+  from Tyler's measured value, and the corrected form reads it exactly.
+
+Tyler's tables at 4.24 to 29.0 m carry suspect cells in the sun's
+direction, and loading them warns; the example catches those warnings,
+reports them, and uses none of those cells.
+
+**Checks.** The quoted figures in `examples/README.md` are recomputed;
+the background radiance at the observer equals Tyler's to 1e-12; the
+horizontal line gives exp(-c r); looking up the contrast exceeds the
+horizontal's, looking down it falls short, at both distances.
+
+**Version.** Part of 1.10.1, with section 77's example; nothing in the
+API.
