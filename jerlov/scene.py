@@ -15,9 +15,10 @@ still needs a backscattering ratio.
 
 Deliberate limitations, recorded in DECISIONS.md section 13:
 
-- **Horizontal paths only.** Observer and target are at the same depth, so
-  the downwelling irradiance is a single spectrum. A slanted path would need
-  integration along a changing depth.
+- **Horizontal paths in** :meth:`Scene.observe`. Observer and target are
+  at the same depth, so the downwelling irradiance is a single spectrum.
+  :meth:`Scene.observe_slant` takes a slanted line of sight in uniform
+  water, after Duntley (1963) (DECISIONS.md section 75).
 - **No forward-scatter blur.** This gives the radiance of one point, not the
   sharpness of an image. Blur needs the full phase function.
 - **Lambertian targets.**
@@ -442,6 +443,146 @@ class Scene:
             distance_m=float(distance_m),
             target_radiance=target,
         )
+
+    def observe_slant(self, reflectance, distance_m: float, *,
+                      target_depth_m: float, kd, water_radiance,
+                      radiance_attenuation,
+                      face_irradiance_ratio) -> Observation:
+        """Look at a Lambertian target above or below, ``distance_m`` away.
+
+        Duntley (1963), "Light in the sea", J. Opt. Soc. Am. 53, 214-233,
+        eqs. (8)-(16), for uniform water. The observer is at the scene's
+        ``depth_m`` and the target at ``target_depth_m``; with ``z`` and
+        ``zt`` those depths, ``c`` the beam attenuation and ``Nw`` the
+        radiance of open water seen from the observer along this line::
+
+            direct = L_target * exp(-c * r)
+            veiling = Nw * (1 - exp(-c * r - K * (zt - z)))
+
+        This is Duntley's eq. (12), whose printed sign in front of the path
+        radiance is corrected, with ``K r cos(theta)`` written as the change
+        of ``ln Nw`` between the two depths, so that no angle and no sign
+        convention for one is needed (DECISIONS.md section 75). Looking down
+        (``zt > z``) the contrast falls faster than along a horizontal line,
+        looking up more slowly. With ``zt == z`` it is :meth:`observe`.
+
+        Parameters
+        ----------
+        reflectance:
+            Spectral reflectance of the target, 0 to 1.
+        distance_m:
+            Distance to the target along the line of sight. Not less than
+            the difference of the two depths.
+        target_depth_m:
+            Depth of the target, in m.
+        kd:
+            Kd between the two depths, to light the target:
+            ``Ed(zt) = Ed(z) * exp(-Kd * (zt - z))``. A
+            :class:`~jerlov.Water` carrying Kd, or an array on the
+            wavelengths, as :meth:`at_depth` takes it.
+        water_radiance:
+            ``Nw``: the radiance of the water itself, with no target, seen
+            from the observer along this line of sight, in the unit of the
+            downwelling irradiance. No default. For a horizontal line it is
+            B_inf; :func:`veiling_radiance_estimate` is for that case only.
+        radiance_attenuation:
+            ``K = -d ln(Nw)/dz`` along this line of sight, in 1/m, positive
+            when that radiance falls with depth. A number or an array on
+            the wavelengths. No default: it is not Kd. It belongs to one
+            direction and changes with the light field; only in the
+            asymptotic light field is it the same in every direction
+            (Duntley, p. 231). It is taken as constant along the path,
+            which Duntley (p. 230) found seldom matters beyond the first
+            metres below the surface, as sighting ranges rarely exceed
+            2/K.
+        face_irradiance_ratio:
+            As for :meth:`observe`, relative to Ed at the target's depth.
+        """
+        if self.depth_m is None:
+            raise MissingQuantityError(
+                "the scene has no depth_m, and a slanted line of sight needs "
+                "the observer's depth; build the scene with depth_m or with "
+                "Scene.at_depth")
+        if np.size(target_depth_m) != 1:
+            raise ValueError("target_depth_m must be a single depth, in m")
+        _require_number(target_depth_m, "target_depth_m")
+        z, zt = float(self.depth_m), float(target_depth_m)
+        if not (np.isfinite(z) and np.isfinite(zt)) or z < 0 or zt < 0:
+            raise ValueError(
+                "the observer's and the target's depths must be finite and "
+                "not negative")
+        t = self.transmittance(distance_m)
+        r = float(distance_m)
+        rise = zt - z
+        if abs(rise) > r * (1 + 1e-12):
+            raise ValueError(
+                f"the target is {abs(rise):g} m deeper or shallower than the "
+                f"observer, more than the {r:g} m between them")
+        rho, ratio = self._target_inputs(reflectance, face_irradiance_ratio)
+        if isinstance(kd, Descent):
+            raise ValueError(
+                "kd must be a Water carrying Kd or an array; a Descent starts "
+                "at the surface, not at the observer")
+        kd_values = (kd.kd(self.wavelengths) if isinstance(kd, Water)
+                     else np.asarray(kd, dtype=float))
+        if np.shape(kd_values) != self.wavelengths.shape:
+            raise ValueError("kd must have the same shape as wavelengths")
+        if np.any(np.isinf(kd_values)):
+            raise ValueError("kd must be finite (NaN marks a gap)")
+        _refuse_negative(kd_values, self.wavelengths, "Kd")
+        if water_radiance is None:
+            raise MissingQuantityError(
+                "water_radiance has no default: it is the radiance of the "
+                "water itself seen from the observer along this line of "
+                "sight, and depends on the light field as well as the water")
+        nw = np.asarray(water_radiance, dtype=float)
+        if nw.shape != self.wavelengths.shape:
+            raise ValueError(
+                "water_radiance must have the same shape as wavelengths")
+        if np.any(nw < 0):
+            raise ValueError("water_radiance cannot be negative")
+        if radiance_attenuation is None:
+            raise MissingQuantityError(
+                "radiance_attenuation has no default: K along this line of "
+                "sight is not Kd, and only in the asymptotic light field is "
+                "it the same in every direction (Duntley 1963, p. 231)")
+        k = np.array(radiance_attenuation, dtype=float)
+        if k.ndim != 0 and k.shape != self.wavelengths.shape:
+            raise ValueError(
+                "radiance_attenuation must be a number or have the same "
+                "shape as wavelengths")
+        if np.any(np.isinf(k)):
+            raise ValueError(
+                "radiance_attenuation must be finite (NaN marks a gap)")
+        _refuse_negative(np.broadcast_to(k, self.wavelengths.shape),
+                         self.wavelengths, "radiance_attenuation")
+
+        lit = self.downwelling * np.exp(-kd_values * rise)
+        target = rho * ratio * lit / np.pi
+        return Observation(
+            wavelengths=self.wavelengths,
+            direct=target * t,
+            veiling=nw * (1.0 - t * np.exp(-k * rise)),
+            transmittance=t,
+            distance_m=r,
+            target_radiance=target,
+        )
+
+    def _target_inputs(self, reflectance, face_irradiance_ratio):
+        """The target's reflectance and face irradiance ratio, checked."""
+        rho = np.asarray(reflectance, dtype=float)
+        if rho.shape != self.wavelengths.shape:
+            raise ValueError(
+                "reflectance must have the same shape as wavelengths")
+        if np.any(rho < 0) or np.any(rho > 1):
+            raise ValueError("reflectance must lie between 0 and 1")
+        if face_irradiance_ratio is None:
+            raise MissingQuantityError(
+                "face_irradiance_ratio has no default: it is the irradiance "
+                "on the face of the target the observer sees, divided by the "
+                "downwelling irradiance, and the water type does not fix it. "
+                "See DECISIONS.md section 34.")
+        return rho, _face_ratio(face_irradiance_ratio, self.wavelengths.shape)
 
     def __repr__(self) -> str:  # pragma: no cover - convenience only
         lo, hi = self.wavelengths[0], self.wavelengths[-1]

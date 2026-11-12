@@ -129,10 +129,33 @@ releases before 0.12.0 assumed.
 
 Deliberate limits, all recorded in `DECISIONS.md`:
 
-- **Horizontal paths only.** Observer and target at the same depth.
+- **Slanted paths in uniform water only.** `observe` is horizontal;
+  `observe_slant` takes a target above or below (see below).
 - **No forward-scatter blur.** This is the radiance of one point, not the
   sharpness of an image.
 - **Lambertian targets.**
+
+### Looking up or down
+
+`Scene.observe_slant` takes a target at another depth, after Duntley
+(1963). The observer is at the scene's depth; nothing about the angle is
+needed beyond the two depths and the distance:
+
+```python
+# n_w and k_l are yours: measured, or from a model of the light field
+obs = scene.observe_slant(np.full_like(wl, 0.8), 8.0, target_depth_m=15.0,
+                          kd=kd, water_radiance=n_w,
+                          radiance_attenuation=k_l,
+                          face_irradiance_ratio=1.0)
+```
+
+`water_radiance` is the radiance of the water itself seen along that line
+from the observer, and `radiance_attenuation` how fast it falls with depth.
+Neither has a default: the second is not Kd, and is the same in every
+direction only in the asymptotic light field. Looking down, contrast
+falls faster than along a horizontal line; looking up, more slowly.
+Duntley's eq. (12) prints the wrong sign in front of the path radiance
+(DATA.md section 34).
 
 ### Coefficients for the Akkaynak-Treibitz form
 
@@ -522,8 +545,8 @@ made.
 ## Provenance and design
 
 `DATA.md` records, for every shipped table, where it came from, what was
-verified, and what is known to be wrong with it. Thirty-three entries are
-documented there: eleven confirmed defects in the source literature, three
+verified, and what is known to be wrong with it. Thirty-four entries are
+documented there: twelve confirmed defects in the source literature, three
 questions the first edition of Jerlov settled, and the rest notes.
 
 `DECISIONS.md` records why the package is shaped the way it is, including the
