@@ -1612,3 +1612,73 @@ def test_part_6_low_kd_is_the_clearest_water(secchi_example):
     assert case1["low_kd"] and max(case1["low_kd"]) < 500.0
     assert case1["low_chl"] == [0.03]
 
+
+
+# -- The clear sky against D65 (sunlight_and_d65.py, section 77) ---------
+
+
+@pytest.fixture(scope="module")
+def sky_module():
+    import runpy
+    return runpy.run_path(str(ROOT / "examples" / "sunlight_and_d65.py"),
+                          run_name="sunlight_and_d65")
+
+
+@pytest.fixture(scope="module")
+def sky_example(sky_module):
+    import contextlib
+    import io
+    with contextlib.redirect_stdout(io.StringIO()), warnings.catch_warnings():
+        warnings.simplefilter("error", jerlov.ProvenanceWarning)
+        warnings.simplefilter("error", FutureWarning)
+        return sky_module["main"]()
+
+
+@source_tree
+def test_examples_README_figures_for_the_sky(sky_example):
+    """examples/README.md: 450/650 of 1.20 to 1.29 against 1.46; the 1
+    percent depth up to 2.9 m shallower in IB (94.1 m under D65), 0.5 m at
+    most in the coastal types; the blue channel up to 7 percent; PAR from
+    43 to 454 W m-2 at 10 km; Kd(490) spanning 17 percent."""
+    text = (ROOT / "examples" / "README.md").read_text()
+    for quoted in ("1.20 to 1.29", "1.46", "2.9 m", "94.1 m", "0.5 m",
+                   "7 percent", "43 to 454", "17 percent"):
+        assert quoted in text, quoted
+    tilt = sky_example["shape"]["tilt"]
+    skies = [v for k, v in tilt.items() if k != "D65"]
+    assert (round(min(skies), 2), round(max(skies), 2)) == (1.20, 1.29)
+    assert round(tilt["D65"], 2) == 1.46
+    gap, depth = sky_example["gap"], sky_example["depth"]
+    assert round(gap["IB"], 1) == 2.9
+    assert round(depth[("IB", "D65")], 1) == 94.1
+    assert round(max(gap[t] for t in ("1C", "5C", "9C")), 1) == 0.5
+    assert round(100 * sky_example["blue"]) == 7
+    level = sky_example["level"]
+    tens = [v for (sun, vis), v in level.items() if vis == 10.0]
+    assert (round(min(tens)), round(max(tens))) == (43, 454)
+    kds = [row[2] for row in sky_example["d0"].values()]
+    assert round(100 * (max(kds) / min(kds) - 1)) == 17
+
+
+def test_every_sky_is_redder_than_d65(sky_example):
+    tilt = sky_example["shape"]["tilt"]
+    assert all(v < tilt["D65"] for k, v in tilt.items() if k != "D65")
+
+
+def test_the_one_percent_depth_needs_only_the_shape(sky_module):
+    """Scaling the light by 3 changes nothing, which is why part 3 can set
+    a relative D65 beside an absolute sky."""
+    kd = jerlov.water("II", source="jerlov1976")
+    light = sky_module["sky"](30.0).below
+    wl = sky_module["WL"]
+    one = jerlov.par_profile(light, wl, [0.0], kd=kd, unit="energy")
+    three = jerlov.par_profile(3 * light, wl, [0.0], kd=kd, unit="energy")
+    assert one.depth_of_fraction(0.01) == pytest.approx(
+        three.depth_of_fraction(0.01), rel=1e-12)
+
+
+def test_the_sky_example_reports_what_it_was_warned_of(sky_example):
+    """Only the coverage of the colour matching functions and the sRGB
+    gamut, both reported in its Warnings part."""
+    caught = sky_example["caught"]
+    assert caught and all(("covered" in m) or ("gamut" in m) for m in caught)

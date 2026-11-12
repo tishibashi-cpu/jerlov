@@ -1,6 +1,6 @@
 # Examples
 
-Nineteen scripts. Each runs against the installed package and needs nothing beyond
+Twenty scripts. Each runs against the installed package and needs nothing beyond
 NumPy.
 
 ```
@@ -23,6 +23,7 @@ python examples/painted_sphere.py
 python examples/wave_focusing.py
 python examples/fish_colour_differences.py
 python examples/ocean_colour_and_secchi.py
+python examples/sunlight_and_d65.py
 ```
 
 CI runs all of them on every push, so an example that has stopped working is a
@@ -56,6 +57,7 @@ copy of the package silently wins over the working tree. In a clone, run
 | work with the flicker of light under waves, near the surface | `wave_focusing.py` |
 | study fish vision, or how water changes colour differences for an animal | `fish_colour_differences.py` |
 | have a chlorophyll concentration, or a and bb, rather than a water type; or want a Secchi depth | `ocean_colour_and_secchi.py` |
+| have used D65 as the light above the sea, or need the sun's spectrum at the surface | `sunlight_and_d65.py` |
 
 ## What each shows
 
@@ -270,6 +272,19 @@ al. 1995 for phytoplankton, Morel & Maritorena 2001 for particle
 backscattering, and stated choices for the rest) and sets the Kd they
 give beside Morel & Maritorena's.
 
+**`sunlight_and_d65.py`** — the clear sky at the sea surface by the model
+of Gregg & Carder (1990), for one stated maritime atmosphere and the sun
+at 0, 30, 60 and 80 degrees, set beside D65. Every one of the model's
+skies is redder than D65: the ratio of 450 to 650 nm is **1.20 to 1.29**
+against D65's 1.46. Below the surface the difference moves the depth of
+1 percent PAR by up to **2.9 m** in IB (94.1 m under D65) and by 0.5 m at
+most in the coastal types, and a white card at depth in III, recorded by
+a camera balanced for D65, changes by up to 7 percent in its blue
+channel. It also gives the level D65 does not have, PAR from 43 to 454 W
+m-2 at 10 km visibility, and, through Gordon's (1989) D0, shows Jerlov
+II's Kd(490) spanning **17 percent** between the sun overhead and 60
+degrees from it under this sky.
+
 ## What they do not show
 
 Three scripts compare with field measurements: `euphotic_zone.py` with
@@ -281,5 +296,6 @@ output is what the published coefficients imply.
 
 **Every script ends with the assumptions it made** — stated backscatter
 ratios, approximate veiling geometry, invented reflectance and receptor
-curves, D65 standing in for real daylight. Each is a choice a caller can
+curves, D65 standing in for real daylight (`sunlight_and_d65.py` measures
+what that costs). Each is a choice a caller can
 replace with a measurement.

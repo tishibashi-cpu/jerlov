@@ -4,6 +4,31 @@ Every release is archived on Zenodo under the concept DOI
 [10.5281/zenodo.22321312](https://doi.org/10.5281/zenodo.22321312), which
 always resolves to the latest version.
 
+## 1.10.1 — 2026-11-12
+
+A new example, the clear sky against D65 (DECISIONS.md section 77). No
+shipped value changed, and nothing in the API.
+
+**Examples.** `sunlight_and_d65.py` sets the surface irradiance of Gregg
+& Carder (1990), for one stated maritime atmosphere and four suns, beside
+CIE D65, which twelve of the examples use for the light above the sea.
+
+- The shape: every one of the model's skies is redder than D65 (450 to
+  650 nm, 1.20 to 1.29 against 1.46); the colours are computed over
+  350-700 nm for both, and the example says how far that moves D65's.
+- The level D65 does not have: PAR above the sea, 43 to 454 W m-2.
+- Below the surface: the depth of 1 percent PAR moves by up to 2.9 m in
+  IB and 0.5 m at most in the coastal types; a white card at depth in III,
+  as a camera balanced for D65 records it, changes by up to 7 percent in
+  its blue channel.
+- Through Gordon's (1989) D0, Jerlov II's Kd(490) spans 17 percent
+  between the sun overhead and 60 degrees from it under this sky. Jerlov's
+  tables do not record their sun; the example says the 30 degrees it
+  starts from is an assumption.
+
+**Docs.** README, `examples/README.md` and the site's examples page list
+it; there are now twenty examples.
+
 ## 1.10.0 — 2026-11-12
 
 The clear-sky irradiance at the sea surface, after Gregg and Carder

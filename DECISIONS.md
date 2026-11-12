@@ -3805,3 +3805,12 @@ checks that the 1 percent depths are a function of the shape only
 (scaling a sky by 3 changes nothing).
 
 **Version.** An example only, nothing in the API: 1.10.1.
+
+**Differences from the plan, noted after the example was written.**
+The green channel in part 4 differs by up to 2 percent, not "about 1"
+(the prototype's 1.4 rounded the other way). The warnings the example
+reports are the coverage of the colour matching functions and, from
+10 m, the sRGB gamut; and in part 5 the `ProvenanceWarning` that
+`gordon1989_d0` gives above 60 degrees is silenced for the 80 degree
+row, which the example labels as the formula's rather than a
+measurement's. Everything else is as planned.

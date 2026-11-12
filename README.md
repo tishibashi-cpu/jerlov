@@ -553,9 +553,10 @@ python examples/painted_sphere.py              a sphere seen from four direction
 python examples/wave_focusing.py               flicker under waves, against Darecki
 python examples/fish_colour_differences.py     colour differences for a fish's cones
 python examples/ocean_colour_and_secchi.py      Kd from chlorophyll or a and bb, the Secchi depth
+python examples/sunlight_and_d65.py            the clear sky at the surface against D65
 ```
 
-Nineteen scripts, each aimed at a different reader; `examples/README.md` says
+Twenty scripts, each aimed at a different reader; `examples/README.md` says
 which to start with. CI runs all of them on every push, so an example that has
 stopped working is a failed build. Every one ends with the assumptions it
 made.
