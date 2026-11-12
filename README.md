@@ -490,6 +490,24 @@ statistics on its synthetic data (DATA.md section 28). Nothing here reads
 satellite files; pass the Rrs you have read (DECISIONS.md sections 66 and
 67).
 
+## The light at the sea surface under a clear sky
+
+```python
+sky = jerlov.gregg1990_irradiance(
+    np.arange(350, 701), sun_zenith_deg=40.0, day_of_year=172,
+    pressure_hpa=1013.25, air_mass_type=1, relative_humidity=80.0,
+    precipitable_water_cm=1.5, wind_speed_24h=3.0, wind_speed=5.0,
+    ozone_du=300.0, visibility_km=15.0)   # or aerosol_optical_thickness_550
+sky.direct_above, sky.diffuse_above       # W m-2 nm-1, just above the sea
+sky.below                                 # just below: Scene.at_depth, par_profile
+```
+
+The model of Gregg & Carder (1990), with its table of the sun's spectrum
+and the gases' absorption at every nm from 350 to 700. Every input that
+describes the sky is yours; none has a default. It reproduces the paper's
+own diffuse shares (Table 5) to the printed percent. The paper prints a
+second 1/2 inside Fresnel's law (DATA.md section 35).
+
 ## Solar heating of the upper ocean
 
 Ocean circulation models absorb shortwave radiation as a sum of two
@@ -545,8 +563,8 @@ made.
 ## Provenance and design
 
 `DATA.md` records, for every shipped table, where it came from, what was
-verified, and what is known to be wrong with it. Thirty-four entries are
-documented there: twelve confirmed defects in the source literature, three
+verified, and what is known to be wrong with it. Thirty-five entries are
+documented there: thirteen confirmed defects in the source literature, three
 questions the first edition of Jerlov settled, and the rest notes.
 
 `DECISIONS.md` records why the package is shaped the way it is, including the

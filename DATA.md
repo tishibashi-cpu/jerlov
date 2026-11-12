@@ -3,7 +3,7 @@
 What every shipped table is, where it came from, what was verified, and what
 is known to be wrong with it.
 
-Thirty-four entries are recorded below. Twelve are confirmed defects, three were
+Thirty-five entries are recorded below. Thirteen are confirmed defects, three were
 open questions that the first edition of Jerlov settled, and the rest are
 notes rather than defects. None of them is repaired silently: values that
 could be recovered carry `status = reconstructed` and say how, values that
@@ -1904,3 +1904,67 @@ of sight and its K depend on the light field as well as the water; both
 are the caller's. Duntley takes K as constant along the path, which he
 found seldom matters beyond the first metres below the surface, as
 sighting ranges rarely exceed 2/K (p. 230).
+
+## 35. The clear-sky irradiance at the sea surface: Gregg and Carder (1990) Table 1, and a misprint in eq. (44) (confirmed)
+
+`gregg1990_irradiance` (DECISIONS.md section 76) is the model of Gregg,
+W. W. and Carder, K. L. (1990), "A simple spectral solar irradiance model
+for cloudless maritime atmospheres", Limnol. Oceanogr. 35(8), 1657-1675,
+DOI `10.4319/lo.1990.35.8.1657`. The PDF is a scan with an OCR text
+layer; the equations and Table 1 were read from the page images at 300
+dpi.
+
+**Table 1** (pp. 1662-1663) gives, at every nm from 350 to 700, the mean
+extraterrestrial irradiance H0 (W m-2 nm-1), from the revised Neckel and
+Labs (1984) spectrum corrected for overlap and interpolated to 1 nm, and
+the ozone (Inn and Tanaka 1953), water vapour and oxygen (from the 5S
+code) absorption coefficients, cm-1 (p. 1661). It is shipped as
+`gregg1990_table1.csv`, 351 rows as printed, with status `transcribed`.
+
+- Water vapour and oxygen are printed from 560 nm only. Below that the
+  file holds 0, with a note on each row; eqs. (18) and (19) give a
+  transmittance of 1 for a zero coefficient.
+- The OCR layer reads the oxygen coefficient at 676, 677, 681 and 685 nm
+  as "O.OO@", "o.ood" and "0.00;"; the page prints 0.000. It splits the
+  689 nm row across two lines. Every value was compared with the page
+  images, not only these.
+- Against Bird and Riordan (1984), SERI/TR-215-2436, Table 2-1, the same
+  Neckel and Labs revised spectrum in 122 bands: H0 averaged over the 11
+  nm around each of their wavelengths from 350 to 690 nm lies within 5
+  percent of theirs, and within 1.5 percent except at 350 nm (the end of
+  the table, +4.5) and 430 nm (the G band, +4.0). A check that would catch
+  a misplaced digit, not a small misreading; the page images are what the
+  values rest on.
+
+**The misprint.** Eq. (44), p. 1666, prints Fresnel's reflectance for the
+direct sun as
+
+    rho_d = 1/2 [ (1/2) sin2(theta - theta_r) / sin2(theta + theta_r)
+                  + tan2(theta - theta_r) / tan2(theta + theta_r) ]
+
+with a second 1/2 inside the bracket. As printed, it gives 0.0159 for the
+sun overhead, where Fresnel's law gives ((n - 1)/(n + 1))^2 = 0.0212 with
+the paper's n = 1.341, and 0.0143 at 40 degrees, where the paper's
+eq. (46) takes over at 0.0253 (p. 1667). Without the inner 1/2 it gives
+0.0254 at 40 degrees, continuous with eq. (46) to the paper's rounding.
+The package uses Fresnel's law without it.
+
+**Checks against the paper's own results.**
+
+- Table 5 (p. 1670), the share of diffuse light in the global irradiance
+  at 60 degrees under its standard conditions and at both ends of each of
+  its eight ranges: all seventeen values reproduced to the printed whole
+  percent (34 to 79).
+- The same table's rms and largest deviations agree in sign and within
+  25 percent in size (the model's are 0 to 3.6 points from the printed
+  ones), and the wavelength of the largest within 10 nm, except for the
+  24 h mean wind, whose deviation is 0.15 to 0.27 percent at every
+  wavelength (printed 358 nm, the model's 381). The paper does not say
+  how its rms was taken.
+- Table 4 (p. 1669): direct to diffuse 59:41 at V = 16 km with air mass
+  type 10 and 37:63 at V = 8 km with type 1, the Angstrom exponents 1.2
+  and 0.2, and about 2 W m-2 less over 350-700 nm in the second, all
+  reproduced with Table 5's other conditions, which the paper does not
+  restate for Table 4.
+- Foam reflectance at 20 m/s about 2.3 percent, as in Fig. 2 (p. 1667),
+  with the air density as printed, 1.2 x 10^3 g m-3.

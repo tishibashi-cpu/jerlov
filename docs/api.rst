@@ -209,6 +209,14 @@ Visual pigments and receptor noise
 
 .. autofunction:: receptor_noise_distance
 
+The irradiance at the sea surface under a clear sky
+---------------------------------------------------
+
+.. autofunction:: gregg1990_irradiance
+
+.. autoclass:: SurfaceIrradiance
+   :members:
+
 Kd without a water type, Rrs and the Secchi depth
 -------------------------------------------------
 
