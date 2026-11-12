@@ -230,6 +230,11 @@ Kd without a water type, Rrs and the Secchi depth
 
 .. autofunction:: above_surface_rrs
 
+.. autofunction:: lee2011_rrs
+
+.. autodata:: LEE2011_RRS_COEFFICIENTS
+   :no-value:
+
 .. autofunction:: lee2015_secchi_depth
 
 From Rrs to a and bb

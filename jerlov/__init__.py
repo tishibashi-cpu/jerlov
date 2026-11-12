@@ -75,9 +75,11 @@ from .vision import receptor_noise_distance, visual_pigment_template
 from .ocean_colour import (
     GORDON1988_RRS_COEFFICIENTS,
     LEE2002_RRS_COEFFICIENTS,
+    LEE2011_RRS_COEFFICIENTS,
     above_surface_rrs,
     bricaud1995_aph,
     lee2005_kd,
+    lee2011_rrs,
     lee2013_kd,
     lee2015_secchi_depth,
     morel2001_bbp,
@@ -204,6 +206,8 @@ __all__ = [
     "above_surface_rrs",
     "GORDON1988_RRS_COEFFICIENTS",
     "LEE2002_RRS_COEFFICIENTS",
+    "LEE2011_RRS_COEFFICIENTS",
+    "lee2011_rrs",
     "lee2015_secchi_depth",
     "qaa_ioccg2006",
     "lee2013_raman_correction",
@@ -212,4 +216,4 @@ __all__ = [
     "QAAResult",
 ]
 
-__version__ = "1.6.0"
+__version__ = "1.7.0"

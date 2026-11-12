@@ -3374,3 +3374,67 @@ nm-1; CDOM varied, as Bricaud et al. (1998) do in their appendix.
 before they were checked: the 443 nm ranges of A and B are on p. 13,324
 of Bricaud et al. (1995), not 13,325, and "can be provided on request"
 on p. 31,037 of Bricaud et al. (1998), not 31,038.
+
+## 73. Rrs with water and particles apart, Lee et al. (2011): the plan
+
+Section 66's reflectance, rrs = g0 u + g1 u^2 with u = bb/(a + bb), treats
+all backscattering alike. Molecular and particle scattering have
+different phase functions, so their shares of bb reach the sensor
+differently. Lee et al. (2011) keep them apart, and give coefficients for
+other viewing geometries than straight down (NEXT_STEPS section 0b,
+item 3).
+
+**The source.** Lee, Z. P., Du, K., Voss, K. J., Zibordi, G., Lubac, B.,
+Arnone, R. and Weidemann, A. (2011), "An inherent-optical-property-
+centered approach to correct the angular effects in water-leaving
+radiance", Appl. Opt. 50(19), 3155-3167, DOI `10.1364/AO.50.003155`
+(resolved at doi.org); obtained by the user. Eq. (14), p. 3158:
+
+    Rrs(l, W) = (G0w(W) + G1w(W) bbw/k) bbw/k + (G0p(W) + G1p(W) bbp/k) bbp/k,
+    k = a + bb
+
+Rrs above the surface: the paper folds the crossing of the surface into
+the coefficients. They were fitted to Hydrolight runs on the 500 IOP sets
+of IOCCG Report 5, bb/(a + bb) 0.0002-0.37 (p. 3159), with particle phase
+functions blended from Petzold's average and a Fournier-Forand of
+backscattering ratio 1 percent.
+
+**Only seven geometries are printed.** The paper derived (6 x 7 x 13 + 6)
+sets, for sun zenith 0-75 degrees, viewing zenith 0-70 and relative
+azimuth 0-180, but Table 2 (p. 3159) prints "a few samples": seven
+columns, (sun, view, azimuth) = (0, 0, 0), (0, 30, 90), (15, 30, 90),
+(30, 30, 90), (0, 40, 135), (15, 40, 135), (30, 40, 135). The user chose
+all seven (2026-11-12). Its nadir column, 0.0604, 0.0406, 0.0402,
+0.1310, is the set Lee et al. (2013) quote (p. 4244). The table agrees
+with the page image. Not offered: interpolation between geometries,
+which the paper does not describe.
+
+**The function and the constant.** One per source (section 1), as
+`subsurface_rrs` takes `GORDON1988_RRS_COEFFICIENTS`:
+
+- `LEE2011_RRS_COEFFICIENTS`: a read-only mapping from (sun zenith,
+  viewing zenith, relative azimuth), degrees, to (G0w, G1w, G0p, G1p),
+  the seven columns as printed.
+- `lee2011_rrs(a, bb, /, *, bb_water, coefficients)`: eq. (14), sr-1.
+  bbp = bb - bb_water. `coefficients` is four positive numbers, no
+  default; one of the mapping's values or the caller's own (the paper
+  says they "can be easily revised/updated"). a and bb as for
+  `lee2013_kd`: positive, NaN passes; bb_water not negative and not
+  above bb.
+- Outside bb/(a + bb) 0.0002-0.37 a `ProvenanceWarning`: the fit's data
+  did not reach there.
+
+**Not claimed.** NEXT_STEPS recorded that this form was said to be more
+accurate than Gordon's in clear water. The paper makes no such
+comparison, so neither does the package.
+
+**Checks.** Planned before the code:
+
+- The seven columns against the page image and the nadir column against
+  Lee et al. (2013); the count (6 x 7 x 13 + 6) against the angular grid
+  the text gives (six sun angles; seven viewing angles from 10 to 70 at
+  thirteen azimuths, plus nadir for each sun).
+- Eq. (14) written out in the test, scalars and arrays; bb_water = bb
+  leaves only the water terms; refusals and the warning at its limits.
+
+**Version.** New public names: 1.7.0.

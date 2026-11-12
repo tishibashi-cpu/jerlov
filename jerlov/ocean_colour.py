@@ -20,6 +20,7 @@ the reflectance to a and bb, is not here.
 from __future__ import annotations
 
 import warnings
+from types import MappingProxyType
 
 import numpy as np
 
@@ -67,6 +68,21 @@ GORDON1988_RRS_COEFFICIENTS = (0.0949, 0.0794)
 #: g0 and g1 of Lee, Carder & Arnone (2002, p. 5756): the mean of Gordon et
 #: al.'s pair and a pair for coastal water from another paper.
 LEE2002_RRS_COEFFICIENTS = (0.0895, 0.1247)
+#: (G0w, G1w, G0p, G1p) of Lee et al. (2011), Table 2 (p. 3159), sr^-1, by
+#: (sun zenith, viewing zenith, relative azimuth) in degrees: the seven
+#: geometries the paper prints, of the many it derived. Read-only.
+LEE2011_RRS_COEFFICIENTS = MappingProxyType({
+    (0.0, 0.0, 0.0): (0.0604, 0.0406, 0.0402, 0.1310),
+    (0.0, 30.0, 90.0): (0.0596, 0.0516, 0.0408, 0.1420),
+    (15.0, 30.0, 90.0): (0.0590, 0.0562, 0.0411, 0.1461),
+    (30.0, 30.0, 90.0): (0.0584, 0.0601, 0.0418, 0.1492),
+    (0.0, 40.0, 135.0): (0.0581, 0.0581, 0.0414, 0.1458),
+    (15.0, 40.0, 135.0): (0.0614, 0.0524, 0.0425, 0.1408),
+    (30.0, 40.0, 135.0): (0.0624, 0.0524, 0.0434, 0.1406),
+})
+#: bb/(a + bb) of the IOCCG Report 5 data the coefficients were fitted to
+#: (p. 3159).
+_LEE2011_U = (0.0002, 0.37)
 
 #: Chlorophyll concentrations, mg m^-3, that Morel & Maritorena's pooled
 #: data spanned: 0.02 to more than 30 (p. 7164).
@@ -484,6 +500,71 @@ def subsurface_rrs(a, bb, /, *, coefficients):
                          "numbers, such as GORDON1988_RRS_COEFFICIENTS")
     u = bb / (a + bb)
     return _result(g[0] * u + g[1] * u ** 2, a, bb)
+
+
+@_data.positional_only()
+def lee2011_rrs(a, bb, /, *, bb_water, coefficients):
+    """The remote sensing reflectance above the surface, water and
+    particles apart, Lee et al. (2011).
+
+    Lee, Z. P., Du, K., Voss, K. J., Zibordi, G., Lubac, B., Arnone, R. and
+    Weidemann, A. (2011), "An inherent-optical-property-centered approach to
+    correct the angular effects in water-leaving radiance", Appl. Opt.
+    50(19), 3155-3167, doi:10.1364/AO.50.003155, eq. (14)::
+
+        Rrs = (G0w + G1w bbw/k) bbw/k + (G0p + G1p bbp/k) bbp/k,
+        k = a + bb,  bbp = bb - bbw
+
+    Parameters
+    ----------
+    a, bb:
+        Absorption and backscattering coefficients, 1/m, positive; numbers
+        or arrays of one shape. NaN marks a gap and gives NaN.
+    bb_water:
+        Pure water's part of bb, 1/m: not negative and not above bb.
+    coefficients:
+        (G0w, G1w, G0p, G1p), sr^-1, four positive numbers; no default.
+        :data:`LEE2011_RRS_COEFFICIENTS` holds the seven sets Table 2
+        prints, by (sun zenith, viewing zenith, relative azimuth); its
+        (0, 0, 0) is straight down with the sun overhead.
+
+    Returns
+    -------
+    Rrs above the surface, sr^-1: the coefficients include the crossing of
+    the surface, so :func:`above_surface_rrs` is not applied to it.
+
+    Notes
+    -----
+    The coefficients were fitted to Hydrolight runs on the IOP sets of
+    IOCCG Report 5, with bb/(a + bb) from 0.0002 to 0.37 (p. 3159);
+    outside that range the result comes with a :class:`ProvenanceWarning`.
+    The particle phase function was a blend of Petzold's average and a
+    Fournier-Forand of backscattering ratio 1 percent. The paper derived
+    coefficients for many more geometries but prints only these seven; it
+    describes no interpolation between them, and none is done here.
+    Optically deep water; no Raman scattering. DECISIONS.md section 73.
+    """
+    a, bb = _check_iops(a, bb)
+    bbw = _spectral(bb_water, "bb_water")
+    if np.any(bbw < 0) or np.any(bbw > bb):
+        raise ValueError("bb_water must not be negative, and is part of bb, "
+                         "so cannot exceed it")
+    g = _finite(coefficients, "coefficients")
+    if g.shape != (4,) or np.any(g <= 0):
+        raise ValueError("coefficients must be (G0w, G1w, G0p, G1p), four "
+                         "positive numbers, such as a value of "
+                         "LEE2011_RRS_COEFFICIENTS")
+    k = a + bb
+    u = bb / k
+    lo, hi = _LEE2011_U
+    known = u[~np.isnan(u)] if np.ndim(u) else u
+    if np.any(known < lo) or np.any(known > hi):
+        _warn(f"bb/(a + bb) outside {lo:g}-{hi:g}, the range of the data "
+              "Lee et al. (2011) fitted their coefficients to (p. 3159)")
+    xw = bbw / k
+    xp = (bb - bbw) / k
+    rrs = (g[0] + g[1] * xw) * xw + (g[2] + g[3] * xp) * xp
+    return _result(rrs, a, bb, bbw)
 
 
 @_data.positional_only()

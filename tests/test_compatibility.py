@@ -323,7 +323,7 @@ def test_haltrins_constants_are_exported():
 def test_every_exported_name_exists():
     missing = [n for n in jerlov.__all__ if not hasattr(jerlov, n)]
     assert not missing
-    assert len(jerlov.__all__) == len(set(jerlov.__all__)) == 95
+    assert len(jerlov.__all__) == len(set(jerlov.__all__)) == 97
 
 
 @source_tree
