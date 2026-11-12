@@ -3,7 +3,7 @@
 What every shipped table is, where it came from, what was verified, and what
 is known to be wrong with it.
 
-Twenty-nine entries are recorded below. Eleven are confirmed defects, three were
+Thirty entries are recorded below. Eleven are confirmed defects, three were
 open questions that the first edition of Jerlov settled, and the rest are
 notes rather than defects. None of them is repaired silently: values that
 could be recovered carry `status = reconstructed` and say how, values that
@@ -1719,4 +1719,36 @@ table, which ends at 550. Not tested, only recorded.
 **Not used.** The standard deviations and Delta aw are in the CSVs but
 the function does not return them. Pope & Fry and Mason et al. measured
 fresh water; no salinity or temperature correction is applied.
+
+## 30. Removing Raman scattering from Rrs: Table 2 of Lee et al. (2013) (note)
+
+`lee2013_raman_correction` (DECISIONS.md section 71) carries the six rows
+of Table 2 of Lee et al. (2013), J. Geophys. Res. Oceans 118, 4241-4255,
+DOI `10.1002/jgrc.20308`, p. 4245: alpha, beta1 and beta2 of their eq.
+(11) at the MODIS bands 412, 443, 488, 531, 551 and 667 nm. They are
+literals in `jerlov/qaa.py`, not a shipped table, and a test repeats them
+and checks eq. (11) against them.
+
+**The minus signs are not in the PDF's text.** The text extracted from
+the PDF reads beta2 as 0.022 to 0.081; the page image prints -0.022 to
+-0.081, and the paper's text calls beta2 negative (p. 4244). The values
+were read from the image. alpha and beta2 have no unit; beta1 has "a unit
+associated with Rrs" (the table's footnote), sr-1.
+
+**What the coefficients rest on.** Hydrolight runs of the case 1 model of
+Morel & Maritorena (2001) with chlorophyll 0.02, 0.05, 0.1, 0.2, 0.5, 1
+and 3 mg m-3; the fit is within about 15 percent of Hydrolight's RF, and
+RF is "generally less than 0.20" (p. 4244). The paper offers no worked
+example to check against. On the IOCCG Report 5 synthetic data set,
+which excludes inelastic scattering (Report 5, p. 17) and so is not a
+validation, RF stays below 0.20 for all 500 spectra at 440-560 nm
+(maximum 0.135, at 560 nm).
+
+**What the paper did beyond the table, and the package does not.** For
+its hyperspectral data (p. 4246) the paper computed RF at the six bands,
+"interpolated and extrapolated" it to 350-550 nm every 2 nm, and set RF
+to 0 below 400 nm "to represent the assumed low Raman-scattering
+contribution". The package interpolates between 412 and 667 nm as the
+paper does, and refuses outside: the extrapolation is not described, and
+the zero is an assumption.
 

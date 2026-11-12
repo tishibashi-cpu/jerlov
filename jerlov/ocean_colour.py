@@ -344,7 +344,9 @@ def subsurface_rrs(a, bb, /, *, coefficients):
     zenith; nearer the zenith it depends on the phase function (p. 10910).
     The values of g0 and g1 vary with the phase function (Lee et al. 2002,
     p. 5756). The relation is for optically deep water: no bottom, and no
-    Raman scattering or fluorescence. DECISIONS.md section 66.
+    Raman scattering or fluorescence. DECISIONS.md section 66. To remove
+    Raman scattering from a measured Rrs before comparing, see
+    :func:`~jerlov.lee2013_raman_correction`.
     """
     a, bb = _check_iops(a, bb)
     g = _finite(coefficients, "coefficients")

@@ -11,6 +11,10 @@ section 67):
 
 Both take Rrs at the bands of a sensor and return a, bbp, and the split of
 a into phytoplankton and the rest. Neither reads satellite data.
+
+Both invert the reflectance of elastic scattering alone;
+:func:`lee2013_raman_correction` removes Raman scattering from a measured
+Rrs first (DECISIONS.md section 71).
 """
 
 from __future__ import annotations
@@ -332,3 +336,117 @@ def qaa_ioccg2006(wavelengths, rrs, /, *, bands, pure_water):
     return QAAResult(wavelengths=wl, a=a, bbp=bbp, adg=adg, aph=aph,
                      eta=Y, reference_nm=np.asarray(reference, dtype=float),
                      version="ioccg2006")
+
+
+# -- Raman scattering (DECISIONS.md section 71) ---------------------------
+
+LEE2013_RAMAN = (
+    "Lee, Z., Hu, C., Shang, S., Du, K., Lewis, M., Arnone, R. and Brewin, "
+    "R. (2013), J. Geophys. Res. Oceans 118, 4241-4255, "
+    "doi:10.1002/jgrc.20308, eqs. (11)-(13) and Table 2"
+)
+
+#: Lee et al. (2013) Table 2, p. 4245, as printed: (MODIS band nm, alpha,
+#: beta1 in the unit of Rrs, beta2). The minus signs were read from the
+#: page image; the PDF's text drops them.
+_LEE2013_RAMAN_TABLE = (
+    (412.0, 0.003, 0.014, -0.022),
+    (443.0, 0.004, 0.015, -0.023),
+    (488.0, 0.011, 0.010, -0.051),
+    (531.0, 0.015, 0.010, -0.070),
+    (551.0, 0.017, 0.010, -0.080),
+    (667.0, 0.018, 0.010, -0.081),
+)
+
+
+@dataclass(frozen=True)
+class RamanCorrection:
+    """Rrs with the light Raman-scattered by the water removed.
+
+    Arrays have the shape of the Rrs given, wavelengths along the last
+    axis.
+    """
+
+    #: nm, the wavelengths of the Rrs given.
+    wavelengths: np.ndarray
+    #: RF, the Raman part of the measured Rrs over the rest (eq. 12).
+    raman_factor: np.ndarray
+    #: The corrected Rrs, Rrs_T / (1 + RF), sr^-1 (eq. 13).
+    rrs: np.ndarray
+
+
+@_data.positional_only()
+def lee2013_raman_correction(wavelengths, rrs, /, *, bands):
+    """Remove Raman scattering from a measured Rrs, Lee et al. (2013).
+
+    ::
+
+        RF(l) = alpha(l) Rrs_T(440) / Rrs_T(550)
+                + beta1(l) Rrs_T(550) ** beta2(l)       (11)
+        Rrs(l) = Rrs_T(l) / (1 + RF(l))                  (13)
+
+    Rrs_T is the remote sensing reflectance as measured above the
+    surface, sr^-1, Raman scattering included; the corrected Rrs is what
+    the forward relations of this package and both QAA versions describe.
+    ``rrs`` holds Rrs_T at ``wavelengths``, along its last axis. ``bands``
+    names the wavelengths that play "440" and "550", each one of
+    ``wavelengths``; there is no default (for MODIS, 443 and 547 or 551
+    nm).
+
+    alpha, beta1 and beta2 are Table 2's, at the MODIS bands 412, 443,
+    488, 531, 551 and 667 nm, fitted to Hydrolight runs of the case 1
+    model of Morel & Maritorena (2001) with chlorophyll from 0.02 to 3 mg
+    m^-3; the paper puts the fit within about 15 percent of Hydrolight's
+    RF. RF is computed at those six bands and interpolated linearly in
+    wavelength between them, as the paper does for hyperspectral data
+    (p. 4246). Outside 412-667 nm it raises :class:`ValueError`. For its
+    own hyperspectral data the paper also extrapolated RF to 350 nm,
+    without saying how, and set it to 0 below 400 nm, an assumption; this
+    function does neither (DECISIONS.md section 71).
+
+    NaN in Rrs_T passes through. Rrs_T must not be negative or infinite,
+    and at the "550" band must be positive.
+    """
+    wl = np.asarray(wavelengths, dtype=float)
+    if (wl.ndim != 1 or wl.size == 0 or not np.all(np.isfinite(wl))
+            or np.any(np.diff(wl) <= 0)):
+        raise ValueError("wavelengths must be one ascending list of finite "
+                         "numbers, nm")
+    table = np.array(_LEE2013_RAMAN_TABLE)
+    lo, hi = table[0, 0], table[-1, 0]
+    if wl[0] < lo or wl[-1] > hi:
+        raise ValueError(
+            f"Lee et al. (2013) give the correction at {lo:g}-{hi:g} nm; "
+            f"wavelengths span {wl[0]:g}-{wl[-1]:g} nm. This package does "
+            "not extrapolate.")
+    r = np.asarray(rrs, dtype=float)
+    if r.ndim == 0 or r.shape[-1] != wl.size:
+        raise ValueError("rrs must have one value for each wavelength along "
+                         "its last axis")
+    if np.any(np.isinf(r)) or np.any(r < 0):
+        raise ValueError("rrs must not be negative or infinite; NaN marks a "
+                         "gap and gives NaN")
+    roles = ("440", "550")
+    if not isinstance(bands, dict) or set(bands) != set(roles):
+        raise ValueError("bands must name the wavelength of '440' and '550', "
+                         "and nothing else")
+    index = {}
+    for role in roles:
+        hit = np.flatnonzero(wl == float(bands[role]))
+        if hit.size != 1:
+            raise ValueError(f"band {role!r} = {bands[role]!r} nm is not one "
+                             "of wavelengths")
+        index[role] = int(hit[0])
+    r440 = r[..., index["440"]]
+    r550 = r[..., index["550"]]
+    if np.any(r550 == 0):
+        raise ValueError("Rrs at the '550' band must be positive: eq. (11) "
+                         "divides by it and raises it to a negative power")
+    alpha, beta1, beta2 = table[:, 1], table[:, 2], table[:, 3]
+    at_bands = (alpha * (r440 / r550)[..., None]
+                + beta1 * r550[..., None] ** beta2)
+    flat = at_bands.reshape(-1, table.shape[0])
+    rf = np.array([np.interp(wl, table[:, 0], row) for row in flat])
+    rf = rf.reshape(r.shape[:-1] + (wl.size,))
+    return RamanCorrection(wavelengths=wl.copy(), raman_factor=rf,
+                           rrs=r / (1.0 + rf))
