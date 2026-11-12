@@ -272,7 +272,14 @@ quasi-analytical algorithm and compares the a they recover with the a it
 started from. A sixth builds a and bb from chlorophyll alone (Bricaud et
 al. 1995 for phytoplankton, Morel & Maritorena 2001 for particle
 backscattering, and stated choices for the rest) and sets the Kd they
-give beside Morel & Maritorena's.
+give beside Morel & Maritorena's. A seventh looks at the reflectance off
+nadir, at Lee et al.'s (2011) seven printed geometries: up to **8
+percent** above the nadir one, and the nadir one up to 14 percent from
+Gordon et al.'s (1988), within the range of bb/(a + bb) Lee et al.
+fitted to; Jerlov III at 412-488 nm lies outside it, and says so. Lee et al.'s (2013) Raman correction puts the
+Raman part of a measured reflectance at 2 to 11 percent of its elastic
+part for these waters. The choice of reflectance model moves the Secchi
+depth by at most 2.4 percent.
 
 **`sunlight_and_d65.py`** — the clear sky at the sea surface by the model
 of Gregg & Carder (1990), for one stated maritime atmosphere and the sun

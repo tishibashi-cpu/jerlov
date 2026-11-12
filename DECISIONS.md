@@ -3920,3 +3920,21 @@ outside what it reports; and the nadir reflectance at one band is
 written out from Table 2's coefficients.
 
 **Version.** Part of 1.10.1, with sections 77 and 78.
+
+**Differences from the plan, noted after the part was written.** The
+plan calls RF a "share"; Lee et al.'s (2013) RF is the Raman part
+relative to the elastic part, Rrs_T = Rrs (1 + RF), and the example and
+the README say so. Everything else is as planned: off nadir up to 9
+percent above nadir, nadir up to 21 percent from Gordon et al., RF 2 to
+11 percent, and the Secchi depth moving by at most 2.4 percent.
+
+**Changed after the first full run of the tests.** A test that every
+warning the example raises is one it reports failed: `lee2011_rrs` warns
+that Jerlov III, with Solonenko and Mobley's a and b, has bb/(a + bb)
+above 0.37 at 412, 443 and 488 nm (and at 425-500 nm on part 2's grid),
+outside the range Lee et al. fitted to. The plan's "up to about 9" and
+"up to about 21 percent" come partly from those bands. The example now
+says which bands lie outside, gives the figures within the range (8 and
+14 percent) and with the rest (9 and 21), notes that III's Secchi depth
+by Lee et al. (2011) rests partly on them, and reports the warning; the
+test accepts that warning only when the example reports bands outside.

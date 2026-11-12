@@ -6,9 +6,9 @@ always resolves to the latest version.
 
 ## 1.10.1 — 2026-11-12
 
-Two new examples: the clear sky against D65 (DECISIONS.md section 77),
-and looking up and down (section 78). No shipped value changed, and
-nothing in the API.
+Two new examples, the clear sky against D65 (DECISIONS.md section 77) and
+looking up and down (section 78), and a seventh part for the ocean colour
+example (section 79). No shipped value changed, and nothing in the API.
 
 **Examples.** `sunlight_and_d65.py` sets the surface irradiance of Gregg
 & Carder (1990), for one stated maritime atmosphere and four suns, beside
@@ -41,6 +41,20 @@ Tyler's (1958) measured radiance distribution in that lake.
   field.
 - Duntley's eq. (12) as printed would make the open water read 46 times
   what Tyler measured; the corrected form reads it exactly.
+
+`ocean_colour_and_secchi.py` gains a seventh part (DECISIONS.md section
+79), using two relations no example used:
+
+- Lee et al.'s (2011) reflectance at its seven printed geometries: off
+  nadir up to 8 percent above nadir, and nadir up to 14 percent from
+  Gordon et al.'s (1988), within the range of bb/(a + bb) the
+  coefficients were fitted to. Jerlov III at 412-488 nm lies outside it
+  (9 and 21 percent there); the example reports the warning.
+- Lee et al.'s (2013) Raman correction: the Raman part a measured
+  reflectance of these waters would carry, 2 to 11 percent of the elastic
+  part, the most at 667 nm in IB.
+- The Secchi depth moves by at most 2.4 percent between the two
+  reflectance models.
 
 **Docs.** README, `examples/README.md` and the site's examples page list
 both; there are now twenty-one examples.

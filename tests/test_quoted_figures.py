@@ -1560,10 +1560,15 @@ def test_every_secchi_ordering_is_a_finding_or_depends(secchi_example):
 @source_tree
 def test_the_secchi_example_warns_only_as_it_reports(secchi_example):
     """Every warning it caught is printed; each is about the depths of the
-    Secchi check (lee2015_secchi_depth) or, from part 6, about Kd below the
-    range of lee2013_kd, which part 6 reports."""
+    Secchi check (lee2015_secchi_depth), from part 6 about Kd below the
+    range of lee2013_kd, which part 6 reports, or from part 7 about the
+    range lee2011_rrs was fitted to, which part 7 reports."""
     for message in secchi_example["caught"]:
-        assert "0.1 to 30 m" in message or "0.02 to 5 1/m" in message
+        assert ("0.1 to 30 m" in message or "0.02 to 5 1/m" in message
+                or "0.0002-0.37" in message)
+    # Part 7: Lee et al.'s (2011) fit range, only where it reports it.
+    assert any("0.0002-0.37" in m for m in secchi_example["caught"]) \
+        == bool(secchi_example["geometry"]["outside"])
     assert any("0.02 to 5 1/m" in m for m in secchi_example["caught"]) \
         == bool(secchi_example["case1"]["low_kd"])
 
@@ -1744,3 +1749,40 @@ def test_the_slant_example_uses_no_suspect_cell(slant_example):
     overstruck digit, none at the azimuth it reads (80 degrees)."""
     for message in slant_example["caught"]:
         assert "azimuth 80" not in message
+
+
+@source_tree
+def test_part_7_figures(secchi_example):
+    """examples/README.md: within Lee et al.'s fit range, off nadir up to 8
+    percent above nadir and nadir up to 14 percent from Gordon et al.; III
+    at 412-488 nm outside it; RF 2 to 11 percent; the Secchi depth moved
+    by at most 2.4 percent (DECISIONS.md section 79)."""
+    text = (ROOT / "examples" / "README.md").read_text()
+    for quoted in ("**8\npercent**", "14 percent", "III at 412-488 nm",
+                   "2 to 11 percent", "2.4 percent"):
+        assert quoted in text, quoted
+    g = secchi_example["geometry"]
+    assert round(100 * (g["view_fitted"] - 1)) == 8
+    assert round(100 * g["off_fitted"]) == 14
+    assert {t: list(v) for t, v in g["outside"].items()} == {
+        "III": [412.0, 443.0, 488.0]}
+    assert tuple(round(100 * x) for x in g["rf"]) == (2, 11)
+    assert round(100 * g["moved"], 1) == 2.4
+
+
+def test_part_7_nadir_written_out(secchi_module):
+    """Lee et al. (2011) eq. (14) at nadir, 488 nm, Jerlov II, from Table
+    2's (0.0604, 0.0406, 0.0402, 0.1310)."""
+    wl = np.array([488.0])
+    water = jerlov.water("II", source="solonenko2015")
+    s = secchi_module["SALINITY_PSU"]
+    bbw = jerlov.pure_water_backscattering(wl, salinity_psu=s)
+    bp = water.b(wl) - jerlov.pure_water_scattering(wl, salinity_psu=s)
+    bb = bbw + secchi_module["PETZOLD_RATIO"] * bp
+    k = water.a(wl) + bb
+    want = ((0.0604 + 0.0406 * bbw / k) * bbw / k
+            + (0.0402 + 0.1310 * (bb - bbw) / k) * (bb - bbw) / k)
+    got = jerlov.lee2011_rrs(water.a(wl), bb, bb_water=bbw,
+                             coefficients=jerlov.LEE2011_RRS_COEFFICIENTS[
+                                 (0.0, 0.0, 0.0)])
+    assert np.allclose(got, want, rtol=1e-13, atol=0)
