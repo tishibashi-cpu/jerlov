@@ -3283,3 +3283,7 @@ choice, 2026-11-12: both RF and the corrected Rrs).
   scalar and array inputs.
 
 **Version.** New public names: 1.5.0.
+
+**Corrected before the code.** Report 5 says the synthetic data exclude
+inelastic scattering on p. 17, not p. 15 (p. 15 is where it says their
+aw "were taken from Pope and Fry (1997)").
