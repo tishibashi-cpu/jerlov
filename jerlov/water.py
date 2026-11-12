@@ -1115,7 +1115,9 @@ def pure_water_absorption(wavelength_nm, /, source: str = "williamson2022"):
     script checks. From 720 nm their model gives the water's contents no
     absorption at all, so every type's a is this. See DATA.md section 20.
 
-    Other sources raise :class:`MissingQuantityError`, saying why.
+    Other sources raise :class:`MissingQuantityError`, saying why. For a
+    published spectrum in its own right, such as Pope & Fry (1997), see
+    :func:`pure_water_absorption_table`.
     """
     get_source(source)          # an unknown key says which ones exist
     if source != "williamson2022":
@@ -1133,6 +1135,97 @@ def pure_water_absorption(wavelength_nm, /, source: str = "williamson2022"):
             f"{wl[-1]:g} nm). This package does not extrapolate."
         )
     return _like_input(np.interp(query, wl, values), wavelength_nm)
+
+
+#: The published pure water absorption spectra, by key: (file, citation).
+_AW_TABLES = {
+    "pope1997": ("pope1997_aw.csv",
+                 "Pope & Fry (1997), Appl. Opt. 36, 8710-8723, Table 3"),
+    "smith1981": ("smith1981_aw.csv",
+                  "Smith & Baker (1981), Appl. Opt. 20, 177-184, Table I"),
+    "mason2016": ("mason2016_aw.csv",
+                  "Mason, Cone & Fry (2016), Appl. Opt. 55, 7163-7172, "
+                  "Table 2"),
+    "lee2015": ("lee2015_aw.csv",
+                "Lee et al. (2015), Appl. Opt. 54, 546-558, Table 1"),
+    "lee2015_smoothed": ("lee2015_aw.csv",
+                         "Lee et al. (2015), Appl. Opt. 54, 546-558, "
+                         "Table 1, smoothed column"),
+}
+
+
+def _aw_table(source: str):
+    """(wavelengths, aw, statuses, notes) of one published spectrum."""
+    if source not in _AW_TABLES:
+        raise KeyError(f"unknown pure water absorption table {source!r} "
+                       f"(available: {', '.join(_AW_TABLES)})")
+    filename = _AW_TABLES[source][0]
+    rows = _data._rows(filename)
+    wl = np.array([float(r["wavelength_nm"]) for r in rows])
+    aw = np.array([float(r["aw_per_m"]) for r in rows])
+    statuses = [r["status"] for r in rows]
+    notes = [r["note"] for r in rows]
+    if source == "lee2015_smoothed":
+        for i, r in enumerate(rows):
+            if r["smoothed_aw_per_m"]:
+                aw[i] = float(r["smoothed_aw_per_m"])
+                notes[i] = ""
+    return wl, aw, statuses, notes
+
+
+@_data.positional_only()
+def pure_water_absorption_table(wavelength_nm, /, *, source: str):
+    """A published absorption spectrum of pure water, 1/m.
+
+    Unlike :func:`pure_water_absorption`, which returns the aw a Jerlov
+    source built its a on, this returns a spectrum published for its own
+    sake, for use where a pure water absorption must be supplied, such as
+    the ``pure_water`` of :func:`qaa_v6` and :func:`qaa_ioccg2006`. There is
+    no default: which one to use is the caller's choice.
+
+    ``source`` is one of:
+
+    - ``"pope1997"``: Pope & Fry (1997), Appl. Opt. 36, 8710-8723, Table 3.
+      Pure water at 22 C, integrating cavity, 380-727.5 nm every 2.5 nm.
+      Their calibration used data at 700 nm and below. The aw of IOCCG
+      Report 5 (2006).
+    - ``"smith1981"``: Smith & Baker (1981), Appl. Opt. 20, 177-184,
+      Table I. Pure water, derived from the diffuse attenuation of the
+      clearest natural waters, 200-800 nm every 10 nm. At 710 nm the
+      printed aw exceeds the printed K, against the paper's own Eq. (6),
+      and warns.
+    - ``"mason2016"``: Mason, Cone & Fry (2016), Appl. Opt. 55, 7163-7172,
+      Table 2. Pure water at 23 C, integrating cavity, 250-550 nm: every 10
+      nm to 300, then every 2 nm.
+    - ``"lee2015"``: Lee et al. (2015), Appl. Opt. 54, 546-558, Table 1.
+      "Pure" seawater, inverted from the remote sensing reflectance of the
+      clearest oceans, 350-550 nm every 5 nm, as printed.
+    - ``"lee2015_smoothed"``: the same, with the paper's smoothed values at
+      360, 370, 385, 395 and 400 nm, where it attributes dips to imperfect
+      removal of Raman scattering.
+
+    Linear interpolation between the printed wavelengths, no
+    extrapolation. Uncertainties are in the tables but not returned. See
+    DATA.md section 29 and DECISIONS.md section 70.
+    """
+    wl, aw, statuses, notes = _aw_table(source)
+    query = _as_array(wavelength_nm)
+    _require_number(query, "wavelength_nm")
+    if np.any(query < wl[0]) or np.any(query > wl[-1]):
+        raise ValueError(
+            f"wavelength outside the range of {source!r} ({wl[0]:g}-"
+            f"{wl[-1]:g} nm). This package does not extrapolate.")
+    flagged = sorted({j for samples in _support(wl, query)
+                      for j in samples if statuses[j] in _data.QUESTIONABLE})
+    if flagged:
+        warnings.warn(
+            f"{_AW_TABLES[source][1]}: "
+            + "; ".join(f"{statuses[j]} at {wl[j]:g} nm: {notes[j]}"
+                        for j in flagged),
+            ProvenanceWarning,
+            stacklevel=_data.caller_stacklevel(),
+        )
+    return _like_input(np.interp(query, wl, aw), wavelength_nm)
 
 
 #: Austin & Petzold (1986) state their model holds below this K(490), 1/m.

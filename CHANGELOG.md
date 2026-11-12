@@ -6,9 +6,9 @@ always resolves to the latest version.
 
 ## 1.4.0 — 2026-11-11
 
-bb from the particles' backscattering ratio (DECISIONS.md sections 68
-and 69).
-No shipped value changed; no public name is added, and
+bb from the particles' backscattering ratio, and four published spectra
+of the absorption of pure water (DECISIONS.md sections 68 to 70). No
+shipped value changed; four tables and one public name are added, and
 `backscatter_ratio` means what it did.
 
 **Added.**
@@ -30,7 +30,29 @@ No shipped value changed; no public name is added, and
   to `Water.bb` (DECISIONS.md section 69). Calling it with neither ratio
   raised `TypeError` and now raises `MissingQuantityError`.
 
-**Docs.** README's "Supply bb" names both ratios.
+- `pure_water_absorption_table(wavelengths, source=...)`: a published
+  absorption spectrum of pure water, for wherever one must be supplied,
+  such as the `pure_water` of `qaa_v6` and `qaa_ioccg2006`. `source` has
+  no default and is one of `pope1997` (Pope & Fry 1997, 380-727.5 nm, the
+  aw of IOCCG Report 5), `smith1981` (Smith & Baker 1981, 200-800 nm),
+  `mason2016` (Mason, Cone & Fry 2016, 250-550 nm), `lee2015` (Lee et
+  al. 2015, "pure" seawater inverted from reflectance, 350-550 nm) and
+  `lee2015_smoothed` (the same with the paper's smoothed values).
+  `pure_water_absorption` is unchanged: it still returns the aw a Jerlov
+  source built its a on.
+
+**Data.** DATA.md section 29. Each table was checked against its paper
+before it was written: Pope & Fry's percent errors follow from their
+standard deviations, Smith & Baker's Eq. (6) holds in every row but one,
+Mason et al.'s minimum is the one their abstract gives, and Lee et al.'s
+smoothed values are the averages they describe. The exception is
+confirmed: at 710 nm Smith & Baker print an aw of 0.839 1/m above a K of
+0.834, which their Eq. (6) does not allow. It is kept as printed, marked
+`suspect`, and warns. The aw of the IOCCG synthetic data set is Pope &
+Fry's at all 31 of its wavelengths.
+
+**Docs.** README's "Supply bb" names both ratios. `tools/README.md`
+counts thirteen scripts that read no file.
 
 ## 1.3.0 — 2026-11-11
 
