@@ -3369,3 +3369,8 @@ nm-1; CDOM varied, as Bricaud et al. (1998) do in their appendix.
   if it holds for every choice.
 
 **Version.** New public names: 1.6.0.
+
+**Corrected before the code.** Two page numbers above were written
+before they were checked: the 443 nm ranges of A and B are on p. 13,324
+of Bricaud et al. (1995), not 13,325, and "can be provided on request"
+on p. 31,037 of Bricaud et al. (1998), not 31,038.
