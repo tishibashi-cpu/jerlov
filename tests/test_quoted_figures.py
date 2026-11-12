@@ -1559,10 +1559,13 @@ def test_every_secchi_ordering_is_a_finding_or_depends(secchi_example):
 
 @source_tree
 def test_the_secchi_example_warns_only_as_it_reports(secchi_example):
-    """Every warning it caught is printed; none is about anything but the
-    depths of the check (and so came from lee2015_secchi_depth)."""
+    """Every warning it caught is printed; each is about the depths of the
+    Secchi check (lee2015_secchi_depth) or, from part 6, about Kd below the
+    range of lee2013_kd, which part 6 reports."""
     for message in secchi_example["caught"]:
-        assert "0.1 to 30 m" in message
+        assert "0.1 to 30 m" in message or "0.02 to 5 1/m" in message
+    assert any("0.02 to 5 1/m" in m for m in secchi_example["caught"]) \
+        == bool(secchi_example["case1"]["low_kd"])
 
 
 @source_tree
@@ -1582,3 +1585,30 @@ def test_the_round_trip_recovers_a_for_every_case(secchi_example):
     worst = secchi_example["recovered"]
     assert set(worst) == {"v6", "ioccg2006"}
     assert all(0 < v < 1 for v in worst.values())
+
+
+@source_tree
+def test_part_6_findings_hold_for_every_cdom_share(secchi_example, secchi_module):
+    """Part 6 calls a chlorophyll 'below at all three wavelengths, whatever
+    y' only if every share and wavelength is negative, and lists every such
+    chlorophyll (DECISIONS.md section 72)."""
+    case1 = secchi_example["case1"]
+    diff = case1["diff"]
+    shares = secchi_module["CDOM_SHARES"]
+    for chl in secchi_module["CHLOROPHYLL"]:
+        everywhere = all(v < 0 for y in shares for v in diff[(chl, y)].values())
+        assert everywhere == (chl in case1["below"])
+    assert case1["below"], "the paragraph needs at least one chlorophyll"
+    low = secchi_module["CHLOROPHYLL"][0]
+    at440 = [diff[(low, y)][440.0] for y in shares]
+    assert case1["mixed"] == (min(at440) < 0 < max(at440))
+
+
+@source_tree
+def test_part_6_low_kd_is_the_clearest_water(secchi_example):
+    """The wavelengths where the built Kd falls below 0.02 1/m are blue,
+    and the chlorophyll values the text names are where it happens."""
+    case1 = secchi_example["case1"]
+    assert case1["low_kd"] and max(case1["low_kd"]) < 500.0
+    assert case1["low_chl"] == [0.03]
+

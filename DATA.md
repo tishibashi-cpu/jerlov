@@ -3,7 +3,7 @@
 What every shipped table is, where it came from, what was verified, and what
 is known to be wrong with it.
 
-Thirty entries are recorded below. Eleven are confirmed defects, three were
+Thirty-one entries are recorded below. Eleven are confirmed defects, three were
 open questions that the first edition of Jerlov settled, and the rest are
 notes rather than defects. None of them is repaired silently: values that
 could be recovered carry `status = reconstructed` and say how, values that
@@ -45,6 +45,7 @@ could not are `missing`, and values that are used but doubtful are `suspect`.
 | `pope1997_aw.csv` | Pure water absorption, Pope & Fry (1997) Table 3, with sigma and percent error. 2.5 nm, 380-727.5 nm | 140 |
 | `smith1981_aw.csv` | Pure water absorption, Smith & Baker (1981) Table I. 10 nm, 200-800 nm | 61 |
 | `mason2016_aw.csv` | Pure water absorption, Mason, Cone & Fry (2016) Table 2, with sigma. 250-550 nm: 10 nm to 300, then 2 nm | 131 |
+| `bricaud1995_aph.csv` | A and B of a*ph = A [Chl]^-B, with r2, Bricaud et al. (1995) Table 2. 2 nm, 400-700 nm, and 675 nm | 152 |
 | `lee2015_aw.csv` | "Pure" seawater absorption inverted from Rrs, Lee et al. (2015) Table 1, with the smoothed column and Delta aw. 5 nm, 350-550 nm | 41 |
 
 The four tables drawn from the two Dstl datasets (`williamson2022_iop`,
@@ -107,6 +108,9 @@ only; see section 16.
 
 - **Haltrin 1999.** Appl. Opt. 38, 6826-6832. Origin of the scattering model
   used by both Solonenko & Mobley and Williamson & Hollins; see section 6.
+
+- **Bricaud et al. 1995.** J. Geophys. Res. 100(C7), 13321-13332, DOI
+  `10.1029/95JC00463`. Table 2; see section 31.
 
 - **Pope & Fry 1997, Smith & Baker 1981, Mason, Cone & Fry 2016, Lee et al.
   2015.** The pure water absorption spectra of section 29, each with its
@@ -1751,4 +1755,50 @@ to 0 below 400 nm "to represent the assumed low Raman-scattering
 contribution". The package interpolates between 412 and 667 nm as the
 paper does, and refuses outside: the extrapolation is not described, and
 the zero is an assumption.
+
+## 31. Chlorophyll to aph and bbp: Bricaud et al. (1995) Table 2, and Morel & Maritorena's eq. (10) (note)
+
+`bricaud1995_aph` and `morel2001_bbp` (DECISIONS.md section 72).
+
+**Bricaud et al. (1995)**, J. Geophys. Res. 100(C7), 13321-13332, DOI
+`10.1029/95JC00463`. Table 2, pp. 13,326-13,327, gives A, B and r2 of
+a*ph(l) = A(l) [Chl]^-B(l) every 2 nm from 400 to 700 nm, and at 675 nm
+as well: 152 rows from 815 spectra spanning [Chl] 0.02-25 mg m-3. The PDF
+is a scan with a text layer; all 456 numbers were read from the page
+images and agree with the text layer, including the negative B at 698
+and 700 nm. `tools/build_bricaud1995.py` carries them as literals and
+checks them against the text:
+
+- the 440 nm row is the a*ph(440) = 0.0403 [Chl]^-0.332 that the text
+  gives twice (the caption of Figure 4, p. 13,327, and p. 13,330);
+- halfway between 442 and 444 nm, A = 0.0394 and B = 0.3435, within the
+  0.0394-0.0406 and 0.330-0.344 the text gives for 443 nm with and
+  without 488 samples (p. 13,324).
+
+r2 is below 0.01 from 556 to 578 nm and at 696 and 698 nm: there the
+power law describes the data hardly at all. The values are used as
+printed; the docstring says so.
+
+**Bricaud et al. (1998)**, J. Geophys. Res. 103(C13), 31033-31044, DOI
+`10.1029/98JC02712`, refit the same kind of relation to 1166 spectra, for
+all particles as well as for phytoplankton, but print the spectral
+coefficients only as a figure (Figure 4): the values "at 2-nm intervals
+can be provided on request" (p. 31,037). The package does not use them.
+Its 440 nm relations, which are printed, agree with the text's ratio of
+the two (1.37 on average, 1.33 at 0.02 and 1.41 at 25 mg m-3). Its
+nonalgal particles at 440 nm, 0.0124 [Chl]^0.724, and their mean slope,
+0.011 per nm, are quoted in `ocean_colour_and_secchi.py` part 6 as stated
+choices.
+
+**Morel & Maritorena (2001), eq. (10) is not their model's bbp.** Eq.
+(10), p. 7170, is printed with a maximum backscattering efficiency of
+0.02 and a (550/l) dependence at every [Chl]. It is the 1988 form: the
+text then modifies it "in two ways" (p. 7171), resetting the
+maximum to 1 percent and letting the exponent vary with [Chl], which
+gives their eqs. (13) and (14). The package follows (13) and (14). In
+(14), v = (1/2)(log10 Chl - 0.3) is -0.9995 at 0.02 and +0.0005 at 2 mg
+m-3, the "l^-1" and "neutral" the text describes; its unit is printed
+"mg-3". Eq. (9), bp550 = 0.30 [Chl]^0.62, is used as printed; the
+paper's (9'), which subtracts pure water's scattering, it calls
+negligible.
 
