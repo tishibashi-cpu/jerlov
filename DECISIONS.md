@@ -3438,3 +3438,73 @@ comparison, so neither does the package.
   leaves only the water terms; refusals and the warning at its limits.
 
 **Version.** New public names: 1.7.0.
+
+## 74. The downwelling distribution function D0, and Kd at another sun angle: the plan
+
+Kd depends on the light field as well as on the water: the same water
+has a larger Kd with the sun low. Jerlov's tables do not say at what sun
+angle, or under what sky, their Kd were measured. Gordon (1989) showed
+that dividing Kd by D0, the downwelling distribution function just
+beneath the surface (the reciprocal of the mean cosine of the downwelling
+light), removes most of that dependence (NEXT_STEPS section 0b, item 6).
+The user chose (2026-11-12) to take D0 and the rescaling now and to
+leave the oblique-path Scene (section 0, item 4) to a release of its
+own.
+
+**The source.** Gordon, H. R. (1989), "Can the Lambert-Beer law be
+applied to the diffuse attenuation coefficient of ocean water?", Limnol.
+Oceanogr. 34(8), 1389-1409, DOI `10.4319/lo.1989.34.8.1389` (resolved at
+doi.org). A scan with a text layer, from a university course site;
+equations and the table were read from the page images.
+
+- Eq. (12), p. 1401, for a sky of uniform radiance:
+  D0 = f / cos(theta_w) + 1.197 (1 - f), with f the fraction of the
+  irradiance transmitted through the surface that is direct sunlight,
+  and theta_w the sun's zenith angle in the water.
+- Table 3, p. 1399: D0 computed exactly beneath a flat surface with a
+  model atmosphere, at 440, 480 and 550 nm, for sun zenith 0-80 degrees
+  and a diffuse sky (1.197), with 1/cos(theta_w) beside it.
+- Accuracy of eq. (12) against Table 3 (p. 1402): within about 3 percent
+  for the sun up to 60 degrees; at 80 degrees 5-8 percent too low (with
+  their eq. 13 for the direct part) or 0.5-4 percent too high (eq. 14).
+- K/D0 as nearly an inherent property: K/(c D0) and <K>/(c D0) fall on
+  single curves of (1 - w0 F) for every sun angle and wavelength
+  computed, fitted with an average error of 1.8 and 2.2 percent (p.
+  1399).
+
+**The refractive index.** The text gives "about 1.33 for the ocean"
+(p. 1392). Table 3's 1/cos(theta_w) column is reproduced to its printed
+rounding at every angle by n = 1.333 (checked before writing this) but
+not by 1.33 (25, 60 and 80 degrees miss). The package uses 1.333 and
+says why.
+
+**The functions.** One per source (section 1):
+
+- `gordon1989_d0(sun_zenith_deg, /, *, direct_fraction)`: eq. (12) with
+  Snell's law at n = 1.333. f has no default: it depends on the sky
+  and is the caller's measurement or estimate (the paper's shadow
+  method). The sun from 0 up to but not including 90 degrees; above 60 a
+  `ProvenanceWarning` citing the accuracy above. f within 0-1.
+- `gordon1989_kd(kd, /, *, d0_from, d0_to)`: kd * d0_to / d0_from,
+  rescaling a Kd measured under one light field to another, on the
+  strength of K/D0 being nearly independent of the light field. Both
+  D0 are required: **Jerlov's tables do not record the conditions, so
+  the package cannot supply d0_from for them**, and the docstring says
+  so. The paper's K is Kd just beneath the surface and <K> its mean over
+  the upper half of the euphotic zone; the docstring says the rescaling
+  is for those, not for Kd at depth.
+
+**Not done here.** The oblique path for `Scene`; rough-surface
+corrections to D0 (the paper's Fig. 9, readable only from a figure);
+anything requiring a model of the sky.
+
+**Checks.** Planned before the code:
+
+- Snell's law at 1.333 against Table 3's 1/cos(theta_w) column, all
+  seven angles, to its rounding; f = 0 gives 1.197, the table's diffuse
+  row; f = 1 gives 1/cos(theta_w).
+- Eq. (12) written out in the test; the rescaling written out;
+  refusals (sun negative or at or above 90, f outside 0-1, NaN, D0 not
+  positive, Kd negative) and the warning above 60 degrees.
+
+**Version.** New public names: 1.8.0.
