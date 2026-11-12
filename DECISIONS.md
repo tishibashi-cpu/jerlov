@@ -3747,3 +3747,61 @@ largest, 0.269, so where its largest falls is not a property of the
 model worth checking. Its wavelength is
 no longer checked; its sign and size still are, and pass. The other
 seven inputs pass as planned.
+
+## 77. An example: the clear sky against D65
+
+Twelve examples stand D65 in for the light above the sea, because until
+1.10.0 there was nothing better to hand. `gregg1990_irradiance` (section
+76) gives a modelled spectrum for a stated sun and sky. The user asked
+(2026-11-12) for an example that compares the two rather than one that
+swaps one for the other, so that the reader sees how much the choice
+matters and where.
+
+**`examples/sunlight_and_d65.py`.** One atmosphere, stated at the top and
+printed: Gregg and Carder's Table 5 standard conditions (1013.25 hPa,
+air mass type 1, 80 percent humidity, 1.5 cm of water, winds of 3 and 5
+m/s, 300 DU) with a visibility of 10 km, on 21 June (day 172), and the
+sun at 0, 30, 60 and 80 degrees from the zenith. Visibilities of 5 and 25
+km, the ends of Table 5's range, where the visibility is the question.
+Five parts:
+
+1. **The shape.** D65 and each sky, scaled to the same energy over
+   400-700 nm. The ratio of 450 to 650 nm (D65 1.46; the model's skies
+   1.15 to 1.30 for the sun up to 60 degrees, so redder than D65, and
+   bluer again as the sun nears the horizon and the sky's light takes
+   over), and the CIE 1931 chromaticity. The model stops at 700 nm and
+   the colour matching functions go on to 830, so every chromaticity,
+   D65's included, is computed over 350-700 nm, and the example prints
+   how far that moves D65's own (x by 0.0002) and the coverage the
+   package's warning reports.
+2. **The level.** PAR above the sea in W m-2 for each sun and
+   visibility. D65 has no level; any absolute quantity needs a sky.
+3. **The 1 percent depth of PAR**, with `par_profile` and Jerlov's
+   (1976) Kd, below D65 and below each sky (`.below`, through the
+   surface). It is a ratio, so only the shape matters. The prototype
+   finds the model's skies put it up to about 3 m shallower in IB and
+   within a few tenths of a metre in the coastal types.
+4. **A white card at depth** in Jerlov III, as a camera white-balanced
+   to D65 in air records it, lit by D65 and by each sky. The prototype
+   finds the blue channel differs by up to about 7 percent of its
+   value, the green by about 1.
+5. **D0 and Kd.** The share of direct light just below the surface at
+   490 nm, from the model, as Gordon's (1989) f; `gordon1989_d0` with it
+   for each sun; and `gordon1989_kd` carrying Jerlov II's Kd(490) from a
+   sun at 30 degrees to the others. The example says plainly that
+   Jerlov's tables do not record the sun they were measured under, so
+   30 degrees is an assumption made to show the size of the effect, not
+   a property of the table.
+
+**What it does not claim.** The model is one cloudless maritime sky; real
+skies have clouds and other aerosols. Nothing here says D65 is wrong for
+the examples that use it: the point is the size of the difference, which
+part 3 and part 4 put in the reader's own units.
+
+**Checks.** `tests/test_quoted_figures.py` recomputes every figure the
+examples README quotes for it, runs it with `ProvenanceWarning` as an
+error except where it reports a warning on purpose (the coverage), and
+checks that the 1 percent depths are a function of the shape only
+(scaling a sky by 3 changes nothing).
+
+**Version.** An example only, nothing in the API: 1.10.1.
