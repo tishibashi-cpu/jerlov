@@ -1665,11 +1665,13 @@ def test_examples_README_figures_for_the_sky(sky_example):
     assert round(100 * (max(kds) / min(kds) - 1)) == 17
 
 
+@source_tree
 def test_every_sky_is_redder_than_d65(sky_example):
     tilt = sky_example["shape"]["tilt"]
     assert all(v < tilt["D65"] for k, v in tilt.items() if k != "D65")
 
 
+@source_tree
 def test_the_one_percent_depth_needs_only_the_shape(sky_module):
     """Scaling the light by 3 changes nothing, which is why part 3 can set
     a relative D65 beside an absolute sky."""
@@ -1682,6 +1684,7 @@ def test_the_one_percent_depth_needs_only_the_shape(sky_module):
         three.depth_of_fraction(0.01), rel=1e-12)
 
 
+@source_tree
 def test_the_sky_example_reports_what_it_was_warned_of(sky_example):
     """Only the coverage of the colour matching functions and the sRGB
     gamut, both reported in its Warnings part."""
@@ -1723,6 +1726,7 @@ def test_examples_README_figures_for_looking_up_and_down(slant_example):
     assert round(slant_example["printed"]) == 46
 
 
+@source_tree
 def test_the_measured_water_is_read_back_exactly(slant_example):
     """observe_slant with Tyler's Nw and K over the path gives, for the
     open water itself, Tyler's radiance at the observer."""
@@ -1733,6 +1737,7 @@ def test_the_measured_water_is_read_back_exactly(slant_example):
     assert slant_example["corrected"] == pytest.approx(1.0, rel=1e-12)
 
 
+@source_tree
 def test_up_beats_across_beats_down(slant_example):
     seen = slant_example["seen"]
     for up, down in (((("up", 29.0)), ("down", 53.7)),
@@ -1744,6 +1749,7 @@ def test_up_beats_across_beats_down(slant_example):
     assert across["contrast"] == pytest.approx(across["flat"], rel=1e-12)
 
 
+@source_tree
 def test_the_slant_example_uses_no_suspect_cell(slant_example):
     """Every warning it reports names cells in the sun's direction or the
     overstruck digit, none at the azimuth it reads (80 degrees)."""
@@ -1770,6 +1776,7 @@ def test_part_7_figures(secchi_example):
     assert round(100 * g["moved"], 1) == 2.4
 
 
+@source_tree
 def test_part_7_nadir_written_out(secchi_module):
     """Lee et al. (2011) eq. (14) at nadir, 488 nm, Jerlov II, from Table
     2's (0.0604, 0.0406, 0.0402, 0.1310)."""
