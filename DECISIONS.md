@@ -3518,3 +3518,105 @@ rows matched is six, by n from 1.3325 to 1.3332, every one of them
 missing 40 degrees. 1.333 is among those, matches the text's "about
 1.33" better than 4/3 (which misses 40 and 80 degrees), and is kept.
 DATA.md records the 40 degree row.
+
+## 75. A slanted line of sight for Scene, Duntley (1963): the plan
+
+Section 13 kept `Scene` to horizontal lines of sight, saying a slanted
+one would need integration along a changing depth. In uniform water it
+does not: Duntley (1963) gives a closed form, and a diver or a camera
+looking down at the bottom or up at the surface is not a rare case
+(NEXT_STEPS section 0, item 4). Section 74 left this to a release of its
+own; the user chose the design below on 2026-11-12.
+
+**The source.** Duntley, S. Q. (1963), "Light in the sea", J. Opt. Soc.
+Am. 53(2), 214-233, DOI `10.1364/JOSA.53.000214`. A scan with a text
+layer; the equations were read from the page images, at 300 dpi, after
+the text layer garbled them. The PDF's page n is the journal's page
+213 + n, checked on each page used.
+
+- Eq. (8), p. 229: Cr/C0 = Tr * bN0 / bNr, the contrast transmittance,
+  "rigorously true despite any amount of nonuniformity".
+- "Uniform water", p. 229: when the background radiance's profile is a
+  straight line on a log scale, eq. (9) dN/dr = -K(z,theta,phi) cos(theta) N,
+  "where r cos(theta) = zt - z", and eq. (10) dN/dr = N* - alpha N, with
+  alpha the beam attenuation coefficient (c in this package).
+- Eq. (12), p. 230: the apparent radiance of the target, its own
+  radiance attenuated by exp(-alpha r) plus the path radiance.
+- Eq. (13), p. 230: radiance differences fall as exp(-alpha r) along
+  any path.
+- Eqs. (14)-(16), p. 231: the contrast against any background, against
+  the water itself, and with K constant (the asymptotic light field),
+  Cr/C0 = exp[(-alpha + K cos(theta)) r].
+- p. 230: alpha and K are taken as constant along the path; in uniform
+  water alpha is, K is not unless the light field is asymptotic, but
+  "because underwater sighting ranges rarely exceed 2/K, the effect of K
+  variation is seldom appreciable, except near the surface of the sea".
+
+**Two misprints, found before any code.** Eq. (12) prints the factor in
+front of the path radiance as exp[+K r cos(theta)]. With that sign, a
+"target" that is the water itself (tN0 = N(zt)) does not come back as
+the background radiance eq. (9) gives at the observer, and eq. (14)
+cannot be derived from eq. (12) as the text says it is. With
+exp[-K r cos(theta)] both hold, and eqs. (9), (13), (14), (15) and (16)
+agree with one another; checked numerically (alpha 0.3, K 0.1,
+cos(theta) 0.6, r 7). Eq. (16) prints an unmatched parenthesis,
+"exp[-alpha+K cos(theta))]r"; eq. (15) makes the meaning plain.
+
+**Which way theta points.** "r cos(theta) = zt - z" comes from
+Duntley, Boileau and Preisendorfer (1957), where z is altitude; the 1963
+paper uses depth instead (p. 229) and the sign of cos(theta) for
+looking up or down is not stated again. The package does not take an
+angle. It takes the two depths and the distance, and writes the
+result without theta:
+
+    path radiance = Nw(z) * (1 - exp[-c r - K (zt - z)])
+    direct        = Lt * exp(-c r)
+
+with Nw(z) the radiance of open water seen from the observer along this
+line of sight, and K = -d ln Nw / dz along it, positive when that
+radiance falls with depth, as it does looking up or down in daylight.
+This is eq. (12) corrected, with K r cos(theta) replaced by the change
+of ln Nw between the two ends; it follows from eqs. (8)-(10) alone.
+Looking down (zt > z) the contrast falls faster than exp(-c r), looking
+up more slowly, as Duntley's Fig. 29 and text describe. A horizontal
+line (zt = z) gives `Scene.observe` exactly.
+
+**The method.** `Scene.observe_slant(reflectance, distance_m, *,
+target_depth_m, kd, water_radiance, radiance_attenuation,
+face_irradiance_ratio)`, returning an `Observation`:
+
+- The observer is at the scene's `depth_m`; a scene without one raises
+  `MissingQuantityError`. `target_depth_m` not negative; `distance_m`
+  not less than the difference of the depths, which is refused.
+- `water_radiance`, Nw(z), has no default. For a horizontal line it is
+  B_inf; `veiling_radiance_estimate` is for that case and the
+  docstring says it is not for a slanted one.
+- `radiance_attenuation`, K, has no default (the user's choice). It is
+  not Kd: it belongs to one direction and depends on the light field;
+  only in the asymptotic field is it the same in every direction
+  (p. 231). A number or an array on the wavelengths.
+- The target is lit by Ed(zt) = Ed(z) exp(-Kd (zt - z)), with `kd` as
+  `Scene.at_depth` takes it (a Water carrying Kd, or an array; not a
+  Descent, which starts at the surface). The user's choice.
+- `Observation.transmittance` is exp(-c r) and `veiling` the path
+  radiance above, so `Observation.contrast` gives eqs. (13)-(15) with
+  no change.
+- Uniform water between the two depths, as for the horizontal path.
+
+**Not done here.** K varying along the path (Preisendorfer's integral,
+p. 230); a target's illumination other than by exponential Kd; anything
+about the surface or a window ([n(z)/n(zt)]^2, p. 229, is 1 underwater).
+
+**Checks.** Planned before the code:
+
+- zt = z gives `observe` to the last bit.
+- A target that is the water (Lt = Nw(zt)) reads Nw(z) at the observer.
+- Eq. (13), eq. (14) and eq. (15)/(16) through `Observation.contrast`,
+  with K (zt - z) = -K' r cos(theta) written out.
+- Looking down loses contrast faster than horizontally, looking up
+  more slowly.
+- Refusals: no depth on the scene, r < |zt - z|, negative depths,
+  missing or negative inputs, K not finite.
+
+**Version.** A new method on `Scene`, no new top-level name: 1.9.0.
+DATA.md gains a section for the source and the two misprints.
