@@ -495,6 +495,10 @@ class Scene:
             which Duntley (p. 230) found seldom matters beyond the first
             metres below the surface, as sighting ranges rarely exceed
             2/K.
+            Looking up, ``K`` times the difference of the depths must
+            not exceed ``c`` times the distance: the path radiance would
+            be negative, and the call raises :class:`ValueError`
+            (DECISIONS.md section 80).
         face_irradiance_ratio:
             As for :meth:`observe`, relative to Ed at the target's depth.
         """
@@ -557,12 +561,29 @@ class Scene:
         _refuse_negative(np.broadcast_to(k, self.wavelengths.shape),
                          self.wavelengths, "radiance_attenuation")
 
+        # Looking up, a K too large for this c makes the path radiance
+        # negative: the water at the target's depth, seen through the path,
+        # would alone outshine Nw. DECISIONS.md section 80.
+        path = self._c * r
+        short = path + k * rise < -1e-9 * path     # NaN, a gap, passes
+        if np.any(short):
+            shown = ", ".join(f"{w:g}" for w in self.wavelengths[short][:5])
+            raise ValueError(
+                f"radiance_attenuation times the {abs(rise):g} m the target "
+                f"is above the observer exceeds c times the {r:g} m between "
+                f"them at {shown} nm, so the path radiance would be "
+                "negative: K says the water at the target's depth is "
+                "brighter than this path could let through. K is too large "
+                "for this water, or c too small")
+
         lit = self.downwelling * np.exp(-kd_values * rise)
         target = rho * ratio * lit / np.pi
         return Observation(
             wavelengths=self.wavelengths,
             direct=target * t,
-            veiling=nw * (1.0 - t * np.exp(-k * rise)),
+            # Within the tolerance above the bracket can be a rounding
+            # error below zero; it is zero there.
+            veiling=nw * np.maximum(1.0 - t * np.exp(-k * rise), 0.0),
             transmittance=t,
             distance_m=r,
             target_radiance=target,

@@ -4018,3 +4018,12 @@ repository and a failing suite.
 **Version.** 1.10.2: two fixes, no new name, no shipped value changed.
 The other findings of the review are recorded outside the repository for
 later versions.
+
+**Differences from the plan, noted after the code was written.** Inside
+the tolerance the bracket `1 - exp(-c r - K (zt - z))` can still be a
+rounding error below zero (about -4e-13 with K = c and the rise a few
+parts in 1e12 over the distance), so it is taken as zero there:
+`max(bracket, 0)`. A bracket that is not negative, or is NaN, is
+unchanged. The publish step counts tracked files against the sdist's
+members with the top directory removed; the sdist also holds
+`setup.cfg` and `jerlov.egg-info/`, which setuptools writes.

@@ -4,6 +4,30 @@ Every release is archived on Zenodo under the concept DOI
 [10.5281/zenodo.22321312](https://doi.org/10.5281/zenodo.22321312), which
 always resolves to the latest version.
 
+## 1.10.2 — 2026-11-12
+
+Two fixes from a review of the whole package (DECISIONS.md section 80).
+No shipped value changed, and no name was added.
+
+**Fixed.** `Scene.observe_slant` returned a negative path radiance when,
+looking up, `radiance_attenuation` times the difference of the depths
+exceeded c times the distance: straight up over 5 m in Jerlov IB (c about
+0.09 1/m) with K = 0.15 1/m gave, at 450 nm, a veiling of -0.34 times the water's
+radiance and a `veiling_fraction` of 1.6, with no warning. Such a K says
+the water at the target's depth is brighter than the path could let
+through, so the call now raises `ValueError`, naming the wavelengths, as
+a negative coefficient is refused. K times the rise equal to c times the
+distance is allowed and adds nothing. No call whose result was not
+negative changes.
+
+**Packaging.** The source distribution now carries every tracked file. Up
+to 1.10.1 it had `tests/*.py` but not `tests/data/`, so three of its test
+files failed when run from it, and it had none of `DATA.md`,
+`DECISIONS.md`, `CHANGELOG.md`, `tools/` or `examples/`, though the
+package's warnings point to the first two. `MANIFEST.in` lists what goes
+in, and the publish workflow stops before uploading if a tracked file is
+missing from the sdist. The wheel is unchanged.
+
 ## 1.10.1 — 2026-11-12
 
 Two new examples, the clear sky against D65 (DECISIONS.md section 77) and

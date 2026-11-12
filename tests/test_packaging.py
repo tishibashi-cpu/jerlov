@@ -470,6 +470,29 @@ def test_publishing_checks_the_tag_and_runs_the_suite_on_the_wheel():
         "publish.yml no longer runs the tests against the installed wheel")
 
 
+@source_tree
+def test_publishing_checks_the_sdist_against_the_repository():
+    """The sdist of 1.10.1 had tests/*.py without tests/data/, and none of
+    DATA.md, DECISIONS.md or tools/ (DECISIONS.md section 80)."""
+    workflow = (ROOT / ".github" / "workflows" / "publish.yml").read_text()
+    assert "git\", \"ls-files" in workflow and "missing from the sdist" \
+        in workflow, "publish.yml no longer compares the sdist with git"
+    manifest = (ROOT / "MANIFEST.in").read_text()
+    for needed in ("graft tests", "graft tools", "graft examples",
+                   "graft docs", "graft .github", "*.md", ".zenodo.json"):
+        assert needed in manifest, f"MANIFEST.in no longer has {needed!r}"
+    # Every directory at the top of the tree is either grafted or known
+    # not to belong in the sdist.
+    grafted = set(re.findall(r"^graft (\S+)$", manifest, re.MULTILINE))
+    apart = {"jerlov", "build", "dist"}
+    for path in ROOT.iterdir():
+        if (path.is_dir() and not path.name.startswith(".")
+                and not path.name.endswith(".egg-info")
+                and path.name not in apart):
+            assert path.name in grafted, (
+                f"{path.name}/ is in the tree but not in MANIFEST.in")
+
+
 def _release_notes_module():
     import importlib.util
     spec = importlib.util.spec_from_file_location(
