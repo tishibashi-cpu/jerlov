@@ -3938,3 +3938,83 @@ says which bands lie outside, gives the figures within the range (8 and
 14 percent) and with the rest (9 and 21), notes that III's Secchi depth
 by Lee et al. (2011) rests partly on them, and reports the warning; the
 test accepts that warning only when the example reports bands outside.
+
+## 80. A slanted line that the inputs cannot describe, and a source distribution that carries what its tests read (1.10.2)
+
+A review of the whole package at 1.10.1, asked for by the user on
+2026-11-12, found two defects. This section is the plan, committed before
+the code.
+
+**1. `Scene.observe_slant` returns a negative path radiance.** Section 75
+writes the path radiance as
+
+    veiling = Nw * (1 - exp(-c r - K (zt - z)))
+
+and refuses a negative `Nw` and a negative `K`, but not the combination
+that makes the bracket negative: looking up (`zt < z`) with
+`K (z - zt) > c r`. Jerlov IB from Solonenko and Mobley has c of about
+0.09 1/m; straight up over 5 m with K = 0.15 1/m the call returns a
+veiling of -0.34 Nw and a `veiling_fraction` of 1.6, with no warning.
+Section 75 did not consider the case.
+
+The inputs then contradict each other, and that can be said from the
+formula alone. `K` says the water's radiance along the line at the
+target's depth is `Nw exp(K (z - zt))`. A target that is that water,
+seen through `exp(-c r)`, must read as `Nw` at the observer (the check
+section 75 rests on, Duntley's eq. 9); with `K (z - zt) > c r` its
+attenuated radiance alone already exceeds `Nw`, and the path would have
+to remove light to make up the difference. No path radiance does that.
+Either K is too large for this water or c too small.
+
+- **The change.** `observe_slant` raises `ValueError` where
+  `c r + K (zt - z)` is negative at any wavelength, naming the first
+  wavelengths, as a negative coefficient is refused (section 60). Zero is
+  allowed: the path then adds nothing. NaN in c or K, a gap, passes and
+  gives NaN as before. Because `distance_m` may fall short of the
+  difference of the depths by a part in 1e12 (section 75's tolerance on
+  the geometry), the test is against `-1e-9 c r`, not against zero.
+- **Not a warning.** A negative radiance is not a doubtful value; it is
+  not a radiance. The package refuses a negative Kd and a negative c for
+  the same reason.
+- **Compatibility.** A call that returned a negative radiance now
+  raises. Section 61 promises the exceptions of calls that worked; this
+  one returned something that cannot be, as the calls section 60 closed
+  did, and the CHANGELOG says so under Fixed. No call whose result was
+  not negative changes, bit for bit: the horizontal case and the tests of
+  section 75 are run unchanged.
+- **Checks.** The example above is refused; K (z - zt) = c r exactly is
+  accepted and gives a veiling of 0; looking down is never refused for
+  it; one wavelength over the limit among several is named; NaN passes;
+  `examples/looking_up_and_down.py` and the README's call still run.
+
+**2. The source distribution cannot run its own tests.** The sdist on
+PyPI holds `tests/*.py`, which setuptools adds by itself, but not
+`tests/data/`, so `test_qaa.py`, `test_raman.py` and
+`test_pure_water_table.py` fail there (2 failed, 12 errors, unpacking
+1.10.1's sdist). It also lacks `DATA.md` and `DECISIONS.md`, which the
+package's own warnings and docstrings send the reader to, the CHANGELOG,
+`tools/` (the record of how each table was made), `examples/` and the
+rest of what the tests read once they find a `pyproject.toml` beside
+them and take the directory for a source tree. `publish.yml` tests the
+wheel with the repository's tests, so nothing noticed. Whoever packages
+from the sdist, or reads it as the archived source, gets less than the
+repository and a failing suite.
+
+- **The change.** A `MANIFEST.in` that puts every tracked file in the
+  sdist: the top-level documents, `.zenodo.json`, `.github/`, `docs/`,
+  `examples/`, `tests/` with its data, `tools/`, and `sources/README.md`.
+  The wheel does not change: it is built from `jerlov/` and its tables
+  alone, and the build is checked for that.
+- **The guard.** `publish.yml` gains a step, before anything is
+  uploaded, that fails if a file `git ls-files` names is missing from
+  the sdist. A test keeps the step in the workflow, as one does for the
+  wheel's tables. Building an sdist inside the test suite needs the
+  network and a build backend, so the suite does not do it.
+- **Checks, by hand before the release.** The sdist built from this
+  tree holds every tracked file; unpacked, with that tree on the path,
+  its whole test suite passes; the wheel's file list is the same as
+  1.10.1's.
+
+**Version.** 1.10.2: two fixes, no new name, no shipped value changed.
+The other findings of the review are recorded outside the repository for
+later versions.
