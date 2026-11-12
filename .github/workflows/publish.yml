@@ -68,6 +68,28 @@ jobs:
           python -m build
           python -m twine check dist/*
 
+      - name: The sdist must carry every tracked file
+        # setuptools adds tests/*.py by itself but not tests/data/, so the
+        # sdist of 1.10.1 could not run its own tests, and it had neither
+        # DATA.md nor tools/. MANIFEST.in lists what goes in; this compares
+        # the result with the repository (DECISIONS.md section 80).
+        run: |
+          python - <<'EOF'
+          import glob, subprocess, sys, tarfile
+          tracked = set(subprocess.run(
+              ["git", "ls-files"], check=True, capture_output=True,
+              text=True).stdout.split("\n")) - {""}
+          sdist = glob.glob("dist/*.tar.gz")[0]
+          with tarfile.open(sdist) as archive:
+              found = {name.split("/", 1)[1] for name in archive.getnames()
+                       if "/" in name}
+          missing = sorted(tracked - found)
+          print(f"{sdist}: {len(tracked) - len(missing)} of {len(tracked)} "
+                "tracked files")
+          if missing:
+              sys.exit("missing from the sdist: " + ", ".join(missing))
+          EOF
+
       - name: The wheel must carry every data table in the source tree
         # A wheel that installs but cannot find its own CSVs is the classic
         # packaging failure. Counting the source tree rather than hard-coding

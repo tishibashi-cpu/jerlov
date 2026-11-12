@@ -147,3 +147,71 @@ def test_kd_from_a_water_and_a_scalar_k():
     want = _slant(s, RHO, 5.0, 12.0, kd=w.kd(WL),
                   radiance_attenuation=np.full(3, 0.07))
     assert np.array_equal(got.radiance, want.radiance)
+
+
+# -- a K the water cannot have (DECISIONS.md section 80) --------------------
+
+def _ib_scene():
+    wl = np.array([450.0, 500.0, 550.0])
+    water = jerlov.water("IB", source="solonenko2015")
+    return wl, water, jerlov.Scene(water, np.ones(3), wl, depth_m=10.0)
+
+
+def _up(scene, k, r=5.0, zt=5.0):
+    return scene.observe_slant(
+        np.full(3, 0.5), r, target_depth_m=zt, kd=np.full(3, 0.05),
+        water_radiance=np.ones(3), radiance_attenuation=k,
+        face_irradiance_ratio=1.0)
+
+
+def test_a_path_radiance_that_would_be_negative_is_refused():
+    """Straight up over 5 m in Jerlov IB, c about 0.09 1/m, with K = 0.15:
+    up to 1.10.1 the veiling came out -0.34 Nw."""
+    wl, water, scene = _ib_scene()
+    assert np.all(water.c(wl) < 0.15)
+    with pytest.raises(ValueError, match="path radiance would be negative"):
+        _up(scene, 0.15)
+
+
+def test_k_equal_to_c_straight_up_adds_nothing():
+    wl, water, scene = _ib_scene()
+    got = _up(scene, water.c(wl))
+    assert np.allclose(got.veiling, 0.0, atol=1e-15)
+    assert np.all(got.veiling >= 0)
+
+
+def test_inside_the_tolerance_the_veiling_is_zero_not_just_below():
+    """The geometry allows the rise to exceed the distance by a part in
+    1e12; the bracket is then a rounding error below zero."""
+    wl, water, scene = _ib_scene()
+    got = _up(scene, water.c(wl), r=5.0, zt=5.0 - 4e-12)
+    assert np.all(got.veiling >= 0)
+
+
+def test_the_wavelengths_over_the_limit_are_named():
+    wl, water, scene = _ib_scene()
+    k = water.c(wl) * np.array([0.5, 1.5, 0.5])
+    with pytest.raises(ValueError, match=r"at 500 nm"):
+        _up(scene, k)
+
+
+def test_looking_down_is_never_refused_for_it():
+    _, _, scene = _ib_scene()
+    got = _up(scene, 5.0, r=5.0, zt=15.0)
+    assert np.all(got.veiling > 0)
+
+
+def test_a_slanted_line_up_is_judged_on_the_rise_not_the_distance():
+    """K above c is allowed while K times the rise stays below c r."""
+    wl, water, scene = _ib_scene()
+    c = water.c(wl)
+    got = _up(scene, 1.5 * c, r=5.0, zt=7.0)          # rise 3 m of 5
+    assert np.all(got.veiling > 0)
+    with pytest.raises(ValueError, match="negative"):
+        _up(scene, 1.8 * c, r=5.0, zt=7.0)
+
+
+def test_a_gap_in_k_still_passes_as_nan():
+    _, _, scene = _ib_scene()
+    got = _up(scene, np.array([0.05, np.nan, 0.05]))
+    assert np.isnan(got.veiling[1]) and np.all(got.veiling[[0, 2]] > 0)

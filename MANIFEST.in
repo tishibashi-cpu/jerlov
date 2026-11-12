@@ -1,0 +1,14 @@
+# The source distribution carries every tracked file: the tests with their
+# data, the documents the package's warnings point to, and the scripts that
+# made each table. publish.yml checks it against `git ls-files`
+# (DECISIONS.md section 80). The wheel is unaffected.
+include *.md *.cff LICENSE NOTICE .zenodo.json .gitignore
+graft .github
+graft docs
+graft examples
+graft sources
+graft tests
+graft tools
+prune docs/_build
+prune sources/ioccg
+global-exclude __pycache__ *.py[cod] .DS_Store
