@@ -567,6 +567,110 @@ def lee2011_rrs(a, bb, /, *, bb_water, coefficients):
     return _result(rrs, a, bb, bbw)
 
 
+#: The refractive index of sea water used for Gordon's (1989) D0: it
+#: reproduces six of the seven rows of his Table 3's 1/cos column, the most
+#: any index does (DECISIONS.md section 74); his text says "about 1.33".
+_GORDON1989_N = 1.333
+#: D0 of a sky of uniform radiance just beneath a flat surface (eq. 12).
+_GORDON1989_DIFFUSE_D0 = 1.197
+
+
+@_data.positional_only()
+def gordon1989_d0(sun_zenith_deg, /, *, direct_fraction):
+    """D0, the downwelling distribution function just beneath the surface.
+
+    Gordon, H. R. (1989), "Can the Lambert-Beer law be applied to the
+    diffuse attenuation coefficient of ocean water?", Limnol. Oceanogr.
+    34(8), 1389-1409, doi:10.4319/lo.1989.34.8.1389, eq. (12)::
+
+        D0 = f / cos(theta_w) + 1.197 (1 - f)
+
+    for a sky of uniform radiance. D0 is the reciprocal of the mean cosine
+    of the downwelling light: 1 for the sun overhead, more as it slants.
+
+    Parameters
+    ----------
+    sun_zenith_deg:
+        The sun's zenith angle in air, degrees, 0 up to but not including
+        90; a number or an array. It is refracted into the water by
+        Snell's law with n = 1.333, which reproduces six of the seven rows
+        of the paper's Table 3 secant column, the most any index does (its
+        text says "about 1.33"; DECISIONS.md section 74).
+    direct_fraction:
+        f, the share of the irradiance transmitted through the surface
+        that is direct sunlight, 0-1. No default: it depends on the sky,
+        and the paper estimates it by shading the sun from an irradiance
+        meter (p. 1401). A number, or an array of the sun's shape.
+
+    Returns
+    -------
+    D0: a float for numbers, an array otherwise.
+
+    Notes
+    -----
+    Against D0 computed exactly with a model atmosphere (Table 3), eq. (12)
+    is within about 3 percent for the sun up to 60 degrees and 5-8 percent
+    too low at 80 (p. 1402); above 60 degrees the result comes with a
+    :class:`ProvenanceWarning`. A flat surface; the paper's correction for
+    waves is given only as a figure. See :func:`gordon1989_kd` for its use.
+    """
+    sun = _finite(sun_zenith_deg, "sun_zenith_deg")
+    f = _finite(direct_fraction, "direct_fraction")
+    if np.any(sun < 0) or np.any(sun >= 90):
+        raise ValueError("sun_zenith_deg must be from 0 up to, not "
+                         "including, 90 degrees")
+    if np.any(f < 0) or np.any(f > 1):
+        raise ValueError("direct_fraction must lie within 0-1")
+    if np.any(sun > 60):
+        _warn("Gordon's (1989) eq. (12) is within about 3 percent of the "
+              "exact D0 up to a sun 60 degrees from the zenith; at 80 it is "
+              "5-8 percent too low (p. 1402)")
+    cos_w = np.sqrt(1 - (np.sin(np.radians(sun)) / _GORDON1989_N) ** 2)
+    d0 = f / cos_w + _GORDON1989_DIFFUSE_D0 * (1 - f)
+    return _result(d0, sun_zenith_deg, direct_fraction)
+
+
+@_data.positional_only()
+def gordon1989_kd(kd, /, *, d0_from, d0_to):
+    """Kd under one light field rescaled to another: kd * d0_to / d0_from.
+
+    Gordon (1989) found Kd/D0 nearly independent of the light field for a
+    given water: computed for many sun angles and wavelengths, K/(c D0)
+    fell on single curves with an average error of 1.8 percent, and the
+    mean over the upper half of the euphotic zone with 2.2 (p. 1399). So a
+    Kd measured when D0 was ``d0_from`` becomes, under ``d0_to``, about
+    ``kd * d0_to / d0_from``.
+
+    Parameters
+    ----------
+    kd:
+        Kd, 1/m, not negative; a number or an array. The paper's K is Kd
+        just beneath the surface, and <K> its mean over the upper half of
+        the euphotic zone (p. 1398); the rescaling is for those, not for
+        Kd at depth, where the light field has changed.
+    d0_from, d0_to:
+        D0 when ``kd`` was measured, and D0 wanted, both positive; numbers
+        or arrays broadcasting with ``kd``. Both are required. **Jerlov's
+        Kd tables do not record the sun angle or the sky they were
+        measured under, so this package cannot supply d0_from for them**;
+        a caller who rescales them states an assumption.
+        :func:`gordon1989_d0` gives D0 from the sun and the sky.
+
+    Returns
+    -------
+    Kd, 1/m: a float for numbers, an array otherwise. DECISIONS.md section
+    74.
+    """
+    k = _finite(kd, "kd")
+    d_from = _finite(d0_from, "d0_from")
+    d_to = _finite(d0_to, "d0_to")
+    if np.any(k < 0):
+        raise ValueError("kd must not be negative")
+    if np.any(d_from <= 0) or np.any(d_to <= 0):
+        raise ValueError("d0_from and d0_to must be positive")
+    return _result(k * d_to / d_from, kd, d0_from, d0_to)
+
+
 @_data.positional_only()
 def above_surface_rrs(rrs, /):
     """The remote sensing reflectance above the surface, from that below.

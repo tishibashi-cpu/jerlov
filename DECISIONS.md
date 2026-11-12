@@ -3508,3 +3508,13 @@ anything requiring a model of the sky.
   positive, Kd negative) and the warning above 60 degrees.
 
 **Version.** New public names: 1.8.0.
+
+**Corrected while writing the code, before any result was read.** The
+plan says n = 1.333 reproduces Table 3's 1/cos(theta_w) column at every
+angle. It does not: at 40 degrees it gives 1.14148, which rounds to
+1.141, and the page image prints 1.142. No single index reproduces all
+seven rows: searched from 1.3200 to 1.3499 in steps of 0.0001, the most
+rows matched is six, by n from 1.3325 to 1.3332, every one of them
+missing 40 degrees. 1.333 is among those, matches the text's "about
+1.33" better than 4/3 (which misses 40 and 80 degrees), and is kept.
+DATA.md records the 40 degree row.
