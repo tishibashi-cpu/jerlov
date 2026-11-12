@@ -4,6 +4,56 @@ Every release is archived on Zenodo under the concept DOI
 [10.5281/zenodo.22321312](https://doi.org/10.5281/zenodo.22321312), which
 always resolves to the latest version.
 
+## 1.4.0 — 2026-11-12
+
+bb from the particles' backscattering ratio, and four published spectra
+of the absorption of pure water (DECISIONS.md sections 68 to 70). No
+shipped value changed; four tables and one public name are added, and
+`backscatter_ratio` means what it did.
+
+**Added.**
+
+- `Water.bb(wl, particle_backscatter_ratio=r)`: r is bbp/bp, the
+  particles' ratio, and bb is 0.5 b_w + r (b - b_w), with b_w the pure
+  water term of the source's own scattering model (Haltrin 1999, as
+  Williamson & Hollins 2022 and Solonenko & Mobley 2015 print it). The
+  existing `backscatter_ratio` applies its ratio to the whole b, pure
+  water included, which in clear water can give a bb below what the
+  water alone backscatters: for Solonenko & Mobley's type IB at 450 nm,
+  0.0183 gives 1.24e-3 1/m against the water's 1.75e-3, and the new
+  keyword 2.93e-3. Published ratios,
+  such as Petzold's average particle's 0.0183, are mostly the particles'.
+- Exactly one of the two ratios must be given. A `Water` made from
+  measurements has no scattering model to say which b_w its b contains,
+  and the new keyword refuses it with `MissingQuantityError`.
+- `veiling_radiance_estimate(..., particle_backscatter_ratio=r)`, passed
+  to `Water.bb` (DECISIONS.md section 69). Calling it with neither ratio
+  raised `TypeError` and now raises `MissingQuantityError`.
+
+- `pure_water_absorption_table(wavelengths, source=...)`: a published
+  absorption spectrum of pure water, for wherever one must be supplied,
+  such as the `pure_water` of `qaa_v6` and `qaa_ioccg2006`. `source` has
+  no default and is one of `pope1997` (Pope & Fry 1997, 380-727.5 nm, the
+  aw of IOCCG Report 5), `smith1981` (Smith & Baker 1981, 200-800 nm),
+  `mason2016` (Mason, Cone & Fry 2016, 250-550 nm), `lee2015` (Lee et
+  al. 2015, "pure" seawater inverted from reflectance, 350-550 nm) and
+  `lee2015_smoothed` (the same with the paper's smoothed values).
+  `pure_water_absorption` is unchanged: it still returns the aw a Jerlov
+  source built its a on.
+
+**Data.** DATA.md section 29. Each table was checked against its paper
+before it was written: Pope & Fry's percent errors follow from their
+standard deviations, Smith & Baker's Eq. (6) holds in every row but one,
+Mason et al.'s minimum is the one their abstract gives, and Lee et al.'s
+smoothed values are the averages they describe. The exception is
+confirmed: at 710 nm Smith & Baker print an aw of 0.839 1/m above a K of
+0.834, which their Eq. (6) does not allow. It is kept as printed, marked
+`suspect`, and warns. The aw of the IOCCG synthetic data set is Pope &
+Fry's at all 31 of its wavelengths.
+
+**Docs.** README's "Supply bb" names both ratios. `tools/README.md`
+counts thirteen scripts that read no file.
+
 ## 1.3.0 — 2026-11-11
 
 The inverse of 1.2.0's reflectance: the quasi-analytical algorithm, from

@@ -3,7 +3,7 @@
 What every shipped table is, where it came from, what was verified, and what
 is known to be wrong with it.
 
-Twenty-eight entries are recorded below. Ten are confirmed defects, three were
+Twenty-nine entries are recorded below. Eleven are confirmed defects, three were
 open questions that the first edition of Jerlov settled, and the rest are
 notes rather than defects. None of them is repaired silently: values that
 could be recovered carry `status = reconstructed` and say how, values that
@@ -42,6 +42,10 @@ could not are `missing`, and values that are used but doubtful are `suspect`.
 | `gernez2009_bands.csv` | Median CV of Ed at six bands, 443-683 nm, clear skies, against the sun's zenith angle, wave height, wind speed and Kd(490) (Figure 10); **read from a figure** | 282 |
 | `gernez2009_diffuse_share.csv` | Share of diffuse light in the downwelling irradiance above the water, sun 20-90 degrees, as printed on Figures 8a and 10a from a model of the sky | 8 |
 | `morel2001_kd.csv` | Kw, e and chi of Kd = Kw + chi [Chl]^e for case 1 water. 5 nm, 350-700 nm | 71 |
+| `pope1997_aw.csv` | Pure water absorption, Pope & Fry (1997) Table 3, with sigma and percent error. 2.5 nm, 380-727.5 nm | 140 |
+| `smith1981_aw.csv` | Pure water absorption, Smith & Baker (1981) Table I. 10 nm, 200-800 nm | 61 |
+| `mason2016_aw.csv` | Pure water absorption, Mason, Cone & Fry (2016) Table 2, with sigma. 250-550 nm: 10 nm to 300, then 2 nm | 131 |
+| `lee2015_aw.csv` | "Pure" seawater absorption inverted from Rrs, Lee et al. (2015) Table 1, with the smoothed column and Delta aw. 5 nm, 350-550 nm | 41 |
 
 The four tables drawn from the two Dstl datasets (`williamson2022_iop`,
 `williamson2022_measured`, `solonenko2015_iop` and `williamson2023_depth`)
@@ -103,6 +107,10 @@ only; see section 16.
 
 - **Haltrin 1999.** Appl. Opt. 38, 6826-6832. Origin of the scattering model
   used by both Solonenko & Mobley and Williamson & Hollins; see section 6.
+
+- **Pope & Fry 1997, Smith & Baker 1981, Mason, Cone & Fry 2016, Lee et al.
+  2015.** The pure water absorption spectra of section 29, each with its
+  DOI there. Transcribed from the PDFs, which the user obtained.
 
 ---
 
@@ -959,7 +967,10 @@ raises `MissingQuantityError`, saying which case it is.
 Pope & Fry (1997) on its own, the most cited pure water spectrum, is not
 shipped either: none of the sources here used it alone, and one source's a
 minus another's aw is partly a difference between two laboratories' pure
-water, not the absorption of what was in the water.
+water, not the absorption of what was in the water. (Since 1.4.0 it is shipped,
+as a published spectrum in its own right, through a separate function;
+the reason above still holds for subtracting it from a Jerlov type's a.
+See section 29.)
 
 ## 21. Petzold's volume scattering functions (note)
 
@@ -1629,4 +1640,83 @@ three rows of a and up to 0.015 off for bbp.
 The table counts 476 of 500 decompositions as valid without giving the
 rule. Taking those with adg(440), aph(440) and aph(490) all positive gives
 475.
+
+## 29. Published pure water absorption, and an inconsistency in Smith & Baker (1981) Table I (confirmed)
+
+`pure_water_absorption_table(wl, source=...)` returns one of four
+published spectra (DECISIONS.md section 70). They are not the aw of any
+Jerlov source; `pure_water_absorption` still returns that. All four were
+transcribed by `tools/build_pure_water_aw.py` from PDFs the user
+obtained, with the numbers as literals, and each was checked against the
+paper's own statements first.
+
+| Key | Paper | Table | Range | Checked against |
+|---|---|---|---|---|
+| `pope1997` | Pope & Fry, Appl. Opt. 36(33), 8710-8723, DOI `10.1364/AO.36.008710` | 3, pp. 8718-8719 | 380-727.5 nm, 2.5 nm | the percent column; the minimum Mason et al. quote |
+| `smith1981` | Smith & Baker, Appl. Opt. 20(2), 177-184, DOI `10.1364/AO.20.000177` | I, p. 182 | 200-800 nm, 10 nm | Eq. (6); Table II |
+| `mason2016` | Mason, Cone & Fry, Appl. Opt. 55(25), 7163-7172, DOI `10.1364/AO.55.007163` | 2, p. 7170 | 250-550 nm | the minimum in the abstract |
+| `lee2015`, `lee2015_smoothed` | Lee, Wei, Voss, Lewis, Bricaud & Huot, Appl. Opt. 54(3), 546-558, DOI `10.1364/AO.54.000546` | 1, p. 555 | 350-550 nm, 5 nm | the smoothing rule |
+
+The DOIs were resolved at doi.org, each to the volume, issue and first
+page above.
+
+**What each is.** Pope & Fry and Mason et al. measured pure water in an
+integrating cavity, at 22 and 23 degrees C. Smith & Baker derived aw from
+the diffuse attenuation K of the clearest natural waters by their Eq. (6),
+K = aw + bsw/2. Pope & Fry (p. 8720) find "significant disagreement below
+490 nm" with Smith & Baker and put it down to their own purification, the
+absence of scattering effects in their cavity, and its sensitivity. Lee
+et al. inverted "pure"
+seawater absorption from the remote sensing reflectance of the clearest
+oceans; it is not a laboratory measurement.
+
+**Pope & Fry.** Read from the text of the PDF and compared with the page
+image. The percent column is the standard deviation combined in
+quadrature with a 2 percent calibration error, rounded up to an integer
+(p. 8719); all 140 rows satisfy that within the rounding of the printed
+aw and sigma. The table's minimum, 0.00442 at 417.5 nm, is the "0.0044
+m-1 at 418 nm" Mason et al. quote (p. 7164). The values beyond 700 nm are
+printed, but the calibration constants were determined from data at 700
+nm and below (p. 8717), and the title's range is 380-700 nm: they are
+kept as `ok` with a note saying so.
+
+The aw of the IOCCG synthetic data set (`tests/data/`), which IOCCG
+Report 5 says "were taken from Pope and Fry (1997)" (p. 15), equals this
+table at all 31 of its wavelengths, 400-700 nm; a test checks it.
+
+**Smith & Baker: 710 nm (confirmed).** A 1981 scan, read from the page
+images. Eq. (6) holds for every row within the rounding of K, aw and bsw,
+except at 710 nm, where the page prints K = 0.834 and aw = 0.839: aw
+above K, by 0.005 where bsw/2 is 0.00035. Which of the two is wrong
+cannot be told from the paper; Table II, which repeats K and aw every 50
+nm, does not include 710 nm. aw at 710 nm is kept as printed and marked
+`suspect`, so any value resting on it warns. Table II agrees with Table I
+at its 13 wavelengths.
+
+**Mason et al.** Read from the text of the PDF. Table 2 prints values in
+units of 1e-3 1/m; the CSV holds them in 1/m, converted by moving the
+decimal point, not by floating-point arithmetic. The abstract gives the
+minimum as 0.000811 +/- 0.000227 m-1 at 344 nm; the table's minimum is
+0.81 and 0.23 (x 1e-3) there. From 310 to 550 nm a three-point moving
+average was applied by the authors (p. 7169).
+
+**Lee et al.** Read from the text of the PDF. Five wavelengths, 360,
+370, 385, 395 and 400 nm, also carry a smoothed value, which the paper
+describes as "a simple average between the shoulders" of dips it
+attributes to imperfect removal of Raman scattering (p. 555). Each is the
+mean of the unsmoothed values either side of its dip, within rounding:
+355 and 365 nm for 360; 365 and 375 for 370; 380 and 390 for 385; 390 and
+405 for the dip at 395-400. `lee2015` returns the aw column as printed,
+`lee2015_smoothed` the smoothed values where there are any.
+
+The QAA_v6 spreadsheet (DATA.md section 28) labels its aw "Lee et al
+(2015)": 0.0031, 0.0048, 0.0132, 0.0302 and 0.0595 at 412, 443, 489, 510
+and 555 nm. Against this table: 0.0031 at 410 and 415 nm; 0.0132 is the
+value at 490 nm; 0.0302 at 510 nm as printed; at 443 nm the table gives
+0.0050 by linear interpolation, not 0.0048; and 555 nm is outside the
+table, which ends at 550. Not tested, only recorded.
+
+**Not used.** The standard deviations and Delta aw are in the CSVs but
+the function does not return them. Pope & Fry and Mason et al. measured
+fresh water; no salinity or temperature correction is applied.
 

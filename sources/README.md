@@ -34,6 +34,11 @@ obtained and transcribed into `petzold1972_vsf.csv` and
 `petzold1972_stations.csv`. `tools/build_petzold1972.py` carries the
 numbers as literals and needs no input; see DATA.md section 21.
 
+`tools/build_pure_water_aw.py` needs no input either: Pope & Fry (1997),
+Smith & Baker (1981), Mason, Cone & Fry (2016) and Lee et al. (2015) are
+carried as literals and checked against each paper; see DATA.md section
+29.
+
 ## Read but not machine-processed
 
 These were read to establish provenance and are cited in `DATA.md`. They are

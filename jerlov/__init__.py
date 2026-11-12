@@ -106,6 +106,7 @@ from .water import (
     measured_points,
     profile_depth,
     pure_water_absorption,
+    pure_water_absorption_table,
     water,
     water_type_at_depth,
 )
@@ -166,6 +167,7 @@ __all__ = [
     "QuantaLevels",
     "QUANTA_BAND_NM",
     "pure_water_absorption",
+    "pure_water_absorption_table",
     "petzold_scattering",
     "PETZOLD_STATIONS",
     "ScatteringFunction",
@@ -203,4 +205,4 @@ __all__ = [
     "QAAResult",
 ]
 
-__version__ = "1.3.0"
+__version__ = "1.4.0"

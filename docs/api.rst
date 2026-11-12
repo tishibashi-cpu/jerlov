@@ -17,6 +17,7 @@ Water types and their coefficients
    :members:
 
 .. autofunction:: pure_water_absorption
+.. autofunction:: pure_water_absorption_table
 
 .. autofunction:: measured_points
 

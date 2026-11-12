@@ -151,8 +151,10 @@ def test_observe_requires_the_keyword():
 
 
 def test_estimate_requires_a_backscatter_ratio():
+    """Omitting both ratios raised TypeError until 1.4.0, which made both
+    optional in the signature (DECISIONS.md section 69)."""
     w = jerlov.water("III")
-    with pytest.raises(TypeError):
+    with pytest.raises(MissingQuantityError):
         jerlov.veiling_radiance_estimate(w, np.ones_like(WL), WL)
     with pytest.raises(MissingQuantityError):
         jerlov.veiling_radiance_estimate(

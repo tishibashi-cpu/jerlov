@@ -3013,3 +3013,206 @@ possible at all; its numbers are the ones quoted here.
   new example: it starts from that example's waters and reflectance.
 - `tools/README.md` still said eleven scripts read no file; with
   `build_morel2001.py` (section 66) it is twelve, and it says so now.
+
+## 68. bb from the particles' backscattering ratio: the plan
+
+`Water.bb(wl, backscatter_ratio=r)` returns r b, with b the total
+scattering, pure water's included. In clear water this can put bb below
+pure water's own backscattering: Solonenko & Mobley's type I is nearly
+all water, and r = 0.0183 gives bb at 450 nm of 7.0e-5 1/m where the
+water alone backscatters 1.75e-3. `lee2013_kd` refuses such a bb.
+Section 66 met this in its example, which built bb = bb_w + r (b - b_w)
+by hand with Morel's b_w and bb_w at 35 psu. Measured and published
+ratios (Petzold's average particle, 0.0183; the 0.005-0.03 ranges in the
+docstring) are mostly ratios for the particles, bbp/bp, not for the
+whole water.
+
+**The meaning of `backscatter_ratio` does not change** (section 61, the
+compatibility rules). A second keyword is added:
+`Water.bb(wl, /, *, particle_backscatter_ratio=r)`, which returns
+
+    bb = 0.5 b_w + r (b - b_w)
+
+**b_w is the source's own.** Both sources that give b built it from
+Haltrin's (1999) two-component model, whose first term is pure water,
+b_w = bw_coeff (400/lambda)^bw_exponent, with the constants each source
+prints (`Source.scattering`). Subtracting that, and not Morel's or a
+salinity-dependent b_w, leaves the particles' part of the source's own
+b, for the same reason `pure_water_absorption` returns the source's aw
+(section 20 of DATA.md): the difference must be within one source, not
+between two tabulations. Haltrin's Eq. (3) gives 0.5 b_w as the water's
+backscattering; the model's water term is symmetric. No salinity is
+asked for, because none enters the source's b_w.
+
+Checked before writing this: b - b_w is positive at every wavelength,
+1 nm apart, of every type in both sources. The smallest margin is
+Solonenko & Mobley's type I at 300 nm, where b exceeds b_w by 2.9
+percent; for Williamson & Hollins it is a factor of 8.8 (IB, 300 nm).
+
+**Refusals.**
+
+- Both keywords, or neither: neither raises `MissingQuantityError` as
+  now, its message naming both; both raise `ValueError`.
+- A `Water` with no scattering model, made by `Water(...)` or
+  `Water.from_measurements`, raises `MissingQuantityError` for the new
+  keyword: its b_w is unknown, and is not guessed. The caller who
+  measured b knows which b_w they removed and can compute bb themselves.
+- r must be one number in (0, 0.5), as for `backscatter_ratio`.
+- b's own refusals and warnings (range, extrapolated values) pass
+  through unchanged, since b is read the same way.
+
+**Linear interpolation.** `Water.b` interpolates the tabulated b
+linearly; b_w is the formula at the wavelength asked. Between Solonenko
+& Mobley's 17 wavelengths the interpolated b of a convex spectrum lies
+above the true curve, so the margin above stays positive; the test
+checks it at 1 nm.
+
+**Out.** The particles' ratio is still the caller's: nothing here
+derives it from the water type (DATA.md section 10 stands). Haltrin's
+own Bs and Bl are not used for the same reason.
+
+**Version.** A new keyword, no new public name: 1.4.0.
+
+**Checks.** Planned before the code:
+
+- The formula written out in the test with the source's constants, for
+  scalars and arrays, both sources, several types.
+- With r equal to 0.5, bb = 0.5 b (the water and the particles both
+  symmetric); bb is never below 0.5 b_w for r in (0, 0.5).
+- `backscatter_ratio` returns exactly what it did in 1.3.0.
+- The refusals above, with NaN, inf, negative, zero, 0.5, arrays.
+- The section 66 example keeps its own Morel-based construction (it
+  states its b_w and salinity); its output does not change.
+
+**Changed while writing the code.**
+
+- *The example of the problem was a flagged value.* The plan's
+  opening figures, Solonenko & Mobley's type I at 450 nm (bb 7.0e-5 1/m
+  against the water's 1.75e-3), are arithmetically right, but every b of
+  their type I is flagged `suspect`. The CHANGELOG and the test use their
+  type IB, unflagged, at 450 nm: 0.0183 of the whole b gives 1.24e-3 1/m,
+  below the water's 1.75e-3; the particles' ratio gives 2.93e-3.
+  Williamson & Hollins's IB is not an example: there 0.0183 b is 2.47e-3.
+- *A water without b says so first.* For a Kd-only source the new
+  keyword raises b's own `MissingQuantityError` ("'b' is not available"),
+  not the one about the scattering model, which would have described it
+  as made from measurements.
+
+## 69. The particles' ratio for the veiling radiance estimate: the plan
+
+`veiling_radiance_estimate(water, downwelling, wavelengths, /, *,
+backscatter_ratio)` computes bb as `water.bb(wavelengths,
+backscatter_ratio=...)`, so it has the defect section 68 removed from
+`Water.bb`: a bb below pure water's own in clear water, and the veiling
+radiance with it, since B_inf is proportional to bb. Section 68 left it
+out of scope; the user asked for it on 2026-11-11, in the same 1.4.0.
+
+**The change.** A second keyword, `particle_backscatter_ratio`, passed
+to `Water.bb` unchanged. `backscatter_ratio` keeps its meaning. Both
+become optional in the signature, and `Water.bb` enforces section 68's
+rule: neither raises `MissingQuantityError`, both raise `ValueError`.
+
+**What a caller sees change.** Omitting both used to raise `TypeError`
+(a required keyword missing) and now raises `MissingQuantityError`,
+saying what to pass. No call that worked behaves differently; the
+compatibility rules (section 61) do not count a different exception for
+a call that already failed.
+
+**Version.** 1.4.0, with section 68.
+
+**Checks.** Planned before the code:
+
+- With the new keyword, the result equals bb * Ed / (2 pi c) with bb from
+  `Water.bb(..., particle_backscatter_ratio=...)`, written out in the
+  test.
+- With `backscatter_ratio`, exactly the 1.3.0 result.
+- Neither, both, and a measured `Water` refused as `Water.bb` refuses.
+- No example's output changes (none passes the new keyword).
+
+## 70. Published pure water absorption spectra: the plan
+
+`pure_water_absorption(wl, source=...)` returns the aw a Jerlov source
+built its a on, so that `w.a(l) - pure_water_absorption(l)` is a
+difference within one source; only Williamson & Hollins publish theirs.
+Since 1.3.0 `qaa_v6` and `qaa_ioccg2006` require `pure_water` and have no
+default, but a caller who wants the aw IOCCG Report 5 used, Pope & Fry
+(1997), cannot get it from the package. This section adds the published
+laboratory and in-situ spectra.
+
+**A separate function, not more keys** (the user's choice, 2026-11-11).
+These are not Jerlov sources: `water(..., source="pope1997")` could never
+work, and mixing the keys would break the meaning of the existing
+function and its default, which section 61 keeps. The new function has
+no default: which aw to use is the caller's choice, as for `qaa_v6`.
+
+    pure_water_absorption_table(wavelength_nm, /, *, source)
+
+**The sources.** All four obtained by the user as PDFs; the DOIs
+resolved at doi.org to the volume, issue and first page below.
+
+| key | paper | what | range |
+|---|---|---|---|
+| `pope1997` | Pope & Fry, Appl. Opt. 36(33), 8710-8723, 10.1364/AO.36.008710, Table 3 | pure water, integrating cavity, 22 C | 380-727.5 nm, 2.5 nm |
+| `smith1981` | Smith & Baker, Appl. Opt. 20(2), 177-184, 10.1364/AO.20.000177, Table I | pure water, from K of the clearest natural waters | 200-800 nm, 10 nm |
+| `mason2016` | Mason, Cone & Fry, Appl. Opt. 55(25), 7163-7172, 10.1364/AO.55.007163, Table 2 | pure water, integrating cavity, 23 C | 250-550 nm; 10 nm to 300, then 2 nm |
+| `lee2015` | Lee et al., Appl. Opt. 54(3), 546-558, 10.1364/AO.54.000546, Table 1 | "pure" seawater, inverted from Rrs in the clearest oceans | 350-550 nm, 5 nm |
+| `lee2015_smoothed` | the same, with its "Smoothed aw" column at the five wavelengths that have one | | |
+
+Lee et al. smooth four dips between 350 and 400 nm that they attribute
+to imperfect removal of Raman scattering, and print the result as a
+separate column at 360, 370, 385, 395 and 400 nm. Both are offered as
+keys rather than one chosen silently (section 1).
+
+**Behaviour.** Linear interpolation between printed wavelengths, no
+extrapolation (`ValueError`), NaN refused, a float for a scalar, as
+`pure_water_absorption`. An unknown key raises `KeyError` naming the
+others. A value with a questionable status warns.
+
+**The tables.** One CSV per paper, transcribed by one script,
+`tools/build_pure_water_aw.py`, with the numbers as literals as printed
+(Pope & Fry's standard deviation and percent, Mason's sigma, Lee's
+smoothed column and Delta aw are carried, not used). Smith & Baker's is
+a 1981 scan: read from the page image; the other three from the text,
+compared with the image for Pope & Fry.
+
+**Checks inside the papers, run before anything is written.**
+
+- Pope & Fry: the percent column is sigma combined in quadrature with a
+  2 percent calibration error and rounded up (p. 8718). All 140 rows
+  satisfy it within the rounding of the printed aw and sigma (checked
+  before writing this). The minimum is 0.00442 at 417.5 nm; Mason et
+  al. quote Pope & Fry's minimum as 0.0044 at 418 nm.
+- Smith & Baker: their Eq. (6), K = aw + bsw/2, holds for every row
+  within rounding except 710 nm, where aw (0.839) exceeds K (0.834) as
+  printed on the page; aw at 710 nm is kept as printed and marked
+  `suspect`. Table II repeats K and aw every 50 nm and must agree.
+- Mason et al.: the abstract gives the minimum as 0.000811 +/- 0.000227
+  at 344 nm; the table's minimum is 0.81e-3 +/- 0.23e-3 there.
+- Lee et al.: each smoothed value is "a simple average between the
+  shoulders" (p. 554): the mean of the unsmoothed values either side of
+  the dip, within rounding.
+
+**Checks against other documents, in the tests.**
+
+- The aw of the IOCCG synthetic data set (`tests/data/`), which Report 5
+  attributes to Pope & Fry, against `pope1997` at its 31 wavelengths,
+  400-700 nm.
+- The aw the QAA_v6 spreadsheet labels "Lee et al (2015)" (412, 443,
+  489, 510, 555 nm) is recorded in DATA.md against `lee2015`, not
+  asserted: 555 nm lies outside the table.
+
+**Out.** The uncertainties are carried in the CSVs but not returned;
+salinity and temperature corrections of aw are not applied. Pope &
+Fry's values beyond 700 nm are printed in their Table 3 but their
+calibration used 700 nm and below (p. 8716); they are kept as `ok` and
+the docstring and DATA.md say so.
+
+**Version.** A new public name: 1.4.0, with sections 68 and 69.
+
+**Corrected before the code.** Three page numbers above were written
+before they were checked against the page footers. Pope & Fry's
+percent rule is on p. 8719, not 8718; their statement that the
+calibration used 700 nm and below is on p. 8717, not 8716; Lee et al.'s
+Table 1 and "a simple average between the shoulders" are on p. 555, not
+554. Pope & Fry's Table 3 is on pp. 8718-8719, Smith & Baker's Table I
+on p. 182 and Table II on p. 183, Mason et al.'s Table 2 on p. 7170.
