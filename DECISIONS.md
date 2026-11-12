@@ -3883,3 +3883,40 @@ sign wrong inside the bracket and read 1452 for Tyler's 1380; caught by
 the plan's own check that the corrected form gives the measurement, and
 fixed before anything was committed. The tilted lines reach the same
 target depths at 16.1 to 32.4 m.
+
+## 79. The ocean colour example, part 7: the reflectance by geometry, and Raman scattering
+
+Two relations added since `ocean_colour_and_secchi.py` was written are
+used by no example: `lee2011_rrs` (section 73), the reflectance with
+water and particles apart at the seven geometries Lee et al. (2011)
+print, and `lee2013_raman_correction` (section 71). The user chose
+(2026-11-12) to add them to that example as a seventh part, in the same
+release as sections 77 and 78.
+
+**Part 7.** For IB, II, III and 1C, with Solonenko and Mobley's a and b
+and the particles' backscatter ratio of Hydrolight's own phase function
+(0.0183), as in parts 1 and 2:
+
+- **By geometry.** At the six MODIS bands of Lee et al.'s (2013) Table 2
+  (412 to 667 nm; a and b interpolated linearly from Solonenko and
+  Mobley's 25 nm grid, as the package does), Rrs by Lee et al. (2011) at
+  each printed geometry, against the nadir one, and the nadir one against
+  Gordon et al.'s (1988) reflectance taken above the surface as part 2
+  takes it. The prototype finds the off-nadir geometries up to about 9
+  percent above nadir, and nadir up to about 21 percent away from Gordon
+  et al.'s.
+- **Raman.** Lee et al.'s (2013) RF on the same reflectance. RF is
+  defined on a measured reflectance, which contains Raman scattering;
+  these are elastic, so the example presents RF as the size of the share
+  a measured spectrum would carry, not as a correction of these. The
+  prototype finds 2 to 11 percent, largest at 667 nm in IB.
+- **The Secchi depth**, by Lee et al. (2015) on part 2's grid, from Lee
+  et al.'s (2011) nadir reflectance against Gordon et al.'s, with part
+  1's Kd: how much the choice of reflectance model moves it.
+
+**Checks.** The figures quoted in `examples/README.md` for part 7 are
+recomputed; the example still runs with `ProvenanceWarning` as an error
+outside what it reports; and the nadir reflectance at one band is
+written out from Table 2's coefficients.
+
+**Version.** Part of 1.10.1, with sections 77 and 78.
