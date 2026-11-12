@@ -4,6 +4,61 @@ Every release is archived on Zenodo under the concept DOI
 [10.5281/zenodo.22321312](https://doi.org/10.5281/zenodo.22321312), which
 always resolves to the latest version.
 
+## 1.10.1 — 2026-11-12
+
+Two new examples, the clear sky against D65 (DECISIONS.md section 77) and
+looking up and down (section 78), and a seventh part for the ocean colour
+example (section 79). No shipped value changed, and nothing in the API.
+
+**Examples.** `sunlight_and_d65.py` sets the surface irradiance of Gregg
+& Carder (1990), for one stated maritime atmosphere and four suns, beside
+CIE D65, which twelve of the examples use for the light above the sea.
+
+- The shape: every one of the model's skies is redder than D65 (450 to
+  650 nm, 1.20 to 1.29 against 1.46); the colours are computed over
+  350-700 nm for both, and the example says how far that moves D65's.
+- The level D65 does not have: PAR above the sea, 43 to 454 W m-2.
+- Below the surface: the depth of 1 percent PAR moves by up to 2.9 m in
+  IB and 0.5 m at most in the coastal types; a white card at depth in III,
+  as a camera balanced for D65 records it, changes by up to 7 percent in
+  its blue channel.
+- Through Gordon's (1989) D0, Jerlov II's Kd(490) spans 17 percent
+  between the sun overhead and 60 degrees from it under this sky. Jerlov's
+  tables do not record their sun; the example says the 30 degrees it
+  starts from is an assumption.
+
+`looking_up_and_down.py` (DECISIONS.md section 78) sees a black target
+from 41.3 m in Lake Pend Oreille along five lines, straight up to straight
+down, with `Scene.observe_slant` and the water's radiance and K from
+Tyler's (1958) measured radiance distribution in that lake.
+
+- Over about 12 m, looking up leaves 7.0 times the contrast of a
+  horizontal line, and looking down 1/7.5 of it.
+- The distance at which the contrast falls to 2 percent: 16.4 m up, 9.9 m
+  across, 7.0 m down.
+- Tyler's K differs by direction by a factor of 2.0 near the surface and
+  agrees within 12 percent from 16.6 to 53.7 m, Duntley's asymptotic light
+  field.
+- Duntley's eq. (12) as printed would make the open water read 46 times
+  what Tyler measured; the corrected form reads it exactly.
+
+`ocean_colour_and_secchi.py` gains a seventh part (DECISIONS.md section
+79), using two relations no example used:
+
+- Lee et al.'s (2011) reflectance at its seven printed geometries: off
+  nadir up to 8 percent above nadir, and nadir up to 14 percent from
+  Gordon et al.'s (1988), within the range of bb/(a + bb) the
+  coefficients were fitted to. Jerlov III at 412-488 nm lies outside it
+  (9 and 21 percent there); the example reports the warning.
+- Lee et al.'s (2013) Raman correction: the Raman part a measured
+  reflectance of these waters would carry, 2 to 11 percent of the elastic
+  part, the most at 667 nm in IB.
+- The Secchi depth moves by at most 2.4 percent between the two
+  reflectance models.
+
+**Docs.** README, `examples/README.md` and the site's examples page list
+both; there are now twenty-one examples.
+
 ## 1.10.0 — 2026-11-12
 
 The clear-sky irradiance at the sea surface, after Gregg and Carder

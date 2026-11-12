@@ -367,6 +367,110 @@ warning about it below.""")
                 low_chl=sorted(low_chl))
 
 
+#: The six MODIS bands of Lee et al.'s (2013) Table 2, where RF is defined.
+MODIS_NM = np.array([412.0, 443.0, 488.0, 531.0, 551.0, 667.0])
+NADIR = (0.0, 0.0, 0.0)
+
+
+def geometry_part(kd, caught):
+    rule("7. The reflectance by geometry, and Raman scattering")
+    print(f"""Lee et al. (2011) keep water and particles apart and print their
+coefficients for seven geometries (sun, view, azimuth from the sun, in
+degrees). At the MODIS bands of Lee et al.'s (2013) Raman correction, with
+bbp/bp = {PETZOLD_RATIO}; a and b interpolated linearly between Solonenko &
+Mobley's 25 nm:
+""")
+    by_view, against, raman, fitted = {}, {}, {}, {}
+    print(f"  {'type':>5} {'off nadir / nadir':>20} "
+          f"{'nadir / Gordon et al.':>24} {'Raman RF':>14}")
+    for t in TYPES:
+        water = jerlov.water(t, source="solonenko2015")
+        a = water.a(MODIS_NM)
+        bbw = jerlov.pure_water_backscattering(MODIS_NM,
+                                               salinity_psu=SALINITY_PSU)
+        bp = water.b(MODIS_NM) - jerlov.pure_water_scattering(
+            MODIS_NM, salinity_psu=SALINITY_PSU)
+        bb = bbw + PETZOLD_RATIO * bp
+        with warnings.catch_warnings(record=True) as record:
+            warnings.simplefilter("always")
+            lee = {g: jerlov.lee2011_rrs(a, bb, bb_water=bbw, coefficients=c)
+                   for g, c in jerlov.LEE2011_RRS_COEFFICIENTS.items()}
+        expect_provenance(record, caught)
+        gordon = jerlov.above_surface_rrs(jerlov.subsurface_rrs(
+            a, bb, coefficients=jerlov.GORDON1988_RRS_COEFFICIENTS))
+        u = bb / (a + bb)
+        # Lee et al. fitted to bb/(a + bb) from 0.0002 to 0.37 (p. 3159).
+        fitted[t] = (u >= 0.0002) & (u <= 0.37)
+        ratios = np.array([lee[g] / lee[NADIR] for g in lee])
+        by_view[t] = (ratios.min(), ratios.max(),
+                      ratios[:, fitted[t]].max())
+        against[t] = lee[NADIR] / gordon
+        # RF is defined on a measured reflectance, which holds Raman
+        # scattering; this one is elastic, so RF here is the size of the
+        # share a measured spectrum would carry, not a correction of it.
+        raman[t] = jerlov.lee2013_raman_correction(
+            MODIS_NM, gordon, bands={"440": 443.0, "550": 551.0}).raman_factor
+        print(f"  {t:>5} {ratios.min():>9.3f} to {ratios.max():.3f}"
+              f" {against[t].min():>13.2f} to {against[t].max():.2f}"
+              f" {raman[t].min():>7.3f} to {raman[t].max():.3f}")
+    view_hi = max(v[1] for v in by_view.values())
+    view_fitted = max(v[2] for v in by_view.values())
+    off = max(np.max(np.abs(v - 1)) for v in against.values())
+    off_fitted = max(np.max(np.abs(against[t][fitted[t]] - 1)) for t in TYPES)
+    outside = {t: MODIS_NM[~fitted[t]] for t in TYPES if not fitted[t].all()}
+    rf_lo = min(v.min() for v in raman.values())
+    rf_hi = max(v.max() for v in raman.values())
+    worst_rf = max(TYPES, key=lambda t: raman[t].max())
+    print(f"""
+{"; ".join(f"{t} at {', '.join(f'{w:g}' for w in v)} nm" for t, v in outside.items())} lies outside the range of bb/(a + bb) Lee et al.
+fitted to, 0.0002-0.37 (the warning below), so those figures are the
+model's beyond its data. Within the range: looked at from off nadir, the
+same water's reflectance is up to {100 * (view_fitted - 1):.0f} percent above the nadir one ({100 * (view_hi - 1):.0f}
+with the rest), and at nadir Lee et al.'s (2011) model differs from Gordon
+et al.'s (1988) by up to {100 * off_fitted:.0f} percent ({100 * off:.0f} with the rest). Both are fits to
+radiative transfer calculations, made on different sets of waters.
+
+RF, by Lee et al.'s (2013) empirical correction, is the Raman part of a
+measured reflectance relative to its elastic part, Rrs_measured = Rrs (1 +
+RF): {100 * rf_lo:.0f} to {100 * rf_hi:.0f} percent here, the most at 667 nm in {worst_rf}. These
+reflectances are elastic, so RF is computed on them as on a measured one,
+to show its size; a measured Rrs would carry that much more, and should
+have it removed before it is compared with any of this.""")
+
+    print("""
+The Secchi depth by Lee et al. (2015), part 2's grid and part 1's Kd,
+from each nadir reflectance, m:
+""")
+    secchi = {}
+    for t in TYPES:
+        _, a, bp, bbw = optics(t)
+        bb = bbw + PETZOLD_RATIO * bp
+        k = kd[t, PETZOLD_RATIO]
+        with warnings.catch_warnings(record=True) as record:
+            warnings.simplefilter("always")
+            lee = jerlov.lee2011_rrs(
+                a, bb, bb_water=bbw,
+                coefficients=jerlov.LEE2011_RRS_COEFFICIENTS[NADIR])
+            gordon = jerlov.above_surface_rrs(jerlov.subsurface_rrs(
+                a, bb, coefficients=jerlov.GORDON1988_RRS_COEFFICIENTS))
+            secchi[t] = (jerlov.lee2015_secchi_depth(WL, k, gordon),
+                         jerlov.lee2015_secchi_depth(WL, k, lee))
+        expect_provenance(record, caught)
+        print(f"  {t:>5}  Gordon et al. {secchi[t][0]:>5.1f}   "
+              f"Lee et al. (2011) {secchi[t][1]:>5.1f}")
+    moved = max(abs(b / a - 1) for a, b in secchi.values())
+    print(f"""
+The reflectance model moves the Secchi depth by at most {100 * moved:.1f} percent: the
+depth rests mostly on Kd, and on the reflectance only through a
+logarithm. III's reflectance by Lee et al. (2011) rests partly on bands
+outside their fit, as above.""")
+    return dict(by_view=by_view, against=against, raman=raman,
+                secchi=secchi, view_hi=view_hi, view_fitted=view_fitted,
+                off=off,
+                off_fitted=off_fitted, outside=outside, rf=(rf_lo, rf_hi),
+                moved=moved)
+
+
 def main():
     _banner()
     caught = set()
@@ -377,6 +481,7 @@ def main():
     nearest = chlorophyll_part()
     recovered = qaa_part()
     case1 = case1_part(caught)
+    geometry = geometry_part(kd, caught)
     if caught:
         rule("Warnings")
         print("Raised along the way, each a ProvenanceWarning:")
@@ -388,8 +493,10 @@ def main():
     measured; bb is built from them with a stated bbp/bp, since no Jerlov
     type determines it (DATA.md section 10).
   - The pure water terms are Morel's formula at {SALINITY_PSU:g} psu.
-  - The reflectance is for optically deep water seen from straight above:
-    no bottom, no Raman scattering, no fluorescence.
+  - The reflectance is for optically deep water: no bottom, no Raman
+    scattering, no fluorescence. Part 7 looks off nadir with Lee et al.'s
+    (2011) seven printed geometries, and gives Raman scattering's share
+    by Lee et al.'s (2013) correction, which is empirical.
   - The Secchi depth rests on the eye's contrast threshold and the white
     disc that Lee et al. assumed; their check against 338 measurements
     found about 18 percent.
@@ -401,7 +508,7 @@ def main():
 """)
     return dict(worst=worst, depths=depths, findings=findings,
                 depends=depends, by_pair=by_pair, by_ratio=by_ratio, products=products, nearest=nearest,
-                recovered=recovered, case1=case1,
+                recovered=recovered, case1=case1, geometry=geometry,
                 caught=caught)
 
 

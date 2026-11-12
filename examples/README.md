@@ -1,6 +1,6 @@
 # Examples
 
-Nineteen scripts. Each runs against the installed package and needs nothing beyond
+Twenty-one scripts. Each runs against the installed package and needs nothing beyond
 NumPy.
 
 ```
@@ -23,6 +23,8 @@ python examples/painted_sphere.py
 python examples/wave_focusing.py
 python examples/fish_colour_differences.py
 python examples/ocean_colour_and_secchi.py
+python examples/sunlight_and_d65.py
+python examples/looking_up_and_down.py
 ```
 
 CI runs all of them on every push, so an example that has stopped working is a
@@ -56,6 +58,8 @@ copy of the package silently wins over the working tree. In a clone, run
 | work with the flicker of light under waves, near the surface | `wave_focusing.py` |
 | study fish vision, or how water changes colour differences for an animal | `fish_colour_differences.py` |
 | have a chlorophyll concentration, or a and bb, rather than a water type; or want a Secchi depth | `ocean_colour_and_secchi.py` |
+| have used D65 as the light above the sea, or need the sun's spectrum at the surface | `sunlight_and_d65.py` |
+| see under water along a slanted line, looking up or down | `looking_up_and_down.py` |
 
 ## What each shows
 
@@ -268,7 +272,39 @@ quasi-analytical algorithm and compares the a they recover with the a it
 started from. A sixth builds a and bb from chlorophyll alone (Bricaud et
 al. 1995 for phytoplankton, Morel & Maritorena 2001 for particle
 backscattering, and stated choices for the rest) and sets the Kd they
-give beside Morel & Maritorena's.
+give beside Morel & Maritorena's. A seventh looks at the reflectance off
+nadir, at Lee et al.'s (2011) seven printed geometries: up to **8
+percent** above the nadir one, and the nadir one up to 14 percent from
+Gordon et al.'s (1988), within the range of bb/(a + bb) Lee et al.
+fitted to; Jerlov III at 412-488 nm lies outside it, and says so. Lee et al.'s (2013) Raman correction puts the
+Raman part of a measured reflectance at 2 to 11 percent of its elastic
+part for these waters. The choice of reflectance model moves the Secchi
+depth by at most 2.4 percent.
+
+**`sunlight_and_d65.py`** — the clear sky at the sea surface by the model
+of Gregg & Carder (1990), for one stated maritime atmosphere and the sun
+at 0, 30, 60 and 80 degrees, set beside D65. Every one of the model's
+skies is redder than D65: the ratio of 450 to 650 nm is **1.20 to 1.29**
+against D65's 1.46. Below the surface the difference moves the depth of
+1 percent PAR by up to **2.9 m** in IB (94.1 m under D65) and by 0.5 m at
+most in the coastal types, and a white card at depth in III, recorded by
+a camera balanced for D65, changes by up to 7 percent in its blue
+channel. It also gives the level D65 does not have, PAR from 43 to 454 W
+m-2 at 10 km visibility, and, through Gordon's (1989) D0, shows Jerlov
+II's Kd(490) spanning **17 percent** between the sun overhead and 60
+degrees from it under this sky.
+
+**`looking_up_and_down.py`** — a black target seen from 41.3 m in Lake
+Pend Oreille along five lines, straight up to straight down, by
+`Scene.observe_slant` (Duntley 1963), with the radiance of the water and
+its K taken from Tyler's (1958) measured radiance distribution in the same
+lake rather than guessed. Over about 12 m, looking up leaves **7.0 times**
+the contrast a horizontal line does and looking down **1/7.5** of it; the
+distance at which the contrast falls to 2 percent is 16.4 m up, 9.9 m
+across and 7.0 m down. Tyler's K differs by direction by a factor of 2.0
+near the surface and agrees within 12 percent from 16.6 to 53.7 m, as
+Duntley's asymptotic light field has it. Duntley's eq. (12) as printed
+would make the open water read 46 times what Tyler measured.
 
 ## What they do not show
 
@@ -281,5 +317,6 @@ output is what the published coefficients imply.
 
 **Every script ends with the assumptions it made** — stated backscatter
 ratios, approximate veiling geometry, invented reflectance and receptor
-curves, D65 standing in for real daylight. Each is a choice a caller can
+curves, D65 standing in for real daylight (`sunlight_and_d65.py` measures
+what that costs). Each is a choice a caller can
 replace with a measurement.

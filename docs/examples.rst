@@ -1,7 +1,7 @@
 Examples
 ========
 
-Nineteen scripts, each for one kind of reader. Each runs against the
+Twenty-one scripts, each for one kind of reader. Each runs against the
 installed package, needs nothing beyond NumPy, and prints what it
 computes. CI runs every one of them, so an example that has stopped
 working is a failed build rather than something a reader discovers. They
@@ -57,3 +57,7 @@ are in the repository, not in the installed package; from a clone:
      - `fish_colour_differences.py <https://github.com/tishibashi-cpu/jerlov/blob/main/examples/fish_colour_differences.py>`_
    * - have a chlorophyll concentration, or a and bb, rather than a water type; or want a Secchi depth
      - `ocean_colour_and_secchi.py <https://github.com/tishibashi-cpu/jerlov/blob/main/examples/ocean_colour_and_secchi.py>`_
+   * - have used D65 as the light above the sea, or need the sun's spectrum at the surface
+     - `sunlight_and_d65.py <https://github.com/tishibashi-cpu/jerlov/blob/main/examples/sunlight_and_d65.py>`_
+   * - see under water along a slanted line, looking up or down
+     - `looking_up_and_down.py <https://github.com/tishibashi-cpu/jerlov/blob/main/examples/looking_up_and_down.py>`_

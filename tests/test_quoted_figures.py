@@ -1560,10 +1560,15 @@ def test_every_secchi_ordering_is_a_finding_or_depends(secchi_example):
 @source_tree
 def test_the_secchi_example_warns_only_as_it_reports(secchi_example):
     """Every warning it caught is printed; each is about the depths of the
-    Secchi check (lee2015_secchi_depth) or, from part 6, about Kd below the
-    range of lee2013_kd, which part 6 reports."""
+    Secchi check (lee2015_secchi_depth), from part 6 about Kd below the
+    range of lee2013_kd, which part 6 reports, or from part 7 about the
+    range lee2011_rrs was fitted to, which part 7 reports."""
     for message in secchi_example["caught"]:
-        assert "0.1 to 30 m" in message or "0.02 to 5 1/m" in message
+        assert ("0.1 to 30 m" in message or "0.02 to 5 1/m" in message
+                or "0.0002-0.37" in message)
+    # Part 7: Lee et al.'s (2011) fit range, only where it reports it.
+    assert any("0.0002-0.37" in m for m in secchi_example["caught"]) \
+        == bool(secchi_example["geometry"]["outside"])
     assert any("0.02 to 5 1/m" in m for m in secchi_example["caught"]) \
         == bool(secchi_example["case1"]["low_kd"])
 
@@ -1612,3 +1617,179 @@ def test_part_6_low_kd_is_the_clearest_water(secchi_example):
     assert case1["low_kd"] and max(case1["low_kd"]) < 500.0
     assert case1["low_chl"] == [0.03]
 
+
+
+# -- The clear sky against D65 (sunlight_and_d65.py, section 77) ---------
+
+
+@pytest.fixture(scope="module")
+def sky_module():
+    import runpy
+    return runpy.run_path(str(ROOT / "examples" / "sunlight_and_d65.py"),
+                          run_name="sunlight_and_d65")
+
+
+@pytest.fixture(scope="module")
+def sky_example(sky_module):
+    import contextlib
+    import io
+    with contextlib.redirect_stdout(io.StringIO()), warnings.catch_warnings():
+        warnings.simplefilter("error", jerlov.ProvenanceWarning)
+        warnings.simplefilter("error", FutureWarning)
+        return sky_module["main"]()
+
+
+@source_tree
+def test_examples_README_figures_for_the_sky(sky_example):
+    """examples/README.md: 450/650 of 1.20 to 1.29 against 1.46; the 1
+    percent depth up to 2.9 m shallower in IB (94.1 m under D65), 0.5 m at
+    most in the coastal types; the blue channel up to 7 percent; PAR from
+    43 to 454 W m-2 at 10 km; Kd(490) spanning 17 percent."""
+    text = (ROOT / "examples" / "README.md").read_text()
+    for quoted in ("1.20 to 1.29", "1.46", "2.9 m", "94.1 m", "0.5 m",
+                   "7 percent", "43 to 454", "17 percent"):
+        assert quoted in text, quoted
+    tilt = sky_example["shape"]["tilt"]
+    skies = [v for k, v in tilt.items() if k != "D65"]
+    assert (round(min(skies), 2), round(max(skies), 2)) == (1.20, 1.29)
+    assert round(tilt["D65"], 2) == 1.46
+    gap, depth = sky_example["gap"], sky_example["depth"]
+    assert round(gap["IB"], 1) == 2.9
+    assert round(depth[("IB", "D65")], 1) == 94.1
+    assert round(max(gap[t] for t in ("1C", "5C", "9C")), 1) == 0.5
+    assert round(100 * sky_example["blue"]) == 7
+    level = sky_example["level"]
+    tens = [v for (sun, vis), v in level.items() if vis == 10.0]
+    assert (round(min(tens)), round(max(tens))) == (43, 454)
+    kds = [row[2] for row in sky_example["d0"].values()]
+    assert round(100 * (max(kds) / min(kds) - 1)) == 17
+
+
+@source_tree
+def test_every_sky_is_redder_than_d65(sky_example):
+    tilt = sky_example["shape"]["tilt"]
+    assert all(v < tilt["D65"] for k, v in tilt.items() if k != "D65")
+
+
+@source_tree
+def test_the_one_percent_depth_needs_only_the_shape(sky_module):
+    """Scaling the light by 3 changes nothing, which is why part 3 can set
+    a relative D65 beside an absolute sky."""
+    kd = jerlov.water("II", source="jerlov1976")
+    light = sky_module["sky"](30.0).below
+    wl = sky_module["WL"]
+    one = jerlov.par_profile(light, wl, [0.0], kd=kd, unit="energy")
+    three = jerlov.par_profile(3 * light, wl, [0.0], kd=kd, unit="energy")
+    assert one.depth_of_fraction(0.01) == pytest.approx(
+        three.depth_of_fraction(0.01), rel=1e-12)
+
+
+@source_tree
+def test_the_sky_example_reports_what_it_was_warned_of(sky_example):
+    """Only the coverage of the colour matching functions and the sRGB
+    gamut, both reported in its Warnings part."""
+    caught = sky_example["caught"]
+    assert caught and all(("covered" in m) or ("gamut" in m) for m in caught)
+
+
+# -- Looking up and down (looking_up_and_down.py, section 78) ------------
+
+
+@pytest.fixture(scope="module")
+def slant_example():
+    import contextlib
+    import io
+    import runpy
+    module = runpy.run_path(
+        str(ROOT / "examples" / "looking_up_and_down.py"),
+        run_name="looking_up_and_down")
+    with contextlib.redirect_stdout(io.StringIO()), warnings.catch_warnings():
+        warnings.simplefilter("error", jerlov.ProvenanceWarning)
+        warnings.simplefilter("error", FutureWarning)
+        return module["main"]()
+
+
+@source_tree
+def test_examples_README_figures_for_looking_up_and_down(slant_example):
+    text = (ROOT / "examples" / "README.md").read_text()
+    for quoted in ("7.0 times", "1/7.5", "16.4 m up, 9.9 m", "7.0 m down",
+                   "factor of 2.0", "within 12 percent", "46 times"):
+        assert quoted in text, quoted
+    seen = slant_example["seen"]
+    up = seen[("up", 29.0)]
+    down = seen[("down", 53.7)]
+    assert round(up["contrast"] / up["flat"], 1) == 7.0
+    assert round(down["flat"] / down["contrast"], 1) == 7.5
+    ranges = slant_example["ranges"]
+    assert [round(ranges[n], 1) for n in ("up", "horizontal", "down")] == [
+        16.4, 9.9, 7.0]
+    assert round(slant_example["printed"]) == 46
+
+
+@source_tree
+def test_the_measured_water_is_read_back_exactly(slant_example):
+    """observe_slant with Tyler's Nw and K over the path gives, for the
+    open water itself, Tyler's radiance at the observer."""
+    for row in slant_example["seen"].values():
+        obs = row["observation"]
+        water = row["nw_target"] * obs.transmittance + obs.veiling
+        assert float(water[0]) == pytest.approx(row["nw"], rel=1e-12)
+    assert slant_example["corrected"] == pytest.approx(1.0, rel=1e-12)
+
+
+@source_tree
+def test_up_beats_across_beats_down(slant_example):
+    seen = slant_example["seen"]
+    for up, down in (((("up", 29.0)), ("down", 53.7)),
+                     ((("up", 16.6)), ("down", 66.1))):
+        flat = seen[up]["flat"]
+        assert abs(seen[up]["contrast"]) > abs(flat)
+        assert abs(seen[down]["contrast"]) < abs(seen[down]["flat"])
+    across = seen[("horizontal", 41.3)]
+    assert across["contrast"] == pytest.approx(across["flat"], rel=1e-12)
+
+
+@source_tree
+def test_the_slant_example_uses_no_suspect_cell(slant_example):
+    """Every warning it reports names cells in the sun's direction or the
+    overstruck digit, none at the azimuth it reads (80 degrees)."""
+    for message in slant_example["caught"]:
+        assert "azimuth 80" not in message
+
+
+@source_tree
+def test_part_7_figures(secchi_example):
+    """examples/README.md: within Lee et al.'s fit range, off nadir up to 8
+    percent above nadir and nadir up to 14 percent from Gordon et al.; III
+    at 412-488 nm outside it; RF 2 to 11 percent; the Secchi depth moved
+    by at most 2.4 percent (DECISIONS.md section 79)."""
+    text = (ROOT / "examples" / "README.md").read_text()
+    for quoted in ("**8\npercent**", "14 percent", "III at 412-488 nm",
+                   "2 to 11 percent", "2.4 percent"):
+        assert quoted in text, quoted
+    g = secchi_example["geometry"]
+    assert round(100 * (g["view_fitted"] - 1)) == 8
+    assert round(100 * g["off_fitted"]) == 14
+    assert {t: list(v) for t, v in g["outside"].items()} == {
+        "III": [412.0, 443.0, 488.0]}
+    assert tuple(round(100 * x) for x in g["rf"]) == (2, 11)
+    assert round(100 * g["moved"], 1) == 2.4
+
+
+@source_tree
+def test_part_7_nadir_written_out(secchi_module):
+    """Lee et al. (2011) eq. (14) at nadir, 488 nm, Jerlov II, from Table
+    2's (0.0604, 0.0406, 0.0402, 0.1310)."""
+    wl = np.array([488.0])
+    water = jerlov.water("II", source="solonenko2015")
+    s = secchi_module["SALINITY_PSU"]
+    bbw = jerlov.pure_water_backscattering(wl, salinity_psu=s)
+    bp = water.b(wl) - jerlov.pure_water_scattering(wl, salinity_psu=s)
+    bb = bbw + secchi_module["PETZOLD_RATIO"] * bp
+    k = water.a(wl) + bb
+    want = ((0.0604 + 0.0406 * bbw / k) * bbw / k
+            + (0.0402 + 0.1310 * (bb - bbw) / k) * (bb - bbw) / k)
+    got = jerlov.lee2011_rrs(water.a(wl), bb, bb_water=bbw,
+                             coefficients=jerlov.LEE2011_RRS_COEFFICIENTS[
+                                 (0.0, 0.0, 0.0)])
+    assert np.allclose(got, want, rtol=1e-13, atol=0)

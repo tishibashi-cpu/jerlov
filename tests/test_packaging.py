@@ -424,7 +424,8 @@ def test_every_optional_extra_is_used_by_something():
 
 WORD_COUNTS = {"Eight": 8, "Nine": 9, "Ten": 10, "Eleven": 11, "Twelve": 12,
                "Thirteen": 13, "Fourteen": 14, "Fifteen": 15, "Sixteen": 16,
-               "Seventeen": 17, "Eighteen": 18, "Nineteen": 19}
+               "Seventeen": 17, "Eighteen": 18, "Nineteen": 19, "Twenty": 20,
+               "Twenty-one": 21, "Twenty-two": 22}
 
 
 @source_tree
@@ -432,7 +433,7 @@ def test_the_READMEs_count_the_examples():
     """Both said "Eight scripts", and a ninth was about to make them wrong."""
     scripts = len(list((ROOT / "examples").glob("*.py")))
     for readme in (ROOT / "README.md", ROOT / "examples" / "README.md"):
-        match = re.search(r"\b(\w+) scripts[,.]", readme.read_text())
+        match = re.search(r"\b([\w-]+) scripts[,.]", readme.read_text())
         assert match, f"{readme.name} no longer counts the examples"
         assert WORD_COUNTS.get(match.group(1)) == scripts, (
             f"{readme.relative_to(ROOT)} says {match.group(1)} scripts; "
