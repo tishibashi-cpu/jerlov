@@ -522,7 +522,7 @@ made.
 ## Provenance and design
 
 `DATA.md` records, for every shipped table, where it came from, what was
-verified, and what is known to be wrong with it. Thirty entries are
+verified, and what is known to be wrong with it. Thirty-one entries are
 documented there: eleven confirmed defects in the source literature, three
 questions the first edition of Jerlov settled, and the rest notes.
 

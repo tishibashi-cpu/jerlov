@@ -206,6 +206,135 @@ def morel2001_kd(wavelengths, /, *, chlorophyll_mg_m3: float):
     return _like_input(out, wavelengths)
 
 
+#: The [Chl] range of Bricaud et al. (1995), mg m^-3 (abstract).
+_BRICAUD_CHL = (0.02, 25.0)
+
+
+@_data.positional_only()
+def bricaud1995_aph(wavelengths, /, *, chlorophyll_mg_m3: float):
+    """Absorption by phytoplankton, aph, from the chlorophyll concentration.
+
+    Bricaud, A., Babin, M., Morel, A. and Claustre, H. (1995),
+    "Variability in the chlorophyll-specific absorption coefficients of
+    natural phytoplankton: Analysis and parameterization", J. Geophys. Res.
+    100(C7), 13321-13332, doi:10.1029/95JC00463. Table 2::
+
+        a*ph = A [Chl]^-B,    aph = [Chl] a*ph = A [Chl]^(1 - B)
+
+    with A and B every 2 nm from 400 to 700 nm and at 675 nm. aph is
+    computed at those wavelengths and interpolated linearly between them;
+    outside 400-700 nm it raises :class:`ValueError`.
+
+    Parameters
+    ----------
+    wavelengths:
+        nm, a number or an array, within 400-700 nm.
+    chlorophyll_mg_m3:
+        [Chl], mg m^-3: chlorophyll a plus divinyl chlorophyll a. One
+        number; no default.
+
+    Returns
+    -------
+    aph, 1/m: a float for a number, an array otherwise.
+
+    Notes
+    -----
+    A statistical mean of 815 spectra from many oceans, spanning [Chl]
+    0.02-25 mg m^-3; outside that range the result comes with a
+    :class:`ProvenanceWarning`. Individual waters scatter widely about it,
+    and the fit is poor where phytoplankton absorb little: r2 on the
+    log-transformed data is below 0.01 from 556 to 578 nm and at 696 and
+    698 nm (Table 2). Only
+    phytoplankton: nonalgal particles, dissolved matter and water are not
+    included. Bricaud et al. (1998) refit the relation to 1166 spectra
+    but print the spectral coefficients only as a figure. DATA.md section
+    31, DECISIONS.md section 72.
+    """
+    chl = _single(chlorophyll_mg_m3, "chlorophyll_mg_m3", "mg m^-3")
+    query = np.atleast_1d(np.asarray(wavelengths, dtype=float))
+    grid, a, b = _data.bricaud1995()
+    if (not np.all(np.isfinite(query)) or np.any(query < grid[0])
+            or np.any(query > grid[-1])):
+        raise ValueError(
+            f"wavelengths must lie within {grid[0]:g}-{grid[-1]:g} nm, the "
+            "range of Bricaud et al.'s Table 2. This package does not "
+            "extrapolate.")
+    lo, hi = _BRICAUD_CHL
+    if not lo <= chl <= hi:
+        _warn(f"[Chl] = {chl:g} mg m^-3 is outside the {lo:g}-{hi:g} that "
+              "Bricaud et al.'s (1995) data spanned; the result is their "
+              "relation carried beyond its data.")
+    aph = a * chl ** (1.0 - b)
+    out = np.interp(query.ravel(), grid, aph).reshape(query.shape)
+    return _like_input(out, wavelengths)
+
+
+#: Morel & Maritorena (2001) eq. (13): the bracket 0.50 - 0.25 log10 [Chl]
+#: is zero here and negative above.
+_BBP_CHL_LIMIT = 100.0
+
+
+@_data.positional_only()
+def morel2001_bbp(wavelengths, /, *, chlorophyll_mg_m3: float):
+    """Backscattering by particles, bbp, from the chlorophyll concentration.
+
+    Morel, A. and Maritorena, S. (2001), J. Geophys. Res. 106(C4),
+    7163-7180, doi:10.1029/2000JC000319, eqs. (13), (14) and (9)::
+
+        bbp = {0.002 + 0.01 [0.50 - 0.25 log10 Chl] (l/550)^v} bp550
+        v = (1/2)(log10 Chl - 0.3)    for Chl < 2 mg m^-3
+        v = 0                         above 2
+        bp550 = 0.30 Chl^0.62
+
+    Parameters
+    ----------
+    wavelengths:
+        nm, a number or an array, within 350-700 nm, the model's domain.
+    chlorophyll_mg_m3:
+        [Chl], mg m^-3. One number; no default.
+
+    Returns
+    -------
+    bbp, 1/m: a float for a number, an array otherwise. Add pure water's
+    backscattering for the total bb (their eq. 11).
+
+    Notes
+    -----
+    This is the form the paper's model uses. Its eq. (10) is the 1988
+    form (a maximum efficiency of 0.02 and a (550/l) dependence at every
+    [Chl]), which the paper then modifies "in two ways" into (13) and (14)
+    (p. 7171). Eq. (9) is the paper's; its (9'), which subtracts
+    pure water's scattering at 550 nm, is called negligible there and is
+    not applied. (14) is written for 0.02-2 mg m^-3 and is used as written
+    below 0.02, with a :class:`ProvenanceWarning`, as is anything above
+    30; above 100 mg m^-3, where the bracket turns negative, it raises
+    :class:`ValueError`. DATA.md section 31, DECISIONS.md section 72.
+    """
+    chl = _single(chlorophyll_mg_m3, "chlorophyll_mg_m3", "mg m^-3")
+    query = np.atleast_1d(np.asarray(wavelengths, dtype=float))
+    lo_nm, hi_nm = 350.0, 700.0
+    if (not np.all(np.isfinite(query)) or np.any(query < lo_nm)
+            or np.any(query > hi_nm)):
+        raise ValueError(
+            f"wavelengths must lie within {lo_nm:g}-{hi_nm:g} nm, the "
+            "domain of Morel & Maritorena's model. This package does not "
+            "extrapolate.")
+    if chl > _BBP_CHL_LIMIT:
+        raise ValueError(
+            f"[Chl] = {chl:g} mg m^-3 is above {_BBP_CHL_LIMIT:g}, where the "
+            "term 0.50 - 0.25 log10 [Chl] of eq. (13) is negative")
+    lo, hi = _MOREL_CHL
+    if not lo <= chl <= hi:
+        _warn(f"[Chl] = {chl:g} mg m^-3 is outside the {lo:g}-{hi:g} that "
+              "Morel & Maritorena's data spanned; the result is their "
+              "relation carried beyond its data.")
+    v = 0.5 * (np.log10(chl) - 0.3) if chl < 2.0 else 0.0
+    bp550 = 0.30 * chl ** 0.62
+    out = (0.002 + 0.01 * (0.50 - 0.25 * np.log10(chl))
+           * (query / 550.0) ** v) * bp550
+    return _like_input(out, wavelengths)
+
+
 def _check_iops(a, bb) -> tuple[np.ndarray, np.ndarray]:
     a = _spectral(a, "a")
     bb = _spectral(bb, "bb")

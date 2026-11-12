@@ -4,6 +4,37 @@ Every release is archived on Zenodo under the concept DOI
 [10.5281/zenodo.22321312](https://doi.org/10.5281/zenodo.22321312), which
 always resolves to the latest version.
 
+## 1.6.0 — 2026-11-12
+
+From chlorophyll to absorption by phytoplankton and backscattering by
+particles, for case 1 water (DECISIONS.md section 72). No shipped value
+changed; one table and two public names are added.
+
+**Added.**
+
+- `bricaud1995_aph(wavelengths, chlorophyll_mg_m3=...)`: aph = A [Chl]^(1 -
+  B), with A and B from Table 2 of Bricaud et al. (1995), every 2 nm from
+  400 to 700 nm. Outside the 0.02-25 mg m-3 of their data it warns.
+- `morel2001_bbp(wavelengths, chlorophyll_mg_m3=...)`: Morel & Maritorena's
+  (2001) particle backscattering, eqs. (13), (14) and (9), 350-700 nm.
+  Their eq. (10) is the 1988 form, which the paper itself modifies into
+  (13) and (14); the package follows the modified form.
+- `bricaud1995_aph.csv`, transcribed by `tools/build_bricaud1995.py` and
+  checked against the paper's text.
+
+**Data.** DATA.md section 31. Bricaud et al. (1995) is a scan; all 456
+numbers of Table 2 were read from the page images. Bricaud et al. (1998)
+prints its spectral coefficients only as a figure and is not used for
+them.
+
+**Examples.** `ocean_colour_and_secchi.py` gains a sixth part: a and bb
+built from chlorophyll alone, with stated choices for nonalgal particles,
+CDOM and pure water, and the Kd they give (Lee et al. 2013) against Morel
+& Maritorena's. For 1, 3 and 10 mg m-3 it is below theirs at 440, 490 and
+555 nm whatever the share of CDOM.
+
+**Docs.** `tools/README.md` counts fourteen scripts that read no file.
+
 ## 1.5.0 — 2026-11-12
 
 Removing Raman scattering from a measured reflectance (DECISIONS.md

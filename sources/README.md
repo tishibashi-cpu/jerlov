@@ -39,6 +39,10 @@ Smith & Baker (1981), Mason, Cone & Fry (2016) and Lee et al. (2015) are
 carried as literals and checked against each paper; see DATA.md section
 29.
 
+`tools/build_bricaud1995.py` needs no input: Bricaud et al. (1995) Table
+2 is carried as literals and checked against the paper's text; see
+DATA.md section 31.
+
 ## Read but not machine-processed
 
 These were read to establish provenance and are cited in `DATA.md`. They are

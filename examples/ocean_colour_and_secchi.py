@@ -15,7 +15,9 @@ model; sets that beside Poole & Atkins's (1929) rule; and finds the Jerlov
 type nearest to Morel & Maritorena's (2001) Kd for a range of chlorophyll
 concentrations (DECISIONS.md section 66). Last, it inverts the reflectance
 again by the quasi-analytical algorithm, both versions, and sets the a and
-bbp they recover against the ones it started from (section 67).
+bbp they recover against the ones it started from (section 67). Finally,
+it builds a and bb from chlorophyll alone and compares the Kd they give
+with Morel & Maritorena's (section 72).
 """
 
 import warnings
@@ -280,6 +282,91 @@ version, against its synthetic and field data.""")
     return worst
 
 
+#: Bricaud et al. (1998): nonalgal particles at 440 nm, eq. (3), and the
+#: mean slope of their exponential, eq. (5), from 267 measured spectra.
+NAP_440 = (0.0124, 0.724)
+NAP_SLOPE = 0.011
+#: Their appendix: CDOM at 440 nm as a share y of (aw + ap)(440), with
+#: y = 0, 0.1 or 0.2, and a slope of 0.014 (eq. 11).
+CDOM_SHARES = (0.0, 0.1, 0.2)
+CDOM_SLOPE = 0.014
+CASE1_NM = (440.0, 490.0, 555.0)
+#: Lee et al. (2013): the model is good for Kd of about 0.02-5 1/m.
+LEE2013_KD_RANGE = (0.02, 5.0)
+
+
+def case1_part(caught):
+    rule("6. From chlorophyll to a and bb, and on to Kd")
+    wl = np.arange(400.0, 701.0, 5.0)
+    print(f"""a and bb built from [Chl] alone, {wl[0]:g}-{wl[-1]:g} nm: pure water (Pope & Fry
+1997; Morel's bbw at {SALINITY_PSU:g} psu), phytoplankton (Bricaud et al. 1995),
+nonalgal particles ({NAP_440[0]} [Chl]^{NAP_440[1]} at 440 nm, slope {NAP_SLOPE} per nm, Bricaud
+et al. 1998), CDOM as a share y = {', '.join(f'{y:g}' for y in CDOM_SHARES)} of the rest at 440 nm with
+slope {CDOM_SLOPE} (their appendix), and particle backscattering (Morel &
+Maritorena 2001, eqs. 13-14). Lee et al.'s (2013) Kd from them, sun at
+{SUN_ZENITH_DEG:g} degrees, against Morel & Maritorena's Kd for the same [Chl], in percent:
+""")
+    aw = jerlov.pure_water_absorption_table(wl, source="pope1997")
+    bbw = jerlov.pure_water_backscattering(wl, salinity_psu=SALINITY_PSU)
+    at = {w: int(np.flatnonzero(wl == w)[0]) for w in (440.0,) + CASE1_NM}
+    head = "".join(f" {f'y={y:g}':>17}" for y in CDOM_SHARES)
+    print(f"  {'[Chl]':>6}{head}")
+    print(f"  {'mg/m3':>6}" + "".join(
+        f" {'/'.join(f'{w:g}' for w in CASE1_NM):>17}" for _ in CDOM_SHARES))
+    diff = {}
+    low_kd, low_chl = set(), set()
+    for chl in CHLOROPHYLL:
+        aph = jerlov.bricaud1995_aph(wl, chlorophyll_mg_m3=chl)
+        anap = NAP_440[0] * chl ** NAP_440[1] * np.exp(
+            -NAP_SLOPE * (wl - 440.0))
+        bbp = jerlov.morel2001_bbp(wl, chlorophyll_mg_m3=chl)
+        k_morel = jerlov.morel2001_kd(wl, chlorophyll_mg_m3=chl)
+        cells = []
+        for y in CDOM_SHARES:
+            i = at[440.0]
+            cdom = y * (aw[i] + aph[i] + anap[i]) * np.exp(
+                -CDOM_SLOPE * (wl - 440.0))
+            with warnings.catch_warnings(record=True) as record:
+                warnings.simplefilter("always")
+                kd = jerlov.lee2013_kd(aw + aph + anap + cdom, bbw + bbp,
+                                       bb_water=bbw,
+                                       sun_zenith_deg=SUN_ZENITH_DEG)
+            expect_provenance(record, caught)
+            if np.any(kd < LEE2013_KD_RANGE[0]):
+                low_kd.update(wl[kd < LEE2013_KD_RANGE[0]].tolist())
+                low_chl.add(chl)
+            rel = kd / k_morel - 1
+            diff[(chl, y)] = {w: float(rel[at[w]]) for w in CASE1_NM}
+            cells.append("/".join(f"{100 * diff[(chl, y)][w]:+.0f}"
+                                  for w in CASE1_NM))
+        print(f"  {chl:>6g}" + "".join(f" {c:>17}" for c in cells))
+    below = [c for c in CHLOROPHYLL
+             if all(diff[(c, y)][w] < 0 for y in CDOM_SHARES
+                    for w in CASE1_NM)]
+    blue = {c: [100 * diff[(c, y)][440.0] for y in CDOM_SHARES]
+            for c in CHLOROPHYLL}
+    top, low = CHLOROPHYLL[-1], CHLOROPHYLL[0]
+    mixed = min(blue[low]) < 0 < max(blue[low])
+    low_text = (f"At {low:g} mg/m3 the sign at 440 nm depends on y "
+                f"({min(blue[low]):+.0f} to {max(blue[low]):+.0f} percent)."
+                if mixed else
+                f"At {low:g} mg/m3 the difference at 440 nm is "
+                f"{min(blue[low]):+.0f} to {max(blue[low]):+.0f} percent.")
+    print(f"""
+For [Chl] of {', '.join(f'{c:g}' for c in below)} mg/m3 the Kd built this way is below Morel &
+Maritorena's at all three wavelengths, whatever y; at {top:g} mg/m3 by
+{-max(blue[top]):.0f} to {-min(blue[top]):.0f} percent at 440 nm.
+{low_text}
+Both are means for case 1 water from different data sets; this sets two
+published routes side by side and does not say which is nearer the sea.""")
+    if low_kd:
+        print(f"""The built Kd falls below the {LEE2013_KD_RANGE[0]:g} 1/m that Lee et al. (2013) state their
+model good for at {min(low_kd):g}-{max(low_kd):g} nm, for [Chl] of {', '.join(f'{c:g}' for c in sorted(low_chl))} mg/m3; that is the
+warning about it below.""")
+    return dict(diff=diff, below=below, mixed=mixed, low_kd=sorted(low_kd),
+                low_chl=sorted(low_chl))
+
+
 def main():
     _banner()
     caught = set()
@@ -289,6 +376,7 @@ def main():
     products = poole_part(depths, tr)
     nearest = chlorophyll_part()
     recovered = qaa_part()
+    case1 = case1_part(caught)
     if caught:
         rule("Warnings")
         print("Raised along the way, each a ProvenanceWarning:")
@@ -307,10 +395,13 @@ def main():
     found about 18 percent.
   - Morel & Maritorena's Kd is a mean for case 1 water, about which real
     waters scatter.
+  - Part 6's a and bb are built from means as well, and from choices
+    that are stated, not determined: the nonalgal slope, the share of
+    CDOM, and Pope & Fry's pure water.
 """)
     return dict(worst=worst, depths=depths, findings=findings,
                 depends=depends, by_pair=by_pair, by_ratio=by_ratio, products=products, nearest=nearest,
-                recovered=recovered,
+                recovered=recovered, case1=case1,
                 caught=caught)
 
 

@@ -245,6 +245,17 @@ def morel2001() -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray,
 
 
 @lru_cache(maxsize=None)
+def bricaud1995() -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """Return ``(wavelengths, A, B)`` from Bricaud et al. (1995) Table 2."""
+    rows = sorted(_rows("bricaud1995_aph.csv"),
+                  key=lambda r: float(r["wavelength_nm"]))
+    wl = np.array([float(r["wavelength_nm"]) for r in rows])
+    a = np.array([float(r["A_m2_per_mg"]) for r in rows])
+    b = np.array([float(r["B_exponent"]) for r in rows])
+    return _frozen(wl), _frozen(a), _frozen(b)
+
+
+@lru_cache(maxsize=None)
 def b_from_c_ratio() -> tuple[np.ndarray, dict[str, np.ndarray]]:
     """Return ``(wavelengths, {statistic: ratio})`` from Smart (2007)
     Table 1."""

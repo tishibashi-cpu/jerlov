@@ -265,7 +265,10 @@ sets the model beside Poole & Atkins's 1.7. Last, Morel & Maritorena's
 (2001) Kd for six chlorophyll concentrations and the Jerlov type nearest
 each. A fifth part inverts the reflectance again by both versions of the
 quasi-analytical algorithm and compares the a they recover with the a it
-started from.
+started from. A sixth builds a and bb from chlorophyll alone (Bricaud et
+al. 1995 for phytoplankton, Morel & Maritorena 2001 for particle
+backscattering, and stated choices for the rest) and sets the Kd they
+give beside Morel & Maritorena's.
 
 ## What they do not show
 

@@ -76,9 +76,11 @@ from .ocean_colour import (
     GORDON1988_RRS_COEFFICIENTS,
     LEE2002_RRS_COEFFICIENTS,
     above_surface_rrs,
+    bricaud1995_aph,
     lee2005_kd,
     lee2013_kd,
     lee2015_secchi_depth,
+    morel2001_bbp,
     morel2001_kd,
     subsurface_rrs,
 )
@@ -194,6 +196,8 @@ __all__ = [
     "visual_pigment_template",
     "receptor_noise_distance",
     "morel2001_kd",
+    "morel2001_bbp",
+    "bricaud1995_aph",
     "lee2005_kd",
     "lee2013_kd",
     "subsurface_rrs",
@@ -208,4 +212,4 @@ __all__ = [
     "QAAResult",
 ]
 
-__version__ = "1.5.0"
+__version__ = "1.6.0"
