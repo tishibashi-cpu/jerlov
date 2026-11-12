@@ -3,7 +3,7 @@
 What every shipped table is, where it came from, what was verified, and what
 is known to be wrong with it.
 
-Thirty-two entries are recorded below. Eleven are confirmed defects, three were
+Thirty-three entries are recorded below. Eleven are confirmed defects, three were
 open questions that the first edition of Jerlov settled, and the rest are
 notes rather than defects. None of them is repaired silently: values that
 could be recovered carry `status = reconstructed` and say how, values that
@@ -1835,4 +1835,34 @@ function warns outside that range of bb/(a + bb).
 **Not claimed.** The notes this work started from said the form was
 more accurate than Gordon et al.'s (1988) in clear water. Lee et al.
 (2011) do not compare the two, and the package does not say so.
+
+## 33. D0 and Kd at another sun angle: Gordon (1989), and a row of his Table 3 (note)
+
+`gordon1989_d0` and `gordon1989_kd` (DECISIONS.md section 74) carry eq.
+(12) of Gordon (1989), Limnol. Oceanogr. 34(8), 1389-1409, DOI
+`10.4319/lo.1989.34.8.1389`, p. 1401, D0 = f / cos(theta_w) + 1.197 (1 -
+f), and the rescaling by K/D0 the paper supports (pp. 1398-1399). The
+PDF, from a university course site, is a scan with a text layer;
+equation (12) and Table 3 were read from the page images.
+
+**The refractive index, and the 40 degree row.** The text says the
+ocean's refractive index is "about 1.33" (p. 1392). Table 3 (p. 1399)
+prints 1/cos(theta_w) beside its D0 for seven sun angles. n = 1.333
+reproduces six of them to their printed three decimals; at 40 degrees
+it gives 1.14148 where the page prints 1.142. No index from 1.3200 to
+1.3499 reproduces more than six rows, and every one that reproduces six
+misses 40 degrees; 1.33 itself reproduces four. Whether the 40 degree
+entry was rounded from a different computation or is a misprint, the
+paper does not say. The package uses 1.333; a test checks all of this.
+
+**Accuracy.** Against D0 computed with a model atmosphere (Table 3),
+eq. (12) is within about 3 percent for the sun up to 60 degrees and 5-8
+percent too low at 80 (p. 1402); the function warns above 60. K/D0
+falls on single curves with an average error of 1.8 percent, and <K>/D0
+with 2.2 (p. 1399).
+
+**What the package cannot do.** Jerlov's Kd tables do not record the
+sun angle or the sky they were measured under, so no D0 can be assigned
+to them without an assumption; `gordon1989_kd` takes both D0 from the
+caller.
 

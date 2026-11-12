@@ -4,6 +4,28 @@ Every release is archived on Zenodo under the concept DOI
 [10.5281/zenodo.22321312](https://doi.org/10.5281/zenodo.22321312), which
 always resolves to the latest version.
 
+## 1.8.0 — 2026-11-12
+
+The downwelling distribution function D0, and Kd under another light
+field (DECISIONS.md section 74). No shipped value changed; two public
+names are added.
+
+**Added.**
+
+- `gordon1989_d0(sun_zenith_deg, direct_fraction=...)`: Gordon's (1989)
+  eq. (12), D0 = f / cos(theta_w) + 1.197 (1 - f), for a sky of uniform
+  radiance, the sun refracted with n = 1.333. f, the share of direct
+  sunlight, has no default. Above 60 degrees it warns: the paper finds
+  the equation 5-8 percent low at 80.
+- `gordon1989_kd(kd, d0_from=..., d0_to=...)`: kd * d0_to / d0_from, on
+  the strength of Kd/D0 being nearly independent of the light field.
+  Both D0 are the caller's: Jerlov's tables do not record the conditions
+  of their Kd.
+
+**Data.** DATA.md section 33: no refractive index reproduces all seven
+rows of Gordon's Table 3 secant column; 1.333 reproduces six, and the
+40 degree row is the one no index fits.
+
 ## 1.7.0 — 2026-11-12
 
 The remote sensing reflectance with molecular and particle backscattering

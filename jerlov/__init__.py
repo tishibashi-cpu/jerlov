@@ -78,6 +78,8 @@ from .ocean_colour import (
     LEE2011_RRS_COEFFICIENTS,
     above_surface_rrs,
     bricaud1995_aph,
+    gordon1989_d0,
+    gordon1989_kd,
     lee2005_kd,
     lee2011_rrs,
     lee2013_kd,
@@ -200,6 +202,8 @@ __all__ = [
     "morel2001_kd",
     "morel2001_bbp",
     "bricaud1995_aph",
+    "gordon1989_d0",
+    "gordon1989_kd",
     "lee2005_kd",
     "lee2013_kd",
     "subsurface_rrs",
@@ -216,4 +220,4 @@ __all__ = [
     "QAAResult",
 ]
 
-__version__ = "1.7.0"
+__version__ = "1.8.0"

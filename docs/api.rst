@@ -222,6 +222,10 @@ Kd without a water type, Rrs and the Secchi depth
 
 .. autofunction:: lee2013_kd
 
+.. autofunction:: gordon1989_d0
+
+.. autofunction:: gordon1989_kd
+
 .. autofunction:: subsurface_rrs
 
 .. autodata:: GORDON1988_RRS_COEFFICIENTS
