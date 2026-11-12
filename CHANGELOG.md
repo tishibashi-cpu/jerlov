@@ -4,7 +4,7 @@ Every release is archived on Zenodo under the concept DOI
 [10.5281/zenodo.22321312](https://doi.org/10.5281/zenodo.22321312), which
 always resolves to the latest version.
 
-## 1.4.0 — 2026-11-11
+## 1.4.0 — 2026-11-12
 
 bb from the particles' backscattering ratio, and four published spectra
 of the absorption of pure water (DECISIONS.md sections 68 to 70). No
