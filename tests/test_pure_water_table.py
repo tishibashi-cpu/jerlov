@@ -73,6 +73,12 @@ def test_scalars_arrays_and_empty():
     assert isinstance(many, np.ndarray) and list(many) == [0.00635, 0.0204]
     assert jerlov.pure_water_absorption_table(
         [], source="pope1997").shape == (0,)
+    grid = np.array([[400.0, 410.0], [705.0, 720.0]])
+    got = _quiet(lambda: jerlov.pure_water_absorption_table(
+        grid, source="smith1981"))
+    assert got.shape == (2, 2) and got[1, 1] == 1.169
+    with pytest.warns(ProvenanceWarning, match="710 nm"):
+        jerlov.pure_water_absorption_table(grid, source="smith1981")
 
 
 def test_the_IOCCG_synthetic_data_used_pope_and_fry():

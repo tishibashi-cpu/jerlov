@@ -1215,7 +1215,7 @@ def pure_water_absorption_table(wavelength_nm, /, *, source: str):
         raise ValueError(
             f"wavelength outside the range of {source!r} ({wl[0]:g}-"
             f"{wl[-1]:g} nm). This package does not extrapolate.")
-    flagged = sorted({j for samples in _support(wl, query)
+    flagged = sorted({j for samples in _support(wl, query.ravel())
                       for j in samples if statuses[j] in _data.QUESTIONABLE})
     if flagged:
         warnings.warn(
