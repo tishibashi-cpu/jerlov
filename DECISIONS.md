@@ -3287,3 +3287,85 @@ choice, 2026-11-12: both RF and the corrected Rrs).
 **Corrected before the code.** Report 5 says the synthetic data exclude
 inelastic scattering on p. 17, not p. 15 (p. 15 is where it says their
 aw "were taken from Pope and Fry (1997)").
+
+## 72. Chlorophyll to aph and bbp, for case 1 water: the plan
+
+Section 66 gave Kd from chlorophyll (Morel & Maritorena 2001) and Kd,
+Rrs and the Secchi depth from a and bb, but nothing from chlorophyll to
+a and bb. With that link the two routes to Kd can be compared, and
+chlorophyll leads on to Rrs and the Secchi depth (NEXT_STEPS section
+0b, item 4).
+
+**The sources, and one that could not be used.**
+
+- Bricaud, A., Babin, M., Morel, A. and Claustre, H. (1995), J. Geophys.
+  Res. 100(C7), 13321-13332, DOI `10.1029/95JC00463`. Table 2 (pp.
+  13,326-13,327): a*ph(l) = A(l) [Chl]^-B(l), with A, B and r2 every 2
+  nm from 400 to 700 nm and at 675 nm, from 815 spectra spanning
+  [Chl] 0.02-25 mg m-3 (abstract). Obtained by the user; a scan, so all
+  456 numbers were read from the page images and agree with the text
+  layer. The text twice gives a*ph(440) = 0.0403 [Chl]^-0.332, the
+  table's 440 nm row.
+- Morel, A. and Maritorena, S. (2001), section 66's source, eqs. (9),
+  (13) and (14), pp. 7170-7171.
+- Not used: Bricaud, A., Morel, A., Babin, M., Allali, K. and Claustre,
+  H. (1998), J. Geophys. Res. 103(C13), 31033-31044, DOI
+  `10.1029/98JC02712`, obtained by the user. It refits the same kind of
+  power law to 1166 spectra, for all particles and for phytoplankton,
+  but prints the spectral coefficients only as a figure (Figure 4); the
+  values "at 2-nm intervals can be provided on request" (p. 31,038).
+  Only the 440 nm relations are printed. The user chose the 1995 table
+  over reading the figure or asking the authors.
+
+**The functions.** One per source (section 1); the user's choice,
+2026-11-12, of these two and no more.
+
+- `bricaud1995_aph(wavelengths, /, *, chlorophyll_mg_m3)`, 1/m:
+  aph = [Chl] a*ph = A [Chl]^(1 - B), computed at the table's
+  wavelengths and interpolated linearly between them; outside 400-700 nm
+  `ValueError`. Outside 0.02-25 mg m-3 a `ProvenanceWarning`.
+- `morel2001_bbp(wavelengths, /, *, chlorophyll_mg_m3)`, 1/m: eq. (13)
+  with (14) and (9),
+
+      bbp(l) = {0.002 + 0.01 [0.50 - 0.25 log10 Chl] (l/550)^v} bp550
+      v = (1/2)(log10 Chl - 0.3) for 0.02 < Chl < 2, v = 0 above 2
+      bp550 = 0.30 Chl^0.62
+
+  **Eq. (10), as printed, is not used.** It is the 1988 form (maximum
+  efficiency 0.02, a (550/l) dependence throughout), which the next
+  paragraph modifies "in two ways": the maximum reset to 1 percent, and
+  the exponent varying with [Chl], giving (13) and (14) (the user's
+  choice). Eq. (9) is the paper's; its (9'), which subtracts pure
+  water's scattering, is called negligible by the paper and not used,
+  so that the function is what the paper computed. Within the paper,
+  (14) gives v = -0.9995 at 0.02 and +0.0005 at 2 mg m-3, the "l^-1 at
+  0.02" and "neutral at 2" its text describes; (14)'s unit is printed
+  "mg-3".
+  350-700 nm, the model's domain, as `morel2001_kd`. Below 0.02 mg m-3
+  the first branch of (14) is used and warns, as does anything above
+  30 (section 66's data range). Above 100 mg m-3 the bracket, which the
+  paper says becomes zero at 100, turns negative: refused.
+- [Chl] is one positive finite number for both, as for `morel2001_kd`;
+  wavelengths a number or an array, NaN and inf refused.
+
+**Not given: nonalgal particles, CDOM, pure water.** The example takes
+them as stated choices: pure water from `pure_water_absorption_table`
+(section 70) and `pure_water_backscattering`; nonalgal particles from
+Bricaud et al. (1998) eqs. (3) and (5) with their mean slope, 0.011
+nm-1; CDOM varied, as Bricaud et al. (1998) do in their appendix.
+
+**Checks.** Planned before the code:
+
+- `tools/build_bricaud1995.py` carries Table 2 as literals and checks:
+  400-700 nm every 2 nm plus 675; the 440 nm row against the text's
+  equation; at 443 nm, interpolated A and B within the ranges the text
+  gives (A 0.0394-0.0406, B 0.330-0.344, p. 13,325); r2 within 0-1.
+- Each function against its equations written out in the test, scalar
+  and array; the (14) branch at 2 mg m-3; refusals and warnings at every
+  limit above.
+- The example: a and bb from chlorophyll into `lee2013_kd`, against
+  `morel2001_kd`, for several chlorophyll values and stated CDOM and
+  nonalgal choices; a statement about the comparison is a finding only
+  if it holds for every choice.
+
+**Version.** New public names: 1.6.0.
