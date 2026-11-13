@@ -4,6 +4,98 @@ Every release is archived on Zenodo under the concept DOI
 [10.5281/zenodo.22321312](https://doi.org/10.5281/zenodo.22321312), which
 always resolves to the latest version.
 
+## 1.10.3 — 2026-11-13
+
+The rest of what the review of 1.10.1 found (DECISIONS.md section 81).
+No shipped value changed, and no name was added or removed. Some calls
+that returned something impossible, or failed with an unhelpful error,
+now raise; they are listed under Fixed. No call with finite, possible
+inputs gives a different number.
+
+**Fixed.** Infinity is refused where it used to pass. The package's rule
+is that NaN marks a gap and infinity is not a value; these did not follow
+it, and now raise `ValueError`:
+
+- `Water`, built directly or by `from_measurements`: an infinite a, b, Kd
+  or uncertainty. In a `Scene` an infinite c came out as NaN at a distance
+  of zero. A negative value still warns and is kept.
+- `Scene`, `Scene.at_depth` and `veiling_radiance_estimate`: an infinite
+  downwelling irradiance (and `at_depth` a negative one at the surface,
+  which it left to `Scene` to refuse). `observe`, `observe_slant` and
+  `attenuation_coefficients`: an infinite veiling or water radiance.
+- `Observation.contrast`: a background radiance that is negative or
+  infinite, or whose shape is neither a number's nor the wavelengths'.
+- `kd_spectrum`: an infinite or negative Kd. A Kd below pure sea water's
+  still only warns.
+- `b_from_c`: an infinite c, and a `bw` or `cw` that is infinite or
+  negative.
+- `bb_from_vsf`: an infinite beta. `pure_water_vsf`: an angle that is
+  NaN, infinite or outside 0-180 degrees.
+- `xyz_to_srgb`: an infinite X, Y or Z, which clipping turned into a plain
+  colour. `integrate_response`: infinity in the spectrum or the response.
+  NaN in a spectrum still gives NaN, and the docstrings now say so.
+
+Five result types can be compared. `Backscattering`,
+`AttenuationCoefficients`, `QAAResult`, `RamanCorrection` and
+`SurfaceIrradiance` raised NumPy's "truth value of an array is ambiguous"
+when two equal results were compared, and could not be hashed. They now
+compare field by field, NaN equal to NaN, and hash to match; a result of
+plain numbers compares as it did. `QAAResult` and `RamanCorrection` have
+a one-line `repr` instead of one printing every array.
+
+Results no longer share arrays with the caller or with each other.
+`gregg1990_irradiance`, `qaa_v6` and `qaa_ioccg2006` returned the
+caller's own wavelength array; `Observation` and
+`AttenuationCoefficients` held the `Scene`'s. They hold copies, and
+`Scene.wavelengths` is read-only, since c is evaluated on it once.
+
+A `ParProfile` can be pickled, and so sent to another process.
+
+Exceptions that say what was wrong:
+
+- `gregg1990_irradiance` raised `TypeError` when neither or both of
+  `visibility_km` and `aerosol_optical_thickness_550` were given. Neither
+  is now a `MissingQuantityError` and both a `ValueError`, as for the two
+  ratios of `Water.bb`.
+- Text given for a number raised NumPy's `TypeError` in
+  `gregg1990_irradiance`, in the chlorophyll of `morel2001_kd`,
+  `morel2001_bbp` and `bricaud1995_aph`, and in the `lambda_max` of
+  `visual_pigment_template`; it is the `ValueError` those raise for any
+  other bad value.
+- `tyler1958_radiance` with something that is not a number raises the
+  `KeyError` of an unknown depth, not `float`'s error.
+- `ScatteringFunction.vsf_at` with a 2-D array of angles says it wants a
+  number or a 1-D array, instead of "truth value of an array is
+  ambiguous".
+
+**Docs.** DATA.md's table of files gains `gregg1990_table1.csv`, shipped
+since 1.10.0 without a row, and its table of statuses the nine values
+shipped tables used without one: `transcribed`, `included`,
+`excluded_sparse`, `identity`, `second_highest`, `undeclared`,
+`not_a_water_type`, `other_definition` and `above_axis`. Tests now hold
+both tables to what is shipped, row counts included.
+
+The README shows seven functions of 1.4.0 to 1.8.0 it never mentioned:
+`pure_water_absorption_table`, `bricaud1995_aph`, `morel2001_bbp`,
+`gordon1989_d0`, `gordon1989_kd`, `lee2011_rrs` and
+`lee2013_raman_correction`; its example for the quasi-analytical
+algorithm no longer uses one name for a number and an array. A test
+checks that every `jerlov.<name>` the README writes exists.
+
+Docstrings that later versions had left behind: `Scene`'s `depth_m`
+(used by `observe_slant`), `Observation.veiling` and `contrast` along a
+slanted line, the head of the ocean colour module, the `pure_water` of
+both QAA functions, and the `KeyError` of `descend` when its source lacks
+a type the profile passes through.
+
+**Examples.** `sources_disagree.py` ends with the list of what it assumed,
+as the README says every example does; a test now checks it. No number in
+any example changed.
+
+**Packaging.** Python 3.14 is tested in CI and declared in the
+classifiers. `.gitignore` named `.DS_Store` twice, and the Zenodo
+description joined its list of defects with two "and"s.
+
 ## 1.10.2 — 2026-11-12
 
 Two fixes from a review of the whole package (DECISIONS.md section 80).

@@ -207,9 +207,11 @@ def test_refusals():
         for value in values:
             with pytest.raises(ValueError, match=name):
                 f(500, **{**STANDARD, name: value})
-    with pytest.raises(TypeError, match="exactly one"):
+    # Both is a ValueError and neither a MissingQuantityError, as for
+    # Water.bb's two ratios (DECISIONS.md section 81; TypeError to 1.10.2).
+    with pytest.raises(ValueError, match="exactly one"):
         f(500, **{**STANDARD, "aerosol_optical_thickness_550": 0.2})
-    with pytest.raises(TypeError, match="exactly one"):
+    with pytest.raises(jerlov.MissingQuantityError, match="exactly one"):
         f(500, **{**STANDARD, "visibility_km": None})
     without = dict(STANDARD)
     del without["ozone_du"]

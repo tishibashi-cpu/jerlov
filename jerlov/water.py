@@ -152,6 +152,11 @@ class Water:
             if arr.shape != self.wavelengths.shape:
                 raise ValueError(
                     f"{key} must have the same shape as wavelengths")
+            if np.any(np.isinf(arr)):
+                # NaN marks a gap; infinity is no measurement, and in a
+                # Scene it came out as NaN at a distance of zero.
+                raise ValueError(
+                    f"{key} must not be infinite; NaN marks a gap")
             self._series[key] = arr
         if not self._series:
             raise ValueError("at least one of a, b, kd must be given")
@@ -196,9 +201,10 @@ class Water:
                     f"uncertainty[{key!r}] must have the same shape as "
                     "wavelengths"
                 )
-            if np.any(arr < 0):
+            if np.any(arr < 0) or np.any(np.isinf(arr)):
                 # NaN < 0 is False, so NaN, "not known", passes.
-                raise ValueError(f"uncertainty[{key!r}] cannot be negative")
+                raise ValueError(
+                    f"uncertainty[{key!r}] cannot be negative or infinite")
             arr.setflags(write=False)
             self._uncertainty[key] = arr
 
@@ -988,6 +994,9 @@ def descend(surface_water_type: str, depth_m: float, wavelengths, /, *,
         declared no type, too few campaigns supporting one, or below 200 m,
         where they make no statement. A coastal profile runs out quickly:
         Jerlov 9C below 10 m, 5C and 7C below 20 m, 3C below 70 m.
+    KeyError
+        Where ``source`` has no Kd for a type the profile passes through:
+        Austin & Petzold (1986) cover I to 1C only.
 
     Notes
     -----
@@ -1283,6 +1292,11 @@ def kd_spectrum(kd, wavelength_nm: float, at, /):
             raise ValueError(
                 f"{label} outside the model range ({lo:g}-{hi:g} nm)")
     kd_values = np.asarray(kd, dtype=float)
+    if np.any(np.isinf(kd_values)) or np.any(kd_values < 0):
+        # NaN, a gap, passes and gives NaN. A Kd below pure sea water's
+        # only warns, below; one below zero is no Kd.
+        raise ValueError("kd must be finite and not negative (NaN marks a "
+                         "gap)")
 
     m1 = float(np.interp(wavelength_nm, wl, m))
     kw1 = float(np.interp(wavelength_nm, wl, kw))
@@ -1437,6 +1451,14 @@ def b_from_c(c, wavelength_nm, /, *, bw, cw, bound: str = "average"):
     if np.ndim(wavelength_nm) == 0:
         ratio = ratio[0]
     c_values = np.asarray(c, dtype=float)
+    if np.any(np.isinf(c_values)):
+        raise ValueError("c must be finite (NaN marks a gap)")
+    for name, value in (("bw", bw), ("cw", cw)):
+        pure = np.asarray(value, dtype=float)
+        if np.any(np.isinf(pure)) or np.any(pure < 0):
+            raise ValueError(
+                f"{name}, pure water's coefficient in 1/m, must be finite "
+                "and not negative (NaN marks a gap)")
     if np.any(c_values < cw):
         warnings.warn(
             "c is below the pure water value cw, which is not "

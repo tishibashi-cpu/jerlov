@@ -1,20 +1,27 @@
 """Kd without a water type, the colour of the sea from above, and the
 Secchi depth.
 
-Four published relations, each from its primary paper, with the quantities
-the papers do not fix left to the caller (DECISIONS.md section 66):
+Published relations, each from its primary paper, with the quantities the
+papers do not fix left to the caller (DECISIONS.md sections 66 and 72 to
+74):
 
 - Kd from the chlorophyll concentration of case 1 water, Morel &
+  Maritorena (2001);
+- the absorption by phytoplankton and the backscattering by particles
+  from the same concentration, Bricaud et al. (1995) and Morel &
   Maritorena (2001);
 - Kd from the absorption and backscattering coefficients and the sun, Lee,
   Du & Arnone (2005) and Lee et al. (2013);
 - the remote sensing reflectance from a and bb, Gordon et al. (1988) and
-  Lee, Carder & Arnone (2002);
+  Lee, Carder & Arnone (2002), and with water and particles apart at seven
+  viewing geometries, Lee et al. (2011);
+- the downwelling distribution function D0 and a Kd under another light
+  field, Gordon (1989);
 - the Secchi depth from Kd and the remote sensing reflectance, Lee et al.
   (2015).
 
-All are forward relations. None reads satellite data, and the inverse, from
-the reflectance to a and bb, is not here.
+All are forward relations, and none reads satellite data. The inverse, from
+the reflectance to a and bb, is in :mod:`jerlov.qaa`.
 """
 
 from __future__ import annotations
@@ -104,7 +111,12 @@ def _warn(message: str) -> None:
 
 
 def _single(value, name: str, unit: str) -> float:
-    if np.ndim(value) != 0 or not np.isfinite(value) or float(value) <= 0:
+    try:
+        ok = (np.ndim(value) == 0 and bool(np.isfinite(value))
+              and float(value) > 0)
+    except TypeError:               # text, say: isfinite has no answer
+        ok = False
+    if not ok:
         raise ValueError(f"{name} must be one finite positive number, "
                          f"{unit}, not {value!r}")
     return float(value)

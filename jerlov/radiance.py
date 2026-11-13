@@ -78,8 +78,12 @@ def tyler1958_radiance(depth_m: float) -> RadianceDistribution:
     warns. The measurement includes the clear sky's light and the barge's
     shadow, which Tyler read around (pp. 12-13).
     """
+    try:
+        wanted = float(depth_m)
+    except (TypeError, ValueError):
+        wanted = float("nan")       # matches no table: the KeyError below
     rows = [r for r in _data._rows("tyler1958_radiance.csv")
-            if float(r["depth_m"]) == float(depth_m)]
+            if float(r["depth_m"]) == wanted]
     if not rows:
         raise KeyError(f"Tyler (1958) has no table at {depth_m!r} m (known: "
                        f"{', '.join(f'{d:g}' for d in TYLER1958_DEPTHS)})")

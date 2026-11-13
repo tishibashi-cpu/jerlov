@@ -47,6 +47,7 @@ could not are `missing`, and values that are used but doubtful are `suspect`.
 | `mason2016_aw.csv` | Pure water absorption, Mason, Cone & Fry (2016) Table 2, with sigma. 250-550 nm: 10 nm to 300, then 2 nm | 131 |
 | `bricaud1995_aph.csv` | A and B of a*ph = A [Chl]^-B, with r2, Bricaud et al. (1995) Table 2. 2 nm, 400-700 nm, and 675 nm | 152 |
 | `lee2015_aw.csv` | "Pure" seawater absorption inverted from Rrs, Lee et al. (2015) Table 1, with the smoothed column and Delta aw. 5 nm, 350-550 nm | 41 |
+| `gregg1990_table1.csv` | Extraterrestrial solar irradiance and the absorption coefficients of ozone, water vapour and oxygen, Gregg & Carder (1990) Table 1. 1 nm, 350-700 nm | 351 |
 
 The four tables drawn from the two Dstl datasets (`williamson2022_iop`,
 `williamson2022_measured`, `solonenko2015_iop` and `williamson2023_depth`)
@@ -71,6 +72,19 @@ only; see section 16.
 | `model` | Computed by the source's own model, not measured at that wavelength: Austin & Petzold's (1986) Kd from K(475) by their Eq. (6) | Usable, as accurate as the model |
 | `jerlov_original` | Jerlov's own value, carried unchanged by a later source: Austin & Petzold's 475 nm column | Usable |
 | `pure_seawater` | Not a measurement of the type: the attenuation of pure sea water, which Austin & Petzold give as type I | Usable; read the source's caveat |
+| `transcribed` | Printed as a number and copied as printed, in a table none of whose rows is flagged: `gregg1990_table1` and `gernez2009_diffuse_share` | Usable, as `ok` is |
+| `included` | `williamson2022_measured`: an average over five or more campaigns, which the paper kept | Usable; what `measured_points` returns |
+| `excluded_sparse` | `williamson2022_measured`: an average over fewer than five campaigns, which the paper left out | Returned only with `include_sparse=True` |
+| `identity` | `williamson2023_depth`: the 0-10 m layer, which is the surface type by definition, not a count of campaigns | Usable |
+| `second_highest` | `williamson2023_depth`: the paper chose the type with the second-highest campaign count, as closer to the layers around it (section 13) | Usable; the `note` names the type passed over |
+| `undeclared` | `williamson2023_depth`: fewer than ten campaigns supported any type, and the paper leaves the layer blank | Empty. `water_type_at_depth` gives `None`, and `descend` stops |
+| `not_a_water_type` | `paulson1977_shortwave`: a row of the paper's Table 2 that is not a Jerlov type (section 14) | Refused unless `include_non_types=True` |
+| `other_definition` | `boss2001_chi`: a chi from another paper, defined on the total scattering rather than the particles', kept for comparison (section 18) | Not used by `bb_from_vsf` |
+| `above_axis` | `gernez2009_bands`: the line leaves the top of the figure's axes, so there is nothing to read (section 25) | Empty; NaN in `gernez2009_band_cv` |
+
+The first twelve are the statuses a spectrum carries, and the ones a
+caller's own `flags` may use, less `read_from_figure`. The rest belong to
+one table each and say what kind of row it is.
 
 ## Sources
 

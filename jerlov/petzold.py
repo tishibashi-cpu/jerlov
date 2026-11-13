@@ -86,6 +86,10 @@ class ScatteringFunction:
         extension, and a :class:`ProvenanceWarning` says so.
         """
         query = _as_array(angle_deg)
+        if query.ndim > 1:
+            raise ValueError(
+                "angle_deg must be a number or a 1-D array of them, not an "
+                f"array of shape {query.shape}")
         _require_number(query, "angle_deg")
         lo, hi = float(self.angles_deg[0]), float(self.angles_deg[-1])
         if np.any(query < lo) or np.any(query > hi):

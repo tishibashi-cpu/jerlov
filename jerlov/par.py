@@ -36,7 +36,6 @@ Three things are stated rather than hidden:
 from __future__ import annotations
 
 import warnings
-from collections.abc import Callable
 from dataclasses import dataclass
 
 import numpy as np
@@ -71,6 +70,63 @@ def _photons(spectrum: np.ndarray, wavelengths: np.ndarray, unit: str):
         return spectrum
     # E / (h c / lambda) photons per second, / N_A for moles, * 1e6 for umol.
     return spectrum * wavelengths * 1e-9 / (_H * _C) / _NA * 1e6
+
+
+class _Tau:
+    """The optical depth at a depth, on the grid PAR is integrated on.
+
+    A class rather than a function defined inside :func:`par_profile`, so
+    that a :class:`ParProfile` can be pickled and sent to another process
+    (DECISIONS.md section 81). ``kd`` is the Kd on ``sub_wl``, applied
+    unchanged with depth; with a ``descent`` it is that descent's layers
+    instead, on the samples ``near`` picks.
+    """
+
+    __slots__ = ("grid", "sub_wl", "kd", "descent", "near")
+
+    def __init__(self, grid, sub_wl, kd=None, descent=None, near=None):
+        self.grid = grid
+        self.sub_wl = sub_wl
+        self.kd = kd
+        self.descent = descent
+        self.near = near
+
+    def __call__(self, z):
+        if self.descent is not None:
+            optical_depth = self.descent._optical_depth(z, self.near)
+        else:
+            optical_depth = self.kd * z
+        return np.interp(self.grid, self.sub_wl, optical_depth)
+
+
+class _Shifted:
+    """The optical depths with Kd plus and minus k uncertainties."""
+
+    __slots__ = ("grid", "sub_wl", "kd", "sigma", "band")
+
+    def __init__(self, grid, sub_wl, kd, sigma, band):
+        self.grid = grid
+        self.sub_wl = sub_wl
+        self.kd = kd
+        self.sigma = sigma
+        self.band = band
+
+    def __call__(self, k):
+        lo, hi = self.band
+        if np.any(np.isnan(self.sigma)):
+            raise MissingQuantityError(
+                f"the uncertainty of Kd has a gap between {lo:g} and "
+                f"{hi:g} nm, so its effect on the integral over all of "
+                "it is not determined")
+        more, less = self.kd + k * self.sigma, self.kd - k * self.sigma
+        if np.any(less < 0):
+            worst = self.sub_wl[np.argmin(less)]
+            raise ValueError(
+                f"Kd minus {k:g} uncertainties is negative at "
+                f"{worst:g} nm: the uncertainty is larger than the "
+                "value, and a Kd below zero cannot be")
+        return (_Tau(self.grid, self.sub_wl, more),
+                _Tau(self.grid, self.sub_wl, less))
 
 
 class ParProfile:
@@ -489,6 +545,7 @@ def par_profile(surface_downwelling, wavelengths, /, depths_m, *, kd,
         raise ValueError("depths_m cannot be negative")
 
     deepest = None
+    descent = None
     sigma: np.ndarray | None = None
     no_range = ""
     if isinstance(kd, Descent):
@@ -511,11 +568,6 @@ def par_profile(surface_downwelling, wavelengths, /, depths_m, *, kd,
         kd_from = (f"a descent from Jerlov {kd.surface_water_type} "
                    f"({kd.source})")
         descent = kd
-
-        def optical_depth(z):
-            # The descent's own layers, on the samples the band rests on only.
-            return descent._optical_depth(z, near)
-
         kd_values = (np.vstack([v[near] for v in kd._kd]) if kd._kd
                      else np.zeros_like(sub_wl))
         if kd_uncertainty is not None:
@@ -565,9 +617,6 @@ def par_profile(surface_downwelling, wavelengths, /, depths_m, *, kd,
             # NaN with only a NumPy RuntimeWarning.
             raise ValueError("kd must be finite and not negative")
 
-        def optical_depth(z):
-            return kd_values * z
-
     # The grid: every sample inside the band, plus its two ends.
     inside = (wl > lo) & (wl < hi)
     grid = np.concatenate(([lo], wl[inside], [hi]))
@@ -598,28 +647,18 @@ def par_profile(surface_downwelling, wavelengths, /, depths_m, *, kd,
             raise ValueError("photon_weight must be finite and not negative")
         weight = np.interp(grid, sub_wl, values)
 
-    def tau(z):
-        return np.interp(grid, sub_wl, optical_depth(z))
+    # The descent's own layers, on the samples the band rests on only; or
+    # one Kd applied unchanged with depth.
+    if descent is not None:
+        tau = _Tau(grid, sub_wl, descent=descent, near=near)
+    else:
+        tau = _Tau(grid, sub_wl, kd=kd_values)
 
-    shifted: str | Callable
+    shifted: str | _Shifted
     if sigma is None:
         shifted = no_range
     else:
-        def shifted(k):
-            if np.any(np.isnan(sigma)):
-                raise MissingQuantityError(
-                    f"the uncertainty of Kd has a gap between {lo:g} and "
-                    f"{hi:g} nm, so its effect on the integral over all of "
-                    "it is not determined")
-            more, less = kd_values + k * sigma, kd_values - k * sigma
-            if np.any(less < 0):
-                worst = sub_wl[np.argmin(less)]
-                raise ValueError(
-                    f"Kd minus {k:g} uncertainties is negative at "
-                    f"{worst:g} nm: the uncertainty is larger than the "
-                    "value, and a Kd below zero cannot be")
-            return (lambda z: np.interp(grid, sub_wl, more * z),
-                    lambda z: np.interp(grid, sub_wl, less * z))
+        shifted = _Shifted(grid, sub_wl, kd_values, sigma, band_nm)
 
     return ParProfile(depths, band_nm, grid, surface_q, tau, deepest,
                       kd_from, weight, shifted)

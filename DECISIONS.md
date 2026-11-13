@@ -4027,3 +4027,151 @@ parts in 1e12 over the distance), so it is taken as zero there:
 unchanged. The publish step counts tracked files against the sdist's
 members with the top directory removed; the sdist also holds
 `setup.cfg` and `jerlov.egg-info/`, which setuptools writes.
+
+## 81. The rest of the review of 1.10.1: documents, results that copy and compare, inputs that cannot be (1.10.3)
+
+Section 80 fixed the two defects of the review and left thirteen findings.
+The user asked on 2026-11-13 for all of them, as 1.10.3. This is the
+plan, committed before the code. No shipped value changes, and no name is
+added or removed.
+
+**Documents (no behaviour changes).**
+
+- DATA.md's table of files lacks `gregg1990_table1.csv`, added in 1.10.0;
+  the test only looked for the name anywhere in the file. The row goes in,
+  and the test becomes: every shipped table has a row, with the number of
+  rows it has.
+- DATA.md's table of statuses lacks nine values the shipped tables use:
+  `transcribed`, `identity`, `second_highest`, `undeclared`, `included`,
+  `excluded_sparse`, `not_a_water_type`, `other_definition` and
+  `above_axis`. Each gets a row saying what its build script means by it,
+  and a test keeps every status of every shipped table in that table.
+  These are statuses of rows that are not spectra a `Water` carries, so
+  `_data.STATUSES`, what a caller's own flags may be, does not change.
+- The README never mentions seven functions of 1.4.0 to 1.8.0:
+  `pure_water_absorption_table`, `lee2013_raman_correction`,
+  `bricaud1995_aph`, `morel2001_bbp`, `lee2011_rrs`, `gordon1989_d0` and
+  `gordon1989_kd`. They go into its two sections of entry points. Its
+  example for the quasi-analytical algorithm uses the name `bbw` for a
+  number and then for an array; the array gets its own name. A test checks
+  that every `jerlov.<name>` the README writes exists. It does not run the
+  README's code, whose inputs are the reader's.
+- Docstrings that later versions left behind: `Scene`'s `depth_m` ("not
+  used", but `observe_slant` uses it), `Observation.veiling` and
+  `contrast` (horizontal only), the head of `ocean_colour.py` ("four
+  relations", "the inverse is not here"), and the `pure_water` of both
+  QAA functions, which do not name `pure_water_absorption_table`.
+  `descend` gains the `KeyError` it raises when `source` lacks a type the
+  profile passes through.
+- The README says every example ends with its assumptions.
+  `sources_disagree.py` does not; it gets the closing list the others
+  have. `.gitignore` names `.DS_Store` twice. The Zenodo description joins
+  its list of defects with two "and"s.
+
+**Results that compare and copy.**
+
+- Five result types are dataclasses with the generated `==`:
+  `Backscattering`, `AttenuationCoefficients`, `QAAResult`,
+  `RamanCorrection` and `SurfaceIrradiance`. Two equal results made
+  separately raise NumPy's "truth value of an array is ambiguous", and
+  `hash` fails on an array. The other result types switch `==` off, but
+  a `Backscattering` of numbers, or a `SurfaceIrradiance` at one
+  wavelength, compares by value today, and switching it off would turn
+  that `True` into `False`. So these five compare field by field with
+  `numpy.array_equal`, NaN equal to NaN, and hash to match: what worked
+  keeps its answer, and what raised gets one. `QAAResult` and
+  `RamanCorrection` get a short `repr`; the generated one prints every
+  array.
+- `gregg1990_irradiance`, `qaa_v6` and `qaa_ioccg2006` return the
+  caller's own wavelength array, against the rule that what is received
+  is copied; they copy. `Observation` and `AttenuationCoefficients` hold
+  the `Scene`'s wavelength array itself; they get copies, and the
+  `Scene`'s own is made read-only, since c was evaluated on it once and a
+  change would leave the two out of step. `Scene.downwelling` stays
+  writable: nothing is derived from it ahead of time.
+- `ParProfile` cannot be pickled, so cannot go to another process: its
+  optical depth is a function defined inside `par_profile`. The functions
+  become small classes holding the same arrays. Every number must come
+  out bit for bit as before.
+
+**Inputs that cannot be.** The package's rule is that NaN marks a gap and
+infinity is refused. These did not follow it, or took something else no
+measurement can be. Each now raises `ValueError`:
+
+- `Water`: an infinite a, b, Kd or uncertainty. (A negative one still
+  warns and is kept, section 60: a corrected measurement can be slightly
+  negative; none is infinite.)
+- `Scene`, `Scene.at_depth`, `veiling_radiance_estimate`: an infinite
+  downwelling irradiance. `observe`, `observe_slant`,
+  `attenuation_coefficients`: an infinite veiling or water radiance.
+- `Observation.contrast`: a background that is negative, infinite, or of
+  a shape that is neither a number nor the wavelengths'.
+- `kd_spectrum`: an infinite or negative Kd. A Kd below pure sea water's
+  still only warns, as Jerlov's own type I is.
+- `b_from_c`: an infinite c, and a `bw` or `cw` that is infinite or
+  negative.
+- `bb_from_vsf`: an infinite beta. `pure_water_vsf`: an angle that is NaN,
+  infinite or outside 0 to 180 degrees.
+- `xyz_to_srgb`, `integrate_response`: infinity in the XYZ, the spectrum
+  or the response. NaN in a spectrum still gives NaN, a gap, and the
+  docstrings of `integrate_response` and `spectrum_to_srgb` say so.
+
+As in sections 60 and 80, a call that returned infinity, NaN from
+infinity, or a negative radiance now raises; no call with finite,
+possible inputs changes.
+
+**Exceptions that say what was wrong.**
+
+- `gregg1990_irradiance` raises `TypeError` both when neither of
+  `visibility_km` and `aerosol_optical_thickness_550` is given and when
+  both are. The package's pattern (sections 61 and 69) is
+  `MissingQuantityError` for the first and `ValueError` for the second,
+  and it follows it now. Section 69 already holds that a different
+  exception from a call that failed anyway is not a breaking change.
+- A number given as text reached `numpy.isfinite` and raised its
+  `TypeError` in `gregg1990_irradiance`, the chlorophyll of the three
+  case 1 functions, and `visual_pigment_template`'s `lambda_max`; these
+  raise the `ValueError` the same functions raise for any other bad
+  value. `tyler1958_radiance("abc")` raises the `KeyError` of an unknown
+  depth. `ScatteringFunction.vsf_at` with a 2-D array of angles raised
+  "truth value of an array is ambiguous"; it says a number or a 1-D array
+  is wanted, as `Water` does.
+
+**Packaging.** Python 3.14 joins the CI matrix and the classifiers, which
+a test keeps equal; the suite passes on 3.14.6 with NumPy 2.5.
+
+**Tidying.** `Scene.observe` and `observe_slant` check the target with the
+same helper; `lee2013_raman_correction` and the QAA functions check
+wavelengths, Rrs and bands with the same helpers. Messages and results do
+not change.
+
+**Checks.** A test for each refusal and each exception above; the two
+DATA.md tables; the README's names; equality, hashing and `repr` of the
+five types; copies not shared; a `ParProfile` pickled and read back gives
+the same `par`, depths, bounds and spectrum; every example's output
+compared with 1.10.2's, expected identical apart from the banner and the
+new closing list of `sources_disagree.py`.
+
+**Version.** 1.10.3. The user chose a patch version for it; the CHANGELOG
+lists every call that now raises under Fixed.
+
+**Differences from the plan, noted after the code was written.**
+
+- `Scene.at_depth` also refuses a negative surface irradiance itself.
+  It used to pass it on, and `Scene` refused the product; the exception
+  is the same `ValueError`, raised one step sooner with the check for
+  infinity.
+- The README test checks more than that each `jerlov.<name>` exists: the
+  name must be in `jerlov.__all__`, and the seven functions must be
+  among them.
+- A test not in the plan holds every example to having its section of
+  assumptions, under one of the four headings the examples use, since
+  the README's sentence about them had been untrue with nothing to
+  notice.
+- The equality treats two fields as the same when both are NaN, for a
+  number as for an array, so that a result is never unequal to a result
+  made the same way; none of the five types has a field that is a single
+  NaN today.
+- The output of the twenty examples that run in under a few minutes was
+  compared with 1.10.2's line by line: the banner's version differs in
+  each, and `sources_disagree.py` has its new closing list. Nothing else.

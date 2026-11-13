@@ -148,6 +148,9 @@ def integrate_response(spectrum, wavelengths, response, response_wavelengths,
     spectrum onto the response's grid instead is no cure, since it only
     trades this error for one in the shape assumed between the spectrum's
     samples.
+
+    NaN in the spectrum, a gap, makes the integral NaN: it is not bridged.
+    Infinity is refused.
     """
     spectrum = np.asarray(spectrum, dtype=float)
     wavelengths = np.asarray(wavelengths, dtype=float)
@@ -159,6 +162,10 @@ def integrate_response(spectrum, wavelengths, response, response_wavelengths,
         raise ValueError("spectrum must have the same shape as wavelengths")
     if response.shape[0] != response_wavelengths.shape[0]:
         raise ValueError("response must be aligned with response_wavelengths")
+    if np.any(np.isinf(spectrum)) or np.any(np.isinf(response)):
+        raise ValueError(
+            "the spectrum and the response must not be infinite; NaN marks "
+            "a gap and gives NaN")
     if wavelengths.size < 2:
         raise ValueError("at least two wavelengths are needed to integrate")
     if response_wavelengths.size < 2:
@@ -222,6 +229,9 @@ def xyz_to_srgb(xyz, *, clip: bool = True) -> np.ndarray:
     falls outside the display gamut, which underwater colours often do.
     """
     xyz = np.asarray(xyz, dtype=float)
+    if np.any(np.isinf(xyz)):
+        # Clipping turned an infinite X into a plain colour.
+        raise ValueError("xyz must not be infinite; NaN gives NaN")
     linear = np.tensordot(xyz, XYZ_TO_LINEAR_SRGB.T, axes=([-1], [0]))
 
     outside = np.any(linear < -1e-9) or np.any(linear > 1 + 1e-9)
@@ -269,6 +279,10 @@ def spectrum_to_srgb(spectrum, wavelengths, /, *, white, clip: bool = True):
 
     Absolute brightness is lost: a perfect diffuser under the stated white
     maps to white whatever the light level.
+
+    NaN in ``spectrum`` inside the observer's range, a gap, gives a NaN
+    colour; a gap in ``white`` is refused, since nothing would then have a
+    colour.
     """
     if white is None:
         raise ValueError(
