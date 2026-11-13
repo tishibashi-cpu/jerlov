@@ -208,7 +208,7 @@ an argument that names a quantity or an option outside its fixed set raises
 Small and focused is easier to review than complete. Say in the description
 what the change is for; if it adds data, say which paper and which edition.
 
-CI runs the tests on Python 3.10 to 3.13, a job pinned to the oldest declared
+CI runs the tests on Python 3.10 to 3.14, a job pinned to the oldest declared
 NumPy, and every example. All of it should be green before review.
 
 ## Scope

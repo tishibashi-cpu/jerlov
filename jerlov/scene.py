@@ -43,12 +43,12 @@ from .water import (
     Descent,
     MissingQuantityError,
     Water,
-    _as_array,
     _require_number,
 )
 
 
-@dataclass(frozen=True)
+@_data.compared_by_value
+@dataclass(frozen=True, eq=False)
 class AttenuationCoefficients:
     """The three coefficients of the Akkaynak-Treibitz image formation model.
 
@@ -109,7 +109,9 @@ class Observation:
         self.direct = direct
         """Target radiance surviving the path: L_target * exp(-c*r)."""
         self.veiling = veiling
-        """Path radiance added by scattering: B_inf * (1 - exp(-c*r))."""
+        """Path radiance added by scattering: B_inf * (1 - exp(-c*r)) along
+        a horizontal line; along a slanted one,
+        Nw * (1 - exp(-c*r - K*(zt - z))), see :meth:`Scene.observe_slant`."""
         self.transmittance = transmittance
         """exp(-c*r). Free of approximation, given c."""
         self.distance_m = distance_m
@@ -147,6 +149,11 @@ class Observation:
             C(r) = (L_t - L_b) t / (L_b t + B (1 - t))
                  = C_0 * L_b t / (L_b t + B (1 - t)),   C_0 = (L_t - L_b) / L_b
 
+        This is written for a horizontal line. From
+        :meth:`Scene.observe_slant` the same holds with ``B (1 - t)``
+        replaced by the slanted path's :attr:`veiling`, and a background
+        at the target's depth lit as the target is.
+
         The path radiance is common to both and cancels from the numerator,
         but not from the denominator, so the loss of contrast is the veiling
         light's doing rather than the transmittance's:
@@ -159,7 +166,16 @@ class Observation:
         - It falls faster than that against a background darker than ``B``,
           and more slowly against a brighter one.
         """
-        background = _as_array(background_radiance)
+        background = np.asarray(background_radiance, dtype=float)
+        if background.ndim != 0 and background.shape != np.shape(
+                self.transmittance):
+            raise ValueError(
+                "background_radiance must be a number or have the same "
+                "shape as wavelengths")
+        if np.any(background < 0) or np.any(np.isinf(background)):
+            raise ValueError(
+                "background_radiance cannot be negative or infinite: it is "
+                "a radiance, not a reflectance or a contrast")
         observed_background = (
             background * self.transmittance
             + self.veiling
@@ -201,8 +217,10 @@ class Scene:
     wavelengths:
         Wavelengths in nm at which everything is evaluated.
     depth_m:
-        Recorded for reference. Not used in the calculation: with a
+        The observer's depth, in m. :meth:`observe` does not use it: with a
         horizontal path the depth enters only through ``downwelling``.
+        :meth:`observe_slant` needs it, to place the target above or
+        below.
     """
 
     @_data.positional_only()
@@ -218,12 +236,16 @@ class Scene:
         self.wavelengths = np.array(wavelengths, dtype=float)
         if self.wavelengths.ndim != 1 or self.wavelengths.size == 0:
             raise ValueError("wavelengths must be a non-empty 1-D array")
+        # Read-only: c is evaluated on it once, below, and a change would
+        # leave the two out of step (DECISIONS.md section 81).
+        self.wavelengths.setflags(write=False)
         self.downwelling = np.array(downwelling, dtype=float)
         if self.downwelling.shape != self.wavelengths.shape:
             raise ValueError(
                 "downwelling must have the same shape as wavelengths")
-        if np.any(self.downwelling < 0):
-            raise ValueError("downwelling irradiance cannot be negative")
+        if np.any(self.downwelling < 0) or np.any(np.isinf(self.downwelling)):
+            raise ValueError(
+                "downwelling irradiance cannot be negative or infinite")
         self.depth_m = depth_m
         # Evaluated once; Water raises for wavelengths outside its data and
         # warns for any that rest on flagged values.
@@ -269,6 +291,9 @@ class Scene:
             raise ValueError(
                 "surface_downwelling must have the same shape as wavelengths"
             )
+        if np.any(surface < 0) or np.any(np.isinf(surface)):
+            raise ValueError(
+                "downwelling irradiance cannot be negative or infinite")
         if isinstance(kd, Descent):
             if kd.depth_m != float(depth_m):
                 raise ValueError(
@@ -348,11 +373,12 @@ class Scene:
                 raise ValueError(
                     "veiling_radiance must have the same shape as wavelengths"
                 )
-            if np.any(b_inf < 0):
-                raise ValueError("veiling_radiance cannot be negative")
+            if np.any(b_inf < 0) or np.any(np.isinf(b_inf)):
+                raise ValueError(
+                    "veiling_radiance cannot be negative or infinite")
         c = self._c.copy()
         return AttenuationCoefficients(
-            wavelengths=self.wavelengths,
+            wavelengths=self.wavelengths.copy(),
             beta_D=c,
             beta_B=c.copy(),
             B_inf=b_inf,
@@ -399,12 +425,7 @@ class Scene:
             did so with a ``FutureWarning``. See DECISIONS.md sections 33
             and 34.
         """
-        rho = np.asarray(reflectance, dtype=float)
-        if rho.shape != self.wavelengths.shape:
-            raise ValueError(
-                "reflectance must have the same shape as wavelengths")
-        if np.any(rho < 0) or np.any(rho > 1):
-            raise ValueError("reflectance must lie between 0 and 1")
+        rho = self._reflectance(reflectance)
         if veiling_radiance is None:
             raise MissingQuantityError(
                 "veiling_radiance (B_inf) has no default: it depends on the "
@@ -418,8 +439,9 @@ class Scene:
             raise ValueError(
                 "veiling_radiance must have the same shape as wavelengths"
             )
-        if np.any(b_inf < 0):
-            raise ValueError("veiling_radiance cannot be negative")
+        if np.any(b_inf < 0) or np.any(np.isinf(b_inf)):
+            raise ValueError(
+                "veiling_radiance cannot be negative or infinite")
         if face_irradiance_ratio is None:
             raise MissingQuantityError(
                 "face_irradiance_ratio has no default: it is the irradiance "
@@ -436,7 +458,7 @@ class Scene:
         target = rho * ratio * self.downwelling / np.pi
         t = self.transmittance(distance_m)
         return Observation(
-            wavelengths=self.wavelengths,
+            wavelengths=self.wavelengths.copy(),
             direct=target * t,
             veiling=b_inf * (1.0 - t),
             transmittance=t,
@@ -543,8 +565,8 @@ class Scene:
         if nw.shape != self.wavelengths.shape:
             raise ValueError(
                 "water_radiance must have the same shape as wavelengths")
-        if np.any(nw < 0):
-            raise ValueError("water_radiance cannot be negative")
+        if np.any(nw < 0) or np.any(np.isinf(nw)):
+            raise ValueError("water_radiance cannot be negative or infinite")
         if radiance_attenuation is None:
             raise MissingQuantityError(
                 "radiance_attenuation has no default: K along this line of "
@@ -579,7 +601,7 @@ class Scene:
         lit = self.downwelling * np.exp(-kd_values * rise)
         target = rho * ratio * lit / np.pi
         return Observation(
-            wavelengths=self.wavelengths,
+            wavelengths=self.wavelengths.copy(),
             direct=target * t,
             # Within the tolerance above the bracket can be a rounding
             # error below zero; it is zero there.
@@ -589,14 +611,19 @@ class Scene:
             target_radiance=target,
         )
 
-    def _target_inputs(self, reflectance, face_irradiance_ratio):
-        """The target's reflectance and face irradiance ratio, checked."""
+    def _reflectance(self, reflectance) -> np.ndarray:
+        """The target's reflectance, checked."""
         rho = np.asarray(reflectance, dtype=float)
         if rho.shape != self.wavelengths.shape:
             raise ValueError(
                 "reflectance must have the same shape as wavelengths")
         if np.any(rho < 0) or np.any(rho > 1):
             raise ValueError("reflectance must lie between 0 and 1")
+        return rho
+
+    def _target_inputs(self, reflectance, face_irradiance_ratio):
+        """The target's reflectance and face irradiance ratio, checked."""
+        rho = self._reflectance(reflectance)
         if face_irradiance_ratio is None:
             raise MissingQuantityError(
                 "face_irradiance_ratio has no default: it is the irradiance "
@@ -685,9 +712,10 @@ def veiling_radiance_estimate(water: Water, downwelling, wavelengths, /, *,
     ed = np.asarray(downwelling, dtype=float)
     if ed.shape != wavelengths.shape:
         raise ValueError("downwelling must have the same shape as wavelengths")
-    if np.any(ed < 0):
+    if np.any(ed < 0) or np.any(np.isinf(ed)):
         # Scene refuses this too; a negative irradiance gave a negative B_inf.
-        raise ValueError("downwelling irradiance cannot be negative")
+        raise ValueError(
+            "downwelling irradiance cannot be negative or infinite")
     bb = water.bb(wavelengths, backscatter_ratio=backscatter_ratio,
                   particle_backscatter_ratio=particle_backscatter_ratio)
     c = water.c(wavelengths)

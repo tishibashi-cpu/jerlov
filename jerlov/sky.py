@@ -19,6 +19,7 @@ from dataclasses import dataclass
 import numpy as np
 
 from . import _data
+from .water import MissingQuantityError
 
 GREGG1990 = (
     "Gregg, W. W. and Carder, K. L. (1990), 'A simple spectral solar "
@@ -43,7 +44,8 @@ _AIR_DENSITY = 1.2e3
 _D = (2.2e-5, 4.0e-4, 4.5e-5, 4.0e-5)
 
 
-@dataclass(frozen=True)
+@_data.compared_by_value
+@dataclass(frozen=True, eq=False)
 class SurfaceIrradiance:
     """Downwelling irradiance at the sea surface, W m-2 nm-1.
 
@@ -83,7 +85,11 @@ class SurfaceIrradiance:
 
 
 def _number(value, name: str) -> float:
-    if np.ndim(value) != 0 or not np.isfinite(value):
+    try:
+        ok = np.ndim(value) == 0 and bool(np.isfinite(value))
+    except TypeError:               # text, say: isfinite has no answer
+        ok = False
+    if not ok:
         raise ValueError(f"{name} must be one finite number, not {value!r}")
     return float(value)
 
@@ -96,7 +102,8 @@ def _at_least(value, name: str, low: float) -> float:
 
 
 def _wavelength_rows(wavelength_nm) -> tuple[np.ndarray, np.ndarray]:
-    query = np.asarray(wavelength_nm, dtype=float)
+    # A copy: the result carries it, and the caller's array stays theirs.
+    query = np.array(wavelength_nm, dtype=float)
     if np.any(np.isnan(query)):
         raise ValueError("wavelength_nm must be numbers, not NaN")
     if np.any(query < 350) or np.any(query > 700) or np.any(
@@ -202,7 +209,8 @@ def gregg1990_irradiance(wavelength_nm, /, *, sun_zenith_deg, day_of_year,
     visibility_km, aerosol_optical_thickness_550:
         Exactly one. The paper takes the visibility V and sets tau_a(550)
         = 3.91 / V with a 1 km scale height (eqs. 28, 29); a measured
-        tau_a(550) replaces that step and nothing else.
+        tau_a(550) replaces that step and nothing else. Neither raises
+        :class:`~jerlov.MissingQuantityError`, both :class:`ValueError`.
 
     No input has a default: each describes the sky at one place and time.
     The paper's observations spanned (Table 2, p. 1667) 1002-1019 hPa, air
@@ -245,9 +253,15 @@ def gregg1990_irradiance(wavelength_nm, /, *, sun_zenith_deg, day_of_year,
     wind_24h = _at_least(wind_speed_24h, "wind_speed_24h", 0)
     wind = _at_least(wind_speed, "wind_speed", 0)
     ozone = _at_least(ozone_du, "ozone_du", 0)
-    if (visibility_km is None) == (aerosol_optical_thickness_550 is None):
-        raise TypeError("give exactly one of visibility_km and "
-                        "aerosol_optical_thickness_550")
+    if visibility_km is None and aerosol_optical_thickness_550 is None:
+        raise MissingQuantityError(
+            "the aerosol has no default: give exactly one of visibility_km "
+            "(the paper's input; tau_a(550) = 3.91 / V) and "
+            "aerosol_optical_thickness_550 (a measured tau_a at 550 nm)")
+    if (visibility_km is not None
+            and aerosol_optical_thickness_550 is not None):
+        raise ValueError("give exactly one of visibility_km and "
+                         "aerosol_optical_thickness_550, not both")
     if visibility_km is not None:
         visibility = _number(visibility_km, "visibility_km")
         if visibility <= 0:

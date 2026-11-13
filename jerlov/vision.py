@@ -128,9 +128,12 @@ def visual_pigment_template(wavelengths, /, *, lambda_max: float,
     if chromophore not in _MEASURED:
         raise ValueError(f"chromophore must be 'A1' or 'A2', not "
                          f"{chromophore!r}")
-    if (np.ndim(lambda_max) != 0
-            or not np.isfinite(lambda_max)
-            or lambda_max <= _LOWEST_LAMBDA_MAX):
+    try:
+        ok = (np.ndim(lambda_max) == 0 and bool(np.isfinite(lambda_max))
+              and lambda_max > _LOWEST_LAMBDA_MAX)
+    except TypeError:               # text, say: isfinite has no answer
+        ok = False
+    if not ok:
         raise ValueError(
             f"lambda_max must be one number above {_LOWEST_LAMBDA_MAX:g} nm, "
             f"the range the template was made for, not {lambda_max!r}")

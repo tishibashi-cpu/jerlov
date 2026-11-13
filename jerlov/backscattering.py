@@ -121,6 +121,10 @@ def pure_water_vsf(angle_deg, wavelength_nm, /, *,
     """
     salinity_psu = _salinity(salinity_psu)
     angle = np.asarray(angle_deg, dtype=float)
+    if (not np.all(np.isfinite(angle)) or np.any(angle < 0)
+            or np.any(angle > 180)):
+        raise ValueError(
+            f"angle_deg must lie within 0-180 degrees, not {angle_deg!r}")
     amplitude = _amplitude(wavelength_nm, salinity_psu)
     out = amplitude * (1 + _ratio() * np.cos(np.radians(angle)) ** 2)
     return _number_or_array(out)
@@ -206,7 +210,8 @@ def _quoted_error(angle_deg: float) -> float:
     return float(np.interp(angle_deg, angles, errors))
 
 
-@dataclass(frozen=True)
+@_data.compared_by_value
+@dataclass(frozen=True, eq=False)
 class Backscattering:
     """``bb`` recovered from a single-angle measurement."""
 
@@ -273,8 +278,9 @@ def bb_from_vsf(beta, angle_deg: float, wavelength_nm, /, *,
     scalar = (np.ndim(beta) == 0 and np.ndim(wavelength_nm) == 0
               and np.ndim(salinity_psu) == 0)
     beta = np.atleast_1d(np.asarray(beta, dtype=float))
-    if np.any(beta < 0):
-        raise ValueError("a volume scattering function cannot be negative")
+    if np.any(beta < 0) or np.any(np.isinf(beta)):
+        raise ValueError(
+            "a volume scattering function cannot be negative or infinite")
     beta_w = np.atleast_1d(
         pure_water_vsf(angle, wavelength_nm, salinity_psu=salinity_psu))
     bb_w = np.atleast_1d(

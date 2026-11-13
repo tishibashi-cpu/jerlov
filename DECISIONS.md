@@ -4154,3 +4154,24 @@ new closing list of `sources_disagree.py`.
 
 **Version.** 1.10.3. The user chose a patch version for it; the CHANGELOG
 lists every call that now raises under Fixed.
+
+**Differences from the plan, noted after the code was written.**
+
+- `Scene.at_depth` also refuses a negative surface irradiance itself.
+  It used to pass it on, and `Scene` refused the product; the exception
+  is the same `ValueError`, raised one step sooner with the check for
+  infinity.
+- The README test checks more than that each `jerlov.<name>` exists: the
+  name must be in `jerlov.__all__`, and the seven functions must be
+  among them.
+- A test not in the plan holds every example to having its section of
+  assumptions, under one of the four headings the examples use, since
+  the README's sentence about them had been untrue with nothing to
+  notice.
+- The equality treats two fields as the same when both are NaN, for a
+  number as for an array, so that a result is never unequal to a result
+  made the same way; none of the five types has a field that is a single
+  NaN today.
+- The output of the twenty examples that run in under a few minutes was
+  compared with 1.10.2's line by line: the banner's version differs in
+  each, and `sources_disagree.py` has its new closing list. Nothing else.

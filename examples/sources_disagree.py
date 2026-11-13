@@ -153,3 +153,19 @@ Each of these could have returned a plausible number. The package refuses
 because a plausible number that nobody can trace is exactly what this field
 already has too much of.
 """)
+
+# --------------------------------------------------------------------------
+rule("Before you use any of this")
+
+print("""  - The comparison in part 1 is at one wavelength, 510 nm, and of b
+    alone. The ratio between the two sources changes with wavelength, and
+    for a it is another ratio again; compute it where you work.
+  - The measured source's spectra are smooth curves fitted to averages
+    over measurement campaigns, not single measurements.
+    `jerlov.measured_points` gives the points behind them, with their
+    spread and their campaign counts.
+  - Neither source is the water in front of you. A Jerlov type is a class
+    of water, defined on the upper 10 m.
+  - Nothing here says which source is right, only that they are not
+    interchangeable and what each rests on.
+""")

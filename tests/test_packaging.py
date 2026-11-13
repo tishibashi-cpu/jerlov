@@ -71,6 +71,84 @@ def test_every_shipped_table_is_listed_in_DATA_md():
 
 
 @source_tree
+def test_DATA_md_lists_every_shipped_table_with_its_rows():
+    """gregg1990_table1.csv was shipped in 1.10.0 without a row in the
+    table of files: the test above found its name in section 35 and was
+    content (DECISIONS.md section 81)."""
+    import csv
+    documented = dict(re.findall(
+        r"^\| `([a-z0-9_]+\.csv)` \|.*\| (\d+) \|$",
+        (ROOT / "DATA.md").read_text(), re.MULTILINE))
+    shipped = {}
+    for path in sorted((ROOT / "jerlov" / "data").glob("*.csv")):
+        with path.open(newline="", encoding="utf-8") as handle:
+            shipped[path.name] = sum(1 for _ in csv.DictReader(handle))
+    assert sorted(documented) == sorted(shipped), (
+        "DATA.md's table of files and jerlov/data/ differ: "
+        f"{sorted(set(documented) ^ set(shipped))}")
+    wrong = {name: (int(documented[name]), rows)
+             for name, rows in shipped.items()
+             if int(documented[name]) != rows}
+    assert not wrong, f"rows as DATA.md says, and as shipped: {wrong}"
+
+
+@source_tree
+def test_DATA_md_explains_every_status_a_shipped_table_uses():
+    """Nine were in use and not in the table of statuses, two of them
+    nowhere in DATA.md at all."""
+    import csv
+    text = (ROOT / "DATA.md").read_text()
+    section = text[text.index("## The `status` column"):
+                   text.index("## Sources")]
+    explained = set(re.findall(r"^\| `([a-z_]+)` \|", section, re.MULTILINE))
+    used = {}
+    for path in sorted((ROOT / "jerlov" / "data").glob("*.csv")):
+        with path.open(newline="", encoding="utf-8") as handle:
+            for row in csv.DictReader(handle):
+                if "status" in row:
+                    used.setdefault(row["status"], path.name)
+    missing = {s: f for s, f in used.items() if s not in explained}
+    assert not missing, f"statuses DATA.md's table does not explain: {missing}"
+    unused = explained - set(used)
+    assert not unused, f"statuses the table explains but none uses: {unused}"
+    # What a caller's own flags may be is a subset of them.
+    from jerlov import _data
+    assert _data.STATUSES <= explained
+
+
+@source_tree
+def test_the_README_names_only_what_exists():
+    """It does not run the README's code, whose inputs are the reader's;
+    it checks that every jerlov.<name> written there is one."""
+    text = (ROOT / "README.md").read_text()
+    names = set(re.findall(r"\bjerlov\.([A-Za-z_][A-Za-z0-9_]*)", text))
+    assert len(names) > 40, "the pattern no longer finds the README's names"
+    unknown = sorted(n for n in names if not hasattr(jerlov, n))
+    assert not unknown, f"the README names jerlov.{unknown}, which do not exist"
+    private = sorted(n for n in names
+                     if n not in jerlov.__all__ and n != "__version__")
+    assert not private, f"the README names {private}, not in jerlov.__all__"
+    # The functions of 1.4.0 to 1.8.0 that it never mentioned.
+    for name in ("pure_water_absorption_table", "lee2013_raman_correction",
+                 "bricaud1995_aph", "morel2001_bbp", "lee2011_rrs",
+                 "gordon1989_d0", "gordon1989_kd"):
+        assert name in names, f"the README no longer mentions {name}"
+
+
+@source_tree
+def test_every_example_has_its_list_of_assumptions():
+    """The README says every one ends with the assumptions it made.
+    sources_disagree.py had none (DECISIONS.md section 81)."""
+    headings = ("Before you use any of this", "What each of these assumed",
+                "Before you put these in a model", "What this assumed")
+    for script in sorted((ROOT / "examples").glob("*.py")):
+        titles = re.findall(r'rule\(f?"([^"]*)"', script.read_text())
+        assert any(t in headings for t in titles), (
+            f"{script.name} has no section listing what it assumed; its "
+            f"sections are {titles}")
+
+
+@source_tree
 def test_every_shipped_table_has_a_build_script_or_is_explained():
     """Each table should be regenerable; tools/README.md says so."""
     scripts = " ".join(p.read_text() for p in (ROOT / "tools").glob("*.py"))

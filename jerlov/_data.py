@@ -8,6 +8,7 @@ silently cleaned up on the way in.
 from __future__ import annotations
 
 import csv
+import dataclasses
 import functools
 import inspect
 import os
@@ -111,6 +112,62 @@ def positional_only(*, also_by_position: tuple[str, ...] = ()
         return wrapper  # type: ignore[return-value]
 
     return decorate
+
+
+_T = TypeVar("_T", bound=type)
+
+
+def compared_by_value(cls: _T) -> _T:
+    """Give a dataclass that holds arrays an ``==`` and a ``hash``.
+
+    The generated ``==`` compares the fields as a tuple, which for two
+    arrays raises NumPy's "truth value of an array is ambiguous", and the
+    generated hash fails on an array. This compares field by field with
+    ``numpy.array_equal``, NaN equal to NaN, so that a result of numbers
+    keeps the answer the generated ``==`` gave it (DECISIONS.md section
+    81). Use with ``@dataclass(frozen=True, eq=False)``.
+    """
+    names = [f.name for f in dataclasses.fields(cls)]  # type: ignore[arg-type]
+
+    def same(a: Any, b: Any) -> bool:
+        if isinstance(a, np.ndarray) or isinstance(b, np.ndarray):
+            a, b = np.asarray(a), np.asarray(b)
+            if a.shape != b.shape:
+                return False
+            try:
+                return bool(np.array_equal(a, b, equal_nan=True))
+            except TypeError:       # not numbers: no NaN to allow for
+                return bool(np.array_equal(a, b))
+        if a is b:
+            return True
+        try:
+            if a != a and b != b:   # NaN
+                return True
+        except (TypeError, ValueError):
+            pass
+        return bool(a == b)
+
+    def __eq__(self: Any, other: Any) -> Any:
+        if other.__class__ is not self.__class__:
+            return NotImplemented
+        return all(same(getattr(self, n), getattr(other, n)) for n in names)
+
+    def __hash__(self: Any) -> int:
+        parts: list[Any] = []
+        for n in names:
+            value = getattr(self, n)
+            if isinstance(value, np.ndarray):
+                parts.append((value.shape, np.asarray(
+                    value, dtype=float).tobytes()))
+            elif isinstance(value, float) and value != value:
+                parts.append("nan")
+            else:
+                parts.append(value)
+        return hash((self.__class__.__name__, tuple(parts)))
+
+    cls.__eq__ = __eq__             # type: ignore[assignment]
+    cls.__hash__ = __hash__         # type: ignore[assignment]
+    return cls
 
 
 def _frozen(array: np.ndarray) -> np.ndarray:

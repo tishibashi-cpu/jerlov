@@ -448,6 +448,10 @@ m = jerlov.measured_points("III", "a")   # m.wavelengths, m.values, m.std_dev
 # The pure water absorption williamson2022 built its a on (300-800 nm).
 jerlov.pure_water_absorption(440)        # 0.0104; other sources say why they have none
 
+# A published pure water absorption in its own right: "pope1997", "smith1981",
+# "mason2016", "lee2015" or "lee2015_smoothed". Which one is yours to say.
+jerlov.pure_water_absorption_table(440, source="pope1997")   # 0.00635
+
 # Use your own measurements; they take exactly the same path, flags included.
 w = jerlov.Water.from_measurements(
     wavelengths, a=..., b=...,
@@ -462,13 +466,33 @@ w = jerlov.Water.from_measurements(
 # Kd of case 1 water from its chlorophyll, mg m^-3 (Morel & Maritorena 2001).
 jerlov.morel2001_kd([443, 490, 555], chlorophyll_mg_m3=0.3)
 
+# From the same chlorophyll: absorption by phytoplankton (Bricaud et al. 1995)
+# and backscattering by particles (Morel & Maritorena 2001). Water, and the
+# rest of what absorbs, are not included.
+jerlov.bricaud1995_aph([443, 490, 555], chlorophyll_mg_m3=0.3)
+jerlov.morel2001_bbp([443, 490, 555], chlorophyll_mg_m3=0.3)
+
 # Kd from a, bb and the sun (Lee et al. 2005, 2013); bb has no default.
-bbw = jerlov.pure_water_backscattering(490, salinity_psu=35.0)
-jerlov.lee2013_kd(0.03, 0.004, bb_water=bbw, sun_zenith_deg=30.0)
+bbw_490 = jerlov.pure_water_backscattering(490, salinity_psu=35.0)
+jerlov.lee2013_kd(0.03, 0.004, bb_water=bbw_490, sun_zenith_deg=30.0)
+
+# A Kd under another sun and sky, by Gordon's (1989) D0. Both D0 are yours:
+# Jerlov's tables do not record the light they were measured under.
+d0 = jerlov.gordon1989_d0(30.0, direct_fraction=0.8)
+jerlov.gordon1989_kd(0.05, d0_from=d0, d0_to=jerlov.gordon1989_d0(60.0, direct_fraction=0.7))
 
 # The remote sensing reflectance, below and above the surface.
 rrs = jerlov.subsurface_rrs(a, bb, coefficients=jerlov.GORDON1988_RRS_COEFFICIENTS)
 Rrs = jerlov.above_surface_rrs(rrs)
+
+# Or above the surface with water and particles apart, at one of the seven
+# viewing geometries Lee et al. (2011) print; (0, 0, 0) is straight down.
+jerlov.lee2011_rrs(a, bb, bb_water=bb_water,
+                   coefficients=jerlov.LEE2011_RRS_COEFFICIENTS[(0.0, 0.0, 0.0)])
+
+# Take Raman scattering out of a measured Rrs first (Lee et al. 2013), 412-667 nm.
+jerlov.lee2013_raman_correction(bands_nm, measured_Rrs,
+                                bands={"440": 443, "550": 555}).rrs
 
 # The Secchi depth from one Kd and one Rrs spectrum, 400-700 nm (Lee et al. 2015).
 jerlov.lee2015_secchi_depth(wavelengths, kd, Rrs)
@@ -477,6 +501,9 @@ jerlov.lee2015_secchi_depth(wavelengths, kd, Rrs)
 q = jerlov.qaa_v6(bands_nm, Rrs, bands={"412": 412, "443": 443, "490": 490,
                                         "55x": 555, "670": 670},
                   pure_water=(pw_nm, aw, bbw))      # q.a, q.bbp, q.adg, q.aph
+# pw_nm, aw and bbw are arrays covering the bands: for instance
+# pure_water_absorption_table(pw_nm, source="pope1997") and
+# pure_water_backscattering(pw_nm, salinity_psu=35.0).
 jerlov.qaa_ioccg2006(...)   # the version IOCCG Report 5 tested; same arguments
 ```
 

@@ -45,7 +45,8 @@ _V6_G = (0.08945, 0.1247)
 _V6_H = (-1.145902927834082, -1.365828264291757, -0.4692660279445807)
 
 
-@dataclass(frozen=True)
+@_data.compared_by_value
+@dataclass(frozen=True, eq=False, repr=False)
 class QAAResult:
     """What the quasi-analytical algorithm derives from one or more
     spectra of Rrs.
@@ -74,13 +75,27 @@ class QAAResult:
     #: ``"ioccg2006"`` or ``"v6"``.
     version: str
 
+    def __repr__(self) -> str:
+        spectra = int(np.prod(np.shape(self.a)[:-1]))
+        return (f"<QAAResult {self.version}, {spectra} "
+                f"spectr{'um' if spectra == 1 else 'a'} at "
+                f"{self.wavelengths.size} bands, "
+                f"{self.wavelengths[0]:g}-{self.wavelengths[-1]:g} nm>")
 
-def _inputs(wavelengths, rrs, bands, pure_water, roles, extra_nm=()):
-    wl = np.asarray(wavelengths, dtype=float)
+
+def _wavelengths(wavelengths) -> np.ndarray:
+    """The bands' wavelengths, checked. A copy: the result carries it, and
+    the caller's array stays theirs."""
+    wl = np.array(wavelengths, dtype=float)
     if (wl.ndim != 1 or wl.size == 0 or not np.all(np.isfinite(wl))
             or np.any(np.diff(wl) <= 0)):
         raise ValueError("wavelengths must be one ascending list of finite "
                          "numbers, nm")
+    return wl
+
+
+def _rrs(rrs, wl) -> np.ndarray:
+    """Rrs along its last axis on ``wl``, checked."""
     r = np.asarray(rrs, dtype=float)
     if r.ndim == 0 or r.shape[-1] != wl.size:
         raise ValueError("rrs must have one value for each wavelength along "
@@ -88,10 +103,14 @@ def _inputs(wavelengths, rrs, bands, pure_water, roles, extra_nm=()):
     if np.any(np.isinf(r)) or np.any(r < 0):
         raise ValueError("rrs must not be negative or infinite; NaN marks a "
                          "gap and gives NaN")
+    return r
+
+
+def _band_indices(wl, bands, roles, wanted: str) -> dict[str, int]:
+    """Where in ``wl`` each role's band is."""
     if not isinstance(bands, dict) or set(bands) != set(roles):
-        raise ValueError(f"bands must name the wavelength of each of "
-                         f"{', '.join(repr(k) for k in roles)}, and nothing "
-                         "else")
+        raise ValueError(f"bands must name the wavelength of {wanted}, and "
+                         "nothing else")
     index = {}
     for role in roles:
         hit = np.flatnonzero(wl == float(bands[role]))
@@ -99,6 +118,14 @@ def _inputs(wavelengths, rrs, bands, pure_water, roles, extra_nm=()):
             raise ValueError(f"band {role!r} = {bands[role]!r} nm is not one "
                              "of wavelengths")
         index[role] = int(hit[0])
+    return index
+
+
+def _inputs(wavelengths, rrs, bands, pure_water, roles, extra_nm=()):
+    wl = _wavelengths(wavelengths)
+    r = _rrs(rrs, wl)
+    index = _band_indices(
+        wl, bands, roles, "each of " + ", ".join(repr(k) for k in roles))
     try:
         pw_wl, aw, bbw = (np.asarray(x, dtype=float) for x in pure_water)
     except (TypeError, ValueError):
@@ -184,8 +211,8 @@ def qaa_v6(wavelengths, rrs, /, *, bands, pure_water):
         ``(wavelengths, aw, bbw)``: pure water's absorption and
         backscattering, 1/m, interpolated linearly; it must cover the
         bands. No default: the spreadsheet uses its own values;
-        :func:`pure_water_absorption` and :func:`pure_water_backscattering`
-        give the package's.
+        :func:`pure_water_absorption_table` gives published spectra of aw
+        to choose from and :func:`pure_water_backscattering` a bbw.
 
     Returns
     -------
@@ -274,7 +301,9 @@ def qaa_ioccg2006(wavelengths, rrs, /, *, bands, pure_water):
     pure_water:
         ``(wavelengths, aw, bbw)``, 1/m, interpolated linearly; it must
         cover the bands and 640 nm. No default: the report used Pope & Fry
-        (1997) for aw and Morel (1974) for bbw (pp. 73-75).
+        (1997) for aw and Morel (1974) for bbw (pp. 73-75);
+        ``pure_water_absorption_table(..., source="pope1997")`` is the
+        first, and :func:`pure_water_backscattering` gives a bbw.
 
     Returns
     -------
@@ -359,7 +388,8 @@ _LEE2013_RAMAN_TABLE = (
 )
 
 
-@dataclass(frozen=True)
+@_data.compared_by_value
+@dataclass(frozen=True, eq=False, repr=False)
 class RamanCorrection:
     """Rrs with the light Raman-scattered by the water removed.
 
@@ -373,6 +403,18 @@ class RamanCorrection:
     raman_factor: np.ndarray
     #: The corrected Rrs, Rrs_T / (1 + RF), sr^-1 (eq. 13).
     rrs: np.ndarray
+
+    def __repr__(self) -> str:
+        spectra = int(np.prod(np.shape(self.rrs)[:-1]))
+        if np.all(np.isnan(self.raman_factor)):
+            factor = "RF undefined"
+        else:
+            factor = (f"RF {np.nanmin(self.raman_factor):.3f}-"
+                      f"{np.nanmax(self.raman_factor):.3f}")
+        return (f"<RamanCorrection {spectra} "
+                f"spectr{'um' if spectra == 1 else 'a'}, "
+                f"{self.wavelengths[0]:g}-{self.wavelengths[-1]:g} nm, "
+                f"{factor}>")
 
 
 @_data.positional_only()
@@ -407,11 +449,7 @@ def lee2013_raman_correction(wavelengths, rrs, /, *, bands):
     NaN in Rrs_T passes through. Rrs_T must not be negative or infinite,
     and at the "550" band must be positive.
     """
-    wl = np.asarray(wavelengths, dtype=float)
-    if (wl.ndim != 1 or wl.size == 0 or not np.all(np.isfinite(wl))
-            or np.any(np.diff(wl) <= 0)):
-        raise ValueError("wavelengths must be one ascending list of finite "
-                         "numbers, nm")
+    wl = _wavelengths(wavelengths)
     table = np.array(_LEE2013_RAMAN_TABLE)
     lo, hi = table[0, 0], table[-1, 0]
     if wl[0] < lo or wl[-1] > hi:
@@ -419,24 +457,8 @@ def lee2013_raman_correction(wavelengths, rrs, /, *, bands):
             f"Lee et al. (2013) give the correction at {lo:g}-{hi:g} nm; "
             f"wavelengths span {wl[0]:g}-{wl[-1]:g} nm. This package does "
             "not extrapolate.")
-    r = np.asarray(rrs, dtype=float)
-    if r.ndim == 0 or r.shape[-1] != wl.size:
-        raise ValueError("rrs must have one value for each wavelength along "
-                         "its last axis")
-    if np.any(np.isinf(r)) or np.any(r < 0):
-        raise ValueError("rrs must not be negative or infinite; NaN marks a "
-                         "gap and gives NaN")
-    roles = ("440", "550")
-    if not isinstance(bands, dict) or set(bands) != set(roles):
-        raise ValueError("bands must name the wavelength of '440' and '550', "
-                         "and nothing else")
-    index = {}
-    for role in roles:
-        hit = np.flatnonzero(wl == float(bands[role]))
-        if hit.size != 1:
-            raise ValueError(f"band {role!r} = {bands[role]!r} nm is not one "
-                             "of wavelengths")
-        index[role] = int(hit[0])
+    r = _rrs(rrs, wl)
+    index = _band_indices(wl, bands, ("440", "550"), "'440' and '550'")
     r440 = r[..., index["440"]]
     r550 = r[..., index["550"]]
     if np.any(r550 == 0):
@@ -448,5 +470,5 @@ def lee2013_raman_correction(wavelengths, rrs, /, *, bands):
     flat = at_bands.reshape(-1, table.shape[0])
     rf = np.array([np.interp(wl, table[:, 0], row) for row in flat])
     rf = rf.reshape(r.shape[:-1] + (wl.size,))
-    return RamanCorrection(wavelengths=wl.copy(), raman_factor=rf,
+    return RamanCorrection(wavelengths=wl, raman_factor=rf,
                            rrs=r / (1.0 + rf))
