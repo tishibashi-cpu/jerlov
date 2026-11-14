@@ -1793,3 +1793,90 @@ def test_part_7_nadir_written_out(secchi_module):
                              coefficients=jerlov.LEE2011_RRS_COEFFICIENTS[
                                  (0.0, 0.0, 0.0)])
     assert np.allclose(got, want, rtol=1e-13, atol=0)
+
+
+# -- Water for a renderer (rendering_export.py, section 82) --------------
+
+
+@pytest.fixture(scope="module")
+def render_example():
+    import contextlib
+    import io
+    import runpy
+    import sys
+    module = runpy.run_path(str(ROOT / "examples" / "rendering_export.py"),
+                            run_name="rendering_export")
+    argv = sys.argv
+    sys.argv = ["rendering_export.py"]      # print only, write no files
+    try:
+        with contextlib.redirect_stdout(io.StringIO()), \
+                warnings.catch_warnings():
+            warnings.simplefilter("error", jerlov.ProvenanceWarning)
+            warnings.simplefilter("error", FutureWarning)
+            return module["main"]()
+    finally:
+        sys.argv = argv
+
+
+@source_tree
+def test_examples_README_figures_for_rendering(render_example):
+    """examples/README.md: red off by up to 8 percent in ACEScg and Rec.
+    2020 and 49 in linear sRGB; IB refused over 20 m, positive to 8.6 m;
+    g by B/S 0.822 to 0.941; the mean cosine's HG backscattering 5 to 30
+    percent less; HG 58 to 310 times short at 0.1 degree."""
+    text = (ROOT / "examples" / "README.md").read_text()
+    for quoted in ("**8 percent**", "**49 percent**", "8.6 m",
+                   "0.822 to 0.941", "5 to 30 percent", "58 to 310 times"):
+        assert quoted in text, quoted
+    worst = render_example["worst"]
+    assert round(100 * worst["acescg"]) == round(100 * worst["rec2020"]) == 8
+    assert round(100 * worst["linear_srgb"]) == 49
+    assert render_example["red_worst"]
+    assert round(render_example["reach"], 1) == 8.6
+    by_ratio = [v[0].g for v in render_example["fits"].values()]
+    assert (round(min(by_ratio), 3), round(max(by_ratio), 3)) == (0.822,
+                                                                 0.941)
+    deficit = render_example["deficit"]
+    assert (round(100 * min(deficit)), round(100 * max(deficit))) == (5, 30)
+    short = render_example["short"]
+    assert (round(min(short)), round(max(short))) == (58, 310)
+
+
+@source_tree
+def test_the_render_example_reports_only_the_extrapolated_ends(
+        render_example):
+    """Its warnings are Williamson & Hollins's model extrapolation outside
+    412-715 nm, and nothing else."""
+    caught = render_example["caught"]
+    assert caught
+    for message in caught:
+        assert message.startswith("ProvenanceWarning: ")
+        assert "model_extrapolation at 360-411, 716-" in message
+        assert message.count(" at ") == message.count("model_extrapolation")
+
+
+@source_tree
+def test_the_render_files_carry_the_fitted_numbers(render_example):
+    files = render_example["files"]
+    srgb, aces = files["srgb"], files["aces"]
+    rgb = files["texts"]["water_mitsuba_rgb.xml"]
+    scale = float(np.max(srgb.sigma_t))
+    assert f'<float name="scale" value="{scale:.6g}"/>' in rgb
+    assert f'<float name="g" value="{files["g"]:.4f}"/>' in rgb
+    # The spectra reach 830 nm, as Mitsuba's spectral variants need, and
+    # beyond the source's 800 nm hold its last value.
+    wl = files["wavelengths"]
+    assert wl[0] == 360 and wl[-1] == 830 and np.all(np.diff(wl) == 1)
+    spectral = files["texts"]["water_mitsuba_spectral.xml"]
+    c800 = float(files["spectra"].c[-1])
+    assert f"800:{c800:.6g}, 801:{c800:.6g}" in spectral
+    assert f"830:{c800:.6g}\"" in spectral
+    # Blender's nodes give back the fitted coefficients through the manual's
+    # absorption = (1 - Color) x Density, scattering = Color x Density.
+    a_colour, a_density, s_colour, s_density = files["blender"]
+    np.testing.assert_allclose((1 - a_colour) * a_density, aces.sigma_a,
+                               rtol=1e-12)
+    np.testing.assert_allclose(s_colour * s_density, aces.sigma_s,
+                               rtol=1e-12)
+    assert np.all((0 <= a_colour) & (a_colour <= 1))
+    assert np.all((0 <= s_colour) & (s_colour <= 1))

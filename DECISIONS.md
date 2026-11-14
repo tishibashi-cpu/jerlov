@@ -4329,3 +4329,49 @@ identical to `Water.a`, `b` and `c` at the same wavelengths;
 for NaN, infinity, negatives, the wrong shape and a missing argument.
 
 **Version.** 1.11.0: new public names, nothing changed.
+
+**Differences from the plan, noted after the code was written.**
+
+- The plan's first look at the mean cosine integrated Petzold's samples
+  by the trapezoid rule in angle. The package integrates the vsf as a
+  power law between the printed angles, as `vsf_at` interpolates it,
+  which gives back the printed s within 0.24 percent at every station.
+  The mean cosines are then 0.869 to 0.945, not 0.877 to 0.954, and the
+  HG matched to them backscatters 5 to 30 percent less than the station,
+  not 19 to 35. At 0.1 degree HG falls 58 to 164 times short when matched
+  to the mean cosine and 68 to 310 times when matched to B/S.
+- **Changed after the first run of the tests.** The refusal of a channel
+  that turns negative gave the distance through whichever of c and a
+  failed first in the fitted range. For IB in linear sRGB the light
+  through a alone turns negative sooner (8.62 m) than through c (9.11 m),
+  so a range ending at 9 m, inside the distance reported, was refused
+  too. The message now gives the distance up to which every channel
+  stays positive through both.
+- Mitsuba 3.9.1's spectral variants sample 360 to 830 nm and render NaN
+  where a medium's spectrum stops short of either end (DATA.md section
+  36), found when the spectral medium was loaded and rendered by hand.
+  Williamson & Hollins stop at 800 nm, so the example holds their 800 nm
+  values to 830 nm, says so in the files and in its list of
+  assumptions, and gives pbrt-v4 the same spectra. The package still
+  returns only what the source has.
+- The example writes pbrt-v4 a spectral medium only: pbrt-v4 renders
+  spectrally and turns RGB into a spectrum, and its RGB spaces do not
+  include ACEScg. Mitsuba's RGB variants take linear sRGB, by its
+  documentation, so its RGB medium uses that space; its documentation
+  asks for RGB values in [0, 1], so sigma_t is divided by its largest
+  value, which goes in `scale`.
+- Blender is included. Its manual gives the Volume Absorption and Volume
+  Scatter nodes as absorption = (1 - Color) x Density and scattering =
+  Color x Density, and its working space as Linear Rec. 709 by default
+  with Linear Rec. 2020 and ACEScg available; Cycles' source does the
+  same. The example gives the node values for ACEScg, and a test turns
+  them back into the fitted coefficients. Blender's newer Volume
+  Coefficients node, which takes the coefficients themselves, is not
+  used, since which release brought it was not established.
+- `illuminant_rgb` is scaled so that the illuminant's luminance Y is 1.
+  A water or a scattering function of the wrong type raises `TypeError`.
+- Found on reading the code back, before the first full run: a channel
+  whose matching function is negative where the water absorbs grows as
+  the light crosses it, and the fit then gives a negative coefficient a
+  renderer cannot take. A sigma_t or sigma_a that is not positive is
+  refused, which the plan did not list; a test builds such a water.

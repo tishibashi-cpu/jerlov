@@ -535,6 +535,34 @@ describes the sky is yours; none has a default. It reproduces the paper's
 own diffuse shares (Table 5) to the printed percent. The paper prints a
 second 1/2 inside Fresnel's law (DATA.md section 35).
 
+## Water for a renderer
+
+```python
+rgb = jerlov.rgb_attenuation(
+    jerlov.water("III"), colour_space="acescg",   # or linear_srgb, rec2020
+    illuminant=jerlov.d65(), distance_range_m=(0.5, 10.0))
+rgb.sigma_t, rgb.sigma_s, rgb.albedo       # 1/m, one per channel
+rgb.max_relative_error_t                   # what one exponential costs
+hg = jerlov.henyey_greenstein_fit(jerlov.petzold_scattering("HAOCE 5"),
+                                  method="backscatter_ratio")  # or mean_cosine
+hg.g, hg.log_ratio                         # and where HG misses Petzold
+spectra = jerlov.spectral_coefficients(jerlov.water("III"),
+                                       range_nm=(400, 700))
+spectra.as_dict()                          # for json.dump, as are the others
+```
+
+For film, games and simulation. A renderer in RGB attenuates each channel
+as one exponential, which the spectrum is not, and the answer depends on
+the light entering the water and on the distances in the scene, so both
+are yours to state and the error over them comes back with the fit. A
+channel that turns negative, as the red of linear sRGB does after a few
+metres of clear water, is refused rather than clipped. The
+Henyey-Greenstein g is matched to Petzold's measured B/S or to his mean
+cosine, which you choose; neither matches sea water's forward peak. The
+spectra go to Mitsuba 3 or pbrt-v4 without an RGB step.
+`examples/rendering_export.py` writes all three for Mitsuba 3, pbrt-v4
+and Blender (DECISIONS.md section 82).
+
 ## Solar heating of the upper ocean
 
 Ocean circulation models absorb shortwave radiation as a sum of two
@@ -582,9 +610,10 @@ python examples/fish_colour_differences.py     colour differences for a fish's c
 python examples/ocean_colour_and_secchi.py      Kd from chlorophyll or a and bb, the Secchi depth
 python examples/sunlight_and_d65.py            the clear sky at the surface against D65
 python examples/looking_up_and_down.py         contrast looking up, across and down
+python examples/rendering_export.py            water for Mitsuba, pbrt and Blender
 ```
 
-Twenty-one scripts, each aimed at a different reader; `examples/README.md` says
+Twenty-two scripts, each aimed at a different reader; `examples/README.md` says
 which to start with. CI runs all of them on every push, so an example that has
 stopped working is a failed build. Every one ends with the assumptions it
 made.
@@ -592,7 +621,7 @@ made.
 ## Provenance and design
 
 `DATA.md` records, for every shipped table, where it came from, what was
-verified, and what is known to be wrong with it. Thirty-five entries are
+verified, and what is known to be wrong with it. Thirty-six entries are
 documented there: thirteen confirmed defects in the source literature, three
 questions the first edition of Jerlov settled, and the rest notes.
 

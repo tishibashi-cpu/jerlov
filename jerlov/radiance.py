@@ -45,8 +45,9 @@ class RadianceDistribution:
     """The extreme limits of the measured band; its half width is 64 nm
     (p. 5)."""
     beam_attenuation: float = -math.log(0.673)
-    """c, 1/m: beam transmittance 67.3 percent per metre at the surface,
-    29 April 1957 (p. 8). The transmissometer's band is not given."""
+    """The beam attenuation c in 1/m, from a beam transmittance of 67.3
+    percent per metre at the surface, 29 April 1957 (p. 8). The
+    transmissometer's band is not given."""
     acceptance_deg: float = 6.6
     """The radiance tubes' full angle of acceptance (p. 7)."""
 

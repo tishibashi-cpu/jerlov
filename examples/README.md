@@ -1,6 +1,6 @@
 # Examples
 
-Twenty-one scripts. Each runs against the installed package and needs nothing beyond
+Twenty-two scripts. Each runs against the installed package and needs nothing beyond
 NumPy.
 
 ```
@@ -25,6 +25,7 @@ python examples/fish_colour_differences.py
 python examples/ocean_colour_and_secchi.py
 python examples/sunlight_and_d65.py
 python examples/looking_up_and_down.py
+python examples/rendering_export.py
 ```
 
 CI runs all of them on every push, so an example that has stopped working is a
@@ -60,6 +61,7 @@ copy of the package silently wins over the working tree. In a clone, run
 | have a chlorophyll concentration, or a and bb, rather than a water type; or want a Secchi depth | `ocean_colour_and_secchi.py` |
 | have used D65 as the light above the sea, or need the sun's spectrum at the surface | `sunlight_and_d65.py` |
 | see under water along a slanted line, looking up or down | `looking_up_and_down.py` |
+| render water, in film, games or simulation | `rendering_export.py` |
 
 ## What each shows
 
@@ -305,6 +307,21 @@ across and 7.0 m down. Tyler's K differs by direction by a factor of 2.0
 near the surface and agrees within 12 percent from 16.6 to 53.7 m, as
 Duntley's asymptotic light field has it. Duntley's eq. (12) as printed
 would make the open water read 46 times what Tyler measured.
+
+**`rendering_export.py`** — Jerlov III and 1C as a renderer in RGB takes
+them: one extinction, absorption and scattering coefficient per channel
+of linear sRGB, ACEScg and Rec. 2020, for D65 crossing 0.5 to 10 m. One
+exponential per channel misses the red channel's true transmittance by
+up to **8 percent** in ACEScg and Rec. 2020 and **49 percent** in linear
+sRGB; for IB over 20 m linear sRGB is refused, every channel staying
+positive only to 8.6 m. Henyey-Greenstein g for Petzold's eight
+stations, matched to B/S (0.822 to 0.941) or to the mean cosine, which
+backscatters 5 to 30 percent less than the station; either way HG falls
+58 to 310 times short at 0.1 degree. Jerlov III is then written as a
+Mitsuba 3 medium in RGB and spectrally, as a pbrt-v4 medium and as the
+values of Blender's volume nodes. The Mitsuba media were rendered once by
+hand outside CI; Mitsuba's spectral variants give NaN where a spectrum
+stops short of 830 nm.
 
 ## What they do not show
 
