@@ -122,11 +122,14 @@ def tables(caught):
             m = xyz_to_rgb_matrix(fit.as_dict()["colour_space"])
         b_inf = caught_by_type(caught, jerlov.veiling_radiance_estimate,
                                water, ed, WL, backscatter_ratio=ratio)
-        rgb_light = m @ caught_by_type(caught, jerlov.spectrum_to_xyz, ed, WL)
+        # The transmittance is the package's, from the spectrum, nothing
+        # fitted (DECISIONS.md section 84); the path radiance is this
+        # example's own, from the package's single-scattering estimate.
+        transmittance[i] = caught_by_type(
+            caught, jerlov.rgb_transmittance, water, DISTANCES_M,
+            colour_space=COLOUR_SPACE, illuminant=(WL, ed)).transmittance
         for j, r in enumerate(DISTANCES_M):
             through = np.exp(-c * r)
-            transmittance[i, j] = (m @ caught_by_type(
-                caught, jerlov.spectrum_to_xyz, ed * through, WL)) / rgb_light
             path[i, j] = (m @ caught_by_type(
                 caught, jerlov.spectrum_to_xyz, b_inf * (1 - through),
                 WL)) / white

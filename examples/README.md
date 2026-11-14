@@ -341,7 +341,7 @@ the two renderings as an image.
 
 **`water_lookup_tables.py`** — the tables a shader reads for Jerlov III:
 by depth (0 to 50 m) and distance (0 to 30 m), the transmittance per
-ACEScg channel and the path radiance, from D65 at the surface, Jerlov's
+ACEScg channel, from `rgb_transmittance`, and the path radiance, from D65 at the surface, Jerlov's
 Kd and the single-scattering estimate with Petzold's HAOCE 5 bb/b, every
 choice stated. One coefficient per channel over 1 to 30 m is off by up to
 **32 percent** for the light at the surface and 5 percent at 50 m, where

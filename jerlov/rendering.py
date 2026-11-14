@@ -9,6 +9,8 @@ sections 12, 38 and 82).
 - :func:`rgb_attenuation`: one extinction, absorption and scattering
   coefficient per channel of a linear RGB space, fitted over distances the
   caller states, with the error of the fit.
+- :func:`rgb_transmittance`: the true transmittance per channel at
+  distances the caller states, for renderers that read a table.
 - :func:`henyey_greenstein_fit`: the g of a Henyey-Greenstein phase
   function for one of Petzold's stations, matched to a property the caller
   chooses, with the error of the shape.
@@ -212,6 +214,67 @@ class RgbAttenuation:
                 f"{', '.join(f'{v:.4g}' for v in self.sigma_t)} 1/m>")
 
 
+class _ChannelLight:
+    """The light of an illuminant, in the channels of an RGB space, after
+    it has crossed water: the computation `rgb_attenuation` and
+    `rgb_transmittance` share (DECISIONS.md sections 82 and 84).
+
+    The spectra are taken at 1 nm where the water, the illuminant and the
+    CIE 1931 observer overlap. ``quantities`` are the water's ("a", "c")
+    that are needed, evaluated in that order, each refused for a gap.
+    """
+
+    def __init__(self, water, colour_space, ill_wl, ill_power, quantities):
+        cmf_wl, cmf = cie_1931_cmf()
+        lo = math.ceil(max(water.range_nm[0], ill_wl[0], cmf_wl[0]))
+        hi = math.floor(min(water.range_nm[1], ill_wl[-1], cmf_wl[-1]))
+        if hi - lo < 1:
+            raise ValueError(
+                f"the water ({water.range_nm[0]:g}-{water.range_nm[1]:g} nm), "
+                f"the illuminant ({ill_wl[0]:g}-{ill_wl[-1]:g} nm) and the "
+                "CIE observer (360-830 nm) do not overlap")
+        wl = np.arange(lo, hi + 1, 1.0)
+        self.coefficients = {}
+        for name in quantities:
+            values = np.asarray(getattr(water, name)(wl), dtype=float)
+            self.coefficients[name] = values
+        for name in quantities:
+            gaps = wl[np.isnan(self.coefficients[name])]
+            if gaps.size:
+                raise ValueError(
+                    f"{name} of {water._label()} has a gap (NaN) at "
+                    f"{gaps[0]:g}-{gaps[-1]:g} nm, inside the "
+                    f"{lo:g}-{hi:g} nm where the colour is formed; no colour "
+                    "can be made across it")
+        self.light = np.interp(wl, ill_wl, ill_power)
+        m = _xyz_to_rgb(colour_space)
+        # The coverage warning, and the illuminant's XYZ, once.
+        self.xyz = integrate_response(self.light, wl, cmf, cmf_wl,
+                                      name="CIE 1931 2-degree observer")
+        cmf_on = np.stack([np.interp(wl, cmf_wl, cmf[:, k])
+                           for k in range(3)], axis=1)
+        self.response = cmf_on @ m.T        # (n, 3): RGB matching functions
+        self.rgb0 = m @ self.xyz
+        if np.any(self.rgb0 <= 0):
+            raise ValueError(
+                f"the illuminant has no positive power in the "
+                f"{_CHANNELS[int(np.argmin(self.rgb0))]} channel of "
+                f"{colour_space}, so a transmittance cannot be formed")
+        self.wl, self.lo, self.hi = wl, lo, hi
+
+    def transmittance(self, name: str):
+        """T_k(r) through the coefficient ``name``, for a 1-D array r."""
+        coefficient = self.coefficients[name]
+
+        def at(r: np.ndarray) -> np.ndarray:
+            spectra = self.light[None, :] * np.exp(-np.outer(r, coefficient))
+            rgb = _data.trapezoid(
+                spectra[:, :, None] * self.response[None, :, :], self.wl,
+                axis=1)
+            return rgb / self.rgb0
+        return at
+
+
 def _first_nonpositive(channel_rgb, grid: np.ndarray) -> float | None:
     """The largest distance up to which every channel stays positive, or
     None if every channel stays positive at every distance of ``grid``."""
@@ -295,51 +358,11 @@ def rgb_attenuation(water, /, *, colour_space, illuminant,
     near, far = _distances(distance_range_m)
     ill_wl, ill_power = _illuminant(illuminant)
 
-    cmf_wl, cmf = cie_1931_cmf()
-    lo = math.ceil(max(water.range_nm[0], ill_wl[0], cmf_wl[0]))
-    hi = math.floor(min(water.range_nm[1], ill_wl[-1], cmf_wl[-1]))
-    if hi - lo < 1:
-        raise ValueError(
-            f"the water ({water.range_nm[0]:g}-{water.range_nm[1]:g} nm), the "
-            f"illuminant ({ill_wl[0]:g}-{ill_wl[-1]:g} nm) and the CIE "
-            "observer (360-830 nm) do not overlap")
-    wl = np.arange(lo, hi + 1, 1.0)
-    a = np.asarray(water.a(wl), dtype=float)
-    c = np.asarray(water.c(wl), dtype=float)
-    for name, values in (("a", a), ("c", c)):
-        gaps = wl[np.isnan(values)]
-        if gaps.size:
-            raise ValueError(
-                f"{name} of {water._label()} has a gap (NaN) at "
-                f"{gaps[0]:g}-{gaps[-1]:g} nm, inside the {lo:g}-{hi:g} nm "
-                "where the colour is formed; no colour can be made across it")
-    light = np.interp(wl, ill_wl, ill_power)
-
-    m = _xyz_to_rgb(colour_space)
-    # The coverage warning, and the illuminant's XYZ, once.
-    xyz = integrate_response(light, wl, cmf, cmf_wl,
-                             name="CIE 1931 2-degree observer")
-    cmf_on = np.stack([np.interp(wl, cmf_wl, cmf[:, k]) for k in range(3)],
-                      axis=1)
-    response = cmf_on @ m.T                 # (n, 3): RGB matching functions
-    rgb0 = m @ xyz
-    if np.any(rgb0 <= 0):
-        raise ValueError(
-            f"the illuminant has no positive power in the "
-            f"{_CHANNELS[int(np.argmin(rgb0))]} channel of {colour_space}, "
-            "so a transmittance cannot be formed")
-
-    def transmittance(coefficient: np.ndarray):
-        def at(r: np.ndarray) -> np.ndarray:
-            spectra = light[None, :] * np.exp(-np.outer(r, coefficient))
-            rgb = _data.trapezoid(spectra[:, :, None] * response[None, :, :],
-                                  wl, axis=1)
-            return rgb / rgb0
-        return at
+    light = _ChannelLight(water, colour_space, ill_wl, ill_power, ("a", "c"))
+    lo, hi, rgb0, xyz = light.lo, light.hi, light.rgb0, light.xyz
 
     r = np.linspace(near, far, _FIT_POINTS)
-    curves = {name: transmittance(coefficient)
-              for name, coefficient in (("c", c), ("a", a))}
+    curves = {name: light.transmittance(name) for name in ("c", "a")}
     observed = {name: at(r) for name, at in curves.items()}
     failing = [name for name, t in observed.items() if np.any(t <= 0)]
     if failing:
@@ -400,6 +423,156 @@ def rgb_attenuation(water, /, *, colour_space, illuminant,
 
 
 _CHANNELS = ("red", "green", "blue")
+
+
+@_data.compared_by_value
+@dataclass(frozen=True, eq=False)
+class RgbTransmittance:
+    """The transmittance per channel of a linear RGB space, by distance.
+
+    Nothing is fitted: each value is the channel's own transmittance of
+    the illuminant's light through c, as :func:`rgb_attenuation` defines
+    it before fitting one exponential to it.
+    """
+
+    colour_space: str
+    """One of :data:`RGB_COLOUR_SPACES`."""
+    distances_m: np.ndarray
+    """The distances asked for, in metres, in the shape given."""
+    transmittance: np.ndarray
+    """T per channel, the shape of :attr:`distances_m` plus a last axis of
+    three: red, green, blue."""
+    wavelength_range_nm: tuple[float, float]
+    """Where the water, the illuminant and the CIE 1931 observer overlap,
+    integrated at 1 nm."""
+    illuminant_rgb: np.ndarray
+    """The illuminant's RGB in this space, scaled so that its luminance Y
+    is 1."""
+    water: str
+    source: str
+    """The source's citation, or an empty string for the caller's own."""
+
+    def as_dict(self) -> dict[str, Any]:
+        """Plain numbers, lists and strings, for :func:`json.dump`."""
+        primaries, white, citation = _SPACES[self.colour_space]
+        return {
+            "kind": "jerlov.rgb_transmittance",
+            "water": self.water,
+            "source": self.source,
+            "colour_space": {
+                "name": self.colour_space,
+                "primaries_xy": [list(p) for p in primaries],
+                "white_xy": list(white),
+                "linear": True,
+                "reference": citation,
+            },
+            "wavelength_range_nm": list(self.wavelength_range_nm),
+            "illuminant_rgb": self.illuminant_rgb.tolist(),
+            "distances_m": self.distances_m.tolist(),
+            "transmittance": self.transmittance.tolist(),
+        }
+
+    def __repr__(self) -> str:  # pragma: no cover - convenience only
+        return (f"<RgbTransmittance {self.water} in {self.colour_space}, "
+                f"{self.distances_m.size} distances>")
+
+
+def _distance_grid(distances_m) -> np.ndarray:
+    if distances_m is None:
+        raise ValueError("distances_m has no default")
+    try:
+        r = np.array(distances_m, dtype=float)
+    except (TypeError, ValueError):
+        raise ValueError(
+            "distances_m must be a number or an array of numbers, in "
+            "metres") from None
+    _require_number(r, "distances_m")
+    if np.any(np.isinf(r)):
+        raise ValueError("distances_m must be finite")
+    if np.any(r < 0):
+        raise ValueError("distances_m must not be negative")
+    if r.size == 0:
+        raise ValueError("distances_m is empty")
+    return r
+
+
+@_data.positional_only()
+def rgb_transmittance(water, distances_m, /, *, colour_space,
+                      illuminant) -> RgbTransmittance:
+    """The transmittance per channel of an RGB space, at given distances.
+
+    For each distance r, T_k(r) = R_k(S exp(-c r)) / R_k(S): the light S
+    of the illuminant after r metres of water, in channel k of the space,
+    over the same light before it. This is the transmittance
+    :func:`rgb_attenuation` fits one exponential to; here it is returned
+    as it is, for a renderer that reads a table (DECISIONS.md section 84).
+
+    Parameters
+    ----------
+    water:
+        A :class:`Water` with ``a`` and ``b``.
+    distances_m:
+        A number or an array of numbers, in metres, finite and not
+        negative, in any order. The result has its shape plus a last axis
+        of three channels.
+    colour_space:
+        One of :data:`RGB_COLOUR_SPACES`. No default.
+    illuminant:
+        ``(wavelengths, power)``, the light that enters the water, as
+        :func:`jerlov.d65` returns it. No default. For a table by depth,
+        pass the light at each depth, from :meth:`Scene.at_depth` or a
+        measurement: how the light got down is the caller's choice.
+
+    Raises
+    ------
+    ValueError
+        When a channel is at zero or below at a requested distance: the
+        light left lies outside the space's gamut. The message gives the
+        distance up to which every channel stays positive. Also for a gap
+        (NaN) in c where the colour is formed, and an illuminant with no
+        power in a channel.
+    MissingQuantityError
+        When the water has no a or no b.
+
+    Notes
+    -----
+    As for :func:`rgb_attenuation`, the spectra are integrated at 1 nm
+    where the water, the illuminant and the CIE 1931 observer overlap, and
+    the water's flagged values warn with :class:`ProvenanceWarning`.
+    """
+    if not isinstance(water, Water):
+        raise TypeError(
+            f"water must be a jerlov.Water, not {type(water).__name__}")
+    colour_space = _space(colour_space)
+    r = _distance_grid(distances_m)
+    ill_wl, ill_power = _illuminant(illuminant)
+    light = _ChannelLight(water, colour_space, ill_wl, ill_power, ("c",))
+    at = light.transmittance("c")
+    flat = r.reshape(-1)
+    values = at(flat)
+    if np.any(values <= 0):
+        far = float(flat.max())
+        grid = np.linspace(0.0, far, _FIT_POINTS)
+        reach = _first_nonpositive(at, np.union1d(grid, flat))
+        channel = _CHANNELS[int(np.argmin(np.min(values, axis=0)))]
+        raise ValueError(
+            f"the {channel} channel of {colour_space} falls to zero or below "
+            f"within {far:g} m: the light left after that lies outside the "
+            "space's gamut. Every channel stays positive only up to about "
+            f"{reach:.3g} m. Ask for shorter distances, or use a wider space")
+    transmittance = values.reshape(r.shape + (3,))
+    illuminant_rgb = light.rgb0 / light.xyz[1]
+    for array in (r, transmittance, illuminant_rgb):
+        array.setflags(write=False)
+    return RgbTransmittance(
+        colour_space=colour_space,
+        distances_m=r,
+        transmittance=transmittance,
+        wavelength_range_nm=(float(light.lo), float(light.hi)),
+        illuminant_rgb=illuminant_rgb,
+        water=water._label(),
+        source=water.source.citation if water.source is not None else "",
+    )
 
 
 # -- Henyey-Greenstein -----------------------------------------------------

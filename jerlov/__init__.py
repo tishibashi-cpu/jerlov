@@ -69,9 +69,11 @@ from .rendering import (
     RGB_COLOUR_SPACES,
     HenyeyGreensteinFit,
     RgbAttenuation,
+    RgbTransmittance,
     SpectralCoefficients,
     henyey_greenstein_fit,
     rgb_attenuation,
+    rgb_transmittance,
     spectral_coefficients,
 )
 from .sky import SurfaceIrradiance, gregg1990_irradiance
@@ -237,6 +239,8 @@ __all__ = [
     "HenyeyGreensteinFit",
     "spectral_coefficients",
     "SpectralCoefficients",
+    "rgb_transmittance",
+    "RgbTransmittance",
 ]
 
-__version__ = "1.11.1"
+__version__ = "1.12.0"

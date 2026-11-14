@@ -4490,3 +4490,84 @@ code or values.
 - pbrt-v4 needed its Wayland support turned off to build in the
   container, and its camera medium named before the camera; Blender's
   working space is set by an operator, its property being read-only.
+
+## 84. The RGB transmittance as a table (1.12.0): the plan
+
+Section 82 fitted one exponential per channel and reported how far it is
+from the channel's true transmittance. A renderer that reads a table
+instead, as games and real-time renderers do (NEXT_STEPS section 0,
+item 6 (c)), needs that true transmittance itself, at distances it
+chooses, with nothing fitted. `examples/water_lookup_tables.py` (section
+83) computed it in the example's own code; the user chose on 2026-11-14
+to bring the transmittance into the package and to leave the path
+radiance in the example, since the package calls its single-scattering
+estimate an order of magnitude and a table would make it look like a
+value.
+
+**The function.** `rgb_transmittance(water, distances_m, /, *,
+colour_space, illuminant)`, returning an `RgbTransmittance`: for each
+distance r, T_k(r) = R_k(S exp(-c r)) / R_k(S), the channel's
+transmittance exactly as section 82 defines it, through c. The same
+colour spaces, the same illuminant with no default, the same 1 nm grid
+where the water, the illuminant and the observer overlap, the same
+warnings (`ProvenanceWarning` from the water, `CoverageWarning` from the
+observer's coverage).
+
+- `distances_m`: a number or a 1-D array of them, finite and not
+  negative, in any order; the result keeps its shape, with a last axis of
+  three channels.
+- A channel at zero or below at any requested distance is refused, as in
+  `rgb_attenuation`, with the distance up to which every channel stays
+  positive: a table with a negative transmittance is not one a renderer
+  can use, and clipping it would hide that the colour left the space.
+- A gap (NaN) in c where the colour is formed, and an illuminant with no
+  power in a channel, are refused as there.
+- The result carries the colour space, the distances, the
+  transmittances, the illuminant's RGB (Y = 1), the wavelength range,
+  the water and its source, and `as_dict()` for `json.dump`.
+- Depth is not an argument. The light at a depth is the caller's
+  illuminant: `Scene.at_depth(...).downwelling`, or a measurement, so
+  that how the light got down (which Kd, constant or not) stays the
+  caller's choice, as it is for `Scene`.
+
+**Shared code.** `rgb_attenuation` and `rgb_transmittance` compute the
+transmittance in one private helper, so the two cannot drift; every
+result of `rgb_attenuation` is to stay bit for bit as in 1.11.1, which a
+test checks against values recorded before the change.
+
+**The example.** `water_lookup_tables.py` takes its transmittance from
+`rgb_transmittance` instead of its own integration; its printed numbers
+are to stay as they are, and its path radiance stays its own, with its
+caveats.
+
+**Checks.** A grey water gives exp(-c r) in every channel exactly. At
+the 201 distances `rgb_attenuation` fits over, the fitted exponential
+departs from `rgb_transmittance` by exactly the error `rgb_attenuation`
+reports. T is 1 at r = 0. A refusal at the distance reported, and none
+just inside it. The shape of the result for a number, a list and a 2-D
+array. Every input for NaN, infinity, negatives and a missing argument.
+
+**Version.** 1.12.0: two public names are added, `rgb_transmittance`
+and `RgbTransmittance`, 110 in all.
+
+**Differences from the plan, noted after the code was written.**
+
+- T at r = 0 is 1 to rounding, about 2 x 10^-15, not exactly 1: the
+  illuminant's R_k(S) is taken once through `integrate_response`, as
+  `rgb_attenuation` takes it, and the table by the same sum done another
+  way. Taking R_k(S) the table's way would have moved `rgb_attenuation`'s
+  results in their last bits, which the plan ruled out; the test allows
+  1 x 10^-13.
+- A distance at which a channel is refused is the reach through c alone,
+  since only c is evaluated: for IB in linear sRGB 9.11 m, where
+  `rgb_attenuation`, which also fits a, reports 8.62 m.
+- `water_lookup_tables.py` prints and writes the same numbers as in
+  1.11.1, compared line by line and cell by cell.
+- **Changed after the first run of the tests, on NumPy 1.22.** The test
+  compared `rgb_attenuation`'s results with values recorded under NumPy 2
+  bit for bit, and under NumPy 1.22 the last bit of some differed. The
+  1.11.1 code and the new code were then run under NumPy 1.22 side by
+  side and agreed bit for bit, as they had under NumPy 2: the difference
+  is NumPy's own rounding, not this change. The test now allows a
+  relative 1 x 10^-14 in the coefficients and the illuminant's RGB, and
+  an absolute 1 x 10^-14 in the errors, which are differences from 1.

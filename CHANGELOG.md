@@ -4,6 +4,30 @@ Every release is archived on Zenodo under the concept DOI
 [10.5281/zenodo.22321312](https://doi.org/10.5281/zenodo.22321312), which
 always resolves to the latest version.
 
+## 1.12.0 — 2026-11-14
+
+The RGB transmittance as a table, for renderers that read one
+(DECISIONS.md section 84). No shipped value changed; two public names
+are added.
+
+**Added.**
+
+- `rgb_transmittance(water, distances_m, colour_space=..., illuminant=...)`:
+  the transmittance per channel of linear sRGB, ACEScg or Rec. 2020 at
+  the distances given, computed from the spectrum with nothing fitted,
+  the quantity `rgb_attenuation` fits one exponential to. The colour
+  space and the illuminant have no default; for a table by depth, the
+  illuminant is the light at each depth. A channel at zero or below at a
+  requested distance is refused, with the distance up to which every
+  channel stays positive. Returns an `RgbTransmittance`, with `as_dict()`.
+
+**Changed.** `rgb_attenuation` computes its transmittance through the
+same private code; its results are bit for bit as in 1.11.1, which a
+test checks.
+
+**Examples.** `water_lookup_tables.py` takes its transmittance from
+`rgb_transmittance`; its output is unchanged.
+
 ## 1.11.1 — 2026-11-14
 
 Three examples for people who render water, and the renderers of
