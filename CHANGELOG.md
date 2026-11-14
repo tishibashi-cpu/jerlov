@@ -4,6 +4,49 @@ Every release is archived on Zenodo under the concept DOI
 [10.5281/zenodo.22321312](https://doi.org/10.5281/zenodo.22321312), which
 always resolves to the latest version.
 
+## 1.11.0 — 2026-11-14
+
+Coefficients for renderers: water for film, games and simulation, in the
+forms renderers take (DECISIONS.md section 82). No shipped value changed;
+seven public names are added.
+
+**Added.**
+
+- `rgb_attenuation(water, colour_space=..., illuminant=...,
+  distance_range_m=...)`: one extinction, absorption and scattering
+  coefficient per channel of linear sRGB, ACEScg or Rec. 2020, fitted to
+  the colour of the light that has crossed the water, with the largest
+  error of the fit over the stated distances. None of the three has a
+  default. A channel that falls to zero or below inside the range, as the
+  red of linear sRGB does after a few metres of clear water, is refused,
+  and the message gives the distance up to which every channel stays
+  positive. Returns an `RgbAttenuation`; `RGB_COLOUR_SPACES` names the
+  spaces.
+- `henyey_greenstein_fit(scattering, method=...)`: the g of a
+  Henyey-Greenstein phase function for one of Petzold's stations, matched
+  to its measured backscatter ratio or to its mean cosine, with no
+  default, and ln(p_HG / p) at Petzold's 55 angles. Returns a
+  `HenyeyGreensteinFit`.
+- `spectral_coefficients(water, range_nm=...)`: a, b and c at the water's
+  own wavelengths, with the status of each value, for spectral renderers.
+  Returns a `SpectralCoefficients`.
+- `ScatteringFunction.mean_cosine()`: the station's mean cosine. It
+  always warns, since the report's extension below 0.1 degree enters it
+  at full weight.
+- Each new result has `as_dict()`, ready for `json.dump`, with units,
+  the colour space or the source, and the fit.
+
+**Examples.** `rendering_export.py`, the twenty-second: the coefficients
+of Jerlov III and 1C in the three spaces and what one exponential per
+channel costs, the refusal in linear sRGB, g for Petzold's eight stations
+both ways, and Jerlov III written as a Mitsuba 3 medium (RGB and
+spectral), a pbrt-v4 medium and the values of Blender's volume nodes.
+
+**Data.** DATA.md section 36 (note): the primaries and whites of the
+three spaces and where they were read, Petzold's integral taken again
+(the printed s to within 0.24 percent), and Mitsuba 3.9.1's spectral
+variants giving NaN where a medium's spectrum stops short of 830 nm.
+
 ## 1.10.3 — 2026-11-13
 
 The rest of what the review of 1.10.1 found (DECISIONS.md section 81).

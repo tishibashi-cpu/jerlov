@@ -65,6 +65,15 @@ from .scene import (
     Scene,
     veiling_radiance_estimate,
 )
+from .rendering import (
+    RGB_COLOUR_SPACES,
+    HenyeyGreensteinFit,
+    RgbAttenuation,
+    SpectralCoefficients,
+    henyey_greenstein_fit,
+    rgb_attenuation,
+    spectral_coefficients,
+)
 from .sky import SurfaceIrradiance, gregg1990_irradiance
 from .shortwave import (
     ShortwaveParameters,
@@ -221,6 +230,13 @@ __all__ = [
     "QAAResult",
     "gregg1990_irradiance",
     "SurfaceIrradiance",
+    "rgb_attenuation",
+    "RgbAttenuation",
+    "RGB_COLOUR_SPACES",
+    "henyey_greenstein_fit",
+    "HenyeyGreensteinFit",
+    "spectral_coefficients",
+    "SpectralCoefficients",
 ]
 
-__version__ = "1.10.3"
+__version__ = "1.11.0"

@@ -78,6 +78,44 @@ class ScatteringFunction:
         """
         return self.vsf / self.b
 
+    def mean_cosine(self) -> float:
+        """The mean cosine of the scattering angle, the asymmetry g.
+
+        2 pi times the integral of the phase function times cos(theta)
+        sin(theta) from 0.1 to 180 degrees, the vsf taken as a power law
+        between the printed angles as :meth:`vsf_at` takes it, plus
+        :attr:`fraction_below_0_1_deg` at a cosine of 1.
+
+        That share, 3.4 to 14.5 percent of b, is the report's power-law
+        extension at every station, and it enters at full weight, so this
+        always warns with :class:`ProvenanceWarning`. Normalised by the
+        printed b, which includes the same extension.
+        """
+        warnings.warn(
+            f"the mean cosine of {self.station} rests on the report's "
+            "power-law extension below 0.1 degree, "
+            f"{self.fraction_below_0_1_deg:.1%} of b, counted at a cosine "
+            "of 1. See DATA.md section 21.",
+            ProvenanceWarning,
+            stacklevel=_data.caller_stacklevel(),
+        )
+        return self._integral(np.cos) / self.b + self.fraction_below_0_1_deg
+
+    def _integral(self, weight) -> float:
+        """2 pi times the integral of vsf * weight(theta) * sin(theta),
+        from 0.1 to 180 degrees, the vsf a power law between samples."""
+        log_angle = np.log(self.angles_deg)
+        log_vsf = np.log(self.vsf)
+        total = 0.0
+        for i in range(self.angles_deg.size - 1):
+            theta = np.linspace(self.angles_deg[i], self.angles_deg[i + 1],
+                                257)
+            vsf = np.exp(np.interp(np.log(theta), log_angle, log_vsf))
+            rad = np.radians(theta)
+            total += float(_data.trapezoid(
+                vsf * weight(rad) * np.sin(rad), rad))
+        return 2 * np.pi * total
+
     def vsf_at(self, angle_deg):
         """The vsf at ``angle_deg``, interpolated linearly in log-log.
 

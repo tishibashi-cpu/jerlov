@@ -217,6 +217,26 @@ The irradiance at the sea surface under a clear sky
 .. autoclass:: SurfaceIrradiance
    :members:
 
+Coefficients for renderers
+--------------------------
+
+.. autofunction:: rgb_attenuation
+
+.. autoclass:: RgbAttenuation
+   :members:
+
+.. autodata:: RGB_COLOUR_SPACES
+
+.. autofunction:: henyey_greenstein_fit
+
+.. autoclass:: HenyeyGreensteinFit
+   :members:
+
+.. autofunction:: spectral_coefficients
+
+.. autoclass:: SpectralCoefficients
+   :members:
+
 Kd without a water type, Rrs and the Secchi depth
 -------------------------------------------------
 

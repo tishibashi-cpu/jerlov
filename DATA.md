@@ -3,7 +3,7 @@
 What every shipped table is, where it came from, what was verified, and what
 is known to be wrong with it.
 
-Thirty-five entries are recorded below. Thirteen are confirmed defects, three were
+Thirty-six entries are recorded below. Thirteen are confirmed defects, three were
 open questions that the first edition of Jerlov settled, and the rest are
 notes rather than defects. None of them is repaired silently: values that
 could be recovered carry `status = reconstructed` and say how, values that
@@ -1982,3 +1982,45 @@ The package uses Fresnel's law without it.
   restate for Table 4.
 - Foam reflectance at 20 m/s about 2.3 percent, as in Fig. 2 (p. 1667),
   with the air density as printed, 1.2 x 10^3 g m-3.
+
+## 36. Coefficients for renderers: three RGB spaces, Petzold's integral, and one renderer's spectral range (note)
+
+`rgb_attenuation`, `henyey_greenstein_fit` and `spectral_coefficients`
+ship no table. What they rest on, besides the waters and Petzold's
+stations already described, is recorded here (DECISIONS.md section 82).
+
+**The RGB spaces.** Primaries and whites as chromaticities, the matrix
+from XYZ derived from them as for sRGB (section 12):
+
+- `linear_srgb`: IEC 61966-2-1, the primaries the package already used,
+  without the transfer function.
+- `acescg`: the AP1 primaries, red (0.713, 0.293), green (0.165, 0.830),
+  blue (0.128, 0.044), and the ACES white (0.32168, 0.33767), from the
+  Academy's ACEScg specification, read on docs.acescentral.com
+  (2026-11-14).
+- `rec2020`: Rec. ITU-R BT.2020-2 (10/2015), Table 3, p. 3: red (0.708,
+  0.292), green (0.170, 0.797), blue (0.131, 0.046), D65 (0.3127,
+  0.3290), read from the ITU's PDF.
+
+Tested: each matrix sends its white to (1, 1, 1) and each primary to its
+own axis, and the sRGB matrix is the one `xyz_to_srgb` uses. The
+tabulated D65 comes out within 5 x 10^-4 of (1, 1, 1) in linear sRGB,
+the difference between the table and its defined chromaticity.
+
+**Petzold's integral, taken again.** The mean cosine integrates the vsf
+between the report's 55 angles as a power law, as `vsf_at` interpolates
+it. The same integral of the vsf alone, plus the report's share below
+0.1 degree, gives back the printed s at all eight stations, low by 0.14
+to 0.24 percent. The mean cosines are 0.869 (AUTEC 8) to 0.945 (HAOCE 5
+and 11). Every one of them rests on the share below 0.1 degree, 3.4 to
+14.5 percent of s, counted at a cosine of 1, which the report extended
+with a power law at every station (section 21); they warn.
+
+**One renderer's spectral range.** Mitsuba 3.9.1's spectral variants
+sample 360 to 830 nm (its `MI_CIE_MIN` and `MI_CIE_MAX`), and a medium
+whose spectrum stops short of either end renders NaN pixels: in a test
+scene, a spectrum defined over 360-800 nm gave 765 of 768 values NaN,
+400-700 nm all 768, 360-830 none. Williamson & Hollins stop at 800 nm,
+so `examples/rendering_export.py` holds their 800 nm values to 830 nm,
+stating it; beyond 800 nm the CIE x-bar has 1.1 x 10^-6 of its weight
+and z-bar none. The package returns only what the source has.
