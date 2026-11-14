@@ -2020,3 +2020,86 @@ def test_the_new_examples_report_only_provenance(rgb_example, tables_example,
         assert out["caught"]
         for message in out["caught"]:
             assert message.startswith("ProvenanceWarning: ")
+
+
+# -- Reference images (reference_images.py, section 85) ------------------
+
+
+@pytest.fixture(scope="module")
+def reference_example():
+    return _run_example("reference_images")
+
+
+@source_tree
+def test_examples_README_figures_for_reference_images(reference_example):
+    text = (ROOT / "examples" / "README.md").read_text()
+    for quoted in ("**0.30**", "0.11 in III", "0.05 in 1C",
+                   "less at 15 m in every type"):
+        assert quoted in text, quoted
+    kept = reference_example[1]["kept"]
+    assert [round(kept[(t, 5.0)], 2) for t in ("IB", "III", "1C")] == [
+        0.30, 0.11, 0.05]
+    assert reference_example[1]["deeper_less"]
+
+
+@source_tree
+def test_the_chart_at_the_material_is_its_colour_under_the_light(
+        reference_example):
+    """At distance 0 nothing of the water is added: the colour is the
+    material's under the downwelling light at that depth, balanced on a
+    white diffuser under the same light."""
+    module, out = reference_example
+    wl = module["WL"]
+    water = jerlov.water("III")
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", jerlov.ProvenanceWarning)
+        warnings.simplefilter("ignore", jerlov.GamutWarning)
+        kd = jerlov.water("III", source="jerlov1976").kd(wl)
+        ed = jerlov.Scene.at_depth(water, 5.0, module["SURFACE"], wl,
+                                   kd=kd).downwelling
+        m = jerlov.usgs2017_reflectance("red_nylon")
+        rho = np.interp(wl, m.wavelengths, m.reflectance)
+        expected = jerlov.spectrum_to_srgb(rho * ed, wl, white=ed,
+                                           clip=False)
+    np.testing.assert_allclose(out["colours"][("III", 5.0, "red_nylon",
+                                               0.0)], expected, rtol=1e-12)
+
+
+@source_tree
+def test_colours_move_towards_the_waters(reference_example):
+    """At each step outwards every material's colour is nearer the
+    water's own, the path radiance at infinite distance balanced the same
+    way. (Chroma alone need not fall: the water's blue-green adds to a
+    green material's at first.)"""
+    module, out = reference_example
+    wl, surface = module["WL"], module["SURFACE"]
+    face = module["FACE_IRRADIANCE_RATIO"]
+    distances = (0.0,) + module["DISTANCES_M"]
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", jerlov.ProvenanceWarning)
+        warnings.simplefilter("ignore", jerlov.GamutWarning)
+        for water_type in module["TYPES"]:
+            water = jerlov.water(water_type)
+            kd = jerlov.water(water_type, source="jerlov1976").kd(wl)
+            ratio = jerlov.petzold_scattering(
+                out["stations"][water_type]).backscatter_ratio
+            for depth in module["DEPTHS_M"]:
+                ed = jerlov.Scene.at_depth(water, depth, surface, wl,
+                                           kd=kd).downwelling
+                b_inf = jerlov.veiling_radiance_estimate(
+                    water, ed, wl, backscatter_ratio=ratio)
+                water_colour = jerlov.spectrum_to_srgb(
+                    b_inf, wl, white=face * ed / np.pi, clip=False)
+                for key in jerlov.USGS2017_MATERIALS:
+                    gap = [float(np.linalg.norm(
+                        out["colours"][(water_type, depth, key, d)]
+                        - water_colour)) for d in distances]
+                    assert all(b < a for a, b in zip(gap, gap[1:])), (
+                        water_type, depth, key, gap)
+
+
+@source_tree
+def test_reference_images_report_only_their_warnings(reference_example):
+    for message in reference_example[1]["caught"]:
+        assert message.startswith(("ProvenanceWarning: ",
+                                   "GamutWarning: "))

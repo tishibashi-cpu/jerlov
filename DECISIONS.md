@@ -4643,3 +4643,20 @@ radiance reproduces each material's colour under the downwelling light,
 and a material's colour moves towards the water's as the distance grows.
 
 **Version.** 1.13.0: three public names and one shipped table.
+
+**Differences from the plan, noted after the code was written.**
+
+- The example takes Kd from Jerlov (1976) for each type, as
+  `water_lookup_tables.py` does, so its colours are formed over
+  360-715 nm, where that Kd ends. Its face irradiance ratio is 0.3, as in
+  `fish_colour_differences.py`, and its backscattering ratio that of the
+  Petzold station whose b at 530 nm is nearest each type's (AUTEC 7 for
+  IB, HAOCE 5 for III and 1C), all stated in its output.
+- The check that a colour moves towards the water's is made against the
+  water's own colour, the path radiance at infinite distance balanced the
+  same way, at every step outwards. A first version of the test asked
+  chroma to fall at every step, and failed: the green tarp in IB gains
+  chroma from 0 to 1 m, the water's blue-green adding to its green.
+- The three neutral materials are tested to be less saturated under D65
+  than every coloured one, not grey within a fixed margin: the concrete
+  is a little warm, as light grey road concrete is.

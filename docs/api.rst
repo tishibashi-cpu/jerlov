@@ -135,6 +135,16 @@ Scattering and backscattering
 
 .. autodata:: PETZOLD_STATIONS
 
+Measured reflectances
+---------------------
+
+.. autofunction:: usgs2017_reflectance
+
+.. autoclass:: MeasuredReflectance
+   :members:
+
+.. autodata:: USGS2017_MATERIALS
+
 Measured light fields
 ---------------------
 

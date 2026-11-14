@@ -4,6 +4,34 @@ Every release is archived on Zenodo under the concept DOI
 [10.5281/zenodo.22321312](https://doi.org/10.5281/zenodo.22321312), which
 always resolves to the latest version.
 
+## 1.13.0 — 2026-11-14
+
+Measured reflectances of ten materials, and reference images
+(DECISIONS.md section 85). No shipped value changed; three public names
+and one table are added.
+
+**Added.**
+
+- `usgs2017_reflectance(material)`: the absolute reflectance of one of
+  ten materials found in and around water, as the USGS Spectral Library
+  Version 7 measured it with an ASD spectrometer, every nm from 350 to
+  830: white PVC, black ABS, grey concrete, red and blue nylon fabric,
+  green tarp, blue-green HDPE, and cadmium orange, cadmium yellow and
+  cobalt violet pigments. Returns a `MeasuredReflectance`;
+  `USGS2017_MATERIALS` lists the ten.
+- `jerlov/data/usgs2017_reflectance.csv`, 4810 values, written by
+  `tools/build_usgs2017.py` from the library's data release (DOI
+  10.5066/F7RR1WDJ, CC0 1.0), copied as printed in a shorter range.
+
+**Examples.** `reference_images.py`, the twenty-sixth: the ten materials
+seen through Jerlov IB, III and 1C at 5 and 15 m depth and out to 10 m,
+balanced on the light at depth, written as CSV and images with `--write
+DIR`.
+
+**Data.** DATA.md section 37 (note): the ten records, what was changed
+(only the range), why these ten, and that the library's HTML sample
+descriptions could not be read here.
+
 ## 1.12.0 — 2026-11-14
 
 The RGB transmittance as a table, for renderers that read one

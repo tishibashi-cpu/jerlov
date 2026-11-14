@@ -65,6 +65,11 @@ from .scene import (
     Scene,
     veiling_radiance_estimate,
 )
+from .materials import (
+    USGS2017_MATERIALS,
+    MeasuredReflectance,
+    usgs2017_reflectance,
+)
 from .rendering import (
     RGB_COLOUR_SPACES,
     HenyeyGreensteinFit,
@@ -241,6 +246,9 @@ __all__ = [
     "SpectralCoefficients",
     "rgb_transmittance",
     "RgbTransmittance",
+    "usgs2017_reflectance",
+    "MeasuredReflectance",
+    "USGS2017_MATERIALS",
 ]
 
-__version__ = "1.12.0"
+__version__ = "1.13.0"

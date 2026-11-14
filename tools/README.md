@@ -17,6 +17,8 @@ their numbers as literals, and `build_cie.py` takes the CIE tables from
 and its DOI.
 
 `openpyxl` and `colour-science` are needed only here, never at run time.
+`build_usgs2017.py` needs `ASCIIdata_splib07a.zip` from the USGS Spectral
+Library Version 7 data release (DOI `10.5066/F7RR1WDJ`).
 Two figshare datasets are needed, `20290782` and `21710252`; the scripts name
 them and their DOIs when they are missing.
 `build_cie.py` uses `colour-science` as a carrier for the CIE tabulations;

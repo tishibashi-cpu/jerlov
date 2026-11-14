@@ -283,6 +283,19 @@ on eight days in 1971, at 530 nm, water and particles together; none of them
 is a Jerlov type. Every value was transcribed from the report and checked
 against its own integrals and its second printing; DATA.md section 21.
 
+## Measured reflectances of real materials
+
+```python
+m = jerlov.usgs2017_reflectance("red_nylon")   # one of jerlov.USGS2017_MATERIALS
+m.wavelengths, m.reflectance                   # 350-830 nm, every nm
+```
+
+Ten materials found in and around water, from white PVC to cobalt violet,
+as the USGS Spectral Library Version 7 measured them (CC0): something real
+to put in front of `Scene` instead of an invented curve. They are dry
+laboratory samples; wet, or another sample, they would reflect differently
+(DATA.md section 37).
+
 ## The type changes with depth
 
 The classification is defined on the top 10 m, but clarity does not stay put.
@@ -619,9 +632,10 @@ python examples/rendering_export.py            water for Mitsuba, pbrt and Blend
 python examples/rgb_versus_spectral.py         what RGB rendering does to colours
 python examples/water_lookup_tables.py         tables for games and real-time shaders
 python examples/phase_function_choice.py       Henyey-Greenstein against Petzold
+python examples/reference_images.py            measured materials through three types
 ```
 
-Twenty-five scripts, each aimed at a different reader; `examples/README.md` says
+Twenty-six scripts, each aimed at a different reader; `examples/README.md` says
 which to start with. CI runs all of them on every push, so an example that has
 stopped working is a failed build. Every one ends with the assumptions it
 made.
@@ -629,7 +643,7 @@ made.
 ## Provenance and design
 
 `DATA.md` records, for every shipped table, where it came from, what was
-verified, and what is known to be wrong with it. Thirty-six entries are
+verified, and what is known to be wrong with it. Thirty-seven entries are
 documented there: thirteen confirmed defects in the source literature, three
 questions the first edition of Jerlov settled, and the rest notes.
 

@@ -1,6 +1,6 @@
 # Examples
 
-Twenty-five scripts. Each runs against the installed package and needs nothing beyond
+Twenty-six scripts. Each runs against the installed package and needs nothing beyond
 NumPy.
 
 ```
@@ -29,6 +29,7 @@ python examples/rendering_export.py
 python examples/rgb_versus_spectral.py
 python examples/water_lookup_tables.py
 python examples/phase_function_choice.py
+python examples/reference_images.py
 ```
 
 CI runs all of them on every push, so an example that has stopped working is a
@@ -68,6 +69,7 @@ copy of the package silently wins over the working tree. In a clone, run
 | make images of water in RGB, and wonder what it costs the colours | `rgb_versus_spectral.py` |
 | draw water every frame from a precomputed table, in a game or simulator | `water_lookup_tables.py` |
 | choose a phase function for light in water | `phase_function_choice.py` |
+| need reference colours to check a rendering or photograph against | `reference_images.py` |
 
 ## What each shows
 
@@ -353,6 +355,14 @@ the sun's beam HG scatters **0.07 to 0.59** of the measured light towards
 the eye, and at 90 degrees 1.08 to 1.80 times it. The stations scatter
 0.20 to 0.37 of their light within 1 degree of forward; HG 0.004 to
 0.046, moving the tight glow around the sun out to wider angles.
+
+**`reference_images.py`** — ten materials whose reflectance the USGS
+Spectral Library measured, from white PVC to cobalt violet, seen through
+Jerlov IB, III and 1C at 5 and 15 m depth, from the surface of the
+material out to 10 m, balanced on the light at depth, with every choice
+stated. At 10 m a coloured material keeps a median **0.30** of its chroma
+in IB at 5 m, 0.11 in III and 0.05 in 1C, and less at 15 m in every type.
+It writes the chart as CSV, linear and 8-bit, and as images.
 
 ## What they do not show
 
