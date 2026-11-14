@@ -543,6 +543,10 @@ rgb = jerlov.rgb_attenuation(
     illuminant=jerlov.d65(), distance_range_m=(0.5, 10.0))
 rgb.sigma_t, rgb.sigma_s, rgb.albedo       # 1/m, one per channel
 rgb.max_relative_error_t                   # what one exponential costs
+table = jerlov.rgb_transmittance(jerlov.water("III"), [1.0, 5.0, 10.0],
+                                 colour_space="acescg",
+                                 illuminant=jerlov.d65())
+table.transmittance                        # (3 distances, 3 channels), unfitted
 hg = jerlov.henyey_greenstein_fit(jerlov.petzold_scattering("HAOCE 5"),
                                   method="backscatter_ratio")  # or mean_cosine
 hg.g, hg.log_ratio                         # and where HG misses Petzold
@@ -554,7 +558,8 @@ spectra.as_dict()                          # for json.dump, as are the others
 For film, games and simulation. A renderer in RGB attenuates each channel
 as one exponential, which the spectrum is not, and the answer depends on
 the light entering the water and on the distances in the scene, so both
-are yours to state and the error over them comes back with the fit. A
+are yours to state and the error over them comes back with the fit; a
+renderer that reads a table can have the transmittance itself, unfitted. A
 channel that turns negative, as the red of linear sRGB does after a few
 metres of clear water, is refused rather than clipped. The
 Henyey-Greenstein g is matched to Petzold's measured B/S or to his mean

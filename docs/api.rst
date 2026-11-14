@@ -227,6 +227,11 @@ Coefficients for renderers
 
 .. autodata:: RGB_COLOUR_SPACES
 
+.. autofunction:: rgb_transmittance
+
+.. autoclass:: RgbTransmittance
+   :members:
+
 .. autofunction:: henyey_greenstein_fit
 
 .. autoclass:: HenyeyGreensteinFit

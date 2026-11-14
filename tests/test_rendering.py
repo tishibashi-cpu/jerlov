@@ -361,3 +361,133 @@ def test_a_caller_water_has_no_citation():
     assert out.source == "" and out.water == "'flat'"
     assert set(out.a_status) == {"ok"}
     assert math.isclose(float(out.albedo[0]), 2 / 3)
+
+
+# -- rgb_transmittance (DECISIONS.md section 84) -------------------------------
+
+#: rgb_attenuation's results recorded in 1.11.1, before its transmittance
+#: moved into the helper rgb_transmittance shares with it: sigma_t,
+#: sigma_a, both errors and the illuminant's RGB, as hexadecimal floats.
+RECORDED_1_11_1 = {
+    ("III", "williamson2022", "acescg", (0.5, 10.0)): [
+        '0x1.e49c2e858a333p-2', '0x1.861a9c0836143p-2', '0x1.a904e2001fb63p-2',
+        '0x1.89387c6e90fe6p-3', '0x1.7cf2700d5bfe1p-4', '0x1.b99ce34d1cd50p-4',
+        '0x1.4ed0546295f28p-4', '0x1.525282b091d80p-8', '0x1.47848888a6280p-8',
+        '0x1.627bca1734168p-4', '0x1.e820b8cb53d80p-8', '0x1.6360a988f6d00p-9',
+        '0x1.f47c6685b51e8p-1', '0x1.00b692621a2d4p+0', '0x1.143c91db83b17p+0'],
+    ("1C", "williamson2022", "linear_srgb", (0.5, 10.0)): [
+        '0x1.780bab0ffdb2fp-1', '0x1.0cc2389f14932p-1', '0x1.3520332abff34p-1',
+        '0x1.7718ce5b51024p-2', '0x1.891638f9c7a39p-4', '0x1.2b180bfe25e4ap-3',
+        '0x1.d7167d1f09550p-4', '0x1.62b15b78a1380p-7', '0x1.1de43f93d9800p-10',
+        '0x1.b3065cac2f7e8p-1', '0x1.298ceae9f6980p-7', '0x1.7cb59a2553a00p-10',
+        '0x1.000a232fec10dp+0', '0x1.fffd2b95ed7bep-1', '0x1.ffe0505dd5ab0p-1'],
+    ("IB", "williamson2022", "rec2020", (0.0, 25.0)): [
+        '0x1.103541a38ded4p-2', '0x1.80381acd6dfafp-3', '0x1.63f20c45acd98p-3',
+        '0x1.277e72047711bp-3', '0x1.079c5863e8664p-4', '0x1.46e1323ce7ce4p-5',
+        '0x1.fa2cc3bb041c0p-3', '0x1.15318a3b94aa0p-5', '0x1.2f0d754ad5c00p-10',
+        '0x1.0d415a67becd0p-2', '0x1.3ab6112e59670p-5', '0x1.bdc58cef2e800p-11',
+        '0x1.0005354ac1ff0p+0', '0x1.fffe705879d5ep-1', '0x1.ffe3b4944529bp-1'],
+    ("III", "solonenko2015", "acescg", (1.0, 5.0)): [
+        '0x1.0ede2a33e5ea1p+0', '0x1.0ff21a17bf7e4p+0', '0x1.5f731d92c3f93p+0',
+        '0x1.8e12304e9bb9ap-3', '0x1.217fbc4f7a381p-4', '0x1.45bd51b338b91p-5',
+        '0x1.78468bfaa46c0p-7', '0x1.df0173334d800p-10', '0x1.5e8f287b200e0p-5',
+        '0x1.a5bcbe132c6e0p-6', '0x1.1770fa13e6d00p-8', '0x1.8ef81a88e9800p-12',
+        '0x1.f3d419617a5d4p-1', '0x1.00d66013dc0edp+0', '0x1.1457f36516daap+0'],
+}
+
+
+@pytest.mark.parametrize("case", sorted(RECORDED_1_11_1))
+def test_rgb_attenuation_is_unchanged_bit_for_bit(case):
+    water_type, source, space, distances = case
+    out = _quiet(jerlov.rgb_attenuation, jerlov.water(water_type,
+                                                      source=source),
+                 colour_space=space, illuminant=jerlov.d65(),
+                 distance_range_m=distances)
+    got = [float(v).hex() for array in (
+        out.sigma_t, out.sigma_a, out.max_relative_error_t,
+        out.max_relative_error_a, out.illuminant_rgb) for v in array]
+    assert got == RECORDED_1_11_1[case]
+
+
+@pytest.mark.parametrize("space", jerlov.RGB_COLOUR_SPACES)
+def test_a_grey_water_transmits_exp_minus_c_r(space):
+    r = np.array([0.0, 0.5, 3.0, 25.0])
+    out = jerlov.rgb_transmittance(_flat_water(c=0.3, a=0.1), r,
+                                   colour_space=space,
+                                   illuminant=jerlov.d65())
+    np.testing.assert_allclose(out.transmittance,
+                               np.exp(-0.3 * r)[:, None] * np.ones(3),
+                               rtol=1e-12)
+
+
+def test_the_fit_departs_from_the_table_by_the_reported_error():
+    water = jerlov.water("III")
+    fit = _quiet(jerlov.rgb_attenuation, water, **ARGS)
+    r = np.linspace(*ARGS["distance_range_m"], 201)
+    table = _quiet(jerlov.rgb_transmittance, water, r,
+                   colour_space=ARGS["colour_space"],
+                   illuminant=ARGS["illuminant"])
+    departure = np.abs(np.exp(-np.outer(r, fit.sigma_t))
+                       / table.transmittance - 1).max(axis=0)
+    np.testing.assert_allclose(departure, fit.max_relative_error_t,
+                               rtol=1e-12)
+    np.testing.assert_array_equal(table.illuminant_rgb, fit.illuminant_rgb)
+    assert table.wavelength_range_nm == fit.wavelength_range_nm
+
+
+def test_the_table_keeps_the_shape_asked_for():
+    kwargs = dict(colour_space="acescg", illuminant=jerlov.d65())
+    water = jerlov.water("1C")
+    one = _quiet(jerlov.rgb_transmittance, water, 2.0, **kwargs)
+    assert one.transmittance.shape == (3,)
+    grid = np.array([[0.0, 1.0], [5.0, 2.0]])
+    table = _quiet(jerlov.rgb_transmittance, water, grid, **kwargs)
+    assert table.transmittance.shape == (2, 2, 3)
+    # 1 to rounding: R_k(S) is taken once, through integrate_response, as
+    # rgb_attenuation takes it, and the table by the same sum another way.
+    np.testing.assert_allclose(table.transmittance[0, 0], 1.0, rtol=1e-13)
+    np.testing.assert_array_equal(table.transmittance[1, 1],
+                                  _quiet(jerlov.rgb_transmittance, water,
+                                         [2.0], **kwargs).transmittance[0])
+    with pytest.raises(ValueError):
+        table.transmittance[0, 0, 0] = 0.0
+    d = json.loads(json.dumps(table.as_dict(), allow_nan=False))
+    assert d["distances_m"] == grid.tolist()
+    assert np.array(d["transmittance"]).shape == (2, 2, 3)
+
+
+def test_a_negative_channel_is_refused_where_it_turns():
+    water = jerlov.water("IB")
+    kwargs = dict(colour_space="linear_srgb", illuminant=jerlov.d65())
+    with pytest.raises(ValueError, match="red channel") as info:
+        _quiet(jerlov.rgb_transmittance, water, [1.0, 20.0], **kwargs)
+    reach = float(str(info.value).split("up to about ")[1].split(" m")[0])
+    _quiet(jerlov.rgb_transmittance, water, [reach * 0.99], **kwargs)
+    with pytest.raises(ValueError, match="red channel"):
+        _quiet(jerlov.rgb_transmittance, water, [reach * 1.01], **kwargs)
+
+
+@pytest.mark.parametrize("distances, message", [
+    (None, "no default"), ("far", "numbers"), ([1.0, np.nan], "NaN"),
+    ([1.0, np.inf], "finite"), ([-1.0], "negative"), ([], "empty"),
+])
+def test_transmittance_inputs_are_checked(distances, message):
+    with pytest.raises(ValueError, match=message):
+        _quiet(jerlov.rgb_transmittance, jerlov.water("III"), distances,
+               colour_space="acescg", illuminant=jerlov.d65())
+
+
+def test_transmittance_needs_its_arguments():
+    with pytest.raises(ValueError, match="no default"):
+        jerlov.rgb_transmittance(jerlov.water("III"), [1.0],
+                                 colour_space=None, illuminant=jerlov.d65())
+    with pytest.raises(TypeError):
+        jerlov.rgb_transmittance(jerlov.water("III"), [1.0],
+                                 colour_space="acescg")
+    with pytest.raises(TypeError, match="jerlov.Water"):
+        jerlov.rgb_transmittance("III", [1.0], colour_space="acescg",
+                                 illuminant=jerlov.d65())
+    with pytest.raises(ValueError, match="gap"):
+        _quiet(jerlov.rgb_transmittance,
+               jerlov.water("5C", source="solonenko2015"), [1.0],
+               colour_space="acescg", illuminant=jerlov.d65())

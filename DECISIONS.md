@@ -4549,3 +4549,17 @@ array. Every input for NaN, infinity, negatives and a missing argument.
 
 **Version.** 1.12.0: two public names are added, `rgb_transmittance`
 and `RgbTransmittance`, 110 in all.
+
+**Differences from the plan, noted after the code was written.**
+
+- T at r = 0 is 1 to rounding, about 2 x 10^-15, not exactly 1: the
+  illuminant's R_k(S) is taken once through `integrate_response`, as
+  `rgb_attenuation` takes it, and the table by the same sum done another
+  way. Taking R_k(S) the table's way would have moved `rgb_attenuation`'s
+  results in their last bits, which the plan ruled out; the test allows
+  1 x 10^-13.
+- A distance at which a channel is refused is the reach through c alone,
+  since only c is evaluated: for IB in linear sRGB 9.11 m, where
+  `rgb_attenuation`, which also fits a, reports 8.62 m.
+- `water_lookup_tables.py` prints and writes the same numbers as in
+  1.11.1, compared line by line and cell by cell.
