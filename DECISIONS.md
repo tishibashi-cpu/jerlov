@@ -4175,3 +4175,157 @@ lists every call that now raises under Fixed.
 - The output of the twenty examples that run in under a few minutes was
   compared with 1.10.2's line by line: the banner's version differs in
   each, and `sources_disagree.py` has its new closing list. Nothing else.
+
+## 82. Coefficients for renderers: RGB, a Henyey-Greenstein g, and spectra (1.11.0): the plan
+
+People who render water, for film, games or simulation, need an
+absorption and a scattering coefficient and a phase function, and
+commonly pick them by eye (NEXT_STEPS section 0, item 6). The package
+holds sourced values for all three. This section hands them over in the
+forms renderers take, without solving the radiative transfer equation
+(sections 12 and 38): the renderer does the light, the package says
+where the numbers came from and how far a renderer's simplification
+moves them. The user chose the design below on 2026-11-14.
+
+**Three forms, in a new module `jerlov/rendering.py`.**
+
+1. `rgb_attenuation(water, /, *, colour_space, illuminant,
+   distance_range_m)`, returning an `RgbAttenuation`: one extinction,
+   absorption and scattering coefficient per channel of a linear RGB
+   space, for renderers that work in RGB (Blender, Arnold, RenderMan,
+   Unreal, Unity, Mitsuba and pbrt in their RGB modes).
+2. `henyey_greenstein_fit(scattering, /, *, method)`, returning a
+   `HenyeyGreensteinFit`: the asymmetry parameter g of a
+   Henyey-Greenstein phase function for one of Petzold's stations, the
+   only phase function most renderers offer.
+3. `spectral_coefficients(water, /, *, range_nm)`, returning a
+   `SpectralCoefficients`: a, b and c at the water's own wavelengths, for
+   spectral renderers (Mitsuba 3, pbrt-v4), with no RGB step to lose.
+
+Each result has `as_dict()`, plain lists, strings and numbers ready for
+`json.dump`, carrying units, the source's citation and what was assumed.
+No file format of any one renderer is written by the package; the
+example does that. New public names: these three functions, their three
+result types and `RGB_COLOUR_SPACES`, 108 in all.
+
+**Why RGB is not a sampling of the spectrum.** A renderer in RGB
+attenuates each channel as exp(-sigma_k r). The light that has crossed r
+metres of water has the spectrum S(lambda) exp(-c(lambda) r), and its
+channel k in a linear RGB space is R_k(r) = M_k . XYZ[S exp(-c r)], with
+M the space's XYZ-to-RGB matrix. The channel's transmittance T_k(r) =
+R_k(r) / R_k(0) is not one exponential, because the spectrum inside a
+channel is attenuated unevenly, and it depends on the light S that
+enters the water. So:
+
+- **The illuminant has no default.** It is passed as `(wavelengths,
+  power)`, as `jerlov.d65()` returns it; above the sea D65 is one
+  choice, `gregg1990_irradiance` another, and under water the light at
+  that depth. Its RGB in the chosen space is returned, so the light in
+  the scene can be set to match.
+- **The distances have no default.** sigma_k is fitted over the caller's
+  `(near, far)` in metres, by least squares in ln T_k at 201 evenly
+  spaced distances, through T = 1 at r = 0 as the renderer's model is.
+  The result carries the fitted range and the largest relative error
+  |exp(-sigma_k r) / T_k(r) - 1| over it, per channel.
+- **The colour space has no default.** One of `RGB_COLOUR_SPACES`:
+  `"linear_srgb"` (IEC 61966-2-1, the primaries the package already
+  has), `"acescg"` (the AP1 primaries and the ACES white, x = 0.32168, y
+  = 0.33767, from the Academy's ACEScg specification, read on
+  docs.acescentral.com), `"rec2020"` (Rec. ITU-R BT.2020-2 (10/2015),
+  Table 3, p. 3). The matrix is derived from the primaries, as for sRGB.
+  No chromatic adaptation is made: a ratio within one channel needs
+  none, and the illuminant's own RGB tells the caller what white it is.
+- **A channel that turns negative is refused.** Clear water leaves a
+  blue-green light that lies outside the sRGB gamut after a few metres,
+  and the red channel, whose matching function is negative in the
+  blue-green, then goes below zero (the user chose to refuse,
+  2026-11-14). The `ValueError` gives the channel and the largest
+  distance at which every channel is still positive; a narrower range
+  or a wider space is the caller's remedy. A first look, with D65,
+  Williamson & Hollins IB, linear sRGB: the red channel's T reaches
+  -0.013 within 20 m. ACEScg and Rec. 2020 keep it positive there.
+- **Absorption and scattering.** sigma_t is fitted from c, sigma_a from
+  a in the same way, and sigma_s = sigma_t - sigma_a, so that the three
+  add up as a renderer assumes; the albedo is sigma_s / sigma_t. A
+  negative sigma_s is refused. **Rejected:** fitting b on its own, since
+  sigma_a + sigma_s would then not equal sigma_t.
+- **Everything else is as elsewhere.** The spectra are integrated on 1
+  nm steps where the water, the illuminant and the CIE 1931 observer
+  overlap, through `integrate_response`, so a water that does not span
+  the observer warns with `CoverageWarning`; flagged values warn with
+  `ProvenanceWarning` through `Water.a` and `Water.c`; a gap (NaN) in a
+  or c inside that overlap is refused, since no colour can be formed
+  across it; an illuminant with no power in a channel is refused.
+
+A first look at how far one exponential is from the truth, D65, 0.5 to
+10 m: in ACEScg the red channel is off by up to 8 or 9 percent in every
+Williamson & Hollins type, green and blue by 0.1 to 8 percent. The
+result says so per channel rather than the docstring in general.
+
+**The Henyey-Greenstein g.** HG is the phase function almost every
+renderer has (Mitsuba's `hg`, pbrt-v4's homogeneous medium's `g`,
+Blender's anisotropy), and it fits ocean water badly: at small angles
+it falls short of Petzold's measurements by a factor of up to about
+140 when g matches the mean cosine, 310 when it matches B/S. Which property it is made to match is a choice, so `method` has no
+default (the user's choice):
+
+- `"backscatter_ratio"`: g such that HG scatters the station's B/S, as
+  printed, beyond 90 degrees: B(g) = (1 - g) / (2 g) [(1 + g) /
+  sqrt(1 + g^2) - 1], solved by bisection. A first look gives g = 0.822
+  (AUTEC 8) to 0.941 (HAOCE 11).
+- `"mean_cosine"`: g equal to the station's mean cosine, 2 pi times the
+  integral of the phase function times cos(theta) sin(theta), the vsf
+  interpolated in log-log as `vsf_at` does, plus the share of s below
+  0.1 degree at a cosine of 1. That share, 3.4 to 14.5 percent of s, is
+  the report's power-law extension at every station and enters the mean
+  cosine at full weight, so this method warns with `ProvenanceWarning`.
+  A first look gives 0.877 to 0.954, and an HG backscattering 19 to 35
+  percent below the measured B/S.
+
+The result carries the station, 530 nm, the method, g, the HG's B/S
+beside the measured one, and ln(p_HG / p) at the report's 55 angles,
+the fit's error where it is. `ScatteringFunction.mean_cosine()` is added
+for the second method, warning in the same way. Petzold measured one
+band in the green, and nothing here gives g a wavelength dependence;
+the renderer will apply one g to all wavelengths, and the docstring
+says so. The vsf includes pure water, as Petzold measured it.
+
+**The spectra.** `spectral_coefficients` returns a, b and c at the
+water's own wavelengths inside `range_nm` (required, inside the water's
+range): no resampling, so a spectral renderer interpolates them as it
+does its own spectra, and nothing is interpolated here first. Gaps stay
+NaN (`None` in `as_dict()`), each value carries its status, flagged
+values warn when the result is made, and a water without a or b raises
+`MissingQuantityError`.
+
+**The example.** `examples/rendering_export.py`, the twenty-second, for
+people who render water: the RGB coefficients of two water types in the
+three spaces with their errors, and the refusal in linear sRGB caught
+and shown; g by both methods for the eight stations; and the same water
+written as a Mitsuba 3 scene's medium (RGB and spectral) and as a
+pbrt-v4 `MakeNamedMedium`, printed, not rendered. The file formats are
+taken from the two renderers' own documentation; whether the Mitsuba
+text loads is checked by hand in a scratchpad environment with Mitsuba
+installed, not in CI, which installs NumPy only. A renderer's scene
+unit is not a metre unless the caller makes it one; both formats have a
+scale for that, and the example says so. Blender's Principled Volume is
+included only if its mapping from colours and density to coefficients
+can be stated from Blender's own manual or source; otherwise it is left
+out and the example says why.
+
+**Checks.** The three matrices against the primaries and whites they
+come from (each primary maps to its own unit vector, the white to
+(1, 1, 1)), and linear sRGB against the matrix the package already
+has. `rgb_attenuation` against a water whose c does not vary with
+wavelength (every channel then gives exactly c, with no error) and
+against a direct sum over the spectrum for one case; the refusal at
+the distance it reports; the coefficients adding up. HG: the closed
+form of B(g) against numerical integration; the backscatter method
+reproducing each station's B/S; the mean cosine's integral of p sin
+reproducing the report's own s within 1 percent, so that the
+interpolation is the report's; g = 0 and the warnings. Spectra: values
+identical to `Water.a`, `b` and `c` at the same wavelengths;
+`as_dict()` through `json.dumps` with `allow_nan=False`. Every input
+for NaN, infinity, negatives, the wrong shape and a missing argument.
+
+**Version.** 1.11.0: new public names, nothing changed.
