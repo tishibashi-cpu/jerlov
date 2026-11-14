@@ -4571,3 +4571,75 @@ and `RgbTransmittance`, 110 in all.
   is NumPy's own rounding, not this change. The test now allows a
   relative 1 x 10^-14 in the coefficients and the illuminant's RGB, and
   an absolute 1 x 10^-14 in the errors, which are differences from 1.
+
+## 85. Measured reflectances of ten materials, and reference images (1.13.0): the plan
+
+NEXT_STEPS section 0, item 6 (d) asks for reference images: how coloured
+surfaces look through each water type, at each depth and distance, for
+checking a renderer or a photograph against. Every example so far has
+used invented reflectances, `synthetic_underwater_images.py` among them,
+which says that real work should use measured ones. This section ships
+measured ones. The user chose on 2026-11-14 to use measured materials
+rather than invented curves, to leave the classic ColorChecker aside
+(its spectra are copyrighted; a request for permission is deferred),
+and left the choice of materials to this plan.
+
+**The source.** Kokaly, R. F., Clark, R. N., Swayze, G. A., Livo, K. E.,
+Hoefen, T. M., Pearson, N. C., Wise, R. A., Benzel, W. M., Lowers, H. A.,
+Driscoll, R. L., and Klein, A. J. (2017), USGS Spectral Library Version 7
+Data, U.S. Geological Survey data release, DOI `10.5066/F7RR1WDJ`,
+marked CC0 1.0; the report is USGS Data Series 1035, DOI
+`10.3133/ds1035`. The use constraints in the release's metadata ask that
+modifications be described and the USGS be acknowledged; DATA.md does
+both. From `ASCIIdata_splib07a.zip`, the spectra as measured (not
+resampled), the ASD spectrometer's records ("ASDFRa AREF"): absolute
+reflectance, the reflectance relative to a Spectralon panel times the
+panel's own (eq. 1, p. 4), at one channel per nm from 350 to 2500 nm,
+with a bandpass of 3.4 to 8.7 nm (FWHM) between 350 and 830.
+
+**The ten.** Chosen to span neutral and hue, from materials found in and
+around water, none fluorescent (a fluorescent sample's measured
+reflectance includes light the lamp made it emit, which water's light
+would not): white PVC (GDS338), black ABS pipe (GDS341), light grey road
+concrete (GDS375), red and blue nylon fabric (GDS431, GDS433), green
+plastic tarp (GDS339), blue-green HDPE (GDS391), and three artists'
+pigments, cadmium orange (GDS786), cadmium yellow (GDS788) and cobalt
+violet (GDS803). Shipped from 350 to 830 nm, the CIE observer's range
+and a little below, as printed, 4810 values; none is deleted in that
+range and all lie between 0 and 1.
+
+**The table.** `jerlov/data/usgs2017_reflectance.csv`, written by
+`tools/build_usgs2017.py` from the downloaded zip, which checks each
+record's header line names the sample, the wavelengths are the ASD's 1
+nm channels, no value is the library's deleted-channel marker, and every
+value lies in (0, 1). The sample descriptions the release carries as
+HTML (1.3 GB with photographs) are behind a download page this container
+cannot use, so DATA.md gives each sample's record line and name as the
+ASCII file prints them, and says the descriptions were not read.
+
+**The function.** `usgs2017_reflectance(material)`, returning a
+`MeasuredReflectance` (the material's key, the library's record number
+and name, the wavelengths and reflectances, the citation);
+`USGS2017_MATERIALS` lists the ten keys. Reflectance at another
+wavelength is the caller's interpolation, as for any spectrum here; the
+values are what the library measured with the ASD's bandpass, which is
+recorded. Three public names, 113 in all.
+
+**The example.** `examples/reference_images.py`, the twenty-sixth: the
+ten materials as a chart, seen through Jerlov IB, III and 1C at 5 and
+15 m, at 1, 3, 5 and 10 m, with the direct light from `Scene.at_depth`
+and the path radiance from the package's single-scattering estimate,
+every choice stated (the surface light, Kd, the face irradiance ratio,
+the backscattering ratio), balanced on the downwelling irradiance at
+depth. It prints the sRGB values and, with `--write DIR`, writes them
+as CSV (linear and encoded) and the charts as PPM images. It says what
+the images are not: a photograph, a validated rendering, or a view of
+anything but a horizontal line in uniform water.
+
+**Checks.** The CSV against the zip, value by value, in the build
+script; the function's values against the CSV; the ten keys; refusal of
+an unknown material. In the example, a chart at distance 0 with no path
+radiance reproduces each material's colour under the downwelling light,
+and a material's colour moves towards the water's as the distance grows.
+
+**Version.** 1.13.0: three public names and one shipped table.
