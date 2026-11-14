@@ -4,8 +4,8 @@ g, and spectra, with how far each simplification moves them.
 For people who render water, in film, games or simulation, and set its
 absorption, scattering and phase function by eye:
 
-    python examples/rendering_export.py            # print everything
-    python examples/rendering_export.py out/       # also write the files
+    python examples/rendering_export.py                  # print everything
+    python examples/rendering_export.py --write out/     # also write files
 
 It fits one extinction, absorption and scattering coefficient per channel
 of three RGB spaces to two Jerlov types, says how far one exponential per
@@ -232,7 +232,7 @@ def numbers(values, digits=6):
     return ", ".join(f"{v:.{digits}g}" for v in values)
 
 
-def files_part(caught):
+def files_part(caught, out_dir):
     rule("5. Into a renderer")
     water = jerlov.water(RENDER_TYPE)
     station, b530 = nearest_station(water)
@@ -339,28 +339,29 @@ scattering = Color x Density, per channel. In ACEScg, fitted over
 {RANGE_M[0]:g}-{RANGE_M[1]:g} m, which leaves red off by up to {100 * float(aces.max_relative_error_t[0]):.0f} percent:
 
 {shown(blender)}""")
-    if len(sys.argv) > 1:
-        out = pathlib.Path(sys.argv[1])
+    if out_dir is not None:
+        out = pathlib.Path(out_dir)
         out.mkdir(parents=True, exist_ok=True)
         for name, text in texts.items():
             (out / name).write_text(text)
         print(f"\nWritten to {out}: {', '.join(texts)}")
     else:
-        print("\nGive a directory on the command line to write these files.")
+        print("\nRun with --write DIR to write these files.")
     return dict(station=station, g=g, srgb=srgb, aces=aces,
                 spectra=spectra, texts=texts, wavelengths=wl,
                 blender=(absorption_colour, absorption_density,
                          scatter_colour, scatter_density))
 
 
-def main():
+def main(out_dir=None):
+    """Print everything; write the four files to ``out_dir`` if given."""
     _banner()
     caught = set()
     table, worst, red_worst = rgb_part(caught)
     reach = refusal_part(caught)
     errors = range_part(caught)
     fits, deficit, short = phase_part()
-    files = files_part(caught)
+    files = files_part(caught, out_dir)
     if caught:
         rule("Warnings")
         print("Raised along the way, and caught by type:")
@@ -391,4 +392,9 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    # Only an explicit --write DIR writes files: run through runpy from
+    # "python -c", as CI runs the examples, sys.argv carries this script's
+    # own path, which must not be taken for a directory.
+    args = sys.argv[1:]
+    main(args[args.index("--write") + 1]
+         if "--write" in args[:-1] else None)

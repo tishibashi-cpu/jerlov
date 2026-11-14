@@ -1803,19 +1803,12 @@ def render_example():
     import contextlib
     import io
     import runpy
-    import sys
     module = runpy.run_path(str(ROOT / "examples" / "rendering_export.py"),
                             run_name="rendering_export")
-    argv = sys.argv
-    sys.argv = ["rendering_export.py"]      # print only, write no files
-    try:
-        with contextlib.redirect_stdout(io.StringIO()), \
-                warnings.catch_warnings():
-            warnings.simplefilter("error", jerlov.ProvenanceWarning)
-            warnings.simplefilter("error", FutureWarning)
-            return module["main"]()
-    finally:
-        sys.argv = argv
+    with contextlib.redirect_stdout(io.StringIO()), warnings.catch_warnings():
+        warnings.simplefilter("error", jerlov.ProvenanceWarning)
+        warnings.simplefilter("error", FutureWarning)
+        return module["main"]()          # prints only, writes no files
 
 
 @source_tree
