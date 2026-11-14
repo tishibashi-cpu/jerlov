@@ -1,6 +1,6 @@
 # Examples
 
-Twenty-two scripts. Each runs against the installed package and needs nothing beyond
+Twenty-five scripts. Each runs against the installed package and needs nothing beyond
 NumPy.
 
 ```
@@ -26,6 +26,9 @@ python examples/ocean_colour_and_secchi.py
 python examples/sunlight_and_d65.py
 python examples/looking_up_and_down.py
 python examples/rendering_export.py
+python examples/rgb_versus_spectral.py
+python examples/water_lookup_tables.py
+python examples/phase_function_choice.py
 ```
 
 CI runs all of them on every push, so an example that has stopped working is a
@@ -62,6 +65,9 @@ copy of the package silently wins over the working tree. In a clone, run
 | have used D65 as the light above the sea, or need the sun's spectrum at the surface | `sunlight_and_d65.py` |
 | see under water along a slanted line, looking up or down | `looking_up_and_down.py` |
 | render water, in film, games or simulation | `rendering_export.py` |
+| make images of water in RGB, and wonder what it costs the colours | `rgb_versus_spectral.py` |
+| draw water every frame from a precomputed table, in a game or simulator | `water_lookup_tables.py` |
+| choose a phase function for light in water | `phase_function_choice.py` |
 
 ## What each shows
 
@@ -322,6 +328,31 @@ Mitsuba 3 medium in RGB and spectrally, as a pbrt-v4 medium and as the
 values of Blender's volume nodes. The Mitsuba media were rendered once by
 hand outside CI; Mitsuba's spectral variants give NaN where a spectrum
 stops short of 830 nm.
+
+**`rgb_versus_spectral.py`** — five invented surfaces seen through IB, III
+and 1C, drawn spectrally and as an RGB renderer draws them with
+`rgb_attenuation`'s coefficients, fitted over 0.5 to 10 m. Inside that
+range the largest CIE 1976 colour difference, with D65 as white, is
+**8.1** in linear sRGB, 5.8 in ACEScg and 5.7 in Rec. 2020 (linear sRGB
+refuses IB). Balanced on the white surface at each distance, as a camera
+would be, the difference grows to 23.8 in ACEScg inside the range and
+47.4 beyond it, and a white surface drawn in RGB turns cyan. It can write
+the two renderings as an image.
+
+**`water_lookup_tables.py`** — the tables a shader reads for Jerlov III:
+by depth (0 to 50 m) and distance (0 to 30 m), the transmittance per
+ACEScg channel and the path radiance, from D65 at the surface, Jerlov's
+Kd and the single-scattering estimate with Petzold's HAOCE 5 bb/b, every
+choice stated. One coefficient per channel over 1 to 30 m is off by up to
+**32 percent** for the light at the surface and 5 percent at 50 m, where
+the light is bluer. It writes the tables as CSV and preview images.
+
+**`phase_function_choice.py`** — what Henyey-Greenstein does at
+Petzold's eight stations, with g matched either way. Within 1 degree of
+the sun's beam HG scatters **0.07 to 0.59** of the measured light towards
+the eye, and at 90 degrees 1.08 to 1.80 times it. The stations scatter
+0.20 to 0.37 of their light within 1 degree of forward; HG 0.004 to
+0.046, moving the tight glow around the sun out to wider angles.
 
 ## What they do not show
 

@@ -1873,3 +1873,150 @@ def test_the_render_files_carry_the_fitted_numbers(render_example):
                                rtol=1e-12)
     assert np.all((0 <= a_colour) & (a_colour <= 1))
     assert np.all((0 <= s_colour) & (s_colour <= 1))
+
+
+# -- Three examples for people who render water (section 83) -------------
+
+
+def _run_example(name):
+    import contextlib
+    import io
+    import runpy
+    module = runpy.run_path(str(ROOT / "examples" / f"{name}.py"),
+                            run_name=name)
+    with contextlib.redirect_stdout(io.StringIO()), warnings.catch_warnings():
+        warnings.simplefilter("error", jerlov.ProvenanceWarning)
+        warnings.simplefilter("error", FutureWarning)
+        return module, module["main"]()
+
+
+@pytest.fixture(scope="module")
+def rgb_example():
+    return _run_example("rgb_versus_spectral")
+
+
+@pytest.fixture(scope="module")
+def tables_example():
+    return _run_example("water_lookup_tables")
+
+
+@pytest.fixture(scope="module")
+def phase_example():
+    return _run_example("phase_function_choice")
+
+
+@source_tree
+def test_examples_README_figures_for_rgb_versus_spectral(rgb_example):
+    text = (ROOT / "examples" / "README.md").read_text()
+    for quoted in ("**8.1**", "5.8 in ACEScg", "5.7 in Rec. 2020",
+                   "23.8 in ACEScg", "47.4 beyond"):
+        assert quoted in text, quoted
+    worst = rgb_example[1]["worst"]
+    assert [round(worst[s][0], 1) for s in ("linear_srgb", "acescg",
+                                            "rec2020")] == [8.1, 5.8, 5.7]
+    assert round(worst["acescg"][1], 1) == 23.8
+    assert round(worst["acescg"][2], 1) == 47.4
+    assert rgb_example[1]["results"][("IB", "linear_srgb")] is None
+
+
+@source_tree
+def test_the_rgb_white_turns_cyan(rgb_example):
+    """Balanced on the spectral white at 20 m, the white surface drawn in
+    RGB has a* < 0 and b* < 0 in Jerlov III, ACEScg."""
+    module, out = rgb_example
+    _, rendered, _ = out["results"][("III", "acescg")]
+    spectral, in_rgb = rendered[("white", 20.0)]
+    white = spectral / module["PATCHES"]["white"][0]
+    _, a, b = module["lab"](in_rgb, white)
+    assert a < 0 and b < 0
+
+
+@source_tree
+def test_a_grey_water_renders_the_same_both_ways(rgb_example):
+    """With c the same at every wavelength, one exponential per channel is
+    exact, and every colour difference is zero."""
+    module, _ = rgb_example
+    wl = module["WL"]
+    water = jerlov.Water.from_measurements(
+        wl, a=np.full(wl.shape, 0.1), b=np.full(wl.shape, 0.2), name="grey")
+    fit = jerlov.rgb_attenuation(water, colour_space="acescg",
+                                 illuminant=module["ILLUMINANT"],
+                                 distance_range_m=(0.5, 10.0))
+    diff, _ = module["differences"](water, fit, (1.0, 5.0, 20.0))
+    assert max(max(v) for v in diff.values()) < 1e-9
+
+
+@source_tree
+def test_examples_README_figures_for_lookup_tables(tables_example):
+    text = (ROOT / "examples" / "README.md").read_text()
+    for quoted in ("**32 percent**", "5 percent at 50 m"):
+        assert quoted in text, quoted
+    out = tables_example[1]
+    assert round(100 * float(np.max(out["shallow"].max_relative_error_t))) == 32
+    assert round(100 * float(np.max(out["deep"].max_relative_error_t))) == 5
+
+
+@source_tree
+def test_the_tables_start_from_one_and_agree_with_the_fit(tables_example):
+    module, out = tables_example
+    t, path = out["transmittance"], out["path"]
+    np.testing.assert_allclose(t[:, 0], 1.0, rtol=1e-12)
+    np.testing.assert_allclose(path[:, 0], 0.0, atol=1e-15)
+    # The table's transmittance, computed by the example from the
+    # spectrum, departs from rgb_attenuation's one exponential by no more
+    # than the largest error that function reports over the same range.
+    r = module["DISTANCES_M"][1:]
+    for i, depth in enumerate(module["DEPTHS_M"]):
+        fit = out["sigma"][float(depth)]
+        departure = np.abs(np.exp(-np.outer(r, fit.sigma_t)) / t[i, 1:] - 1)
+        assert np.all(departure.max(axis=0)
+                      <= fit.max_relative_error_t * (1 + 1e-9))
+    # Every channel falls with distance and with depth's dimmer light.
+    assert np.all(np.diff(t, axis=1) < 0)
+    assert np.all(np.diff(path[:, -1], axis=0) < 0)
+
+
+@source_tree
+def test_examples_README_figures_for_phase_function_choice(phase_example):
+    text = (ROOT / "examples" / "README.md").read_text()
+    for quoted in ("**0.07 to 0.59**", "1.08 to 1.80", "0.20 to 0.37",
+                   "0.004 to\n0.046"):
+        assert quoted in text, quoted
+    out = phase_example[1]
+    assert (round(min(out["small"]), 2), round(max(out["small"]), 2)) == (
+        0.07, 0.59)
+    assert (round(min(out["side"]), 2), round(max(out["side"]), 2)) == (
+        1.08, 1.80)
+    within1 = out["within1"]
+    assert (round(min(m for m, _, _ in within1), 2),
+            round(max(m for m, _, _ in within1), 2)) == (0.20, 0.37)
+    hg = [v for _, b, c in within1 for v in (b, c)]
+    assert (round(min(hg), 3), round(max(hg), 3)) == (0.004, 0.046)
+
+
+@source_tree
+def test_the_shares_reach_one_and_hg_has_its_closed_form(phase_example):
+    module, out = phase_example
+    for station, (f, fitted) in out["stations"].items():
+        assert module["measured_share_within"](f, 180.0) == pytest.approx(
+            1.0, abs=0.003)
+        g = fitted["backscatter_ratio"].g
+        theta = np.linspace(0.0, np.pi, 200001)
+        p = (1 - g * g) / (4 * np.pi * (1 + g * g - 2 * g * np.cos(theta))
+                           ** 1.5)
+        y = 2 * np.pi * p * np.sin(theta)
+        cumulative = np.concatenate([[0.0], np.cumsum(
+            (y[1:] + y[:-1]) / 2 * np.diff(theta))])
+        for cone in (1.0, 10.0, 90.0):
+            k = np.searchsorted(theta, np.radians(cone))
+            assert float(module["hg_share_within"](g, cone)) == pytest.approx(
+                float(cumulative[k]), abs=2e-4)
+
+
+@source_tree
+def test_the_new_examples_report_only_provenance(rgb_example, tables_example,
+                                                 phase_example):
+    for _, out in (rgb_example, tables_example, phase_example):
+        assert out["caught"]
+        for message in out["caught"]:
+            assert message.startswith("ProvenanceWarning: ")

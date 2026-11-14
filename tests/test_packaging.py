@@ -503,7 +503,8 @@ def test_every_optional_extra_is_used_by_something():
 WORD_COUNTS = {"Eight": 8, "Nine": 9, "Ten": 10, "Eleven": 11, "Twelve": 12,
                "Thirteen": 13, "Fourteen": 14, "Fifteen": 15, "Sixteen": 16,
                "Seventeen": 17, "Eighteen": 18, "Nineteen": 19, "Twenty": 20,
-               "Twenty-one": 21, "Twenty-two": 22}
+               "Twenty-one": 21, "Twenty-two": 22, "Twenty-three": 23,
+               "Twenty-four": 24, "Twenty-five": 25}
 
 
 @source_tree

@@ -4375,3 +4375,118 @@ for NaN, infinity, negatives, the wrong shape and a missing argument.
   the light crosses it, and the fit then gives a negative coefficient a
   renderer cannot take. A sigma_t or sigma_a that is not positive is
   refused, which the plan did not list; a test builds such a water.
+
+## 83. Three examples for people who render water, and the renderers run (1.11.1): the plan
+
+Section 82 gave renderers their coefficients and said what each
+simplification costs in the package's own terms: a relative error in a
+transmittance, ln(p_HG / p) at Petzold's angles. People who render water
+judge in other terms: a colour that looks wrong, a table a game reads
+every frame, a glow around the sun. The user asked for examples that use
+the new functions (2026-11-14) and chose three, one per reader. They
+need nothing beyond NumPy and run in CI like the others. 1.11.1 adds no
+public name.
+
+**1. `rgb_versus_spectral.py`, for people who make images.** A few
+reflectances seen through water, rendered twice: spectrally, the light
+S rho(lambda) exp(-c(lambda) r) taken to XYZ, and as a renderer in RGB
+does it, RGB(S rho) exp(-sigma_t r) with `rgb_attenuation`'s
+coefficients, taken back to XYZ through the space's matrix. The
+difference as a CIE 1976 colour difference, Delta E*ab, for three water
+types, the three spaces and distances inside and beyond the fitted
+range. Two references are shown, since both are how images are looked
+at: one white, the illuminant itself, so that far things are dark and
+their difference small; and the white patch at the same distance,
+rendered spectrally, as a camera that sets exposure and white balance on
+the scene would. The reflectances are invented smooth curves, a grey,
+a white and three broad bands, and the example says so; no measured
+chart is shipped and none is brought in. A first look: up to Delta E*ab
+of about 8 in linear sRGB and 5 in ACEScg at 5 m, with the illuminant as
+white. CIEDE2000 is not used: Delta E*ab is a few lines anyone can check
+against the CIE's definition, and the point is the size of the
+difference between two renderings, not a threshold of perception, which
+the example does not claim. It can write the two renderings side by side
+as a small PPM image with `--write DIR`, by the standard library.
+
+**2. `water_lookup_tables.py`, for games and real-time rendering.**
+Tables of the kind a shader samples each frame (NEXT_STEPS section 0,
+item 6 (c), as an example first, before deciding whether it belongs in
+the package): for one water type, by depth and by distance along a
+horizontal line, the transmittance per RGB channel, from the spectrum as
+section 82 defines it, and the path radiance per channel, B_inf (1 -
+exp(-c r)) from `Scene.at_depth` and `veiling_radiance_estimate`, taken
+to RGB. Every choice that fills them is stated at the top and has no
+default in the package: the surface light, the Kd that carries it down,
+the particles' backscattering ratio for B_inf, the colour space, the
+grid. The tables are written as CSV, and as PPM images, with `--write
+DIR`. The example says what the tables leave out: a slanted line, the
+sun's direction, anything but single scattering for B_inf, which the
+package calls an order of magnitude.
+
+**3. `phase_function_choice.py`, for simulation.** What choosing HG, and
+choosing how to fit it, does to the light a renderer scatters, at
+Petzold's eight stations. With the sun in the water at a stated zenith
+angle, the single-scattered radiance along a line of sight is
+proportional to the phase function at the scattering angle between the
+sun's direction and the line of sight; the ratio HG / measured is shown
+from looking towards the sun to looking away, for both ways of choosing
+g. And the share of the scattered light within 1, 10 and 90 degrees of
+the forward direction, measured and HG: the glow around the sun. The
+measured shares integrate the vsf between Petzold's angles as a power
+law, as section 82 did, in the example's own code from the public
+`angles_deg`, `vsf` and `fraction_below_0_1_deg`, and count the report's
+extension below 0.1 degree, which the example says.
+
+**The renderers, run.** Section 82's example wrote a pbrt-v4 medium and
+Blender's node values without running either. Both are now run by hand
+outside CI, in the scratchpad, and DATA.md section 36 says how:
+
+- Blender 5.3.0 (the `bpy` module from PyPI), Cycles on the CPU: a slab
+  of water 5 m thick between an orthographic camera and an emitting
+  plane hidden from the volume's scattering, absorption alone and
+  scattering alone, with volume bounces off. The transmittance read from
+  the EXR is to agree with exp(-sigma r) per channel, in ACEScg and in
+  Linear Rec. 709. A first run: absorption agrees to 7 digits, and
+  scattering within 0.2 percent at 1024 samples, the Monte Carlo's
+  noise; but only with Cycles' denoising off, which by default changed
+  the values by about 5 percent and made a white emitter read 1.13.
+- pbrt-v4, built from its repository on the CPU: the example's spectral
+  medium in a slab, the same arrangement, the transmittance compared
+  with the spectrum's own.
+
+`rendering_export.py` then says what was run instead of "not run", and
+its Blender part mentions the Volume Coefficients node, which Blender
+5.3.0 has.
+
+**Checks.** Every number the three examples print is computed, and the
+ones the README quotes are recomputed by `test_quoted_figures.py`; each
+example's warnings are caught by type and reported, and a test holds
+each to reporting only those. For the first, a grey water (c the same
+at every wavelength) gives a Delta E of zero at every distance, which
+tests the two renderings against each other. For the second, the table
+at depth 0 and distance 0 is a transmittance of 1, and the RGB
+transmittance at the fitted distances agrees with `rgb_attenuation`'s
+own data. For the third, the measured shares reach 1 at 180 degrees to
+within the 0.24 percent of section 82, and HG's shares agree with its
+closed form.
+
+**Version.** 1.11.1: examples and documents, no change to the package's
+code or values.
+
+**Differences from the plan, noted after the code was written.**
+
+- The second example's check against `rgb_attenuation` could not be the
+  plan's: the function does not return its transmittances, and its fit
+  is made at 201 distances, the table's at 30. The test holds the
+  table's transmittance to within the largest error the fit reports
+  over the same range, and to 1 at distance 0.
+- The second example takes Kd from Jerlov (1976), since Williamson &
+  Hollins give none, so its colours are formed over 360-715 nm, where
+  Jerlov's Kd ends; beyond lies 0.05 percent of the observer's x-bar.
+- The third example's prose originally said the blur of what is seen
+  through water lives in the forward cone, and that multiple scattering
+  hides part of what a phase function gets wrong; neither is computed
+  here, and both were taken out before the commit.
+- pbrt-v4 needed its Wayland support turned off to build in the
+  container, and its camera medium named before the camera; Blender's
+  working space is set by an operator, its property being read-only.
