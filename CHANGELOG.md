@@ -4,6 +4,38 @@ Every release is archived on Zenodo under the concept DOI
 [10.5281/zenodo.22321312](https://doi.org/10.5281/zenodo.22321312), which
 always resolves to the latest version.
 
+## 1.11.1 — 2026-11-14
+
+Three examples for people who render water, and the renderers of
+1.11.0's example run (DECISIONS.md section 83). No shipped value
+changed, and no name was added or removed; the package's code is as in
+1.11.0.
+
+**Examples.**
+
+- `rgb_versus_spectral.py`: five invented surfaces seen through Jerlov
+  IB, III and 1C, drawn spectrally and as an RGB renderer draws them with
+  `rgb_attenuation`'s coefficients, compared as CIE 1976 colour
+  differences, with D65 as white and balanced on the scene's own white.
+  `--write DIR` writes the two renderings as an image.
+- `water_lookup_tables.py`: the tables a shader reads, the transmittance
+  and the path radiance per ACEScg channel of Jerlov III by depth and
+  distance, with every choice that fills them stated. `--write DIR`
+  writes them as CSV and preview images.
+- `phase_function_choice.py`: Henyey-Greenstein against Petzold's eight
+  measured phase functions, by scattering angle and in the share of
+  light within 1, 10 and 90 degrees of forward, with g matched either
+  way.
+- `rendering_export.py` says what was run: the pbrt-v4 medium and
+  Blender's node values were rendered by hand (below), and it names
+  Blender 5.3's Volume Coefficients node.
+
+**Data.** DATA.md section 36: pbrt-v4, built from its repository, and
+Blender 5.3.0 (`bpy`), Cycles, render a slab of the example's water with
+the transmittance the spectrum gives, Blender's absorption to 7 digits
+once Cycles' denoising is off, which otherwise moved the values by about
+5 percent.
+
 ## 1.11.0 — 2026-11-14
 
 Coefficients for renderers: water for film, games and simulation, in the

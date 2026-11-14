@@ -2024,3 +2024,31 @@ scene, a spectrum defined over 360-800 nm gave 765 of 768 values NaN,
 so `examples/rendering_export.py` holds their 800 nm values to 830 nm,
 stating it; beyond 800 nm the CIE x-bar has 1.1 x 10^-6 of its weight
 and z-bar none. The package returns only what the source has.
+
+**Two more renderers, run (1.11.1).** Each medium that
+`examples/rendering_export.py` writes for Jerlov III was rendered by hand
+in a test scene, outside CI: a slab of the water 5 m thick between a
+camera and an emitting plane, the plane hidden from the volume's
+scattering or the scattering left out, so that the image is the
+transmitted light alone.
+
+- Blender 5.3.0, the `bpy` module from PyPI, Cycles on the CPU, working
+  space ACEScg and again Linear Rec. 709 (set with
+  `bpy.ops.wm.set_working_color_space`; the property itself is read-only
+  in 5.3), volume bounces off. With the example's Volume Absorption
+  values the transmittance per channel was exp(-sigma_a r) to 7 digits;
+  with its Volume Scatter values exp(-sigma_s r) within 0.2 percent at
+  1024 samples per pixel, the Monte Carlo's noise. Only with Cycles'
+  denoising off: on by default for a final render, it made a white
+  emitter read 1.13 and moved every ratio by about 5 percent. Blender
+  5.3.0 also has a Volume Coefficients node.
+- pbrt-v4, built from github.com/mmp/pbrt-v4 (commit b0bdf46) on the
+  CPU, without Wayland: the camera in the example's spectral medium, the
+  default RGB film in sRGB. The transmittance per channel through a and
+  through a + b, at 4096 samples per pixel and three seeds, agreed with
+  the one computed from the same spectra and the CIE 1931 observer within 2
+  percent in red and green; blue came out 3 to 4 percent high, a little
+  more than the seeds spread, about 2 percent, and the cause was not
+  found. One of the runs at 4096 samples crashed
+  in pbrt and was repeated. The camera's medium must be named before
+  the `Camera` directive, or the camera is in vacuum.

@@ -1,7 +1,7 @@
 Examples
 ========
 
-Twenty-two scripts, each for one kind of reader. Each runs against the
+Twenty-five scripts, each for one kind of reader. Each runs against the
 installed package, needs nothing beyond NumPy, and prints what it
 computes. CI runs every one of them, so an example that has stopped
 working is a failed build rather than something a reader discovers. They
@@ -63,3 +63,9 @@ are in the repository, not in the installed package; from a clone:
      - `looking_up_and_down.py <https://github.com/tishibashi-cpu/jerlov/blob/main/examples/looking_up_and_down.py>`_
    * - render water, in film, games or simulation
      - `rendering_export.py <https://github.com/tishibashi-cpu/jerlov/blob/main/examples/rendering_export.py>`_
+   * - make images of water in RGB, and wonder what it costs the colours
+     - `rgb_versus_spectral.py <https://github.com/tishibashi-cpu/jerlov/blob/main/examples/rgb_versus_spectral.py>`_
+   * - draw water every frame from a precomputed table, in a game or simulator
+     - `water_lookup_tables.py <https://github.com/tishibashi-cpu/jerlov/blob/main/examples/water_lookup_tables.py>`_
+   * - choose a phase function for light in water
+     - `phase_function_choice.py <https://github.com/tishibashi-cpu/jerlov/blob/main/examples/phase_function_choice.py>`_

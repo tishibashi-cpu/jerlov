@@ -338,7 +338,10 @@ a density; its manual gives absorption = (1 - Color) x Density and
 scattering = Color x Density, per channel. In ACEScg, fitted over
 {RANGE_M[0]:g}-{RANGE_M[1]:g} m, which leaves red off by up to {100 * float(aces.max_relative_error_t[0]):.0f} percent:
 
-{shown(blender)}""")
+{shown(blender)}
+
+Blender 5.3 also has a Volume Coefficients node that takes the absorption
+and scattering coefficients themselves, the fitted sigma_a and sigma_s.""")
     if out_dir is not None:
         out = pathlib.Path(out_dir)
         out.mkdir(parents=True, exist_ok=True)
@@ -381,10 +384,11 @@ def main(out_dir=None):
   - Henyey-Greenstein cannot match sea water's forward peak, and one g
     serves every wavelength. Petzold's eight waters are particular waters
     on particular days in 1971, not Jerlov types.
-  - The files are scene descriptions only. The two Mitsuba media were
-    loaded and rendered once by hand, in a small test scene with Mitsuba
-    3.9.1, outside CI; the pbrt-v4 text and the Blender values follow those
-    programs' own documentation and were not run.
+  - The files are scene descriptions only. Each was run once by hand,
+    outside CI, in a test scene (DATA.md section 36): the Mitsuba 3.9.1
+    media rendered; pbrt-v4's medium and Blender 5.3.0's node values gave
+    back the transmittance through a slab within a few percent and to 7
+    digits for Blender's absorption, with Cycles' denoising turned off.
 """)
     return dict(table=table, worst=worst, red_worst=red_worst, reach=reach,
                 errors=errors, fits=fits, deficit=deficit, short=short,

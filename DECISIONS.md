@@ -4472,3 +4472,21 @@ closed form.
 
 **Version.** 1.11.1: examples and documents, no change to the package's
 code or values.
+
+**Differences from the plan, noted after the code was written.**
+
+- The second example's check against `rgb_attenuation` could not be the
+  plan's: the function does not return its transmittances, and its fit
+  is made at 201 distances, the table's at 30. The test holds the
+  table's transmittance to within the largest error the fit reports
+  over the same range, and to 1 at distance 0.
+- The second example takes Kd from Jerlov (1976), since Williamson &
+  Hollins give none, so its colours are formed over 360-715 nm, where
+  Jerlov's Kd ends; beyond lies 0.05 percent of the observer's x-bar.
+- The third example's prose originally said the blur of what is seen
+  through water lives in the forward cone, and that multiple scattering
+  hides part of what a phase function gets wrong; neither is computed
+  here, and both were taken out before the commit.
+- pbrt-v4 needed its Wayland support turned off to build in the
+  container, and its camera medium named before the camera; Blender's
+  working space is set by an operator, its property being read-only.

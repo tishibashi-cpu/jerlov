@@ -611,9 +611,12 @@ python examples/ocean_colour_and_secchi.py      Kd from chlorophyll or a and bb,
 python examples/sunlight_and_d65.py            the clear sky at the surface against D65
 python examples/looking_up_and_down.py         contrast looking up, across and down
 python examples/rendering_export.py            water for Mitsuba, pbrt and Blender
+python examples/rgb_versus_spectral.py         what RGB rendering does to colours
+python examples/water_lookup_tables.py         tables for games and real-time shaders
+python examples/phase_function_choice.py       Henyey-Greenstein against Petzold
 ```
 
-Twenty-two scripts, each aimed at a different reader; `examples/README.md` says
+Twenty-five scripts, each aimed at a different reader; `examples/README.md` says
 which to start with. CI runs all of them on every push, so an example that has
 stopped working is a failed build. Every one ends with the assumptions it
 made.
