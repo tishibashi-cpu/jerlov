@@ -4563,3 +4563,11 @@ and `RgbTransmittance`, 110 in all.
   `rgb_attenuation`, which also fits a, reports 8.62 m.
 - `water_lookup_tables.py` prints and writes the same numbers as in
   1.11.1, compared line by line and cell by cell.
+- **Changed after the first run of the tests, on NumPy 1.22.** The test
+  compared `rgb_attenuation`'s results with values recorded under NumPy 2
+  bit for bit, and under NumPy 1.22 the last bit of some differed. The
+  1.11.1 code and the new code were then run under NumPy 1.22 side by
+  side and agreed bit for bit, as they had under NumPy 2: the difference
+  is NumPy's own rounding, not this change. The test now allows a
+  relative 1 x 10^-14 in the coefficients and the illuminant's RGB, and
+  an absolute 1 x 10^-14 in the errors, which are differences from 1.

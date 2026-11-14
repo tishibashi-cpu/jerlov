@@ -397,16 +397,27 @@ RECORDED_1_11_1 = {
 
 
 @pytest.mark.parametrize("case", sorted(RECORDED_1_11_1))
-def test_rgb_attenuation_is_unchanged_bit_for_bit(case):
+def test_rgb_attenuation_is_unchanged(case):
+    """Recorded under NumPy 2; under NumPy 1.22 the last bit differs, in
+    the old code as in the new, so the comparison allows rounding. On one
+    NumPy the old and the new code agreed bit for bit (DECISIONS.md
+    section 84)."""
     water_type, source, space, distances = case
     out = _quiet(jerlov.rgb_attenuation, jerlov.water(water_type,
                                                       source=source),
                  colour_space=space, illuminant=jerlov.d65(),
                  distance_range_m=distances)
-    got = [float(v).hex() for array in (
-        out.sigma_t, out.sigma_a, out.max_relative_error_t,
-        out.max_relative_error_a, out.illuminant_rgb) for v in array]
-    assert got == RECORDED_1_11_1[case]
+    recorded = np.array([float.fromhex(v) for v in RECORDED_1_11_1[case]])
+    coefficients = np.concatenate([out.sigma_t, out.sigma_a,
+                                   out.illuminant_rgb])
+    np.testing.assert_allclose(coefficients, recorded[[0, 1, 2, 3, 4, 5, 12,
+                                                       13, 14]],
+                               rtol=1e-14, atol=0)
+    # The errors are |exp(-sigma r) / T - 1|, differences from 1, so their
+    # rounding is absolute.
+    errors = np.concatenate([out.max_relative_error_t,
+                             out.max_relative_error_a])
+    np.testing.assert_allclose(errors, recorded[6:12], rtol=0, atol=1e-14)
 
 
 @pytest.mark.parametrize("space", jerlov.RGB_COLOUR_SPACES)
