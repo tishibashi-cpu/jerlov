@@ -4,6 +4,32 @@ Every release is archived on Zenodo under the concept DOI
 [10.5281/zenodo.22321312](https://doi.org/10.5281/zenodo.22321312), which
 always resolves to the latest version.
 
+## 1.15.0 — 2026-11-15
+
+OSOAA's results read back (DECISIONS.md section 87). No shipped value
+changed; six public names are added.
+
+**Added.**
+
+- `read_osoaa_flux(text)` → `OsoaaFlux`: OSOAA's `Flux.txt`, the direct,
+  diffuse and total fluxes down and up at every level, as printed,
+  normalized to an extraterrestrial irradiance of pi, with the sea's
+  levels marked; `OsoaaFlux.kd(upper_m, lower_m)` gives the mean Kd of Ed
+  between two depths.
+- `read_osoaa_radiance_vs_depth(text)` → `OsoaaRadianceProfile` and
+  `read_osoaa_radiance_vs_vza(text)` → `OsoaaRadianceScan`: OSOAA's
+  `RESLUM_vsZ.txt` and `RESLUM_vsVZA.txt`, the normalized radiance, the
+  reflectance and the polarization against depth or viewing zenith angle.
+- Nothing is converted to W/m2: Esun is the caller's, as OSOAA leaves it.
+
+**Examples.** `radiative_transfer_inputs.py --read DIR` reads the results
+of an OSOAA run made with its files and sets the Kd OSOAA made of Jerlov
+III beside Jerlov's own and HydroLight's.
+
+**Data.** DATA.md section 38: the run kept in `tests/data/osoaa_iii_440`
+for the tests, what its files hold, and that OSOAA's direct flux includes
+the forward peak it truncates.
+
 ## 1.14.0 — 2026-11-15
 
 Input files for two radiative transfer codes, OSOAA and HydroLight

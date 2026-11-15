@@ -4883,3 +4883,19 @@ functions write today, byte for byte; refusals of each kind.
 
 **Version.** 1.15.0: three readers and three result classes, six public
 names, 122 in all.
+
+**Differences from the plan, noted after the code was written.**
+
+- The example sets OSOAA's Kd beside Jerlov's in both editions (0.129
+  in 1968, 0.145 in 1976) and beside Solonenko and Mobley's K_d^H
+  (0.123), the Kd HydroLight made of their own a and b, rather than
+  beside their `kd()`, which is their bio-optical model's (DATA.md
+  section 19), not a radiative transfer result.
+- `RESLUM_vsVZA.txt` prints the nadir twice, as -0.00 and 0.00, one row
+  for each half-plane, with one value; the reader keeps both, as for the
+  two surface levels in the sea.
+- A reader given a path rather than text raises `TypeError` and says to
+  pass `Path(...).read_text()`.
+- The example finds its files either in OSOAA's own folders
+  (`Advanced_outputs/`, `Standard_outputs/`) or all in one, as
+  `tests/data` keeps them.

@@ -66,9 +66,15 @@ from .scene import (
     veiling_radiance_estimate,
 )
 from .interop import (
+    OsoaaFlux,
+    OsoaaRadianceProfile,
+    OsoaaRadianceScan,
     hydrolight_ac9_file,
     osoaa_phase_function,
     osoaa_user_profile,
+    read_osoaa_flux,
+    read_osoaa_radiance_vs_depth,
+    read_osoaa_radiance_vs_vza,
 )
 from .materials import (
     USGS2017_MATERIALS,
@@ -257,6 +263,12 @@ __all__ = [
     "osoaa_user_profile",
     "osoaa_phase_function",
     "hydrolight_ac9_file",
+    "read_osoaa_flux",
+    "OsoaaFlux",
+    "read_osoaa_radiance_vs_depth",
+    "OsoaaRadianceProfile",
+    "read_osoaa_radiance_vs_vza",
+    "OsoaaRadianceScan",
 ]
 
-__version__ = "1.14.0"
+__version__ = "1.15.0"

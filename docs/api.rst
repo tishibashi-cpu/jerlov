@@ -252,8 +252,8 @@ Coefficients for renderers
 .. autoclass:: SpectralCoefficients
    :members:
 
-Input files for radiative transfer codes
-----------------------------------------
+Radiative transfer codes: input files and OSOAA's results
+---------------------------------------------------------
 
 What each code adds back, and what was run, are in DATA.md section 38.
 
@@ -262,6 +262,21 @@ What each code adds back, and what was run, are in DATA.md section 38.
 .. autofunction:: osoaa_phase_function
 
 .. autofunction:: hydrolight_ac9_file
+
+.. autofunction:: read_osoaa_flux
+
+.. autoclass:: OsoaaFlux
+   :members:
+
+.. autofunction:: read_osoaa_radiance_vs_depth
+
+.. autoclass:: OsoaaRadianceProfile
+   :members:
+
+.. autofunction:: read_osoaa_radiance_vs_vza
+
+.. autoclass:: OsoaaRadianceScan
+   :members:
 
 Kd without a water type, Rrs and the Secchi depth
 -------------------------------------------------

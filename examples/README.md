@@ -373,7 +373,12 @@ runs c = **0.433** and b/c = 0.7206, Williamson & Hollins's values.
 Subtracting Williamson & Hollins's own aw instead of OSOAA's would leave
 a short by **9.6 percent** in IB and 1.1 percent in 5C; Pope & Fry's aw
 makes a less pure water negative from 650 nm in IB, and the file is
-refused. It writes the three files.
+refused. It writes the three files. With `--read DIR`, the folder of an
+OSOAA run made with them, it reads OSOAA's results back: in the run kept
+in `tests/data`, at 440 nm with the sun at 30 degrees, Ed falls with a
+mean Kd of **0.138** per m from 0 to 50 m, between Jerlov's 0.129 (1968)
+and 0.145 (1976); HydroLight made 0.123 of Solonenko & Mobley's IOPs for
+the same type.
 
 ## What they do not show
 
