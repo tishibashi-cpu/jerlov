@@ -13,7 +13,8 @@ water, the sky and the surface.
 OSOAA_ROOT is a built copy of CNES's RadiativeTransferCode-OSOAA (GPL v3;
 commit 8e4914f was used), WORK_DIR a scratch folder for its runs. OSOAA is
 not part of this package, and CI cannot run this script; it writes
-``examples/data/osoaa_closure/runs.csv`` and ``ed.csv``, which
+``examples/data/osoaa_closure/runs.csv``, ``ed.csv`` and
+``truncation.csv``, which
 ``examples/closure_with_jerlov_kd.py`` and the tests read (DECISIONS.md
 section 91).
 """
@@ -186,6 +187,17 @@ def run_osoaa(run, root: pathlib.Path, work: pathlib.Path):
     return run, depth, aw_x, flux
 
 
+def truncation_coefficient(where: pathlib.Path) -> str:
+    """The hydrosols' truncation coefficient A of one run, as OSOAA
+    printed it in ``PM_PHYTO.txt``: A / 2 of their scattering is treated
+    as unscattered (User Manual V2.0, section 4.2.3)."""
+    text = (where / "Advanced_outputs" / "PM_PHYTO.txt").read_text()
+    for line in text.splitlines():
+        if line.startswith("TRUNCATION COEFFICIENT"):
+            return line.split(":")[1].strip()
+    raise ValueError(f"no truncation coefficient in {where}")
+
+
 def main() -> None:
     if len(sys.argv) != 3:
         raise SystemExit(__doc__)
@@ -233,8 +245,16 @@ def main() -> None:
                 # As OSOAA printed them: the floats read back exactly.
                 writer.writerow([key, repr(float(depth)), repr(float(ed))])
                 rows += 1
-    print(f"wrote {OUT / 'runs.csv'} ({len(results)} runs) and "
-          f"{OUT / 'ed.csv'} ({rows} rows)")
+    with open(OUT / "truncation.csv", "w", newline="") as handle:
+        writer = csv.writer(handle, lineterminator="\n")
+        writer.writerow(["run_id", "truncation_coefficient"])
+        for key in sorted(results):
+            if isinstance(results[key][3], str):
+                continue
+            writer.writerow([key, truncation_coefficient(
+                work / f"run{key:04d}")])
+    print(f"wrote {OUT / 'runs.csv'} ({len(results)} runs), "
+          f"{OUT / 'ed.csv'} ({rows} rows) and {OUT / 'truncation.csv'}")
 
 
 if __name__ == "__main__":

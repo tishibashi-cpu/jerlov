@@ -81,7 +81,7 @@ def test_user_profile_adds_back_to_the_water():
     assert b / (a + b) == pytest.approx(0.72054, abs=5e-5)
 
 
-def test_phase_function_is_vsf_over_b_from_180_down():
+def test_phase_function_is_4_pi_vsf_over_b_from_180_down():
     scattering = jerlov.petzold_scattering("NUC 2200")
     text = jerlov.osoaa_phase_function(
         scattering, minus_f12_over_f11=0.0, f22_over_f11=1.0,
@@ -93,9 +93,35 @@ def test_phase_function_is_vsf_over_b_from_180_down():
     assert "Model 3" in comment
     np.testing.assert_allclose(rows[:, 0], scattering.angles_deg[::-1],
                                rtol=1e-6)
-    np.testing.assert_allclose(rows[:, 1], scattering.vsf[::-1]
+    np.testing.assert_allclose(rows[:, 1], 4 * np.pi * scattering.vsf[::-1]
                                / scattering.b, rtol=1e-8)
     np.testing.assert_array_equal(rows[:, 2:], [[0, 1, 1]] * 55)
+
+
+@pytest.mark.parametrize("station", jerlov.PETZOLD_STATIONS)
+def test_phase_function_integrates_to_4_pi(station):
+    """OSOAA takes F11 as a function whose integral over the sphere is
+    4 pi and does not normalise it (DECISIONS.md section 93): half its
+    integral over the cosine is one, less the share below 0.1 degree that
+    the file does not hold."""
+    scattering = jerlov.petzold_scattering(station)
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", jerlov.ProvenanceWarning)
+        _, _, rows = _ext(jerlov.osoaa_phase_function(
+            scattering, minus_f12_over_f11=0.0, f22_over_f11=1.0,
+            f33_over_f11=1.0))
+    # F11 over the sphere / 4 pi, a power law between the file's angles,
+    # as vsf_at takes the vsf.
+    angle, f11 = rows[::-1, 0], rows[::-1, 1]
+    theta = np.logspace(np.log10(angle[0]), np.log10(angle[-1]), 200_001)
+    f = np.exp(np.interp(np.log(theta), np.log(angle), np.log(f11)))
+    rad = np.radians(theta)
+    share = float(np.sum(0.5 * (f[1:] * np.sin(rad[1:])
+                                + f[:-1] * np.sin(rad[:-1]))
+                         * np.diff(rad))) / 2
+    # The printed vsf and b agree to 0.25 percent.
+    assert share == pytest.approx(1 - scattering.fraction_below_0_1_deg,
+                                  abs=2.5e-3)
 
 
 def test_phase_function_ratios_per_angle():
@@ -279,15 +305,26 @@ def test_flux_totals_and_ratio(flux):
                                atol=1e-6)
 
 
+def test_truncation_coefficient():
+    """OSOAA reports A, twice the share of the hydrosols' scattering it
+    treats as unscattered (User Manual V2.0, section 4.2.3)."""
+    line = next(row for row in _read("PM_PHYTO.txt").splitlines()
+                if row.startswith("TRUNCATION COEFFICIENT"))
+    assert float(line.split(":")[1]) == 1.40215
+
+
 def test_direct_is_not_the_unscattered_beam(flux):
     """OSOAA's truncation counts the forward peak as transmitted: its
-    direct flux falls far slower than c / cos(theta_w)."""
+    direct flux falls slower than c / cos(theta_w), near c (1 - (b/c)
+    A/2) / cos(theta_w)."""
     z = flux.sea_depths_m[1:]
     direct = flux.direct_down[flux.in_sea][1:]
     k_direct = math.log(direct[0] / direct[1]) / (z[1] - z[0])
     theta_w = math.asin(math.sin(math.radians(30.0)) / 1.34)
-    assert k_direct == pytest.approx(0.144, abs=5e-4)
+    assert k_direct == pytest.approx(0.235, abs=5e-4)
     assert 0.433 / math.cos(theta_w) == pytest.approx(0.467, abs=5e-4)
+    truncated = 0.433 * (1 - 0.72054 * 1.40215 / 2) / math.cos(theta_w)
+    assert truncated == pytest.approx(0.231, abs=5e-4)
 
 
 def test_kd(flux):
@@ -297,7 +334,7 @@ def test_kd(flux):
     # standing for 0.
     expected = math.log(ed[0] / ed[-1]) / 50.0
     assert flux.kd(0, 50) == pytest.approx(expected, rel=1e-12)
-    assert flux.kd(0, 50) == pytest.approx(0.1381, abs=5e-5)
+    assert flux.kd(0, 50) == pytest.approx(0.1577, abs=5e-5)
     k = 10
     assert flux.kd(z[k], z[k + 1]) == pytest.approx(
         math.log(ed[k] / ed[k + 1]) / (z[k + 1] - z[k]), rel=1e-12)
@@ -327,7 +364,7 @@ def test_radiance_vs_depth(profile, flux):
     ed = flux.total_down[flux.in_sea]
     np.testing.assert_allclose(profile.reflectance,
                                math.pi * profile.radiance / ed, rtol=2e-5)
-    assert profile.radiance[0] == pytest.approx(0.588088e-2, rel=1e-9)
+    assert profile.radiance[0] == pytest.approx(0.013319, rel=1e-9)
     assert np.all(profile.scattering_angle_deg == 158.09)
 
 

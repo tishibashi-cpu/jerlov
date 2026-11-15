@@ -108,8 +108,9 @@ the campaigns so chosen. A Monte Carlo written for this
 computed Kd from their a and b in 240 runs: six types (IB, II, III, 1C,
 3C, 5C) at twelve wavelengths from 425 to 700 nm, then the sun, the
 Petzold phase function and the pure water varied one at a time on IB and
-III. `examples/closure_with_jerlov_kd.py` reads the runs and prints
-everything below.
+III. The same was done again with the radiative transfer code OSOAA.
+`examples/closure_with_jerlov_kd.py` reads the runs and prints everything
+below.
 
 **What was found.**
 
@@ -140,28 +141,35 @@ everything below.
 - This agrees with Williamson & Hollins's own test (their section 3.D,
   Table 5), in which their averaged a and b, through relations with fitted
   parameters, gave Jerlov's Kd within 14 to 17 percent on average.
+- The radiative transfer code OSOAA, a second calculation made apart
+  from the Monte Carlo, with a sky and a surface of its own, gives Kd 1.007
+  to 1.096 times the Monte Carlo's in the 62 base runs it can make, and
+  lies beyond the reach at the same places, but for 5C at 425 nm, which
+  it brings just inside.
 
-**The first answer was wrong.** Release 1.15.3 made this comparison with
-the radiative transfer code OSOAA and concluded that the coastal types'
-IOPs give down to half of Jerlov's Kd, that the phase function hardly
-matters, and that the two sources describe different water. OSOAA
-truncates the forward peak of the scattering: in every one of its runs it
-treated 96.5 to 97.8 percent of the particles' scattering as if it were
-not scattered at all, where Petzold's functions hold 84 to 89 percent
-within 23 degrees. Its Kd came out 0.7 to 23.1 percent below the Monte
-Carlo's, the more so the stronger the scattering, and with the scattering
-cut off the phase function could not show its effect. It was found when
-Williamson & Hollins's paper, read in full, reported agreement where
-1.15.3 reported none. The runs are kept as the record.
+**The first answer was wrong, and so was the first account of why.**
+Release 1.15.3 made this comparison with OSOAA alone and concluded that
+the coastal types' IOPs give down to half of Jerlov's Kd, that the phase
+function hardly matters, and that the two sources describe different
+water. The package had written OSOAA's phase function 4 pi too small:
+OSOAA expects one whose integral over the sphere is 4 pi and does not
+normalise it. So OSOAA treated 96.5 to 97.8 percent of the particles'
+scattering as if it were not scattered at all, and its Kd came out 0.7 to
+23.1 percent below the Monte Carlo's. Release 1.15.4 found the Kd too low
+when Williamson & Hollins's paper, read in full, reported agreement where
+1.15.3 reported none, but blamed OSOAA without reading its source.
+Reading it found the fault in the package, fixed in 1.15.5. The old runs
+are kept as the record.
 
 **What is not known.** Why the blue end disagrees: the clearest type's
 measured IOPs attenuate more than Jerlov's Kd there, the coastal types'
-less. Whether a widely used code such as HydroLight gives the same Kd as
-this Monte Carlo has not been checked; it was checked only against Morel
-and Loisel's relation. Why OSOAA truncates Petzold's phase functions so
-far was not traced.
+less. Why OSOAA's Kd is up to 9.6 percent above the Monte Carlo's, the
+more the bluer the light and the clearer the water; its sky, which the
+Monte Carlo lacks, may account for it, but that was not checked. HydroLight was not
+run.
 
-**Where.** DATA.md sections 38 and 39; DECISIONS.md sections 90, 91 and
-92; `examples/closure_with_jerlov_kd.py`; `tools/kd_monte_carlo.py`,
-`tools/kd_closure.py` and `examples/data/kd_closure/`; the OSOAA record in
-`tools/osoaa_closure.py` and `examples/data/osoaa_closure/`.
+**Where.** DATA.md sections 38 and 39; DECISIONS.md sections 90 to 93;
+`examples/closure_with_jerlov_kd.py`; `tools/kd_monte_carlo.py`,
+`tools/kd_closure.py` and `examples/data/kd_closure/`; OSOAA's runs in
+`tools/osoaa_closure.py` and `examples/data/osoaa_closure/`, and the old
+ones in `examples/data/osoaa_closure_f11_too_small/`.

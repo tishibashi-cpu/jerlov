@@ -378,9 +378,10 @@ makes a less pure water negative from 650 nm in IB, and the file is
 refused. It writes the three files. With `--read DIR`, the folder of an
 OSOAA run made with them, it reads OSOAA's results back: in the run kept
 in `tests/data`, at 440 nm with the sun at 30 degrees, Ed falls with a
-mean Kd of **0.138** per m from 0 to 50 m, between Jerlov's 0.129 (1968)
+mean Kd of **0.158** per m from 0 to 50 m, above Jerlov's 0.129 (1968)
 and 0.145 (1976); HydroLight made 0.123 of Solonenko & Mobley's IOPs for
-the same type.
+the same type. (Releases before 1.15.5 wrote the phase function 4 pi too
+small, and OSOAA's Kd came out lower.)
 
 **`closure_with_jerlov_kd.py`** — an open question with numbers
 (`OPEN_QUESTIONS.md`): do Williamson & Hollins's measured a and b, put
@@ -391,8 +392,10 @@ for the same types? It reads 240 Monte Carlo runs kept in
 to 0.98 for III, but down to **0.51** for 3C at 425 nm. The sun moves Kd by
 -7.7 to +22.4 percent, the phase function by -6.4 to +14.5 and the pure
 water by -10.9 to +9.3; together they cover the gap except at the blue
-end. The OSOAA runs of 1.15.3, kept beside them, gave Kd up to 23.1
-percent too low.
+end. OSOAA, run as a second calculation, gives Kd 1.007 to 1.096 times
+the Monte Carlo's. The OSOAA runs of 1.15.3, made with the phase function
+4 pi too small, gave Kd up to 23.1 percent too low; they are kept as the
+record.
 
 ## What they do not show
 

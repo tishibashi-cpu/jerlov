@@ -19,8 +19,10 @@ what is still not known, and where the details are. In a line each:
 3. **Do Williamson & Hollins's measured IOPs give back Jerlov's own Kd?**
    By Monte Carlo, within what the unrecorded sun, phase function and pure
    water can explain, except at the blue end: the clearest type's IOPs
-   attenuate more than Jerlov's Kd there and the coastal types' less. A
-   first answer, made with the code OSOAA, was wrong, because OSOAA cut
-   off almost all of the forward scattering. The example
+   attenuate more than Jerlov's Kd there and the coastal types' less. The
+   code OSOAA, run as a second calculation, agrees with the Monte Carlo
+   within 10 percent. A first answer, made with OSOAA alone, was wrong,
+   because this package wrote OSOAA's phase function 4 pi too small. The
+   example
    `closure_with_jerlov_kd.py <https://github.com/tishibashi-cpu/jerlov/blob/main/examples/closure_with_jerlov_kd.py>`_
    prints every figure.

@@ -13,8 +13,8 @@ examples/data/kd_closure/, and works out, figure by figure, how close they
 come, how far the conditions a Jerlov type leaves unrecorded (the sun, the
 phase function, the pure water) move the answer, and where the gap is
 larger than those conditions can make. It also sets beside them the Kd
-that the radiative transfer code OSOAA gave for the same waters, which
-were too low (DECISIONS.md section 92). It needs the repository, for
+that the radiative transfer code OSOAA gives for the same waters, a second
+calculation made independently of the first. It needs the repository, for
 those runs, but nothing beyond the package and NumPy.
 """
 
@@ -148,34 +148,89 @@ coastal types' less.""")
     return dict(up=up, down=down, beyond=beyond)
 
 
-def osoaa_part(found):
-    rule("4. What OSOAA gave for the same waters")
-    with open(DATA / "osoaa_closure" / "runs.csv") as handle:
+def osoaa_kd(folder):
+    """Kd over the first penetration depth of each OSOAA run that was
+    made, from its Ed, with the run's parameters."""
+    with open(folder / "runs.csv") as handle:
         runs = {int(r["run_id"]): r for r in csv.DictReader(handle)}
     profiles = {}
-    with open(DATA / "osoaa_closure" / "ed.csv") as handle:
+    with open(folder / "ed.csv") as handle:
         for r in csv.DictReader(handle):
             profiles.setdefault(int(r["run_id"]), []).append(
                 (float(r["depth_m"]), float(r["ed"])))
-    ratios = []
+    out = {}
     for k, r in runs.items():
-        if r["factor"] != "base" or r["status"] != "ok":
+        if r["status"] != "ok":
             continue
         z, ed = np.array(profiles[k]).T
+        # The surface is printed twice below it; keep the first.
         keep = np.concatenate([[True], np.diff(z) > 0])
         z, log_ed = z[keep], np.log(ed[keep])
-        osoaa = 1.0 / float(np.interp(-(log_ed[0] - 1.0), -log_ed, z))
-        key = (r["water_type"], int(r["wavelength_nm"]))
-        ratios.append((osoaa / found["base"][key], key))
-    low, high = min(ratios), max(ratios)
-    print(f"""OSOAA's Kd, for the {len(ratios)} base runs it could make (release 1.15.3), is
-{100 * (1 - high[0]):.1f} to {100 * (1 - low[0]):.1f} percent below the Monte Carlo's, the most for
-{low[1][0]} at {low[1][1]} nm. In every one of its runs OSOAA treated 96.5 to 97.8 percent of
-the hydrosols' scattering as unscattered. The version of this comparison
-published in 1.15.3 rested on those runs, had the coastal types down to
-half of Jerlov's Kd and put the cause in the data; that was wrong
-(DECISIONS.md section 92).""")
-    return dict(low=low, high=high, n=len(ratios))
+        out[k] = (r, 1.0 / float(np.interp(-(log_ed[0] - 1.0), -log_ed, z)))
+    with open(folder / "truncation.csv") as handle:
+        share = [float(r["truncation_coefficient"]) / 2
+                 for r in csv.DictReader(handle)]
+    return out, (min(share), max(share))
+
+
+def against_monte_carlo(found, folder):
+    kd, share = osoaa_kd(folder)
+    ratios = sorted((v / found["base"][(r["water_type"],
+                                        int(r["wavelength_nm"]))],
+                     r["water_type"], int(r["wavelength_nm"]))
+                    for r, v in kd.values() if r["factor"] == "base")
+    return dict(kd=kd, share=share, ratios=ratios)
+
+
+def osoaa_part(caught, found, factors, verdict):
+    rule("4. A second calculation: OSOAA")
+    now = against_monte_carlo(found, DATA / "osoaa_closure")
+    before = against_monte_carlo(found, DATA / "osoaa_closure_f11_too_small")
+    low, high = now["ratios"][0], now["ratios"][-1]
+    base = {(r["water_type"], r["wavelength_nm"]): v
+            for r, v in now["kd"].values() if r["factor"] == "base"}
+    station = [v / base[(r["water_type"], r["wavelength_nm"])]
+               for r, v in now["kd"].values() if r["factor"] == "station"]
+    sky = [v / base[(r["water_type"], r["wavelength_nm"])]
+           for r, v in now["kd"].values() if r["factor"] in ("aot", "wind")]
+    beyond = {}
+    for r, v in now["kd"].values():
+        if r["factor"] != "base":
+            continue
+        ratio = v / jerlov_kd(caught, r["water_type"], r["wavelength_nm"],
+                              "jerlov1976")
+        if ratio * verdict["up"] < 1 or ratio * verdict["down"] > 1:
+            beyond[(r["water_type"], int(r["wavelength_nm"]))] = ratio
+    mc_beyond = {(water_type, wl) for water_type, (lo, hi)
+                 in verdict["beyond"].items() for wl in lo + hi}
+    moved = factors["moves"]["station"]
+    print(f"""The radiative transfer code OSOAA (CNES), given the same a and b and the
+same Petzold stations, with a sky, an aerosol and a wavy surface of its own,
+gives for the {len(now["ratios"])} base runs it can make {low[0]:.3f} to {high[0]:.3f} times the Monte Carlo's
+Kd: the lowest for {low[1]} at {low[2]} nm, the highest for {high[1]} at {high[2]} nm. It treats
+{100 * now["share"][0]:.1f} to {100 * now["share"][1]:.1f} percent of the hydrosols' scattering as unscattered, the forward
+peak it truncates. Its Kd is the higher the bluer the light and the
+clearer the water; its sky, which the Monte Carlo lacks, may account for
+that, but it was not checked. The station moves its Kd by {100 * (min(station) - 1):+.1f} to {100 * (max(station) - 1):+.1f} percent
+(the Monte Carlo: {100 * (moved[0] - 1):+.1f} to {100 * (moved[1] - 1):+.1f}); the aerosol and the wind, which the
+Monte Carlo does not have, by {100 * (min(sky) - 1):+.1f} to {100 * (max(sky) - 1):+.1f}. Against Jerlov (1976), OSOAA's Kd
+lies outside the reach of section 3 at""")
+    for key in sorted(beyond):
+        print(f"  {key[0]:<4} at {key[1]} nm: {beyond[key]:.2f} times")
+    missing = sorted(mc_beyond - set(beyond))
+    print("the same places as the Monte Carlo's"
+          + ("" if not missing else ", but for "
+             + " and ".join(f"{t} at {wl} nm" for t, wl in missing)
+             + ", which it brings just inside") + ".")
+    print(f"""
+Until release 1.15.5 the package wrote OSOAA's phase function 4 pi too
+small. OSOAA then treated {100 * before["share"][0]:.1f} to {100 * before["share"][1]:.1f} percent of the scattering as
+unscattered, its Kd came out {100 * (1 - before["ratios"][-1][0]):.1f} to {100 * (1 - before["ratios"][0][0]):.1f} percent below the Monte
+Carlo's, and release 1.15.3 drew its conclusions from those runs. They
+were wrong, and the fault was the package's, not OSOAA's (DECISIONS.md
+section 93). The runs are kept in examples/data/osoaa_closure_f11_too_small/.""")
+    return dict(now=now, before=before, station=(min(station), max(station)),
+                sky=(min(sky), max(sky)), beyond=beyond, missing=missing)
 
 
 def main():
@@ -187,7 +242,7 @@ def main():
     found = jerlov_part(runs, caught)
     factors = factor_part(runs)
     verdict = verdict_part(found, factors)
-    osoaa = osoaa_part(found)
+    osoaa = osoaa_part(caught, found, factors, verdict)
     if caught:
         rule("Warnings")
         print("Raised along the way, and caught by type:")

@@ -206,11 +206,16 @@ def osoaa_phase_function(scattering, /, *, minus_f12_over_f11,
                          f22_over_f11, f33_over_f11) -> str:
     """OSOAA's ``-HYD.ExtData`` file from one of Petzold's stations.
 
-    F11 is the station's vsf / b at Petzold's 55 angles, from 180 degrees
-    down, as the OSOAA User Manual V2.0 orders its example (section 3.6.3,
-    pp. 80-81). OSOAA fits it with a spline in the cosine of the angle and
-    normalises it; below Petzold's first angle, 0.1 degree, the spline is
-    OSOAA's.
+    F11 is 4 pi times the station's vsf / b at Petzold's 55 angles, from
+    180 degrees down, as the OSOAA User Manual V2.0 orders its example
+    (section 3.6.3, pp. 80-81): a phase function whose integral over the
+    sphere is 4 pi, as OSOAA takes it. OSOAA fits it with a spline in the
+    cosine of the angle and computes its truncation coefficient from it
+    without normalising it first, so the scale matters (DECISIONS.md
+    section 93). Below Petzold's first angle, 0.1 degree, the spline is
+    OSOAA's; the report's extension there, 3.4 to 14.5 percent of b, is
+    not in the file, so F11's integral over the sphere is 4 pi times one
+    less that share.
 
     Parameters
     ----------
@@ -233,13 +238,9 @@ def osoaa_phase_function(scattering, /, *, minus_f12_over_f11,
     At the Bahamas and southern California stations the values below
     0.169 degree are the report's extension, and warn.
 
-    OSOAA truncates the forward peak of the hydrosols' phase function.
-    With Petzold's it treated 96.5 to 97.8 percent of the hydrosols'
-    scattering as unscattered, more than Petzold's functions hold within
-    23 degrees, and its Kd came out 0.7 to 23 percent below that of a
-    Monte Carlo checked against Morel and Loisel's relation, the more so
-    the larger b/a (DATA.md section 38, DECISIONS.md section 92). Check
-    the truncation coefficient in ``PM_PHYTO.txt`` before trusting a run.
+    Releases 1.14.0 to 1.15.4 wrote F11 as vsf / b, 4 pi too small; OSOAA
+    then treated 96.5 to 97.8 percent of the hydrosols' scattering as
+    unscattered and its Kd came out too low (DATA.md section 38).
     """
     if not isinstance(scattering, ScatteringFunction):
         raise TypeError(
@@ -283,13 +284,14 @@ def osoaa_phase_function(scattering, /, *, minus_f12_over_f11,
             ProvenanceWarning,
             stacklevel=_data.caller_stacklevel(),
         )
-    f11 = scattering.phase_function()
+    # OSOAA's normalisation: the integral over the sphere is 4 pi.
+    f11 = 4 * np.pi * scattering.phase_function()
     lines = [
         f"EXTINCTION_COEF : {scattering.c:.9g}",
         f"SCATTERING_COEF : {scattering.b:.9g}",
         f"NB_LINES : {n}",
         f"Angle F11 -F12/F11 F22/F11 F33/F11 | jerlov: Petzold (1972) "
-        f"{scattering.station}, F11 = vsf/b (1/sr); the two lines above are "
+        f"{scattering.station}, F11 = 4 pi vsf/b; the two lines above are "
         "c and b (1/m), not cross-sections, for -HYD.Model 3 only",
     ]
     for k in range(n - 1, -1, -1):

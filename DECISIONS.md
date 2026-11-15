@@ -5233,3 +5233,82 @@ which has not been merged.
 - `tests/test_osoaa_closure.py`, which checked figures no document now
   quotes, is replaced by `tests/test_kd_closure.py`, which also runs the
   Monte Carlo's checks and makes one stored run again from its seed.
+
+## 93. The fault was the package's: `osoaa_phase_function` wrote F11 4 pi too small (1.15.5): the plan
+
+Section 92 put the low Kd of section 90 down to OSOAA truncating Petzold's
+phase functions too far, and said why OSOAA did so had not been traced.
+The user asked whether that had come from reading OSOAA's source; it had
+not, and they asked for it to be traced. It was, on 2026-11-15, and the
+fault is in this package.
+
+**What OSOAA does.** For a user's phase function (`-HYD.ExtData`,
+`OSOAA_HYDROSOLS.F`, the branch IMOD = 2), OSOAA splines F11 in the cosine
+onto its Gauss angles and passes it, unnormalised, to
+`SOS_DECOMPO_LEGENDRE` (`OSOAA_PARTICLES_RAD.F`), which truncates it and
+takes the truncation coefficient as A = 2 (1 - beta_0), with beta_0 =
+(1/2) sum of F11 times the Gauss weights. That holds only if F11 is
+normalised so that (1/2) of its integral over the cosine is 1, that is
+its integral over the sphere is 4 pi. The manual does not say so in words
+(section 3.6.3, p. 81: "phase function in intensity P11"), but its
+example, an aerosol's F11 of 0.419 at 180 degrees, is of that scale.
+
+**What the package wrote.** `osoaa_phase_function` (1.14.0 to 1.15.4)
+wrote F11 = vsf / b, whose integral over the sphere is 1: 4 pi times too
+small. Section 86 had said OSOAA normalises it; it does not, before the
+truncation coefficient is taken. With the file multiplied by 4 pi and
+nothing else changed, OSOAA truncated 65 to 70 percent instead of 96.5 to
+97.8, and its Kd came within 2 to 8 percent of the Monte Carlo's for 5C
+at 550 nm, IB at 450, III at 550 and 3C at 450.
+
+**The fix.** `osoaa_phase_function` writes F11 = 4 pi vsf / b, says so,
+and a test checks the normalisation; the docstring's warning about
+OSOAA's truncation, which blamed OSOAA, goes. This changes the files the
+function writes, a fix to a defect, not a change of behaviour the package
+promised; the CHANGELOG says so under "Fixed".
+
+**What is done again with OSOAA, by hand outside CI.**
+
+- The run of sections 86 and 87, kept in `tests/data/osoaa_iii_440/`,
+  with the corrected phase function. The readers' tests and the figures
+  quoted from it (Kd of 0.1381 per m, the example's `--read` part) are
+  recomputed.
+- The 408 runs of section 90, with the corrected files, kept in
+  `examples/data/osoaa_closure/` in place of the old ones, with their
+  truncation coefficients. They become a second, independent calculation
+  beside the Monte Carlo of section 92, whose conclusions do not change.
+
+**The documents.** DATA.md sections 38 and 39, `OPEN_QUESTIONS.md`, the
+example `closure_with_jerlov_kd.py`, `radiative_transfer_inputs.py`'s
+figures and the README are corrected: the first answer of 1.15.3 was
+wrong because the package wrote the phase function 4 pi too small, not
+because of OSOAA, and section 92's account of the cause was itself wrong.
+Sections 86, 90 and 92 stay as written, this section correcting them.
+
+**Version.** 1.15.5.
+
+**Differences from the plan.**
+
+- The plan put the new OSOAA runs "in place of the old ones". The old
+  runs are kept instead, in `examples/data/osoaa_closure_f11_too_small/`,
+  so that the figures the documents still quote from them (96.5 to 97.8
+  percent, 0.7 to 23.1 percent) stay recomputed by a test, as the rest of
+  this package's figures are. The single run in `tests/data/` is
+  replaced; release 1.15.4 keeps its old files, and the documents quote
+  no figure from them.
+- `tests/data/osoaa_iii_440/` gains the run's `PM_PHYTO.txt`, so that its
+  truncation coefficient, 1.40215, is read by a test, and
+  `tools/osoaa_closure.py` writes `truncation.csv` itself instead of a
+  script outside the repository.
+- With the corrected file OSOAA's Kd is 1.007 to 1.096 times the Monte
+  Carlo's over the 62 base runs; the four trial runs, 2 to 8 percent
+  above, are among them, with the same results. It is the higher the bluer the light and the
+  clearer the water. OSOAA's sky, which the Monte Carlo lacks, may account
+  for it; that was not checked. The station moves OSOAA's Kd by -5.8 to
+  +14.9 percent, against the Monte Carlo's -6.4 to +14.5. Against Jerlov
+  (1976) OSOAA's Kd lies outside the reach of the three conditions at the
+  same places as the Monte Carlo's but for 5C at 425 nm, which it brings
+  just inside. The documents say so.
+- The first rerun stopped when the disk filled (each run keeps about
+  60 MB of OSOAA's own files); the bulky files of finished runs were
+  deleted as the runs went, which does not change the results.

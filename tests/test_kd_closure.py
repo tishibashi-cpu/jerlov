@@ -1,13 +1,16 @@
 """Williamson & Hollins's IOPs against Jerlov's Kd (DATA.md section 39,
-OPEN_QUESTIONS.md, DECISIONS.md sections 90 to 92): the Monte Carlo's own
+OPEN_QUESTIONS.md, DECISIONS.md sections 90 to 93): the Monte Carlo's own
 checks, and every figure the documents quote, recomputed from the runs in
 examples/data. Away from the source tree, all skipped."""
 
 from __future__ import annotations
 
+import contextlib
 import csv
+import io
 import math
 import pathlib
+import runpy
 import sys
 import warnings
 
@@ -208,20 +211,93 @@ def test_williamson_and_hollins_chose_their_waters_by_jerlov_1976():
     assert "Kd within 14 to 17 percent of Jerlov's" in text
 
 
-# -- The OSOAA record ---------------------------------------------------------
+# -- OSOAA, a second calculation (DECISIONS.md section 93) -------------------
 
 
-def test_osoaa_truncated_almost_everything():
+@pytest.fixture(scope="module")
+def closure():
+    module = runpy.run_path(str(ROOT / "examples" / "closure_with_jerlov_kd.py"),
+                            run_name="closure_with_jerlov_kd")
+    with contextlib.redirect_stdout(io.StringIO()), \
+            warnings.catch_warnings():
+        warnings.simplefilter("ignore", jerlov.ProvenanceWarning)
+        return module["main"]()
+
+
+def test_osoaa_runs_are_made_with_the_corrected_phase_function():
+    """Each run's phase function in OSOAA's record is what the writer
+    writes today, 4 pi vsf / b, for the station the run names."""
+    with open(DATA / "osoaa_closure" / "runs.csv") as handle:
+        runs = list(csv.DictReader(handle))
+    assert len(runs) == 408
+    made = [r for r in runs if r["status"] == "ok"]
+    assert len(made) == 362
     with open(DATA / "osoaa_closure" / "truncation.csv") as handle:
-        coefficients = [float(r["truncation_coefficient"])
-                        for r in csv.DictReader(handle)]
-    assert len(coefficients) == 362
-    assert (min(coefficients), max(coefficients)) == (1.93029, 1.95649)
-    share = (100 * min(coefficients) / 2, 100 * max(coefficients) / 2)
-    assert (round(share[0], 1), round(share[1], 1)) == (96.5, 97.8)
+        assert [int(r["run_id"]) for r in csv.DictReader(handle)] == [
+            int(r["run_id"]) for r in made]
+    for station in {r["station"] for r in made}:
+        s = jerlov.petzold_scattering(station)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", jerlov.ProvenanceWarning)
+            text = jerlov.osoaa_phase_function(
+                s, minus_f12_over_f11=0.0, f22_over_f11=1.0,
+                f33_over_f11=1.0)
+        assert "F11 = 4 pi vsf/b" in text
+
+
+def test_osoaa_against_the_monte_carlo(closure):
+    now = closure["osoaa"]["now"]
+    ratios = now["ratios"]
+    assert len(ratios) == 62
+    assert (round(ratios[0][0], 3), ratios[0][1], ratios[0][2]) == (
+        1.007, "1C", 675)
+    assert (round(ratios[-1][0], 3), ratios[-1][1], ratios[-1][2]) == (
+        1.096, "IB", 425)
+    share = now["share"]
+    assert (round(100 * share[0], 1), round(100 * share[1], 1)) == (
+        56.2, 72.7)
+    station = closure["osoaa"]["station"]
+    assert (round(100 * (station[0] - 1), 1),
+            round(100 * (station[1] - 1), 1)) == (-5.8, 14.9)
+    sky = closure["osoaa"]["sky"]
+    assert (round(100 * (sky[0] - 1), 1), round(100 * (sky[1] - 1), 1)) == (
+        -0.3, 0.8)
+    assert sorted(closure["osoaa"]["beyond"]) == [
+        ("1C", 425), ("3C", 425), ("3C", 450), ("IB", 425), ("IB", 450),
+        ("IB", 475)]
+    assert closure["osoaa"]["missing"] == [("5C", 425)]
+    data = _flat("DATA.md")
+    for quoted in ("OSOAA's Kd is 1.007 to 1.096 times the Monte Carlo's",
+                   "1.096 for IB at 425 nm, 1.007 for 1C at 675 nm",
+                   "56.2 to 72.7 percent", "-5.8 to +14.9 percent",
+                   "-0.3 to +0.8", "but for 5C at 425 nm",
+                   "46 runs cannot be made"):
+        assert quoted in data, quoted
+    assert "Kd 1.007 to 1.096 times the Monte Carlo's" in _flat(
+        "OPEN_QUESTIONS.md")
+    assert "but for 5C at 425 nm" in _flat("OPEN_QUESTIONS.md")
+    assert "up to 9.6 percent above" in _flat("OPEN_QUESTIONS.md")
+    assert round(100 * (ratios[-1][0] - 1), 1) == 9.6
+    assert "1.007 to 1.096 times" in _flat("examples/README.md")
+    assert "within 10 percent" in _flat("docs/open_questions.rst")
+
+
+def test_osoaa_record_with_f11_too_small(closure):
+    """The runs of 1.15.3, kept: the phase function 4 pi too small."""
+    before = closure["osoaa"]["before"]
+    share = before["share"]
+    assert (round(100 * share[0], 1), round(100 * share[1], 1)) == (
+        96.5, 97.8)
+    ratios = before["ratios"]
+    assert len(ratios) == 62
+    low, high = 100 * (1 - ratios[-1][0]), 100 * (1 - ratios[0][0])
+    assert (round(low, 1), round(high, 1)) == (0.7, 23.1)
     for document in ("DATA.md", "OPEN_QUESTIONS.md"):
         assert "96.5 to 97.8 percent" in _flat(document)
-    assert "1.930 to 1.956" in _flat("DATA.md")
+        assert "0.7 to 23.1 percent" in _flat(document)
+    assert "96.5 to 97.8 percent" in " ".join(
+        jerlov.osoaa_phase_function.__doc__.split())
+    assert "up to 23.1 percent too low" in _flat("examples/README.md")
     # Petzold's functions hold far less within 23 degrees, at every
     # station OSOAA was given at the base.
     within = []
@@ -237,31 +313,3 @@ def test_osoaa_truncated_almost_everything():
         within.append(s.fraction_below_0_1_deg + inside)
     assert (round(100 * min(within)), round(100 * max(within))) == (84, 89)
     assert "84 to 89 percent" in _flat("DATA.md")
-
-
-def test_osoaa_kd_against_the_monte_carlo(runs):
-    with open(DATA / "osoaa_closure" / "runs.csv") as handle:
-        osoaa_runs = {int(r["run_id"]): r for r in csv.DictReader(handle)}
-    profiles = {}
-    with open(DATA / "osoaa_closure" / "ed.csv") as handle:
-        for r in csv.DictReader(handle):
-            profiles.setdefault(int(r["run_id"]), []).append(
-                (float(r["depth_m"]), float(r["ed"])))
-    base = base_kd(runs)
-    ratios = []
-    for k, r in osoaa_runs.items():
-        if r["factor"] != "base" or r["status"] != "ok":
-            continue
-        z, ed = np.array(profiles[k]).T
-        keep = np.concatenate([[True], np.diff(z) > 0])
-        z, log_ed = z[keep], np.log(ed[keep])
-        osoaa = 1.0 / float(np.interp(-(log_ed[0] - 1.0), -log_ed, z))
-        ratios.append(osoaa / base[(r["water_type"],
-                                    int(r["wavelength_nm"]))])
-    assert len(ratios) == 62
-    low, high = 100 * (1 - max(ratios)), 100 * (1 - min(ratios))
-    assert (round(low, 1), round(high, 1)) == (0.7, 23.1)
-    for document in ("DATA.md", "OPEN_QUESTIONS.md"):
-        assert "0.7 to 23.1 percent" in _flat(document)
-    assert "0.7 to 23 percent" in " ".join(
-        jerlov.osoaa_phase_function.__doc__.split())

@@ -4,6 +4,43 @@ Every release is archived on Zenodo under the concept DOI
 [10.5281/zenodo.22321312](https://doi.org/10.5281/zenodo.22321312), which
 always resolves to the latest version.
 
+## 1.15.5 — 2026-11-15
+
+A fix: `osoaa_phase_function` wrote OSOAA's phase function 4 pi too small,
+and the fault behind the low OSOAA Kd of 1.15.3 was the package's, not
+OSOAA's (DECISIONS.md section 93). No name changes.
+
+**Fixed.**
+
+- `osoaa_phase_function` writes F11 = 4 pi vsf / b. OSOAA expects a phase
+  function whose integral over the sphere is 4 pi and takes its truncation
+  coefficient from it without normalising it. Releases 1.14.0 to 1.15.4
+  wrote vsf / b, whose integral is 1; OSOAA then treated 96.5 to 97.8
+  percent of the hydrosols' scattering as unscattered and gave Kd that
+  were too low. The files it writes change; a test checks the
+  normalisation at every station.
+- 1.15.4 put the low Kd down to OSOAA truncating Petzold's phase
+  functions too far (DECISIONS.md section 92), without reading OSOAA's
+  source; that was wrong. The docstring's warning that blamed OSOAA is
+  gone.
+
+**Data.** The OSOAA run kept for the readers' tests,
+`tests/data/osoaa_iii_440/`, made again with the corrected file, now with
+its `PM_PHYTO.txt`: truncation coefficient 1.40215, mean Kd from 0 to 50 m
+0.1577 per m (was 0.1381). The 408 OSOAA runs of DATA.md section 39 made
+again in `examples/data/osoaa_closure/`: OSOAA's Kd is 1.007 to 1.096
+times the Monte Carlo's, and against Jerlov (1976) it lies beyond what
+the unrecorded conditions can explain at the same places, but for 5C at
+425 nm. The old runs move to `examples/data/osoaa_closure_f11_too_small/`
+as the record. The Monte Carlo's results and the conclusions of 1.15.4 do
+not change.
+
+**Documents.** DATA.md sections 38 and 39, `OPEN_QUESTIONS.md`, the
+"Open questions" page, the README of the examples and of `tools/`.
+`closure_with_jerlov_kd.py` prints OSOAA as a second calculation and the
+old runs as the record; `radiative_transfer_inputs.py --read` prints the
+new run. `tools/osoaa_closure.py` writes `truncation.csv` itself.
+
 ## 1.15.4 — 2026-11-15
 
 Open questions in a document of their own, with an example; and the

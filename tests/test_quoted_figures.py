@@ -2178,13 +2178,13 @@ def transfer_read_example():
 @source_tree
 def test_examples_README_figures_for_reading_osoaa(transfer_read_example):
     text = (ROOT / "examples" / "README.md").read_text()
-    for quoted in ("mean Kd of **0.138** per m", "Jerlov's 0.129 (1968)",
+    for quoted in ("mean Kd of **0.158** per m", "Jerlov's 0.129 (1968)",
                    "0.145 (1976)", "HydroLight made 0.123"):
         assert quoted in text, quoted
     read = transfer_read_example["read"]
     assert (read["wavelength"], read["sun"], read["depth"]) == (
         440.0, 30.0, 50.0)
-    assert round(read["kd"], 3) == 0.138
+    assert round(read["kd"], 3) == 0.158
     compared = read["compared"]
     assert [round(v, 3) for v in compared.values()] == [0.129, 0.145, 0.123]
 
@@ -2192,10 +2192,10 @@ def test_examples_README_figures_for_reading_osoaa(transfer_read_example):
 @source_tree
 def test_DATA_figures_for_reading_osoaa(transfer_read_example):
     text = (ROOT / "DATA.md").read_text()
-    for quoted in ("is 0.1381 per m", "0.129 in the first edition",
+    for quoted in ("is 0.1577 per m", "0.129 in the first edition",
                    "0.145 in the\n  second", "own a and b for the type, "):
         assert quoted in text, quoted
-    assert round(transfer_read_example["read"]["kd"], 4) == 0.1381
+    assert round(transfer_read_example["read"]["kd"], 4) == 0.1577
 
 
 # -- Open questions recorded in DATA.md (DECISIONS.md section 89) ----------
@@ -2274,9 +2274,12 @@ def test_open_questions_closure_figures_are_the_examples(closure_example):
     assert f"{verdict['down']:.2f} to {verdict['up']:.2f} times" in text
     assert set(verdict["beyond"]) == {"IB", "1C", "3C", "5C"}
     osoaa = out["osoaa"]
-    assert osoaa["n"] == 62
-    assert (f"{100 * (1 - osoaa['high'][0]):.1f} to "
-            f"{100 * (1 - osoaa['low'][0]):.1f} percent") in text
+    ratios = osoaa["now"]["ratios"]
+    assert len(ratios) == 62
+    assert f"{ratios[0][0]:.3f} to {ratios[-1][0]:.3f} times" in text
+    before = osoaa["before"]["ratios"]
+    assert (f"{100 * (1 - before[-1][0]):.1f} to "
+            f"{100 * (1 - before[0][0]):.1f} percent") in text
     assert len(out["runs"]) == 240
 
 
@@ -2315,8 +2318,10 @@ def test_examples_README_figures_for_closure(closure_example):
     assert (f"moves Kd by {moves['sun_deg']} percent, the phase function by "
             f"{moves['station']} and the pure water by "
             f"{moves['pure_water']};") in text
-    assert (f"up to {100 * (1 - out['osoaa']['low'][0]):.1f} percent too low"
-            in text)
+    now = out["osoaa"]["now"]["ratios"]
+    assert f"{now[0][0]:.3f} to {now[-1][0]:.3f} times" in text
+    before = out["osoaa"]["before"]["ratios"]
+    assert f"up to {100 * (1 - before[0][0]):.1f} percent too low" in text
 
 
 @source_tree
