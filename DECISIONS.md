@@ -5214,3 +5214,22 @@ statements of section 90 stay as written, this section correcting them.
 
 **Version.** Still 1.15.4: the correction goes into its pull request,
 which has not been merged.
+
+**Differences from the plan, noted after the code was written.**
+
+- The truncated share is 96.5 to 97.8 percent over all 362 OSOAA runs of
+  section 90, read from each run's `PM_PHYTO.txt` and kept in
+  `examples/data/osoaa_closure/truncation.csv` so that a test can
+  recompute it; the plan's 95 to 98 came from four runs. Likewise OSOAA's
+  Kd are 0.7 to 23.1 percent below the Monte Carlo's over its 62 base
+  runs, not the 7 to 29 of the four runs first compared (which were the
+  Monte Carlo above OSOAA, the other way round).
+- The result: against Jerlov (1976), Williamson & Hollins's IOPs give Kd
+  within what the sun, the phase function and the pure water together can
+  make (0.77 to 1.53 times) everywhere except at the blue end, IB at 425
+  to 475 nm above and 1C, 3C and 5C at 425 nm (3C also at 450) below. The
+  phase function moves Kd by -6.4 to +14.5 percent, not the under 1.5
+  that OSOAA's truncation had shown.
+- `tests/test_osoaa_closure.py`, which checked figures no document now
+  quotes, is replaced by `tests/test_kd_closure.py`, which also runs the
+  Monte Carlo's checks and makes one stored run again from its seed.

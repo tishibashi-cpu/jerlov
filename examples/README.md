@@ -384,14 +384,15 @@ the same type.
 
 **`closure_with_jerlov_kd.py`** — an open question with numbers
 (`OPEN_QUESTIONS.md`): do Williamson & Hollins's measured a and b, put
-through OSOAA, give back the Kd Jerlov printed for the same types? It reads
-408 OSOAA runs kept in `examples/data/osoaa_closure/` and computes every
-figure. Against Jerlov (1976) OSOAA's Kd is **1.00 to 1.36** times Jerlov's
-for IB and 0.79 to 0.95 for III, but down to **0.48** for 3C. The sun moves
-Kd by -7.1 to +20.7 percent and the pure water by -12.0 to +6.2; the phase
-function, the aerosol and the wind by under 1.5. For 5C at 550 nm to reach
-Jerlov's Kd, bb / b would have to be 0.10, where Petzold's largest is
-0.044: the coastal types of the two sources are different water.
+through a radiative transfer calculation, give back the Kd Jerlov printed
+for the same types? It reads 240 Monte Carlo runs kept in
+`examples/data/kd_closure/` and computes every figure. Against Jerlov
+(1976) the computed Kd is **0.98 to 1.47** times Jerlov's for IB and 0.84
+to 0.98 for III, but down to **0.51** for 3C at 425 nm. The sun moves Kd by
+-7.7 to +22.4 percent, the phase function by -6.4 to +14.5 and the pure
+water by -10.9 to +9.3; together they cover the gap except at the blue
+end. The OSOAA runs of 1.15.3, kept beside them, gave Kd up to 23.1
+percent too low.
 
 ## What they do not show
 

@@ -2260,26 +2260,24 @@ def _flat(path):
 def test_open_questions_closure_figures_are_the_examples(closure_example):
     out = closure_example[1]
     text = _flat("OPEN_QUESTIONS.md")
-    check = out["check"]
-    assert (f"within {check['low']:+.1f} to {check['high']:+.1f} percent"
-            in text)
-    for (water_type, source), (low, _, high, _) in out["found"][
-            "ranges"].items():
-        cell = f"{low:.2f} to {high:.2f}"
-        row = (ROOT / "OPEN_QUESTIONS.md").read_text()
-        assert f"| {water_type} |" in row
-        assert cell in row, (water_type, source, cell)
-    for factor, (low, high) in out["moves"].items():
-        assert (f"{low:+.1f} to {high:+.1f} percent".replace("+-", "-")
+    table = (ROOT / "OPEN_QUESTIONS.md").read_text()
+    for water_type in ("IB", "II", "III", "1C", "3C", "5C"):
+        cells = []
+        for source in ("jerlov1976", "jerlov1968"):
+            r = out["found"]["ratios"][(water_type, source)].values()
+            cells.append(f"{min(r):.2f} to {max(r):.2f}")
+        assert f"| {water_type} | {cells[0]} | {cells[1]} |" in table
+    for factor, (low, high) in out["factors"]["moves"].items():
+        assert (f"{100 * (low - 1):+.1f} to {100 * (high - 1):+.1f} percent"
                 in text), factor
     verdict = out["verdict"]
-    assert verdict["within"] == ["II", "III"]
-    assert f"at most {verdict['reach']:.2f} times" in text
-    assert f"would have to be {verdict['needed']:.2f} of the scattering" in text
-    assert f"the largest Petzold measured is {verdict['largest']:.3f}" in text
-    assert f"falls to {verdict['iii_1968']:.2f}" in text
-    assert f"{out['refused']['refused']} of the 408 runs" in text
-    assert len(out["runs"]) == 408
+    assert f"{verdict['down']:.2f} to {verdict['up']:.2f} times" in text
+    assert set(verdict["beyond"]) == {"IB", "1C", "3C", "5C"}
+    osoaa = out["osoaa"]
+    assert osoaa["n"] == 62
+    assert (f"{100 * (1 - osoaa['high'][0]):.1f} to "
+            f"{100 * (1 - osoaa['low'][0]):.1f} percent") in text
+    assert len(out["runs"]) == 240
 
 
 @source_tree
@@ -2304,14 +2302,21 @@ def test_open_questions_pure_water_figures():
 def test_examples_README_figures_for_closure(closure_example):
     out = closure_example[1]
     text = _flat("examples/README.md")
-    ranges = out["found"]["ranges"]
-    ib = ranges[("IB", "jerlov1976")]
-    iii = ranges[("III", "jerlov1976")]
-    c3 = ranges[("3C", "jerlov1976")]
-    assert f"**{ib[0]:.2f} to {ib[2]:.2f}** times" in text
-    assert f"{iii[0]:.2f} to {iii[2]:.2f} for III" in text
-    assert f"down to **{c3[0]:.2f}** for 3C" in text
-    assert f"would have to be {out['verdict']['needed']:.2f}" in text
+    ratios = out["found"]["ratios"]
+    ib = ratios[("IB", "jerlov1976")].values()
+    iii = ratios[("III", "jerlov1976")].values()
+    c3 = ratios[("3C", "jerlov1976")]
+    assert f"**{min(ib):.2f} to {max(ib):.2f}** times" in text
+    assert f"{min(iii):.2f} to {max(iii):.2f} for III" in text
+    assert f"down to **{c3[425]:.2f}** for 3C at 425 nm" in text
+    assert min(c3.values()) == c3[425]
+    moves = {factor: f"{100 * (low - 1):+.1f} to {100 * (high - 1):+.1f}"
+             for factor, (low, high) in out["factors"]["moves"].items()}
+    assert (f"moves Kd by {moves['sun_deg']} percent, the phase function by "
+            f"{moves['station']} and the pure water by "
+            f"{moves['pure_water']};") in text
+    assert (f"up to {100 * (1 - out['osoaa']['low'][0]):.1f} percent too low"
+            in text)
 
 
 @source_tree

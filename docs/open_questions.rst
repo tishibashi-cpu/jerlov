@@ -17,9 +17,10 @@ what is still not known, and where the details are. In a line each:
    tables extend a power law there; scattering on turbulence, measured at
    1 to 10 per m by Bogucki et al. (2004), is not in it.
 3. **Do Williamson & Hollins's measured IOPs give back Jerlov's own Kd?**
-   Through the radiative transfer code OSOAA, for types II and III within
-   what the unrecorded sun and pure water can explain; for the clearest
-   type in the blue and the coastal types, not: there the two sources
-   describe different water. The example
+   By Monte Carlo, within what the unrecorded sun, phase function and pure
+   water can explain, except at the blue end: the clearest type's IOPs
+   attenuate more than Jerlov's Kd there and the coastal types' less. A
+   first answer, made with the code OSOAA, was wrong, because OSOAA cut
+   off almost all of the forward scattering. The example
    `closure_with_jerlov_kd.py <https://github.com/tishibashi-cpu/jerlov/blob/main/examples/closure_with_jerlov_kd.py>`_
    prints every figure.
