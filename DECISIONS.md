@@ -4758,3 +4758,27 @@ with the commit, the compiler and the numbers, as a check made by hand
 outside CI.
 
 **Version.** 1.14.0: three public names.
+
+**Differences from the plan, noted after the code was written.**
+
+- The module is `jerlov/interop.py`. Passing the water or the
+  wavelengths by keyword warns with `FutureWarning`, as every other
+  function under `positional_only` does (section 61), rather than
+  raising.
+- The OSOAA profile's five comment lines are its manual's three column
+  descriptions and two comments: the water, its source and the
+  wavelength, then the pure water subtracted. The file ends without a
+  newline, as the manual asks. Each of `pure_water`'s two values may be
+  one number for every wavelength in `hydrolight_ac9_file`.
+- The files of the example were run once more in OSOAA, byte for byte:
+  its sea profile gives c = 0.4330 per m and b/c = 0.72054, Williamson
+  and Hollins's 0.433 and 0.72055. The run before the plan gave 0.4331
+  because its profile had Morel's 0.00494 subtracted from b while OSOAA
+  added its own 0.00502 back: the very mismatch the required argument
+  is for.
+- The example's HydroLight file takes off the aw that Williamson and
+  Hollins built a on and Morel's bw at 35 PSU, its stated choice, and
+  shows the alternative: Pope and Fry's (1997) aw is larger in the red
+  and is refused from 650 nm in IB. At 440 nm, taking off Williamson and
+  Hollins's aw where OSOAA adds its own would leave a short by 9.6
+  percent in IB.

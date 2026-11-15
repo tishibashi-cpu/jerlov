@@ -252,6 +252,17 @@ Coefficients for renderers
 .. autoclass:: SpectralCoefficients
    :members:
 
+Input files for radiative transfer codes
+----------------------------------------
+
+What each code adds back, and what was run, are in DATA.md section 38.
+
+.. autofunction:: osoaa_user_profile
+
+.. autofunction:: osoaa_phase_function
+
+.. autofunction:: hydrolight_ac9_file
+
 Kd without a water type, Rrs and the Secchi depth
 -------------------------------------------------
 

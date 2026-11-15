@@ -166,7 +166,7 @@ _SPELLED = ["zero", "one", "two", "three", "four", "five", "six", "seven",
             "twenty-nine", "thirty",
             "thirty-one", "thirty-two",
             "thirty-three", "thirty-four", "thirty-five", "thirty-six",
-            "thirty-seven"]
+            "thirty-seven", "thirty-eight"]
 WORDS = {word: value for value, word in enumerate(_SPELLED)}
 WORDS.update({word.capitalize(): value
               for value, word in enumerate(_SPELLED)})
@@ -505,7 +505,8 @@ WORD_COUNTS = {"Eight": 8, "Nine": 9, "Ten": 10, "Eleven": 11, "Twelve": 12,
                "Thirteen": 13, "Fourteen": 14, "Fifteen": 15, "Sixteen": 16,
                "Seventeen": 17, "Eighteen": 18, "Nineteen": 19, "Twenty": 20,
                "Twenty-one": 21, "Twenty-two": 22, "Twenty-three": 23,
-               "Twenty-four": 24, "Twenty-five": 25, "Twenty-six": 26}
+               "Twenty-four": 24, "Twenty-five": 25, "Twenty-six": 26,
+               "Twenty-seven": 27}
 
 
 @source_tree

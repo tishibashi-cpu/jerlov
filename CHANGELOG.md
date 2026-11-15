@@ -4,6 +4,35 @@ Every release is archived on Zenodo under the concept DOI
 [10.5281/zenodo.22321312](https://doi.org/10.5281/zenodo.22321312), which
 always resolves to the latest version.
 
+## 1.14.0 — 2026-11-15
+
+Input files for two radiative transfer codes, OSOAA and HydroLight
+(DECISIONS.md section 86). No shipped value changed; three public names
+are added.
+
+**Added.**
+
+- `osoaa_user_profile(water, wavelength_nm, *, depths_m, pure_water)`:
+  OSOAA's `-HYD.UserProfile` file, the water's a and b less the pure
+  seawater OSOAA adds back, at one wavelength.
+- `osoaa_phase_function(scattering, *, minus_f12_over_f11, f22_over_f11,
+  f33_over_f11)`: OSOAA's `-HYD.ExtData` file from one of Petzold's
+  stations, F11 = vsf / b at his 55 angles, with the polarization ratios
+  he did not measure given by the caller.
+- `hydrolight_ac9_file(water, wavelengths, *, depths_m, pure_water)`:
+  HydroLight's standard-format file of a and c less pure water.
+- The pure water to subtract has no default, and a coefficient that would
+  turn negative is refused.
+
+**Examples.** `radiative_transfer_inputs.py`, the twenty-seventh: Jerlov
+III at 440 nm for OSOAA with Petzold's HAOCE 5, and from 400 to 700 nm for
+HydroLight, with the OSOAA command line, written with `--write DIR`. It
+runs neither code.
+
+**Data.** DATA.md section 38 (note): the OSOAA files were run by hand in
+OSOAA (commit 8e4914f) and its sea profile gives back Jerlov III's c and
+b/c at 440 nm; HydroLight was not run.
+
 ## 1.13.0 — 2026-11-14
 
 Measured reflectances of ten materials, and reference images

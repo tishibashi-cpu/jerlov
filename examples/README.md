@@ -1,6 +1,6 @@
 # Examples
 
-Twenty-six scripts. Each runs against the installed package and needs nothing beyond
+Twenty-seven scripts. Each runs against the installed package and needs nothing beyond
 NumPy.
 
 ```
@@ -363,6 +363,17 @@ material out to 10 m, balanced on the light at depth, with every choice
 stated. At 10 m a coloured material keeps a median **0.30** of its chroma
 in IB at 5 m, 0.11 in III and 0.05 in 1C, and less at 15 m in every type.
 It writes the chart as CSV, linear and 8-bit, and as images.
+
+**`radiative_transfer_inputs.py`** — Jerlov III written for two radiative
+transfer codes, which it does not run: at 440 nm for OSOAA, as a profile
+of a and b less OSOAA's own pure seawater and Petzold's HAOCE 5 phase
+function, with the command line that takes them, and from 400 to 700 nm
+for HydroLight, in its standard ac-9 format. OSOAA adds its water back and
+runs c = **0.433** and b/c = 0.7206, Williamson & Hollins's values.
+Subtracting Williamson & Hollins's own aw instead of OSOAA's would leave
+a short by **9.6 percent** in IB and 1.1 percent in 5C; Pope & Fry's aw
+makes a less pure water negative from 650 nm in IB, and the file is
+refused. It writes the three files.
 
 ## What they do not show
 
