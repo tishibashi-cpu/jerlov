@@ -2318,8 +2318,10 @@ def test_examples_README_figures_for_closure(closure_example):
     assert (f"moves Kd by {moves['sun_deg']} percent, the phase function by "
             f"{moves['station']} and the pure water by "
             f"{moves['pure_water']};") in text
-    assert (f"up to {100 * (1 - out['osoaa']['low'][0]):.1f} percent too low"
-            in text)
+    now = out["osoaa"]["now"]["ratios"]
+    assert f"{now[0][0]:.3f} to {now[-1][0]:.3f} times" in text
+    before = out["osoaa"]["before"]["ratios"]
+    assert f"up to {100 * (1 - before[0][0]):.1f} percent too low" in text
 
 
 @source_tree
