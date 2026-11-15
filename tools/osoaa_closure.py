@@ -78,6 +78,11 @@ def runs():
     for water_type in TYPES:
         for wl in WAVELENGTHS:
             add("base", "", water_type, wl)
+    # Williamson & Hollins's contents on OSOAA's own pure water: always
+    # runnable, where the type's total in the red is not.
+    for water_type in TYPES:
+        for wl in WAVELENGTHS:
+            add("pure_water", "osoaa", water_type, wl, pure_water="osoaa")
     for water_type in FACTOR_TYPES:
         for wl in WAVELENGTHS:
             for sun in (0.0, 60.0):
@@ -108,6 +113,8 @@ def inputs(run, root):
     aw_wh = float(jerlov.pure_water_absorption(wl))
     if run["pure_water"] == "williamson2022":
         aw_x = aw_wh
+    elif run["pure_water"] == "osoaa":
+        aw_x = aw_osoaa
     else:
         aw_x = float(jerlov.pure_water_absorption_table(
             wl, source=run["pure_water"]))
@@ -122,10 +129,31 @@ def inputs(run, root):
 
 
 def run_osoaa(run, root: pathlib.Path, work: pathlib.Path):
+    """OSOAA's Flux for one run, or None where OSOAA cannot be given it.
+
+    OSOAA always adds its own pure water back. Where the total to be run
+    is below OSOAA's own pure water, as Williamson & Hollins's a is in the
+    red, where it is little more than their own aw, or as a total built on
+    a smaller aw is, the profile would be negative, which the writer
+    refuses: such a run is recorded as not run (DECISIONS.md section 90).
+    """
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", jerlov.ProvenanceWarning)
-        profile, phase, depth, aw_x = inputs(run, root)
+        try:
+            profile, phase, depth, aw_x = inputs(run, root)
+        except ValueError as refused:
+            if "less the pure water given is negative" not in str(refused):
+                raise
+            return run, None, None, str(refused).split(":")[0]
     where = work / f"run{run['run_id']:04d}"
+    flux_path = where / "Advanced_outputs" / "Flux.txt"
+    # A run already made with the same inputs is read, not repeated.
+    if (flux_path.exists() and (where / "profile.txt").exists()
+            and (where / "profile.txt").read_text() == profile
+            and (where / "phase.txt").read_text() == phase
+            and (where / "command.txt").exists()):
+        return run, depth, aw_x, jerlov.read_osoaa_flux(
+            flux_path.read_text())
     for sub in ("MIE_AER", "MIE_HYD", "SURF"):
         (where / sub).mkdir(parents=True, exist_ok=True)
     (where / "profile.txt").write_text(profile)
@@ -150,10 +178,10 @@ def run_osoaa(run, root: pathlib.Path, work: pathlib.Path):
     env = dict(os.environ, OSOAA_ROOT=str(root))
     done = subprocess.run(command, cwd=where, env=env, capture_output=True,
                           text=True)
-    flux_path = where / "Advanced_outputs" / "Flux.txt"
     if done.returncode != 0 or not flux_path.exists():
         raise RuntimeError(f"run {run['run_id']} failed: "
                            f"{done.stdout[-400:]} {done.stderr[-400:]}")
+    (where / "command.txt").write_text(" ".join(command[1:]))
     flux = jerlov.read_osoaa_flux(flux_path.read_text())
     return run, depth, aw_x, flux
 
@@ -178,23 +206,28 @@ def main() -> None:
     OUT.mkdir(parents=True, exist_ok=True)
     fields = ["run_id", "factor", "value", "water_type", "wavelength_nm",
               "sun_deg", "station", "pure_water", "aot", "wind",
-              "sea_depth_m", "aw_total_pure_water"]
+              "sea_depth_m", "aw_total_pure_water", "status"]
     with open(OUT / "runs.csv", "w", newline="") as handle:
         writer = csv.writer(handle, lineterminator="\n")
         writer.writerow(fields)
         for key in sorted(results):
-            run, depth, aw_x, _ = results[key]
+            run, depth, aw_x, flux = results[key]
+            ran = not isinstance(flux, str)
             writer.writerow([run["run_id"], run["factor"], run["value"],
                              run["water_type"], run["wavelength_nm"],
                              f"{run['sun_deg']:g}", run["station"],
                              run["pure_water"], f"{run['aot']:g}",
-                             f"{run['wind']:g}", depth, repr(aw_x)])
+                             f"{run['wind']:g}", depth if ran else "",
+                             repr(aw_x) if ran else "",
+                             "ok" if ran else "not_run: " + flux])
     rows = 0
     with open(OUT / "ed.csv", "w", newline="") as handle:
         writer = csv.writer(handle, lineterminator="\n")
         writer.writerow(["run_id", "depth_m", "ed"])
         for key in sorted(results):
             flux = results[key][3]
+            if isinstance(flux, str):
+                continue
             for depth, ed in zip(flux.sea_depths_m,
                                  flux.total_down[flux.in_sea]):
                 # As OSOAA printed them: the floats read back exactly.
