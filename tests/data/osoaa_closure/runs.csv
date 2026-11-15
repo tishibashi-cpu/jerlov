@@ -1,0 +1,409 @@
+run_id,factor,value,water_type,wavelength_nm,sun_deg,station,pure_water,aot,wind,sea_depth_m,aw_total_pure_water,status
+0,base,,IB,425,30,AUTEC 7,williamson2022,0.1,7,143,0.00855,ok
+1,base,,IB,450,30,AUTEC 7,williamson2022,0.1,7,167,0.0114,ok
+2,base,,IB,475,30,AUTEC 7,williamson2022,0.1,7,182,0.01425,ok
+3,base,,IB,500,30,AUTEC 7,williamson2022,0.1,7,143,0.0238,ok
+4,base,,IB,525,30,AUTEC 7,williamson2022,0.1,7,111,0.0418,ok
+5,base,,IB,550,30,AUTEC 7,williamson2022,0.1,7,83,0.0588,ok
+6,base,,IB,575,30,AUTEC 7,williamson2022,0.1,7,61,0.08385,ok
+7,base,,IB,600,30,AUTEC 7,williamson2022,0.1,7,24,0.2224,ok
+8,base,,IB,625,30,AUTEC 7,williamson2022,0.1,7,19,0.28805,ok
+9,base,,IB,650,30,AUTEC 7,williamson2022,0.1,7,,,not_run: a less the pure water given is negative at 650 nm
+10,base,,IB,675,30,AUTEC 7,williamson2022,0.1,7,,,not_run: a less the pure water given is negative at 675 nm
+11,base,,IB,700,30,AUTEC 7,williamson2022,0.1,7,,,not_run: a less the pure water given is negative at 700 nm
+12,base,,II,425,30,HAOCE 11,williamson2022,0.1,7,74,0.00855,ok
+13,base,,II,450,30,HAOCE 11,williamson2022,0.1,7,88,0.0114,ok
+14,base,,II,475,30,HAOCE 11,williamson2022,0.1,7,97,0.01425,ok
+15,base,,II,500,30,HAOCE 11,williamson2022,0.1,7,86,0.0238,ok
+16,base,,II,525,30,HAOCE 11,williamson2022,0.1,7,79,0.0418,ok
+17,base,,II,550,30,HAOCE 11,williamson2022,0.1,7,67,0.0588,ok
+18,base,,II,575,30,HAOCE 11,williamson2022,0.1,7,52,0.08385,ok
+19,base,,II,600,30,HAOCE 11,williamson2022,0.1,7,23,0.2224,ok
+20,base,,II,625,30,HAOCE 11,williamson2022,0.1,7,18,0.28805,ok
+21,base,,II,650,30,HAOCE 11,williamson2022,0.1,7,,,not_run: a less the pure water given is negative at 650 nm
+22,base,,II,675,30,HAOCE 11,williamson2022,0.1,7,,,not_run: a less the pure water given is negative at 675 nm
+23,base,,II,700,30,HAOCE 11,williamson2022,0.1,7,,,not_run: a less the pure water given is negative at 700 nm
+24,base,,III,425,30,HAOCE 5,williamson2022,0.1,7,38,0.00855,ok
+25,base,,III,450,30,HAOCE 5,williamson2022,0.1,7,44,0.0114,ok
+26,base,,III,475,30,HAOCE 5,williamson2022,0.1,7,52,0.01425,ok
+27,base,,III,500,30,HAOCE 5,williamson2022,0.1,7,52,0.0238,ok
+28,base,,III,525,30,HAOCE 5,williamson2022,0.1,7,52,0.0418,ok
+29,base,,III,550,30,HAOCE 5,williamson2022,0.1,7,50,0.0588,ok
+30,base,,III,575,30,HAOCE 5,williamson2022,0.1,7,41,0.08385,ok
+31,base,,III,600,30,HAOCE 5,williamson2022,0.1,7,20,0.2224,ok
+32,base,,III,625,30,HAOCE 5,williamson2022,0.1,7,16,0.28805,ok
+33,base,,III,650,30,HAOCE 5,williamson2022,0.1,7,13,0.3315,ok
+34,base,,III,675,30,HAOCE 5,williamson2022,0.1,7,12,0.4198,ok
+35,base,,III,700,30,HAOCE 5,williamson2022,0.1,7,,,not_run: a less the pure water given is negative at 700 nm
+36,base,,1C,425,30,HAOCE 5,williamson2022,0.1,7,17,0.00855,ok
+37,base,,1C,450,30,HAOCE 5,williamson2022,0.1,7,24,0.0114,ok
+38,base,,1C,475,30,HAOCE 5,williamson2022,0.1,7,35,0.01425,ok
+39,base,,1C,500,30,HAOCE 5,williamson2022,0.1,7,43,0.0238,ok
+40,base,,1C,525,30,HAOCE 5,williamson2022,0.1,7,46,0.0418,ok
+41,base,,1C,550,30,HAOCE 5,williamson2022,0.1,7,50,0.0588,ok
+42,base,,1C,575,30,HAOCE 5,williamson2022,0.1,7,40,0.08385,ok
+43,base,,1C,600,30,HAOCE 5,williamson2022,0.1,7,20,0.2224,ok
+44,base,,1C,625,30,HAOCE 5,williamson2022,0.1,7,16,0.28805,ok
+45,base,,1C,650,30,HAOCE 5,williamson2022,0.1,7,13,0.3315,ok
+46,base,,1C,675,30,HAOCE 5,williamson2022,0.1,7,12,0.4198,ok
+47,base,,1C,700,30,HAOCE 5,williamson2022,0.1,7,,,not_run: a less the pure water given is negative at 700 nm
+48,base,,3C,425,30,HAOCE 5,williamson2022,0.1,7,11,0.00855,ok
+49,base,,3C,450,30,HAOCE 5,williamson2022,0.1,7,15,0.0114,ok
+50,base,,3C,475,30,HAOCE 5,williamson2022,0.1,7,21,0.01425,ok
+51,base,,3C,500,30,HAOCE 5,williamson2022,0.1,7,27,0.0238,ok
+52,base,,3C,525,30,HAOCE 5,williamson2022,0.1,7,30,0.0418,ok
+53,base,,3C,550,30,HAOCE 5,williamson2022,0.1,7,32,0.0588,ok
+54,base,,3C,575,30,HAOCE 5,williamson2022,0.1,7,29,0.08385,ok
+55,base,,3C,600,30,HAOCE 5,williamson2022,0.1,7,18,0.2224,ok
+56,base,,3C,625,30,HAOCE 5,williamson2022,0.1,7,15,0.28805,ok
+57,base,,3C,650,30,HAOCE 5,williamson2022,0.1,7,13,0.3315,ok
+58,base,,3C,675,30,HAOCE 5,williamson2022,0.1,7,11,0.4198,ok
+59,base,,3C,700,30,HAOCE 5,williamson2022,0.1,7,,,not_run: a less the pure water given is negative at 700 nm
+60,base,,5C,425,30,NUC 2240,williamson2022,0.1,7,8,0.00855,ok
+61,base,,5C,450,30,NUC 2240,williamson2022,0.1,7,11,0.0114,ok
+62,base,,5C,475,30,NUC 2240,williamson2022,0.1,7,14,0.01425,ok
+63,base,,5C,500,30,NUC 2240,williamson2022,0.1,7,17,0.0238,ok
+64,base,,5C,525,30,NUC 2240,williamson2022,0.1,7,19,0.0418,ok
+65,base,,5C,550,30,NUC 2240,williamson2022,0.1,7,20,0.0588,ok
+66,base,,5C,575,30,NUC 2240,williamson2022,0.1,7,18,0.08385,ok
+67,base,,5C,600,30,NUC 2240,williamson2022,0.1,7,15,0.2224,ok
+68,base,,5C,625,30,NUC 2240,williamson2022,0.1,7,12,0.28805,ok
+69,base,,5C,650,30,NUC 2240,williamson2022,0.1,7,11,0.3315,ok
+70,base,,5C,675,30,NUC 2240,williamson2022,0.1,7,9,0.4198,ok
+71,base,,5C,700,30,NUC 2240,williamson2022,0.1,7,,,not_run: a less the pure water given is negative at 700 nm
+72,pure_water,osoaa,IB,425,30,AUTEC 7,osoaa,0.1,7,143,0.00478,ok
+73,pure_water,osoaa,IB,450,30,AUTEC 7,osoaa,0.1,7,167,0.00922,ok
+74,pure_water,osoaa,IB,475,30,AUTEC 7,osoaa,0.1,7,182,0.0114,ok
+75,pure_water,osoaa,IB,500,30,AUTEC 7,osoaa,0.1,7,143,0.0204,ok
+76,pure_water,osoaa,IB,525,30,AUTEC 7,osoaa,0.1,7,111,0.0417,ok
+77,pure_water,osoaa,IB,550,30,AUTEC 7,osoaa,0.1,7,83,0.0565,ok
+78,pure_water,osoaa,IB,575,30,AUTEC 7,osoaa,0.1,7,61,0.0772,ok
+79,pure_water,osoaa,IB,600,30,AUTEC 7,osoaa,0.1,7,24,0.2224,ok
+80,pure_water,osoaa,IB,625,30,AUTEC 7,osoaa,0.1,7,19,0.2834,ok
+81,pure_water,osoaa,IB,650,30,AUTEC 7,osoaa,0.1,7,16,0.34,ok
+82,pure_water,osoaa,IB,675,30,AUTEC 7,osoaa,0.1,7,14,0.448,ok
+83,pure_water,osoaa,IB,700,30,AUTEC 7,osoaa,0.1,7,10,0.624,ok
+84,pure_water,osoaa,II,425,30,HAOCE 11,osoaa,0.1,7,74,0.00478,ok
+85,pure_water,osoaa,II,450,30,HAOCE 11,osoaa,0.1,7,88,0.00922,ok
+86,pure_water,osoaa,II,475,30,HAOCE 11,osoaa,0.1,7,97,0.0114,ok
+87,pure_water,osoaa,II,500,30,HAOCE 11,osoaa,0.1,7,86,0.0204,ok
+88,pure_water,osoaa,II,525,30,HAOCE 11,osoaa,0.1,7,79,0.0417,ok
+89,pure_water,osoaa,II,550,30,HAOCE 11,osoaa,0.1,7,67,0.0565,ok
+90,pure_water,osoaa,II,575,30,HAOCE 11,osoaa,0.1,7,52,0.0772,ok
+91,pure_water,osoaa,II,600,30,HAOCE 11,osoaa,0.1,7,23,0.2224,ok
+92,pure_water,osoaa,II,625,30,HAOCE 11,osoaa,0.1,7,18,0.2834,ok
+93,pure_water,osoaa,II,650,30,HAOCE 11,osoaa,0.1,7,15,0.34,ok
+94,pure_water,osoaa,II,675,30,HAOCE 11,osoaa,0.1,7,13,0.448,ok
+95,pure_water,osoaa,II,700,30,HAOCE 11,osoaa,0.1,7,10,0.624,ok
+96,pure_water,osoaa,III,425,30,HAOCE 5,osoaa,0.1,7,38,0.00478,ok
+97,pure_water,osoaa,III,450,30,HAOCE 5,osoaa,0.1,7,44,0.00922,ok
+98,pure_water,osoaa,III,475,30,HAOCE 5,osoaa,0.1,7,52,0.0114,ok
+99,pure_water,osoaa,III,500,30,HAOCE 5,osoaa,0.1,7,52,0.0204,ok
+100,pure_water,osoaa,III,525,30,HAOCE 5,osoaa,0.1,7,52,0.0417,ok
+101,pure_water,osoaa,III,550,30,HAOCE 5,osoaa,0.1,7,50,0.0565,ok
+102,pure_water,osoaa,III,575,30,HAOCE 5,osoaa,0.1,7,41,0.0772,ok
+103,pure_water,osoaa,III,600,30,HAOCE 5,osoaa,0.1,7,20,0.2224,ok
+104,pure_water,osoaa,III,625,30,HAOCE 5,osoaa,0.1,7,16,0.2834,ok
+105,pure_water,osoaa,III,650,30,HAOCE 5,osoaa,0.1,7,13,0.34,ok
+106,pure_water,osoaa,III,675,30,HAOCE 5,osoaa,0.1,7,12,0.448,ok
+107,pure_water,osoaa,III,700,30,HAOCE 5,osoaa,0.1,7,9,0.624,ok
+108,pure_water,osoaa,1C,425,30,HAOCE 5,osoaa,0.1,7,17,0.00478,ok
+109,pure_water,osoaa,1C,450,30,HAOCE 5,osoaa,0.1,7,24,0.00922,ok
+110,pure_water,osoaa,1C,475,30,HAOCE 5,osoaa,0.1,7,35,0.0114,ok
+111,pure_water,osoaa,1C,500,30,HAOCE 5,osoaa,0.1,7,43,0.0204,ok
+112,pure_water,osoaa,1C,525,30,HAOCE 5,osoaa,0.1,7,46,0.0417,ok
+113,pure_water,osoaa,1C,550,30,HAOCE 5,osoaa,0.1,7,50,0.0565,ok
+114,pure_water,osoaa,1C,575,30,HAOCE 5,osoaa,0.1,7,40,0.0772,ok
+115,pure_water,osoaa,1C,600,30,HAOCE 5,osoaa,0.1,7,20,0.2224,ok
+116,pure_water,osoaa,1C,625,30,HAOCE 5,osoaa,0.1,7,16,0.2834,ok
+117,pure_water,osoaa,1C,650,30,HAOCE 5,osoaa,0.1,7,13,0.34,ok
+118,pure_water,osoaa,1C,675,30,HAOCE 5,osoaa,0.1,7,12,0.448,ok
+119,pure_water,osoaa,1C,700,30,HAOCE 5,osoaa,0.1,7,9,0.624,ok
+120,pure_water,osoaa,3C,425,30,HAOCE 5,osoaa,0.1,7,11,0.00478,ok
+121,pure_water,osoaa,3C,450,30,HAOCE 5,osoaa,0.1,7,15,0.00922,ok
+122,pure_water,osoaa,3C,475,30,HAOCE 5,osoaa,0.1,7,21,0.0114,ok
+123,pure_water,osoaa,3C,500,30,HAOCE 5,osoaa,0.1,7,27,0.0204,ok
+124,pure_water,osoaa,3C,525,30,HAOCE 5,osoaa,0.1,7,30,0.0417,ok
+125,pure_water,osoaa,3C,550,30,HAOCE 5,osoaa,0.1,7,32,0.0565,ok
+126,pure_water,osoaa,3C,575,30,HAOCE 5,osoaa,0.1,7,29,0.0772,ok
+127,pure_water,osoaa,3C,600,30,HAOCE 5,osoaa,0.1,7,18,0.2224,ok
+128,pure_water,osoaa,3C,625,30,HAOCE 5,osoaa,0.1,7,15,0.2834,ok
+129,pure_water,osoaa,3C,650,30,HAOCE 5,osoaa,0.1,7,13,0.34,ok
+130,pure_water,osoaa,3C,675,30,HAOCE 5,osoaa,0.1,7,11,0.448,ok
+131,pure_water,osoaa,3C,700,30,HAOCE 5,osoaa,0.1,7,8,0.624,ok
+132,pure_water,osoaa,5C,425,30,NUC 2240,osoaa,0.1,7,8,0.00478,ok
+133,pure_water,osoaa,5C,450,30,NUC 2240,osoaa,0.1,7,11,0.00922,ok
+134,pure_water,osoaa,5C,475,30,NUC 2240,osoaa,0.1,7,14,0.0114,ok
+135,pure_water,osoaa,5C,500,30,NUC 2240,osoaa,0.1,7,17,0.0204,ok
+136,pure_water,osoaa,5C,525,30,NUC 2240,osoaa,0.1,7,19,0.0417,ok
+137,pure_water,osoaa,5C,550,30,NUC 2240,osoaa,0.1,7,20,0.0565,ok
+138,pure_water,osoaa,5C,575,30,NUC 2240,osoaa,0.1,7,18,0.0772,ok
+139,pure_water,osoaa,5C,600,30,NUC 2240,osoaa,0.1,7,15,0.2224,ok
+140,pure_water,osoaa,5C,625,30,NUC 2240,osoaa,0.1,7,12,0.2834,ok
+141,pure_water,osoaa,5C,650,30,NUC 2240,osoaa,0.1,7,11,0.34,ok
+142,pure_water,osoaa,5C,675,30,NUC 2240,osoaa,0.1,7,9,0.448,ok
+143,pure_water,osoaa,5C,700,30,NUC 2240,osoaa,0.1,7,8,0.624,ok
+144,sun_deg,0,IB,425,0,AUTEC 7,williamson2022,0.1,7,143,0.00855,ok
+145,sun_deg,60,IB,425,60,AUTEC 7,williamson2022,0.1,7,143,0.00855,ok
+146,station,AUTEC 8,IB,425,30,AUTEC 8,williamson2022,0.1,7,143,0.00855,ok
+147,station,HAOCE 5,IB,425,30,HAOCE 5,williamson2022,0.1,7,143,0.00855,ok
+148,station,NUC 2200,IB,425,30,NUC 2200,williamson2022,0.1,7,143,0.00855,ok
+149,pure_water,pope1997,IB,425,30,AUTEC 7,pope1997,0.1,7,143,0.00478,ok
+150,pure_water,mason2016,IB,425,30,AUTEC 7,mason2016,0.1,7,143,0.003375,ok
+151,pure_water,lee2015,IB,425,30,AUTEC 7,lee2015,0.1,7,143,0.0033,ok
+152,aot,0.05,IB,425,30,AUTEC 7,williamson2022,0.05,7,143,0.00855,ok
+153,aot,0.3,IB,425,30,AUTEC 7,williamson2022,0.3,7,143,0.00855,ok
+154,wind,2,IB,425,30,AUTEC 7,williamson2022,0.1,2,143,0.00855,ok
+155,wind,15,IB,425,30,AUTEC 7,williamson2022,0.1,15,143,0.00855,ok
+156,sun_deg,0,IB,450,0,AUTEC 7,williamson2022,0.1,7,167,0.0114,ok
+157,sun_deg,60,IB,450,60,AUTEC 7,williamson2022,0.1,7,167,0.0114,ok
+158,station,AUTEC 8,IB,450,30,AUTEC 8,williamson2022,0.1,7,167,0.0114,ok
+159,station,HAOCE 5,IB,450,30,HAOCE 5,williamson2022,0.1,7,167,0.0114,ok
+160,station,NUC 2200,IB,450,30,NUC 2200,williamson2022,0.1,7,167,0.0114,ok
+161,pure_water,pope1997,IB,450,30,AUTEC 7,pope1997,0.1,7,167,0.00922,ok
+162,pure_water,mason2016,IB,450,30,AUTEC 7,mason2016,0.1,7,167,0.00808,ok
+163,pure_water,lee2015,IB,450,30,AUTEC 7,lee2015,0.1,7,167,0.0068,ok
+164,aot,0.05,IB,450,30,AUTEC 7,williamson2022,0.05,7,167,0.0114,ok
+165,aot,0.3,IB,450,30,AUTEC 7,williamson2022,0.3,7,167,0.0114,ok
+166,wind,2,IB,450,30,AUTEC 7,williamson2022,0.1,2,167,0.0114,ok
+167,wind,15,IB,450,30,AUTEC 7,williamson2022,0.1,15,167,0.0114,ok
+168,sun_deg,0,IB,475,0,AUTEC 7,williamson2022,0.1,7,182,0.01425,ok
+169,sun_deg,60,IB,475,60,AUTEC 7,williamson2022,0.1,7,182,0.01425,ok
+170,station,AUTEC 8,IB,475,30,AUTEC 8,williamson2022,0.1,7,182,0.01425,ok
+171,station,HAOCE 5,IB,475,30,HAOCE 5,williamson2022,0.1,7,182,0.01425,ok
+172,station,NUC 2200,IB,475,30,NUC 2200,williamson2022,0.1,7,182,0.01425,ok
+173,pure_water,pope1997,IB,475,30,AUTEC 7,pope1997,0.1,7,182,0.0114,ok
+174,pure_water,mason2016,IB,475,30,AUTEC 7,mason2016,0.1,7,182,0.011189999999999999,ok
+175,pure_water,lee2015,IB,475,30,AUTEC 7,lee2015,0.1,7,182,0.0099,ok
+176,aot,0.05,IB,475,30,AUTEC 7,williamson2022,0.05,7,182,0.01425,ok
+177,aot,0.3,IB,475,30,AUTEC 7,williamson2022,0.3,7,182,0.01425,ok
+178,wind,2,IB,475,30,AUTEC 7,williamson2022,0.1,2,182,0.01425,ok
+179,wind,15,IB,475,30,AUTEC 7,williamson2022,0.1,15,182,0.01425,ok
+180,sun_deg,0,IB,500,0,AUTEC 7,williamson2022,0.1,7,143,0.0238,ok
+181,sun_deg,60,IB,500,60,AUTEC 7,williamson2022,0.1,7,143,0.0238,ok
+182,station,AUTEC 8,IB,500,30,AUTEC 8,williamson2022,0.1,7,143,0.0238,ok
+183,station,HAOCE 5,IB,500,30,HAOCE 5,williamson2022,0.1,7,143,0.0238,ok
+184,station,NUC 2200,IB,500,30,NUC 2200,williamson2022,0.1,7,143,0.0238,ok
+185,pure_water,pope1997,IB,500,30,AUTEC 7,pope1997,0.1,7,143,0.0204,ok
+186,pure_water,mason2016,IB,500,30,AUTEC 7,mason2016,0.1,7,143,0.02073,ok
+187,pure_water,lee2015,IB,500,30,AUTEC 7,lee2015,0.1,7,143,0.0187,ok
+188,aot,0.05,IB,500,30,AUTEC 7,williamson2022,0.05,7,143,0.0238,ok
+189,aot,0.3,IB,500,30,AUTEC 7,williamson2022,0.3,7,143,0.0238,ok
+190,wind,2,IB,500,30,AUTEC 7,williamson2022,0.1,2,143,0.0238,ok
+191,wind,15,IB,500,30,AUTEC 7,williamson2022,0.1,15,143,0.0238,ok
+192,sun_deg,0,IB,525,0,AUTEC 7,williamson2022,0.1,7,111,0.0418,ok
+193,sun_deg,60,IB,525,60,AUTEC 7,williamson2022,0.1,7,111,0.0418,ok
+194,station,AUTEC 8,IB,525,30,AUTEC 8,williamson2022,0.1,7,111,0.0418,ok
+195,station,HAOCE 5,IB,525,30,HAOCE 5,williamson2022,0.1,7,111,0.0418,ok
+196,station,NUC 2200,IB,525,30,NUC 2200,williamson2022,0.1,7,111,0.0418,ok
+197,pure_water,pope1997,IB,525,30,AUTEC 7,pope1997,0.1,7,111,0.0417,ok
+198,pure_water,mason2016,IB,525,30,AUTEC 7,mason2016,0.1,7,111,0.040525,ok
+199,pure_water,lee2015,IB,525,30,AUTEC 7,lee2015,0.1,7,111,0.04,ok
+200,aot,0.05,IB,525,30,AUTEC 7,williamson2022,0.05,7,111,0.0418,ok
+201,aot,0.3,IB,525,30,AUTEC 7,williamson2022,0.3,7,111,0.0418,ok
+202,wind,2,IB,525,30,AUTEC 7,williamson2022,0.1,2,111,0.0418,ok
+203,wind,15,IB,525,30,AUTEC 7,williamson2022,0.1,15,111,0.0418,ok
+204,sun_deg,0,IB,550,0,AUTEC 7,williamson2022,0.1,7,83,0.0588,ok
+205,sun_deg,60,IB,550,60,AUTEC 7,williamson2022,0.1,7,83,0.0588,ok
+206,station,AUTEC 8,IB,550,30,AUTEC 8,williamson2022,0.1,7,83,0.0588,ok
+207,station,HAOCE 5,IB,550,30,HAOCE 5,williamson2022,0.1,7,83,0.0588,ok
+208,station,NUC 2200,IB,550,30,NUC 2200,williamson2022,0.1,7,83,0.0588,ok
+209,pure_water,pope1997,IB,550,30,AUTEC 7,pope1997,0.1,7,83,0.0565,ok
+210,pure_water,mason2016,IB,550,30,AUTEC 7,mason2016,0.1,7,83,0.05629,ok
+211,pure_water,lee2015,IB,550,30,AUTEC 7,lee2015,0.1,7,83,0.0562,ok
+212,aot,0.05,IB,550,30,AUTEC 7,williamson2022,0.05,7,83,0.0588,ok
+213,aot,0.3,IB,550,30,AUTEC 7,williamson2022,0.3,7,83,0.0588,ok
+214,wind,2,IB,550,30,AUTEC 7,williamson2022,0.1,2,83,0.0588,ok
+215,wind,15,IB,550,30,AUTEC 7,williamson2022,0.1,15,83,0.0588,ok
+216,sun_deg,0,IB,575,0,AUTEC 7,williamson2022,0.1,7,61,0.08385,ok
+217,sun_deg,60,IB,575,60,AUTEC 7,williamson2022,0.1,7,61,0.08385,ok
+218,station,AUTEC 8,IB,575,30,AUTEC 8,williamson2022,0.1,7,61,0.08385,ok
+219,station,HAOCE 5,IB,575,30,HAOCE 5,williamson2022,0.1,7,61,0.08385,ok
+220,station,NUC 2200,IB,575,30,NUC 2200,williamson2022,0.1,7,61,0.08385,ok
+221,pure_water,pope1997,IB,575,30,AUTEC 7,pope1997,0.1,7,61,0.0772,ok
+222,aot,0.05,IB,575,30,AUTEC 7,williamson2022,0.05,7,61,0.08385,ok
+223,aot,0.3,IB,575,30,AUTEC 7,williamson2022,0.3,7,61,0.08385,ok
+224,wind,2,IB,575,30,AUTEC 7,williamson2022,0.1,2,61,0.08385,ok
+225,wind,15,IB,575,30,AUTEC 7,williamson2022,0.1,15,61,0.08385,ok
+226,sun_deg,0,IB,600,0,AUTEC 7,williamson2022,0.1,7,24,0.2224,ok
+227,sun_deg,60,IB,600,60,AUTEC 7,williamson2022,0.1,7,24,0.2224,ok
+228,station,AUTEC 8,IB,600,30,AUTEC 8,williamson2022,0.1,7,24,0.2224,ok
+229,station,HAOCE 5,IB,600,30,HAOCE 5,williamson2022,0.1,7,24,0.2224,ok
+230,station,NUC 2200,IB,600,30,NUC 2200,williamson2022,0.1,7,24,0.2224,ok
+231,pure_water,pope1997,IB,600,30,AUTEC 7,pope1997,0.1,7,24,0.2224,ok
+232,aot,0.05,IB,600,30,AUTEC 7,williamson2022,0.05,7,24,0.2224,ok
+233,aot,0.3,IB,600,30,AUTEC 7,williamson2022,0.3,7,24,0.2224,ok
+234,wind,2,IB,600,30,AUTEC 7,williamson2022,0.1,2,24,0.2224,ok
+235,wind,15,IB,600,30,AUTEC 7,williamson2022,0.1,15,24,0.2224,ok
+236,sun_deg,0,IB,625,0,AUTEC 7,williamson2022,0.1,7,19,0.28805,ok
+237,sun_deg,60,IB,625,60,AUTEC 7,williamson2022,0.1,7,19,0.28805,ok
+238,station,AUTEC 8,IB,625,30,AUTEC 8,williamson2022,0.1,7,19,0.28805,ok
+239,station,HAOCE 5,IB,625,30,HAOCE 5,williamson2022,0.1,7,19,0.28805,ok
+240,station,NUC 2200,IB,625,30,NUC 2200,williamson2022,0.1,7,19,0.28805,ok
+241,pure_water,pope1997,IB,625,30,AUTEC 7,pope1997,0.1,7,19,0.2834,ok
+242,aot,0.05,IB,625,30,AUTEC 7,williamson2022,0.05,7,19,0.28805,ok
+243,aot,0.3,IB,625,30,AUTEC 7,williamson2022,0.3,7,19,0.28805,ok
+244,wind,2,IB,625,30,AUTEC 7,williamson2022,0.1,2,19,0.28805,ok
+245,wind,15,IB,625,30,AUTEC 7,williamson2022,0.1,15,19,0.28805,ok
+246,sun_deg,0,IB,650,0,AUTEC 7,williamson2022,0.1,7,,,not_run: a less the pure water given is negative at 650 nm
+247,sun_deg,60,IB,650,60,AUTEC 7,williamson2022,0.1,7,,,not_run: a less the pure water given is negative at 650 nm
+248,station,AUTEC 8,IB,650,30,AUTEC 8,williamson2022,0.1,7,,,not_run: a less the pure water given is negative at 650 nm
+249,station,HAOCE 5,IB,650,30,HAOCE 5,williamson2022,0.1,7,,,not_run: a less the pure water given is negative at 650 nm
+250,station,NUC 2200,IB,650,30,NUC 2200,williamson2022,0.1,7,,,not_run: a less the pure water given is negative at 650 nm
+251,pure_water,pope1997,IB,650,30,AUTEC 7,pope1997,0.1,7,16,0.34,ok
+252,aot,0.05,IB,650,30,AUTEC 7,williamson2022,0.05,7,,,not_run: a less the pure water given is negative at 650 nm
+253,aot,0.3,IB,650,30,AUTEC 7,williamson2022,0.3,7,,,not_run: a less the pure water given is negative at 650 nm
+254,wind,2,IB,650,30,AUTEC 7,williamson2022,0.1,2,,,not_run: a less the pure water given is negative at 650 nm
+255,wind,15,IB,650,30,AUTEC 7,williamson2022,0.1,15,,,not_run: a less the pure water given is negative at 650 nm
+256,sun_deg,0,IB,675,0,AUTEC 7,williamson2022,0.1,7,,,not_run: a less the pure water given is negative at 675 nm
+257,sun_deg,60,IB,675,60,AUTEC 7,williamson2022,0.1,7,,,not_run: a less the pure water given is negative at 675 nm
+258,station,AUTEC 8,IB,675,30,AUTEC 8,williamson2022,0.1,7,,,not_run: a less the pure water given is negative at 675 nm
+259,station,HAOCE 5,IB,675,30,HAOCE 5,williamson2022,0.1,7,,,not_run: a less the pure water given is negative at 675 nm
+260,station,NUC 2200,IB,675,30,NUC 2200,williamson2022,0.1,7,,,not_run: a less the pure water given is negative at 675 nm
+261,pure_water,pope1997,IB,675,30,AUTEC 7,pope1997,0.1,7,14,0.448,ok
+262,aot,0.05,IB,675,30,AUTEC 7,williamson2022,0.05,7,,,not_run: a less the pure water given is negative at 675 nm
+263,aot,0.3,IB,675,30,AUTEC 7,williamson2022,0.3,7,,,not_run: a less the pure water given is negative at 675 nm
+264,wind,2,IB,675,30,AUTEC 7,williamson2022,0.1,2,,,not_run: a less the pure water given is negative at 675 nm
+265,wind,15,IB,675,30,AUTEC 7,williamson2022,0.1,15,,,not_run: a less the pure water given is negative at 675 nm
+266,sun_deg,0,IB,700,0,AUTEC 7,williamson2022,0.1,7,,,not_run: a less the pure water given is negative at 700 nm
+267,sun_deg,60,IB,700,60,AUTEC 7,williamson2022,0.1,7,,,not_run: a less the pure water given is negative at 700 nm
+268,station,AUTEC 8,IB,700,30,AUTEC 8,williamson2022,0.1,7,,,not_run: a less the pure water given is negative at 700 nm
+269,station,HAOCE 5,IB,700,30,HAOCE 5,williamson2022,0.1,7,,,not_run: a less the pure water given is negative at 700 nm
+270,station,NUC 2200,IB,700,30,NUC 2200,williamson2022,0.1,7,,,not_run: a less the pure water given is negative at 700 nm
+271,pure_water,pope1997,IB,700,30,AUTEC 7,pope1997,0.1,7,10,0.624,ok
+272,aot,0.05,IB,700,30,AUTEC 7,williamson2022,0.05,7,,,not_run: a less the pure water given is negative at 700 nm
+273,aot,0.3,IB,700,30,AUTEC 7,williamson2022,0.3,7,,,not_run: a less the pure water given is negative at 700 nm
+274,wind,2,IB,700,30,AUTEC 7,williamson2022,0.1,2,,,not_run: a less the pure water given is negative at 700 nm
+275,wind,15,IB,700,30,AUTEC 7,williamson2022,0.1,15,,,not_run: a less the pure water given is negative at 700 nm
+276,sun_deg,0,III,425,0,HAOCE 5,williamson2022,0.1,7,38,0.00855,ok
+277,sun_deg,60,III,425,60,HAOCE 5,williamson2022,0.1,7,38,0.00855,ok
+278,station,AUTEC 8,III,425,30,AUTEC 8,williamson2022,0.1,7,38,0.00855,ok
+279,station,HAOCE 5,III,425,30,HAOCE 5,williamson2022,0.1,7,38,0.00855,ok
+280,station,NUC 2200,III,425,30,NUC 2200,williamson2022,0.1,7,38,0.00855,ok
+281,pure_water,pope1997,III,425,30,HAOCE 5,pope1997,0.1,7,38,0.00478,ok
+282,pure_water,mason2016,III,425,30,HAOCE 5,mason2016,0.1,7,38,0.003375,ok
+283,pure_water,lee2015,III,425,30,HAOCE 5,lee2015,0.1,7,38,0.0033,ok
+284,aot,0.05,III,425,30,HAOCE 5,williamson2022,0.05,7,38,0.00855,ok
+285,aot,0.3,III,425,30,HAOCE 5,williamson2022,0.3,7,38,0.00855,ok
+286,wind,2,III,425,30,HAOCE 5,williamson2022,0.1,2,38,0.00855,ok
+287,wind,15,III,425,30,HAOCE 5,williamson2022,0.1,15,38,0.00855,ok
+288,sun_deg,0,III,450,0,HAOCE 5,williamson2022,0.1,7,44,0.0114,ok
+289,sun_deg,60,III,450,60,HAOCE 5,williamson2022,0.1,7,44,0.0114,ok
+290,station,AUTEC 8,III,450,30,AUTEC 8,williamson2022,0.1,7,44,0.0114,ok
+291,station,HAOCE 5,III,450,30,HAOCE 5,williamson2022,0.1,7,44,0.0114,ok
+292,station,NUC 2200,III,450,30,NUC 2200,williamson2022,0.1,7,44,0.0114,ok
+293,pure_water,pope1997,III,450,30,HAOCE 5,pope1997,0.1,7,44,0.00922,ok
+294,pure_water,mason2016,III,450,30,HAOCE 5,mason2016,0.1,7,44,0.00808,ok
+295,pure_water,lee2015,III,450,30,HAOCE 5,lee2015,0.1,7,44,0.0068,ok
+296,aot,0.05,III,450,30,HAOCE 5,williamson2022,0.05,7,44,0.0114,ok
+297,aot,0.3,III,450,30,HAOCE 5,williamson2022,0.3,7,44,0.0114,ok
+298,wind,2,III,450,30,HAOCE 5,williamson2022,0.1,2,44,0.0114,ok
+299,wind,15,III,450,30,HAOCE 5,williamson2022,0.1,15,44,0.0114,ok
+300,sun_deg,0,III,475,0,HAOCE 5,williamson2022,0.1,7,52,0.01425,ok
+301,sun_deg,60,III,475,60,HAOCE 5,williamson2022,0.1,7,52,0.01425,ok
+302,station,AUTEC 8,III,475,30,AUTEC 8,williamson2022,0.1,7,52,0.01425,ok
+303,station,HAOCE 5,III,475,30,HAOCE 5,williamson2022,0.1,7,52,0.01425,ok
+304,station,NUC 2200,III,475,30,NUC 2200,williamson2022,0.1,7,52,0.01425,ok
+305,pure_water,pope1997,III,475,30,HAOCE 5,pope1997,0.1,7,52,0.0114,ok
+306,pure_water,mason2016,III,475,30,HAOCE 5,mason2016,0.1,7,52,0.011189999999999999,ok
+307,pure_water,lee2015,III,475,30,HAOCE 5,lee2015,0.1,7,52,0.0099,ok
+308,aot,0.05,III,475,30,HAOCE 5,williamson2022,0.05,7,52,0.01425,ok
+309,aot,0.3,III,475,30,HAOCE 5,williamson2022,0.3,7,52,0.01425,ok
+310,wind,2,III,475,30,HAOCE 5,williamson2022,0.1,2,52,0.01425,ok
+311,wind,15,III,475,30,HAOCE 5,williamson2022,0.1,15,52,0.01425,ok
+312,sun_deg,0,III,500,0,HAOCE 5,williamson2022,0.1,7,52,0.0238,ok
+313,sun_deg,60,III,500,60,HAOCE 5,williamson2022,0.1,7,52,0.0238,ok
+314,station,AUTEC 8,III,500,30,AUTEC 8,williamson2022,0.1,7,52,0.0238,ok
+315,station,HAOCE 5,III,500,30,HAOCE 5,williamson2022,0.1,7,52,0.0238,ok
+316,station,NUC 2200,III,500,30,NUC 2200,williamson2022,0.1,7,52,0.0238,ok
+317,pure_water,pope1997,III,500,30,HAOCE 5,pope1997,0.1,7,52,0.0204,ok
+318,pure_water,mason2016,III,500,30,HAOCE 5,mason2016,0.1,7,52,0.02073,ok
+319,pure_water,lee2015,III,500,30,HAOCE 5,lee2015,0.1,7,52,0.0187,ok
+320,aot,0.05,III,500,30,HAOCE 5,williamson2022,0.05,7,52,0.0238,ok
+321,aot,0.3,III,500,30,HAOCE 5,williamson2022,0.3,7,52,0.0238,ok
+322,wind,2,III,500,30,HAOCE 5,williamson2022,0.1,2,52,0.0238,ok
+323,wind,15,III,500,30,HAOCE 5,williamson2022,0.1,15,52,0.0238,ok
+324,sun_deg,0,III,525,0,HAOCE 5,williamson2022,0.1,7,52,0.0418,ok
+325,sun_deg,60,III,525,60,HAOCE 5,williamson2022,0.1,7,52,0.0418,ok
+326,station,AUTEC 8,III,525,30,AUTEC 8,williamson2022,0.1,7,52,0.0418,ok
+327,station,HAOCE 5,III,525,30,HAOCE 5,williamson2022,0.1,7,52,0.0418,ok
+328,station,NUC 2200,III,525,30,NUC 2200,williamson2022,0.1,7,52,0.0418,ok
+329,pure_water,pope1997,III,525,30,HAOCE 5,pope1997,0.1,7,52,0.0417,ok
+330,pure_water,mason2016,III,525,30,HAOCE 5,mason2016,0.1,7,52,0.040525,ok
+331,pure_water,lee2015,III,525,30,HAOCE 5,lee2015,0.1,7,52,0.04,ok
+332,aot,0.05,III,525,30,HAOCE 5,williamson2022,0.05,7,52,0.0418,ok
+333,aot,0.3,III,525,30,HAOCE 5,williamson2022,0.3,7,52,0.0418,ok
+334,wind,2,III,525,30,HAOCE 5,williamson2022,0.1,2,52,0.0418,ok
+335,wind,15,III,525,30,HAOCE 5,williamson2022,0.1,15,52,0.0418,ok
+336,sun_deg,0,III,550,0,HAOCE 5,williamson2022,0.1,7,50,0.0588,ok
+337,sun_deg,60,III,550,60,HAOCE 5,williamson2022,0.1,7,50,0.0588,ok
+338,station,AUTEC 8,III,550,30,AUTEC 8,williamson2022,0.1,7,50,0.0588,ok
+339,station,HAOCE 5,III,550,30,HAOCE 5,williamson2022,0.1,7,50,0.0588,ok
+340,station,NUC 2200,III,550,30,NUC 2200,williamson2022,0.1,7,50,0.0588,ok
+341,pure_water,pope1997,III,550,30,HAOCE 5,pope1997,0.1,7,50,0.0565,ok
+342,pure_water,mason2016,III,550,30,HAOCE 5,mason2016,0.1,7,50,0.05629,ok
+343,pure_water,lee2015,III,550,30,HAOCE 5,lee2015,0.1,7,50,0.0562,ok
+344,aot,0.05,III,550,30,HAOCE 5,williamson2022,0.05,7,50,0.0588,ok
+345,aot,0.3,III,550,30,HAOCE 5,williamson2022,0.3,7,50,0.0588,ok
+346,wind,2,III,550,30,HAOCE 5,williamson2022,0.1,2,50,0.0588,ok
+347,wind,15,III,550,30,HAOCE 5,williamson2022,0.1,15,50,0.0588,ok
+348,sun_deg,0,III,575,0,HAOCE 5,williamson2022,0.1,7,41,0.08385,ok
+349,sun_deg,60,III,575,60,HAOCE 5,williamson2022,0.1,7,41,0.08385,ok
+350,station,AUTEC 8,III,575,30,AUTEC 8,williamson2022,0.1,7,41,0.08385,ok
+351,station,HAOCE 5,III,575,30,HAOCE 5,williamson2022,0.1,7,41,0.08385,ok
+352,station,NUC 2200,III,575,30,NUC 2200,williamson2022,0.1,7,41,0.08385,ok
+353,pure_water,pope1997,III,575,30,HAOCE 5,pope1997,0.1,7,41,0.0772,ok
+354,aot,0.05,III,575,30,HAOCE 5,williamson2022,0.05,7,41,0.08385,ok
+355,aot,0.3,III,575,30,HAOCE 5,williamson2022,0.3,7,41,0.08385,ok
+356,wind,2,III,575,30,HAOCE 5,williamson2022,0.1,2,41,0.08385,ok
+357,wind,15,III,575,30,HAOCE 5,williamson2022,0.1,15,41,0.08385,ok
+358,sun_deg,0,III,600,0,HAOCE 5,williamson2022,0.1,7,20,0.2224,ok
+359,sun_deg,60,III,600,60,HAOCE 5,williamson2022,0.1,7,20,0.2224,ok
+360,station,AUTEC 8,III,600,30,AUTEC 8,williamson2022,0.1,7,20,0.2224,ok
+361,station,HAOCE 5,III,600,30,HAOCE 5,williamson2022,0.1,7,20,0.2224,ok
+362,station,NUC 2200,III,600,30,NUC 2200,williamson2022,0.1,7,20,0.2224,ok
+363,pure_water,pope1997,III,600,30,HAOCE 5,pope1997,0.1,7,20,0.2224,ok
+364,aot,0.05,III,600,30,HAOCE 5,williamson2022,0.05,7,20,0.2224,ok
+365,aot,0.3,III,600,30,HAOCE 5,williamson2022,0.3,7,20,0.2224,ok
+366,wind,2,III,600,30,HAOCE 5,williamson2022,0.1,2,20,0.2224,ok
+367,wind,15,III,600,30,HAOCE 5,williamson2022,0.1,15,20,0.2224,ok
+368,sun_deg,0,III,625,0,HAOCE 5,williamson2022,0.1,7,16,0.28805,ok
+369,sun_deg,60,III,625,60,HAOCE 5,williamson2022,0.1,7,16,0.28805,ok
+370,station,AUTEC 8,III,625,30,AUTEC 8,williamson2022,0.1,7,16,0.28805,ok
+371,station,HAOCE 5,III,625,30,HAOCE 5,williamson2022,0.1,7,16,0.28805,ok
+372,station,NUC 2200,III,625,30,NUC 2200,williamson2022,0.1,7,16,0.28805,ok
+373,pure_water,pope1997,III,625,30,HAOCE 5,pope1997,0.1,7,16,0.2834,ok
+374,aot,0.05,III,625,30,HAOCE 5,williamson2022,0.05,7,16,0.28805,ok
+375,aot,0.3,III,625,30,HAOCE 5,williamson2022,0.3,7,16,0.28805,ok
+376,wind,2,III,625,30,HAOCE 5,williamson2022,0.1,2,16,0.28805,ok
+377,wind,15,III,625,30,HAOCE 5,williamson2022,0.1,15,16,0.28805,ok
+378,sun_deg,0,III,650,0,HAOCE 5,williamson2022,0.1,7,13,0.3315,ok
+379,sun_deg,60,III,650,60,HAOCE 5,williamson2022,0.1,7,13,0.3315,ok
+380,station,AUTEC 8,III,650,30,AUTEC 8,williamson2022,0.1,7,13,0.3315,ok
+381,station,HAOCE 5,III,650,30,HAOCE 5,williamson2022,0.1,7,13,0.3315,ok
+382,station,NUC 2200,III,650,30,NUC 2200,williamson2022,0.1,7,13,0.3315,ok
+383,pure_water,pope1997,III,650,30,HAOCE 5,pope1997,0.1,7,13,0.34,ok
+384,aot,0.05,III,650,30,HAOCE 5,williamson2022,0.05,7,13,0.3315,ok
+385,aot,0.3,III,650,30,HAOCE 5,williamson2022,0.3,7,13,0.3315,ok
+386,wind,2,III,650,30,HAOCE 5,williamson2022,0.1,2,13,0.3315,ok
+387,wind,15,III,650,30,HAOCE 5,williamson2022,0.1,15,13,0.3315,ok
+388,sun_deg,0,III,675,0,HAOCE 5,williamson2022,0.1,7,12,0.4198,ok
+389,sun_deg,60,III,675,60,HAOCE 5,williamson2022,0.1,7,12,0.4198,ok
+390,station,AUTEC 8,III,675,30,AUTEC 8,williamson2022,0.1,7,12,0.4198,ok
+391,station,HAOCE 5,III,675,30,HAOCE 5,williamson2022,0.1,7,12,0.4198,ok
+392,station,NUC 2200,III,675,30,NUC 2200,williamson2022,0.1,7,12,0.4198,ok
+393,pure_water,pope1997,III,675,30,HAOCE 5,pope1997,0.1,7,12,0.448,ok
+394,aot,0.05,III,675,30,HAOCE 5,williamson2022,0.05,7,12,0.4198,ok
+395,aot,0.3,III,675,30,HAOCE 5,williamson2022,0.3,7,12,0.4198,ok
+396,wind,2,III,675,30,HAOCE 5,williamson2022,0.1,2,12,0.4198,ok
+397,wind,15,III,675,30,HAOCE 5,williamson2022,0.1,15,12,0.4198,ok
+398,sun_deg,0,III,700,0,HAOCE 5,williamson2022,0.1,7,,,not_run: a less the pure water given is negative at 700 nm
+399,sun_deg,60,III,700,60,HAOCE 5,williamson2022,0.1,7,,,not_run: a less the pure water given is negative at 700 nm
+400,station,AUTEC 8,III,700,30,AUTEC 8,williamson2022,0.1,7,,,not_run: a less the pure water given is negative at 700 nm
+401,station,HAOCE 5,III,700,30,HAOCE 5,williamson2022,0.1,7,,,not_run: a less the pure water given is negative at 700 nm
+402,station,NUC 2200,III,700,30,NUC 2200,williamson2022,0.1,7,,,not_run: a less the pure water given is negative at 700 nm
+403,pure_water,pope1997,III,700,30,HAOCE 5,pope1997,0.1,7,9,0.624,ok
+404,aot,0.05,III,700,30,HAOCE 5,williamson2022,0.05,7,,,not_run: a less the pure water given is negative at 700 nm
+405,aot,0.3,III,700,30,HAOCE 5,williamson2022,0.3,7,,,not_run: a less the pure water given is negative at 700 nm
+406,wind,2,III,700,30,HAOCE 5,williamson2022,0.1,2,,,not_run: a less the pure water given is negative at 700 nm
+407,wind,15,III,700,30,HAOCE 5,williamson2022,0.1,15,,,not_run: a less the pure water given is negative at 700 nm

@@ -51,3 +51,10 @@ the QAA_v6 spreadsheet, both distributed by the IOCCG and placed in
 `sources/ioccg/`. It needs `xlrd` and `openpyxl`. Its output is not in the
 wheel. Running it must reproduce `tests/data/` byte for byte.
 
+
+`osoaa_closure.py` writes `tests/data/osoaa_closure/`, 408 runs of the
+radiative transfer code OSOAA (CNES, GPL v3, commit `8e4914f`) on
+Williamson & Hollins's IOPs, for DATA.md section 39 (DECISIONS.md section
+90). It needs a built copy of OSOAA, whose path it takes as an argument,
+and about half an hour on four cores; OSOAA is not part of the package
+and is not run in CI. Its output is not in the wheel.

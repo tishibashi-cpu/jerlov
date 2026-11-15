@@ -4987,3 +4987,101 @@ not on its particles. This goes into section 21, beside the extension it
 qualifies.
 
 **Version.** 1.15.2: documents only.
+
+## 90. Where the closure between IOPs and Kd fails: OSOAA runs, factor by factor (1.15.3): the plan
+
+The user asked on 2026-11-15 for the closure between the package's
+sources to be taken apart: Williamson & Hollins's a and b for a Jerlov
+type, put through a radiative transfer code, against the Kd Jerlov
+printed for the same type. A single run (section 87) gave 0.138 per m for
+III at 440 nm against Jerlov's 0.129 (1968) and 0.145 (1976). This plan
+asks which of the inputs a Jerlov type does not fix moves that number,
+and by how much. It does not settle which source is right; it measures
+how far each unrecorded choice reaches. The user chose on 2026-11-15:
+six types by twelve wavelengths; varying the sun, the phase function,
+the pure water and the sky and surface; Jerlov 1968 and 1976 both as the
+comparison; the runs kept in `tests/data` with a script in `tools/` and a
+new section of DATA.md, no new public name.
+
+**Why it is not circular.** Williamson & Hollins's a and b are averages
+of measured IOPs, grouped by Jerlov type (DATA.md section 9); they were
+not derived from Jerlov's Kd. Their measured points lie from 412 to 715
+nm, so the wavelengths are the twelve Jerlov printed inside that range,
+425 to 700 nm every 25.
+
+**The base runs**, 6 types (IB, II, III, 1C, 3C, 5C) by 12 wavelengths,
+72 runs of OSOAA (commit 8e4914f, as in section 86), each set out so that
+a Jerlov type's own values decide everything a type does decide:
+
+- a and b: Williamson & Hollins's, less OSOAA's own pure seawater at the
+  wavelength (its `fic/OSOAA_SEA_MOL_COEFFS_JUNE_2013.txt`), so that the
+  total OSOAA runs is the type's.
+- Phase function: the Petzold station whose b at 530 nm is nearest the
+  type's, as `reference_images.py` chooses (section 85), with the
+  polarization ratios of section 86's example. Petzold's is the total of
+  water and particles; OSOAA adds the water's own Rayleigh-like
+  scattering on top, so the particles' phase function is approximated by
+  the total, more so in the clearest water. Recorded, not corrected.
+- Sun at 30 degrees from the zenith, OSOAA's maritime aerosol of optical
+  thickness 0.1 at 550 nm, wind 7 m/s, as in section 86's run; a black
+  seabed deep enough that doubling its depth changes Kd by less than 0.1
+  percent (checked on one run of the clearest and one of the most turbid).
+- Kd: from OSOAA's Ed, the mean over the first penetration depth, from
+  just below the surface to where Ed falls to 1/e of its value there, and
+  as a second figure to where it falls to 10 percent. Jerlov's tables do
+  not record the layer either.
+
+**The factors**, each varied alone on IB and III at all twelve
+wavelengths, the others at the base:
+
+- the sun: 0 and 60 degrees from the zenith (Jerlov's tables do not record
+  it; DATA.md section 33);
+- the phase function: AUTEC 8 (the clearest), HAOCE 5 and NUC 2200 (the
+  most turbid but one), whatever the base station was;
+- the pure water: the total a made with Pope & Fry's, Mason et al.'s and
+  Lee et al.'s aw in place of the aw Williamson & Hollins built a on
+  (`pure_water_absorption`), that is a - aw_WH + aw_X, at the wavelengths
+  each covers (to 550 nm for Mason and Lee);
+- the sky and surface: aerosol optical thickness 0.05 and 0.3, and wind 2
+  and 15 m/s.
+
+About 300 runs; each takes about 15 s.
+
+**What is kept.** `tools/osoaa_closure.py` writes each run's two input
+files with the package's own writers, runs OSOAA where it is built (the
+path is the caller's), and reads `Flux.txt` with `read_osoaa_flux`. It
+keeps, in `tests/data/osoaa_closure/`, a table of every run's
+parameters and a table of Ed at the sea's levels, the total downward flux
+as OSOAA printed it; Kd is computed from them. The full outputs are not
+kept. The tests recompute every figure DATA.md quotes from those tables;
+they cannot rerun OSOAA, which is GPL Fortran outside the package and
+not in CI, and the new section says so.
+
+**What the section will report**, for each type and wavelength: OSOAA's Kd
+against Jerlov 1968 and 1976, and, factor by factor, the range over which
+each moves it, beside the gap between the two editions of Jerlov. Solonenko
+& Mobley's K_d^H, HydroLight's Kd from their own a and b, is listed for
+reference where it exists. The question the numbers answer: is the gap
+between IOPs and Kd larger than what the unrecorded conditions alone can
+make?
+
+**Version.** 1.15.3: no package code changes; a tool, test data, tests
+and DATA.md section 39.
+
+**Differences from the plan, noted after the code was written.**
+
+- The plan took for granted that a type's total could always be given to
+  OSOAA. It cannot from 650 nm: OSOAA adds its own pure water, which
+  there is above the aw Williamson & Hollins built a on (0.340 against
+  0.3315 per m at 650 nm, 0.624 against 0.5722 at 700), so a profile of
+  their total less OSOAA's water would be negative, and the writer
+  refuses it. Those 46 runs are kept as `not_run`, and a further 72 were
+  added: every type's contents on OSOAA's own water, which can always be
+  run. 408 runs in all, not about 300.
+- The pure water factor is "a - aw_WH + aw_X" as planned; the contents on
+  OSOAA's water are the same factor with aw_X OSOAA's.
+- The seabed check was made on IB at 425 nm and 5C at 675 nm, since 5C at
+  700 nm cannot be run.
+- A sentence of the first draft of DATA.md section 39, that the gap for
+  II and III was within the conditions, held only against 1976, and now
+  says so; a test checks it against both editions.
