@@ -4782,3 +4782,104 @@ outside CI.
   and is refused from 650 nm in IB. At 440 nm, taking off Williamson and
   Hollins's aw where OSOAA adds its own would leave a short by 9.6
   percent in IB.
+
+## 87. Reading OSOAA's results (1.15.0): the plan
+
+NEXT_STEPS section 0, item 5, its second half: the outputs of a
+radiative transfer code read back, so that what the code made of a
+Jerlov type's IOPs can be set beside what the type's own sources
+measured. The user chose on 2026-11-15 the recommended course on four
+questions: OSOAA's fluxes and both of its standard radiance files; the
+values returned as OSOAA prints them, normalized, with no solar
+irradiance supplied; one real run kept in `tests/data` and not shipped;
+HydroLight's outputs not read.
+
+**HydroLight is left out.** Neither HydroLight nor a file it wrote was
+available, and a reader written from a description alone, never given a
+real file, would be an untested promise (as PlanarRad was in section
+86).
+
+**What OSOAA writes**, from its User Manual V2.0 (2025-01-30) and its
+source at commit 8e4914f, checked against the run of section 86:
+
+- `Advanced_outputs/Flux.txt` (§3.5.6, pp. 75-76): five header lines,
+  then for each level its number, its altitude (positive in the
+  atmosphere, negative in the sea, in m), and the direct, diffuse and
+  total downward fluxes, the direct, diffuse and total upward fluxes,
+  and their ratio Eu/Ed. The fluxes are "normalized to the solar
+  irradiance at TOA": the extraterrestrial irradiance is pi, so the
+  direct flux at the top of the atmosphere is pi cos(theta_s) (2.72070
+  for the run's sun at 30 degrees; pi cos 30 = 2.72070). The manual gives
+  the format as `2X,I4,1X,F14.5,2X,7(2X,E14.6E3)`; the source writes
+  F12.5 (`OSOAA_SOS.F`, FORMAT 600). Both are read by splitting on white
+  space.
+- The surface appears twice: a level at altitude 0 above it and, in the
+  sea, two levels printed `-0.00000`, at optical thicknesses 0 and 1e-4
+  (`PROFILE_SEA.txt`). The sign of the printed zero tells the sea from
+  the air.
+- "Direct" is not the unscattered beam. OSOAA always truncates the
+  forward peak of the hydrosols' phase function, and counts the light
+  so removed as transmitted (§4.2.3, p. 96): in the run, the direct flux
+  in the sea falls at 0.144 per m, not at c / cos(theta_w) = 0.467. The
+  totals Ed and Eu are not affected; the reader says so and computes Kd
+  from the totals only.
+- `Standard_outputs/RESLUM_vsZ.txt` and `RESLUM_vsVZA.txt` (§3.5.1,
+  pp. 57-64): a header stating the relative azimuth, and the fixed viewing
+  zenith angle or depth, then rows of the depth (m, negative) or the
+  viewing zenith angle (degrees, signed by the half-plane, §3.5.1), the
+  scattering angle, I = pi L / Esun (1/sr), the reflectance pi L / Ed,
+  the degree of polarization (percent), the polarized intensity pi
+  L_pol / Esun and the polarized reflectance.
+- `ListParam.txt` lists the run's parameters; it prints the
+  `-HYD.UserProfile` file under the label `-HYD.ExtData` (two lines of
+  that label in the run). The package does not read it: the example
+  does, for the wavelength and the sun.
+
+**The functions**, each reading the text of one file, as the writers of
+section 86 return text:
+
+- `read_osoaa_flux(text, /)` -> `OsoaaFlux`: the levels, the altitudes
+  as printed, a mask of the levels in the sea, and the seven columns as
+  printed, normalized as OSOAA normalizes them. `OsoaaFlux.kd(upper_m,
+  lower_m)`: the mean Kd of the total downward flux between two depths
+  (positive, m) inside the sea's levels, ln Ed interpolated linearly
+  between levels, the first sea level standing for depth 0; outside the
+  levels, refused.
+- `read_osoaa_radiance_vs_depth(text, /)` -> `OsoaaRadianceProfile`: the
+  relative azimuth and viewing zenith angle of the header, and each row's
+  depth (positive, m), scattering angle, normalized radiance,
+  reflectance, degree of polarization, normalized polarized radiance and
+  polarized reflectance.
+- `read_osoaa_radiance_vs_vza(text, /)` -> `OsoaaRadianceScan`: the two
+  relative azimuths and the altitude or depth of the header, and the
+  same columns against the signed viewing zenith angle.
+
+No conversion to W/m2 or W/m2/sr: the manual leaves Esun to the user,
+and so does the package. A file whose first line is not the one its
+reader expects, a row with the wrong number of values, a Fortran field
+overflow (`***`) or a value that is not finite is refused, naming the
+line.
+
+**The data.** One run, the files of section 86's example run by OSOAA:
+`Flux.txt`, both `RESLUM` files, `ListParam.txt`, and the two input
+files, in `tests/data/osoaa_iii_440/`, for the tests only (about 45
+kB). OSOAA is GPL v3; these are its results, not its code. DATA.md
+section 38 gains the run's parameters and what the readers recover.
+
+**The example.** `radiative_transfer_inputs.py` gains `--read DIR`, a
+results directory: Kd from OSOAA's Ed over the run's depths at its
+wavelength, beside Jerlov's (1976) Kd and Solonenko & Mobley's (2015) for
+the type, the irradiance reflectance Eu/Ed and the Q factor just below
+the surface. In the run: 0.138 per m from 0 to 50 m, against 0.145 and
+0.130. Without `--read` it does what it did. The examples stay
+twenty-seven.
+
+**Checks.** The run read back: the totals equal direct plus diffuse to
+the printed digits; the direct flux at the top of the atmosphere is pi
+cos 30 degrees; the printed Eu/Ed is the ratio of the printed totals;
+the reflectance column of `RESLUM_vsZ` is pi I / Ed with Ed from
+`Flux.txt` at the same depth; the input files are what section 86's
+functions write today, byte for byte; refusals of each kind.
+
+**Version.** 1.15.0: three readers and three result classes, six public
+names, 122 in all.
