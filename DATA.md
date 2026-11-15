@@ -2183,6 +2183,21 @@ What was not checked: the radiances themselves against any other code
 or measurement, other wavelengths, other stations, and polarization
 ratios other than these.
 
+**OSOAA truncates Petzold's phase functions too far (found later).**
+OSOAA always truncates the forward peak of the hydrosols' phase function
+(User Manual V2.0, section 4.2.3, p. 96), and each run reports the
+truncation coefficient in `Advanced_outputs/PM_PHYTO.txt`, twice the share
+of the scattering treated as unscattered. With Petzold's functions it was
+1.930 to 1.956 in all 362 runs of section 39's first version (96.5 to
+97.8 percent), although those functions hold 84 to 89 percent of their
+scattering within 23 degrees. Narrowing OSOAA's hydrosol truncation
+angles from 32 and 23 to 8 and 5 degrees (`CTE_HYD_MU1_TRONCA` and
+`CTE_HYD_MU2_TRONCA` in `inc/OSOAA.h`, rebuilt) left the share at 95 to
+96 percent and Kd unchanged, and so did adding a 0 degree row to the
+phase function. Its Kd then fall below a Monte Carlo's, by up to 23
+percent (section 39). Why OSOAA treats these functions so was not traced.
+`osoaa_phase_function` warns of it in its docstring.
+
 **HydroLight** was not available and was not run. `hydrolight_ac9_file`
 follows the "standard format for ac-9 data" of the HydroLight 5.1
 Technical Documentation (Mobley 2012), section 7.3, pp. 55-56; its tests
@@ -2225,90 +2240,89 @@ What the readers recover from it:
   0.123. The run's sun, sky and surface are its own, and a Jerlov type
   does not fix them.
 
-## 39. Williamson & Hollins's IOPs through OSOAA, against Jerlov's Kd (note)
+## 39. Williamson & Hollins's IOPs against Jerlov's Kd (note)
 
-Does a Jerlov type's a and b, put through a radiative transfer code, give
-back the Kd Jerlov printed for it, and which of the conditions a type does
-not fix moves the answer most (DECISIONS.md section 90)? OSOAA (commit
-`8e4914f`, the build of section 38) was run 408 times by
-`tools/osoaa_closure.py`, with the package's own writers for its inputs;
-`tests/data/osoaa_closure/` keeps every run's parameters (`runs.csv`) and
-OSOAA's Ed at every level in the sea (`ed.csv`), and the tests recompute
-every figure below from them. OSOAA is not in CI; the runs are a record.
+Does a Jerlov type's a and b, put through a radiative transfer
+calculation, give back the Kd Jerlov printed for it, and which of the
+conditions a type does not fix move the answer most? The first answer to
+this, in release 1.15.3, was wrong; it is kept at the end of this section
+with the reason (DECISIONS.md sections 90 and 92).
 
-**The runs.** Williamson & Hollins's a and b for IB, II, III, 1C, 3C and 5C
-at the twelve wavelengths Jerlov printed inside their measured 412-715 nm,
-425 to 700 nm every 25. At the base: their total a and b, run by taking
-off OSOAA's own pure seawater, which OSOAA adds back; the phase function of
-the Petzold station whose b at 530 nm is nearest the type's (AUTEC 7 for
-IB, HAOCE 11 for II, HAOCE 5 for III, 1C and 3C, NUC 2240 for 5C); the sun
-30 degrees from the zenith; OSOAA's maritime aerosol of optical thickness
-0.1 at 550 nm; a wind of 7 m/s; a black seabed six penetration depths
-down (doubling it moved Kd by 0.003 percent for IB at 425 nm and 0.0005
-percent for 5C at 675 nm). Kd is the mean over the first penetration
-depth, where OSOAA's Ed falls to 1/e of its value just below the surface;
-taken to 10 percent instead it differs by -0.10 to +0.82 percent. Then,
-on IB and III alone, one factor at a time: the sun at 0 and 60 degrees;
-the phase function of AUTEC 8, HAOCE 5 and NUC 2200; the total a made
-with Pope & Fry's, Mason et al.'s or Lee et al.'s aw in place of
-Williamson & Hollins's, and, on every type, with OSOAA's own; aerosol
-0.05 and 0.3; wind 2 and 15 m/s.
+**Williamson & Hollins's waters were chosen by their Kd.** Their code and
+data (figshare `10.6084/m9.figshare.20290782`, `20221121-Dstl_MIOP_code_v3.py`
+and `ip_jerlov.csv`) assign each measurement campaign the Jerlov type whose
+Kd is nearest its own measured Kd in the upper 10 m, by mean absolute
+percentage error, and keep it only within 25 percent (their paper, section
+2.E). The reference Kd in `ip_jerlov.csv` equal `jerlov1976_kd.csv` at
+every wavelength compared here. Their a and b are then averages over the
+campaigns so chosen; they are not derived from Jerlov's Kd, but they are
+selected by it. The paper itself tests the consistency (section 3.D,
+Table 5): from the averaged a and b, through three analytic relations
+whose parameters they fitted, Kd within 14 to 17 percent of Jerlov's, as
+a mean absolute percentage error.
 
-**46 runs could not be made.** OSOAA always adds its own pure water, and
-from 650 nm it is above the aw Williamson & Hollins built a on (0.340
-against 0.3315 per m at 650 nm, 0.624 against 0.5722 at 700). Where a
-type's total a is below OSOAA's water, as in IB and II from 650 nm and in
-every type at 700 nm, the profile OSOAA would need is negative, and the
-writer refuses it. Those runs are kept in `runs.csv` as `not_run`; the
-type's own contents on OSOAA's water, which can always be run, cover them.
+**The calculation.** `tools/kd_monte_carlo.py`, a Monte Carlo written for
+this: homogeneous, infinitely deep water, a collimated beam at the
+refracted sun, scattering angles drawn from a Petzold station's function,
+no sky, no atmosphere, no surface reflection. With no scattering its Kd is
+a / mu0 within the noise; against Morel and Loisel's relation for the
+first optical depth, as Williamson & Hollins print it (their Eq. 2), it
+agrees within 1 percent with NUC 2240's phase function for b/a from 0.5
+to 10, within 4 percent with AUTEC 7's and up to 8 percent lower with
+HAOCE 5's, following each function's backscattering. `tools/kd_closure.py`
+made 240 runs, kept with their seeds and Kd in
+`examples/data/kd_closure/runs.csv`: Williamson & Hollins's a and b for
+IB, II, III, 1C, 3C and 5C at the twelve wavelengths Jerlov printed inside
+their measured 412-715 nm, the Petzold station nearest each type's b at
+530 nm, the sun 30 degrees from the zenith; then, on IB and III, the sun
+at 0 and 60 degrees, the stations AUTEC 8, HAOCE 5 and NUC 2200, and the
+pure water of Pope & Fry, Mason et al. or Lee et al. under the type's
+contents. Kd is the mean over the first penetration depth.
+`examples/closure_with_jerlov_kd.py` reads the runs and prints every
+figure below.
 
-**OSOAA does what a simple estimate says.** At every base run its Kd is
-within -7.5 to +5.5 percent of (a + bb) / cos(theta_w), with bb the
-station's B/S times b and theta_w the refracted sun. The comparison below
-is between the data, not a fault in the run.
-
-**Against Jerlov.** OSOAA's Kd over Jerlov's, at the twelve wavelengths
-(fewer where runs could not be made):
+**Against Jerlov.** The computed Kd over Jerlov's, at the twelve
+wavelengths:
 
 | Type | Over Jerlov (1976) | Over Jerlov (1968) |
 |---|---|---|
-| IB | 1.00 to 1.36 | 0.99 to 1.46 |
-| II | 0.87 to 1.07 | 0.78 to 1.21 |
-| III | 0.79 to 0.95 | 0.61 to 1.05 |
-| 1C | 0.54 to 1.01 | 0.65 to 1.04 |
-| 3C | 0.48 to 0.98 | 0.61 to 0.98 |
-| 5C | 0.54 to 0.94 | 0.50 to 0.93 |
+| IB | 0.98 to 1.47 | 0.99 to 1.56 |
+| II | 0.92 to 1.10 | 0.81 to 1.22 |
+| III | 0.84 to 0.98 | 0.65 to 1.09 |
+| 1C | 0.56 to 1.03 | 0.72 to 1.11 |
+| 3C | 0.51 to 1.01 | 0.66 to 1.01 |
+| 5C | 0.64 to 1.02 | 0.64 to 1.01 |
 
-The clearest type in the blue gives more attenuation than Jerlov printed,
-by up to 36 percent against 1976 (IB at 450 nm), and the coastal types
-give much less, down to half (3C at 425 nm, 0.48).
+**What the unrecorded conditions can do**, on IB and III, each alone:
 
-**What the unrecorded conditions can do.** On IB and III, at every
-wavelength, each factor alone moves OSOAA's Kd by:
-
-| Factor | Range |
+| Condition | Change in Kd |
 |---|---|
-| The sun, 0 or 60 degrees against 30 | -7.1 to +20.7 percent |
-| The pure water under the type's contents | -12.0 to +6.2 percent |
-| The Petzold station | -0.6 to +1.4 percent |
-| Aerosol, 0.05 or 0.3 | -0.2 to +0.8 percent |
-| Wind, 2 or 15 m/s | -0.3 to +0.5 percent |
+| The sun, 0 or 60 degrees against 30 | -7.7 to +22.4 percent |
+| The Petzold station's phase function | -6.4 to +14.5 percent |
+| The pure water under the type's contents | -10.9 to +9.3 percent |
 
-Jerlov's own two editions differ more than any of them at some
-wavelengths: 1976 over 1968 is 0.99 to 1.32 for IB and 0.77 to 1.15 for
-III at these wavelengths.
+Taken to 10 percent of the surface light instead of the first penetration
+depth, Kd moves by +0.3 to +8.0 percent.
 
-**What it says.** The sun matters most and the phase function, the sky
-and the wind hardly at all; Kd is close to (a + bb) / cos(theta_w), and
-bb is a few percent of a. Against Jerlov (1976), the gap for II and III
-is within what the sun and the pure water together can make, at most a
-factor of 1.28 (1.207 times 1.062); against 1968 it is not for III, at
-0.61 at 575 nm. For IB in the blue and for the coastal types it is not
-against either edition: no condition varied here takes 3C or 5C's Kd up by the half it
-lacks, and the backscatter ratio needed (about 0.1 for 5C at 550 nm) is
-over twice the largest Petzold measured (0.044). Williamson & Hollins's
-IOPs for those types and the Kd Jerlov printed for them are not the same
-water, by more than the conditions a type leaves open. Why, the package
-cannot say; both are summaries of many waters under one type's name.
-Nothing in the package changes because of it; it is recorded so that no
-one takes either source as the other's confirmation.
+**What it says.** Together the three conditions move Kd by 0.77 to 1.53
+times. Against Jerlov (1976) the computed Kd lies outside that reach only
+at the blue end: IB at 425, 450 and 475 nm (1.31 to 1.47 times Jerlov's),
+1C at 425 nm (0.56), 3C at 425 and 450 nm (0.51 and 0.62) and 5C at 425 nm
+(0.64). Elsewhere, Williamson & Hollins's IOPs and Jerlov's Kd are
+consistent within the conditions neither records. At the blue end, the
+clearest type's measured IOPs attenuate more than Jerlov's Kd, and the
+coastal types' less. Why, the package cannot say.
+
+**What 1.15.3 said, and why it was wrong.** Release 1.15.3 made this
+comparison with OSOAA (CNES, commit `8e4914f`, section 38), in 408 runs
+kept in `examples/data/osoaa_closure/`, and concluded that the coastal
+types' IOPs give down to half of Jerlov's Kd, that the phase function
+hardly matters (under 1.5 percent), and that the backscatter ratio needed
+was beyond any Petzold measured. OSOAA truncates the hydrosols' forward
+peak; in every one of its runs it treated 96.5 to 97.8 percent of their
+scattering as unscattered (`truncation.csv`, from each run's
+`PM_PHYTO.txt`), where Petzold's functions hold 84 to 89 percent within
+23 degrees. Its Kd were 0.7 to 23.1 percent below the Monte Carlo's in
+the 62 base runs it could make, the more so the larger b/a, and with the
+scattering truncated, the phase function could not show its effect. Those
+runs are kept as the record. The conclusions above replace them.

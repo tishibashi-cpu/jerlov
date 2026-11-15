@@ -31,6 +31,8 @@ How the package is built
   considered and rejected.
 - DATA.md_: what is known about each shipped table, and what is wrong with
   it.
+- OPEN_QUESTIONS.md_: where the sources disagree, by how much, and how
+  much of it the unrecorded conditions could explain.
 - CONTRIBUTING.md_: what goes in, what it takes, and what a release may
   change.
 

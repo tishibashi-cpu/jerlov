@@ -4,6 +4,49 @@ Every release is archived on Zenodo under the concept DOI
 [10.5281/zenodo.22321312](https://doi.org/10.5281/zenodo.22321312), which
 always resolves to the latest version.
 
+## 1.15.4 — 2026-11-15
+
+Open questions in a document of their own, with an example; and the
+closure of 1.15.3 corrected (DECISIONS.md sections 91 and 92). No package
+code, value or name changes; one docstring gains a warning.
+
+**Corrected.** The comparison of 1.15.3 between Williamson & Hollins's
+IOPs and Jerlov's Kd rested on OSOAA, whose Kd were too low: it treated
+96.5 to 97.8 percent of the scattering of Petzold's phase functions as
+unscattered, and its Kd fell 0.7 to 23.1 percent below a Monte Carlo
+checked against Morel and Loisel's relation. Done again with that Monte
+Carlo (240 runs), the two sources are consistent within what the
+unrecorded sun, phase function and pure water can explain, except at the
+blue end: IB at 425-475 nm and the coastal types at 425-450 nm. 1.15.3's
+conclusion that the coastal types' IOPs describe different water, and
+that the phase function hardly matters, was wrong. DATA.md sections 38
+and 39 say so.
+
+**Documents.**
+
+- `OPEN_QUESTIONS.md`: where the sources disagree, by how much, and how
+  much of it the conditions a source leaves unrecorded could explain.
+  Three questions so far: the absorption of pure water in the violet, the
+  scattering below Petzold's first angle, and whether Williamson &
+  Hollins's IOPs give back Jerlov's Kd. Each sets out the question, what
+  was done, what was found, what is not known and where the details are;
+  every figure is recomputed by a test.
+- A page of the documentation site, "Open questions", lists them with
+  their findings and links to the document.
+- `osoaa_phase_function`'s docstring warns of OSOAA's truncation.
+
+**Examples.** `closure_with_jerlov_kd.py`, the twenty-eighth: reads the
+Monte Carlo runs and prints, computing every figure, the computed Kd
+beside Jerlov's in both editions, how far each unrecorded condition moves
+it, where the gap is larger, and OSOAA's Kd beside the Monte Carlo's. It
+needs the repository, for those runs.
+
+**Tools and data.** `tools/kd_monte_carlo.py` and `tools/kd_closure.py`;
+the runs in `examples/data/kd_closure/`. The OSOAA runs of 1.15.3 move
+from `tests/data/osoaa_closure/` to `examples/data/osoaa_closure/`, with
+each run's truncation coefficient, as the record. None of it is in the
+wheel.
+
 ## 1.15.3 — 2026-11-15
 
 Where the closure between IOPs and Kd fails: Williamson & Hollins's a and b

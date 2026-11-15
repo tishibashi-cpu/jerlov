@@ -52,9 +52,16 @@ the QAA_v6 spreadsheet, both distributed by the IOCCG and placed in
 wheel. Running it must reproduce `tests/data/` byte for byte.
 
 
-`osoaa_closure.py` writes `tests/data/osoaa_closure/`, 408 runs of the
+`osoaa_closure.py` writes `examples/data/osoaa_closure/`, 408 runs of the
 radiative transfer code OSOAA (CNES, GPL v3, commit `8e4914f`) on
 Williamson & Hollins's IOPs, for DATA.md section 39 (DECISIONS.md section
 90). It needs a built copy of OSOAA, whose path it takes as an argument,
 and about half an hour on four cores; OSOAA is not part of the package
-and is not run in CI. Its output is not in the wheel.
+and is not run in CI. Its output is not in the wheel; `examples/closure_with_jerlov_kd.py` reads it.
+
+`kd_monte_carlo.py` computes the Kd of a homogeneous water by Monte Carlo,
+and `python tools/kd_monte_carlo.py --check` runs its checks; `kd_closure.py`
+uses it to write `examples/data/kd_closure/runs.csv`, the 240 runs of
+DATA.md section 39 (DECISIONS.md section 92), in about forty minutes on four
+cores. Each run is seeded. `osoaa_closure.py`'s runs are kept as the record
+of the version that was wrong.

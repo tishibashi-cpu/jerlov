@@ -13,8 +13,9 @@ water, the sky and the surface.
 OSOAA_ROOT is a built copy of CNES's RadiativeTransferCode-OSOAA (GPL v3;
 commit 8e4914f was used), WORK_DIR a scratch folder for its runs. OSOAA is
 not part of this package, and CI cannot run this script; it writes
-``tests/data/osoaa_closure/runs.csv`` and ``ed.csv``, which the tests
-read.
+``examples/data/osoaa_closure/runs.csv`` and ``ed.csv``, which
+``examples/closure_with_jerlov_kd.py`` and the tests read (DECISIONS.md
+section 91).
 """
 
 from __future__ import annotations
@@ -32,7 +33,7 @@ sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent.parent))
 
 import jerlov  # noqa: E402
 
-OUT = (pathlib.Path(__file__).resolve().parent.parent / "tests" / "data"
+OUT = (pathlib.Path(__file__).resolve().parent.parent / "examples" / "data"
        / "osoaa_closure")
 TYPES = ("IB", "II", "III", "1C", "3C", "5C")
 #: Jerlov's printed wavelengths inside Williamson & Hollins's measured

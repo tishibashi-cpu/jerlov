@@ -678,9 +678,11 @@ python examples/rgb_versus_spectral.py         what RGB rendering does to colour
 python examples/water_lookup_tables.py         tables for games and real-time shaders
 python examples/phase_function_choice.py       Henyey-Greenstein against Petzold
 python examples/reference_images.py            measured materials through three types
+python examples/radiative_transfer_inputs.py   files for OSOAA and HydroLight
+python examples/closure_with_jerlov_kd.py      an open question: IOPs against Jerlov's Kd
 ```
 
-Twenty-seven scripts, each aimed at a different reader; `examples/README.md` says
+Twenty-eight scripts, each aimed at a different reader; `examples/README.md` says
 which to start with. CI runs all of them on every push, so an example that has
 stopped working is a failed build. Every one ends with the assumptions it
 made.
@@ -694,6 +696,11 @@ questions the first edition of Jerlov settled, and the rest notes.
 
 `DECISIONS.md` records why the package is shaped the way it is, including the
 alternatives that were rejected and why.
+
+`OPEN_QUESTIONS.md` gathers what comparing the sources found: where they
+disagree, by how much, and how much of it the conditions a source leaves
+unrecorded could explain. The package does not settle these questions;
+it puts numbers on them, each recomputed by a test.
 
 ## Contributing, and reporting a wrong number
 

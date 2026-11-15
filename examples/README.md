@@ -1,7 +1,8 @@
 # Examples
 
-Twenty-seven scripts. Each runs against the installed package and needs nothing beyond
-NumPy.
+Twenty-eight scripts. Each runs against the installed package and needs nothing beyond
+NumPy; `closure_with_jerlov_kd.py` also reads results kept beside it in
+`examples/data/`, so it needs the repository.
 
 ```
 python examples/sources_disagree.py
@@ -30,6 +31,7 @@ python examples/rgb_versus_spectral.py
 python examples/water_lookup_tables.py
 python examples/phase_function_choice.py
 python examples/reference_images.py
+python examples/closure_with_jerlov_kd.py
 ```
 
 CI runs all of them on every push, so an example that has stopped working is a
@@ -379,6 +381,18 @@ in `tests/data`, at 440 nm with the sun at 30 degrees, Ed falls with a
 mean Kd of **0.138** per m from 0 to 50 m, between Jerlov's 0.129 (1968)
 and 0.145 (1976); HydroLight made 0.123 of Solonenko & Mobley's IOPs for
 the same type.
+
+**`closure_with_jerlov_kd.py`** — an open question with numbers
+(`OPEN_QUESTIONS.md`): do Williamson & Hollins's measured a and b, put
+through a radiative transfer calculation, give back the Kd Jerlov printed
+for the same types? It reads 240 Monte Carlo runs kept in
+`examples/data/kd_closure/` and computes every figure. Against Jerlov
+(1976) the computed Kd is **0.98 to 1.47** times Jerlov's for IB and 0.84
+to 0.98 for III, but down to **0.51** for 3C at 425 nm. The sun moves Kd by
+-7.7 to +22.4 percent, the phase function by -6.4 to +14.5 and the pure
+water by -10.9 to +9.3; together they cover the gap except at the blue
+end. The OSOAA runs of 1.15.3, kept beside them, gave Kd up to 23.1
+percent too low.
 
 ## What they do not show
 

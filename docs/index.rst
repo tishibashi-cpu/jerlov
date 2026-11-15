@@ -68,6 +68,7 @@ Where to go next
 
    api
    examples
+   open_questions
 
 .. toctree::
    :maxdepth: 1
