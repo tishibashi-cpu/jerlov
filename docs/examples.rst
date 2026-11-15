@@ -1,7 +1,7 @@
 Examples
 ========
 
-Twenty-five scripts, each for one kind of reader. Each runs against the
+Twenty-six scripts, each for one kind of reader. Each runs against the
 installed package, needs nothing beyond NumPy, and prints what it
 computes. CI runs every one of them, so an example that has stopped
 working is a failed build rather than something a reader discovers. They
@@ -69,3 +69,5 @@ are in the repository, not in the installed package; from a clone:
      - `water_lookup_tables.py <https://github.com/tishibashi-cpu/jerlov/blob/main/examples/water_lookup_tables.py>`_
    * - choose a phase function for light in water
      - `phase_function_choice.py <https://github.com/tishibashi-cpu/jerlov/blob/main/examples/phase_function_choice.py>`_
+   * - need reference colours to check a rendering or photograph against
+     - `reference_images.py <https://github.com/tishibashi-cpu/jerlov/blob/main/examples/reference_images.py>`_

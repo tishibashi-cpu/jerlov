@@ -3,7 +3,7 @@
 What every shipped table is, where it came from, what was verified, and what
 is known to be wrong with it.
 
-Thirty-six entries are recorded below. Thirteen are confirmed defects, three were
+Thirty-seven entries are recorded below. Thirteen are confirmed defects, three were
 open questions that the first edition of Jerlov settled, and the rest are
 notes rather than defects. None of them is repaired silently: values that
 could be recovered carry `status = reconstructed` and say how, values that
@@ -48,6 +48,7 @@ could not are `missing`, and values that are used but doubtful are `suspect`.
 | `bricaud1995_aph.csv` | A and B of a*ph = A [Chl]^-B, with r2, Bricaud et al. (1995) Table 2. 2 nm, 400-700 nm, and 675 nm | 152 |
 | `lee2015_aw.csv` | "Pure" seawater absorption inverted from Rrs, Lee et al. (2015) Table 1, with the smoothed column and Delta aw. 5 nm, 350-550 nm | 41 |
 | `gregg1990_table1.csv` | Extraterrestrial solar irradiance and the absorption coefficients of ozone, water vapour and oxygen, Gregg & Carder (1990) Table 1. 1 nm, 350-700 nm | 351 |
+| `usgs2017_reflectance.csv` | Absolute reflectance of ten materials, the USGS Spectral Library Version 7's ASD records, as measured. 1 nm, 350-830 nm | 4810 |
 
 The four tables drawn from the two Dstl datasets (`williamson2022_iop`,
 `williamson2022_measured`, `solonenko2015_iop` and `williamson2023_depth`)
@@ -125,6 +126,10 @@ one table each and say what kind of row it is.
 
 - **Bricaud et al. 1995.** J. Geophys. Res. 100(C7), 13321-13332, DOI
   `10.1029/95JC00463`. Table 2; see section 31.
+
+- **USGS Spectral Library Version 7 (Kokaly et al. 2017).** U.S.
+  Geological Survey data release, DOI `10.5066/F7RR1WDJ`, CC0 1.0; report
+  USGS Data Series 1035, DOI `10.3133/ds1035`. Ten records; see section 37.
 
 - **Pope & Fry 1997, Smith & Baker 1981, Mason, Cone & Fry 2016, Lee et al.
   2015.** The pure water absorption spectra of section 29, each with its
@@ -2052,3 +2057,64 @@ transmitted light alone.
   found. One of the runs at 4096 samples crashed
   in pbrt and was repeated. The camera's medium must be named before
   the `Camera` directive, or the camera is in vacuum.
+
+## 37. Measured reflectances of ten materials: the USGS Spectral Library (note)
+
+`usgs2017_reflectance.csv` holds ten spectra from Kokaly, R. F., Clark,
+R. N., Swayze, G. A., Livo, K. E., Hoefen, T. M., Pearson, N. C., Wise,
+R. A., Benzel, W. M., Lowers, H. A., Driscoll, R. L., and Klein, A. J.
+(2017), USGS Spectral Library Version 7 Data, U.S. Geological Survey data
+release, DOI `10.5066/F7RR1WDJ`, which its metadata marks CC0 1.0; the
+report is USGS Data Series 1035, DOI `10.3133/ds1035`.
+`usgs2017_reflectance(material)` returns one (DECISIONS.md section 85).
+
+**What was taken.** From `ASCIIdata_splib07a.zip` (21,812,828 bytes, on
+ScienceBase under the DOI), the "splib07a" spectra, as measured, not
+resampled. Each is an ASD spectrometer record of absolute reflectance
+("ASDFRa AREF"): the reflectance relative to a Spectralon panel times the
+panel's own reflectance, eq. (1) of Data Series 1035, p. 4; the ASD
+instruments are described on p. 6. The ASD has a channel at every nm
+from 350 to 2500; the 481 from 350 to 830 nm are shipped, the range of
+the CIE observer and a little below. In that range the bandpass is 3.35
+to 8.65 nm (FWHM), from the library's
+`splib07a_Bandpass_(FWHM)_ASDFR_StandardResolution.txt`.
+
+| Key | Record | Name as printed |
+|---|---|---|
+| `white_pvc` | 19775 | Plastic_PVC GDS338 White |
+| `black_abs` | 19559 | Plastic_ABS GDS341 BlackPipe |
+| `grey_concrete` | 18568 | Concrete GDS375 Lt Gry Road |
+| `red_nylon` | 19080 | Nylon_Fabric GDS431 Red RpSt |
+| `orange_cadmium` | 18413 | Cadmium_orange_0 GDS786 |
+| `yellow_cadmium` | 18440 | Cadmium_yellow_6 med GDS788 |
+| `green_tarp` | 19802 | Plastic_Tarp GDS339 Green |
+| `blue_green_hdpe` | 19577 | Plastic_HDPE GDS391 Blu-Grn |
+| `blue_nylon` | 19098 | Nylon_Fabric GDS433 Blu RpSt |
+| `violet_cobalt` | 18485 | Cobalt_violet GDS803 |
+
+**The modification**, as the release's use constraints ask to be
+described: only the wavelength range is shortened, to 350-830 nm. Each
+value is copied as the library prints it, in its own notation, and
+`tools/build_usgs2017.py` checks the record line of each file, that the
+wavelengths are the ASD's 1 nm channels, that no value in the range is
+the library's deleted-channel marker, and that every value lies between
+0 and 1. The release's metadata also asks that the data not be
+misrepresented and that the USGS be acknowledged; the package's
+docstrings and this section name it.
+
+**Why these ten.** To span neutral and hue with materials found in and
+around water: white, black and grey, and red to violet. None is
+fluorescent: the library's fluorescent yellow webbing was left out,
+since a fluorescent sample's measured reflectance includes light the
+spectrometer's lamp made it emit, which the light under water would not.
+The cadmium and cobalt entries are artists' pigments.
+
+**What was not read.** The release describes each sample in HTML, with
+photographs, in a 1.3 GB file behind a download page this environment
+could not use, and the USGS's per-sample pages refused the request. The
+names above are therefore the record lines as the ASCII files print
+them, and nothing about a sample beyond its name is claimed: not how it
+was prepared, and not whether a pigment was a powder. These are dry
+samples measured in a laboratory; under water a surface is wet, which
+changes its reflectance, and another sample of the same kind of
+material would not reflect the same.
