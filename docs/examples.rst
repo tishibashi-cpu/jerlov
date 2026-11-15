@@ -1,11 +1,12 @@
 Examples
 ========
 
-Twenty-seven scripts, each for one kind of reader. Each runs against the
+Twenty-eight scripts, each for one kind of reader. Each runs against the
 installed package, needs nothing beyond NumPy, and prints what it
-computes. CI runs every one of them, so an example that has stopped
-working is a failed build rather than something a reader discovers. They
-are in the repository, not in the installed package; from a clone:
+computes; ``closure_with_jerlov_kd.py`` also reads results kept beside
+it. CI runs every one of them, so an example that has stopped working is
+a failed build rather than something a reader discovers. They are in the
+repository, not in the installed package; from a clone:
 
 .. code-block:: console
 
@@ -73,3 +74,5 @@ are in the repository, not in the installed package; from a clone:
      - `reference_images.py <https://github.com/tishibashi-cpu/jerlov/blob/main/examples/reference_images.py>`_
    * - run OSOAA or HydroLight with a Jerlov type as the water
      - `radiative_transfer_inputs.py <https://github.com/tishibashi-cpu/jerlov/blob/main/examples/radiative_transfer_inputs.py>`_
+   * - see whether one source of a Jerlov type confirms another
+     - `closure_with_jerlov_kd.py <https://github.com/tishibashi-cpu/jerlov/blob/main/examples/closure_with_jerlov_kd.py>`_

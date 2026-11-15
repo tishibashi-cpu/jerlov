@@ -40,6 +40,7 @@ GITHUB = "https://github.com/tishibashi-cpu/jerlov/blob/main/"
 rst_epilog = f"""
 .. _DECISIONS.md: {GITHUB}DECISIONS.md
 .. _DATA.md: {GITHUB}DATA.md
+.. _OPEN_QUESTIONS.md: {GITHUB}OPEN_QUESTIONS.md
 .. _CHANGELOG.md: {GITHUB}CHANGELOG.md
 .. _CONTRIBUTING.md: {GITHUB}CONTRIBUTING.md
 .. _issues: https://github.com/tishibashi-cpu/jerlov/issues

@@ -2242,3 +2242,93 @@ def test_DATA_quotes_Bogucki_2004():
     # 1e-3 rad is below Petzold's first angle, 0.1 degree.
     assert math.degrees(1e-3) < 0.1 and round(math.degrees(1e-3), 2) == 0.06
     assert round(math.degrees(1e-7), 7) == 0.0000057
+
+
+# -- Open questions (OPEN_QUESTIONS.md, DECISIONS.md section 91) -----------
+
+
+@pytest.fixture(scope="module")
+def closure_example():
+    return _run_example("closure_with_jerlov_kd")
+
+
+def _flat(path):
+    return " ".join((ROOT / path).read_text().split())
+
+
+@source_tree
+def test_open_questions_closure_figures_are_the_examples(closure_example):
+    out = closure_example[1]
+    text = _flat("OPEN_QUESTIONS.md")
+    check = out["check"]
+    assert (f"within {check['low']:+.1f} to {check['high']:+.1f} percent"
+            in text)
+    for (water_type, source), (low, _, high, _) in out["found"][
+            "ranges"].items():
+        cell = f"{low:.2f} to {high:.2f}"
+        row = (ROOT / "OPEN_QUESTIONS.md").read_text()
+        assert f"| {water_type} |" in row
+        assert cell in row, (water_type, source, cell)
+    for factor, (low, high) in out["moves"].items():
+        assert (f"{low:+.1f} to {high:+.1f} percent".replace("+-", "-")
+                in text), factor
+    verdict = out["verdict"]
+    assert verdict["within"] == ["II", "III"]
+    assert f"at most {verdict['reach']:.2f} times" in text
+    assert f"would have to be {verdict['needed']:.2f} of the scattering" in text
+    assert f"the largest Petzold measured is {verdict['largest']:.3f}" in text
+    assert f"falls to {verdict['iii_1968']:.2f}" in text
+    assert f"{out['refused']['refused']} of the 408 runs" in text
+    assert len(out["runs"]) == 408
+
+
+@source_tree
+def test_open_questions_pure_water_figures():
+    text = _flat("OPEN_QUESTIONS.md")
+    for quoted in ("7.95 at 380 nm, 2.99 at 400, 1.46 at 420 and 1.22 at 440",
+                   "between 0.97 and 1.08 from 460 to 550 nm",
+                   "2.59 at 380 nm and 1.03 at 420",
+                   "short by 9.6 percent at 440 nm",
+                   "from 1e-7 to 1e-3 radian",
+                   "3.4 to 14.5 percent"):
+        assert quoted in text, quoted
+    # The same figures DATA.md quotes, recomputed there; and 3.4 to 14.5
+    # percent below 0.1 degree at Petzold's stations.
+    below = [jerlov.petzold_scattering(s).fraction_below_0_1_deg
+             for s in jerlov.PETZOLD_STATIONS]
+    assert (round(100 * min(below), 1), round(100 * max(below), 1)) == (
+        3.4, 14.5)
+
+
+@source_tree
+def test_examples_README_figures_for_closure(closure_example):
+    out = closure_example[1]
+    text = _flat("examples/README.md")
+    ranges = out["found"]["ranges"]
+    ib = ranges[("IB", "jerlov1976")]
+    iii = ranges[("III", "jerlov1976")]
+    c3 = ranges[("3C", "jerlov1976")]
+    assert f"**{ib[0]:.2f} to {ib[2]:.2f}** times" in text
+    assert f"{iii[0]:.2f} to {iii[2]:.2f} for III" in text
+    assert f"down to **{c3[0]:.2f}** for 3C" in text
+    assert f"would have to be {out['verdict']['needed']:.2f}" in text
+
+
+@source_tree
+def test_every_open_question_is_on_the_site():
+    questions = [line[3:].split(". ", 1)[1]
+                 for line in (ROOT / "OPEN_QUESTIONS.md").read_text()
+                 .splitlines() if line.startswith("## ")]
+    page = _flat("docs/open_questions.rst")
+    assert len(questions) == 3
+    for number, question in enumerate(questions, 1):
+        assert f"{number}. **{question}**" in page, question
+    assert "OPEN_QUESTIONS.md_" in page
+    site = (ROOT / "docs" / "open_questions.rst").read_text()
+    assert "7.95 at 380 nm" in " ".join(site.split())
+
+
+@source_tree
+def test_closure_example_reports_only_provenance_warnings(closure_example):
+    for message in closure_example[1]["caught"]:
+        assert message.startswith("ProvenanceWarning: ")

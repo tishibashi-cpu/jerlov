@@ -1,7 +1,8 @@
 # Examples
 
-Twenty-seven scripts. Each runs against the installed package and needs nothing beyond
-NumPy.
+Twenty-eight scripts. Each runs against the installed package and needs nothing beyond
+NumPy; `closure_with_jerlov_kd.py` also reads results kept beside it in
+`examples/data/`, so it needs the repository.
 
 ```
 python examples/sources_disagree.py
@@ -30,6 +31,7 @@ python examples/rgb_versus_spectral.py
 python examples/water_lookup_tables.py
 python examples/phase_function_choice.py
 python examples/reference_images.py
+python examples/closure_with_jerlov_kd.py
 ```
 
 CI runs all of them on every push, so an example that has stopped working is a
@@ -379,6 +381,17 @@ in `tests/data`, at 440 nm with the sun at 30 degrees, Ed falls with a
 mean Kd of **0.138** per m from 0 to 50 m, between Jerlov's 0.129 (1968)
 and 0.145 (1976); HydroLight made 0.123 of Solonenko & Mobley's IOPs for
 the same type.
+
+**`closure_with_jerlov_kd.py`** — an open question with numbers
+(`OPEN_QUESTIONS.md`): do Williamson & Hollins's measured a and b, put
+through OSOAA, give back the Kd Jerlov printed for the same types? It reads
+408 OSOAA runs kept in `examples/data/osoaa_closure/` and computes every
+figure. Against Jerlov (1976) OSOAA's Kd is **1.00 to 1.36** times Jerlov's
+for IB and 0.79 to 0.95 for III, but down to **0.48** for 3C. The sun moves
+Kd by -7.1 to +20.7 percent and the pure water by -12.0 to +6.2; the phase
+function, the aerosol and the wind by under 1.5. For 5C at 550 nm to reach
+Jerlov's Kd, bb / b would have to be 0.10, where Petzold's largest is
+0.044: the coastal types of the two sources are different water.
 
 ## What they do not show
 

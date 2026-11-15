@@ -4,6 +4,33 @@ Every release is archived on Zenodo under the concept DOI
 [10.5281/zenodo.22321312](https://doi.org/10.5281/zenodo.22321312), which
 always resolves to the latest version.
 
+## 1.15.4 — 2026-11-15
+
+Open questions in a document of their own, with an example (DECISIONS.md
+section 91). No package code, value or name changes.
+
+**Documents.**
+
+- `OPEN_QUESTIONS.md`: where the sources disagree, by how much, and how
+  much of it the conditions a source leaves unrecorded could explain.
+  Three questions so far: the absorption of pure water in the violet, the
+  scattering below Petzold's first angle, and whether Williamson &
+  Hollins's IOPs give back Jerlov's Kd. Each sets out the question, what
+  was done, what was found, what is not known and where the details are;
+  every figure is recomputed by a test.
+- A page of the documentation site, "Open questions", lists them with
+  their findings and links to the document.
+
+**Examples.** `closure_with_jerlov_kd.py`, the twenty-eighth: reads the
+OSOAA runs of 1.15.3 and prints, computing every figure, OSOAA's Kd beside
+Jerlov's in both editions, how far each unrecorded condition moves it, and
+what it cannot explain. It needs the repository, for those runs, but not
+OSOAA.
+
+**Moved.** The OSOAA runs of 1.15.3, from `tests/data/osoaa_closure/` to
+`examples/data/osoaa_closure/`, beside the example that reads them; still
+not in the wheel. `tools/osoaa_closure.py` writes there.
+
 ## 1.15.3 — 2026-11-15
 
 Where the closure between IOPs and Kd fails: Williamson & Hollins's a and b

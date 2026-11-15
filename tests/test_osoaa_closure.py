@@ -1,6 +1,6 @@
 """Williamson & Hollins's IOPs through OSOAA, against Jerlov's Kd: every
 figure DATA.md section 39 quotes, recomputed from the runs kept in
-tests/data/osoaa_closure (DECISIONS.md section 90). OSOAA itself is not run
+examples/data/osoaa_closure (DECISIONS.md sections 90 and 91). OSOAA itself is not run
 here; tools/osoaa_closure.py made the runs."""
 
 from __future__ import annotations
@@ -15,11 +15,14 @@ import pytest
 
 import jerlov
 
-RUNS = pathlib.Path(__file__).resolve().parent / "data" / "osoaa_closure"
 ROOT = pathlib.Path(__file__).resolve().parent.parent
+#: The runs live beside the example that reads them (DECISIONS.md section
+#: 91); away from the source tree every test here is skipped.
+RUNS = ROOT / "examples" / "data" / "osoaa_closure"
 source_tree = pytest.mark.skipif(
-    not (ROOT / "DATA.md").exists(),
-    reason="needs the source tree (DATA.md)")
+    not (ROOT / "DATA.md").exists() or not RUNS.exists(),
+    reason="needs the source tree (DATA.md and examples/data)")
+pytestmark = source_tree
 TYPES = ("IB", "II", "III", "1C", "3C", "5C")
 WAVELENGTHS = tuple(range(425, 701, 25))
 SUN_IN_WATER = math.asin(math.sin(math.radians(30.0)) / 1.34)

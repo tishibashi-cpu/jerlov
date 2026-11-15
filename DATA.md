@@ -2232,7 +2232,7 @@ back the Kd Jerlov printed for it, and which of the conditions a type does
 not fix moves the answer most (DECISIONS.md section 90)? OSOAA (commit
 `8e4914f`, the build of section 38) was run 408 times by
 `tools/osoaa_closure.py`, with the package's own writers for its inputs;
-`tests/data/osoaa_closure/` keeps every run's parameters (`runs.csv`) and
+`examples/data/osoaa_closure/` keeps every run's parameters (`runs.csv`) and
 OSOAA's Ed at every level in the sea (`ed.csv`), and the tests recompute
 every figure below from them. OSOAA is not in CI; the runs are a record.
 
