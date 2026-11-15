@@ -4660,3 +4660,101 @@ and a material's colour moves towards the water's as the distance grows.
 - The three neutral materials are tested to be less saturated under D65
   than every coloured one, not grey within a fixed margin: the concrete
   is a little warm, as light grey road concrete is.
+
+## 86. Input files for two radiative transfer codes, OSOAA and HydroLight (1.14.0): the plan
+
+NEXT_STEPS section 0, item 5: a Jerlov type's a, b and a measured phase
+function written in the input formats of the radiative transfer codes
+that solve what this package does not (sections 12 and 38). The user
+chose on 2026-11-14 the recommended course on four questions: OSOAA and
+HydroLight as targets; the pure water each code adds back a required
+argument; OSOAA's polarization ratios required arguments; input files
+only, the codes' outputs left for later.
+
+**PlanarRad is left out.** Its Python driver, planarradpy (GPL v2,
+github.com/marrabld/planarradpy), runs PlanarRad's own executables,
+which were distributed from planarrad.com; that domain now redirects to
+a parked page, and no other source was found. Files for a program no
+one can obtain, and that could not be run, would be untested promises.
+
+**OSOAA** (CS Group and LOA for CNES, GPL v3,
+github.com/CNES/RadiativeTransferCode-OSOAA, commit 8e4914f), its User
+Manual V2.0 (2025-01-30). With `-HYD.Model 3` the hydrosols are a
+user's Mueller matrix (`-HYD.ExtData`, §3.6.3, pp. 80-81) and a user's
+depth profile of absorption and scattering (`-HYD.UserProfile`, §3.6.4,
+pp. 81-82), from which "pure seawater absorption and scattering
+coefficients need to be subtracted" (§3.2.4, p. 37), at the run's single
+wavelength. Built here with gfortran
+13.3 from its Makefile, and run by hand before this plan:
+
+- Jerlov III at 440 nm, less a pure water of the test's choosing (Pope
+  & Fry's a, 0.00635, and Morel's b at 35 PSU, 0.00494): OSOAA's sea
+  profile gives a total extinction of 0.4331 per metre and a share of
+  scattering of 0.7206. Jerlov III's c and b/c with OSOAA's own pure
+  seawater added back (a 0.00635 and b 0.00501629 at 440 nm, from its
+  `fic/OSOAA_SEA_MOL_COEFFS_JUNE_2013.txt`) are 0.4331 and 0.7206: OSOAA
+  adds its own pure water to the profile, as its manual says.
+- The extinction and scattering cross-sections at the head of the
+  `-HYD.ExtData` file are not used under `-HYD.Model 3`: two runs that
+  differed only in them gave byte-identical radiances and fluxes.
+
+**HydroLight** (Sequoia Scientific; commercial). The "standard format
+for ac-9 data", §7.3 of the HydroLight 5.1 Technical Documentation
+(Mobley 2012, pp. 55-56, as published with a University of Maine
+course): ten header records, a record giving the number of wavelengths
+and the wavelengths, then one record per depth of the depth, a at each
+wavelength and c at each, ended by the last record repeated with a
+negative depth; a and c "with the water ... removed", HydroLight adding
+pure water back. HydroLight was not available and was not run; the
+files follow the document, and say so. The phase function stays
+HydroLight's choice: it uses discretized phase functions made by its
+own code, which this package cannot produce.
+
+**The functions**, in a new module, each returning the file's text for
+the caller to write:
+
+- `osoaa_user_profile(water, wavelength_nm, /, *, depths_m,
+  pure_water)`: OSOAA's five comment lines (the water, its source, the
+  wavelength, what was subtracted), then depth, a - a_w and b - b_w.
+  `pure_water` is `(a_w, b_w)` at the wavelength, the values OSOAA adds
+  back, with no default. The depths start at 0, as OSOAA requires, and
+  are fewer than its limit of 500 (`CTE_NZ_MAX_USER_PROFILE`).
+- `osoaa_phase_function(scattering, /, *, minus_f12_over_f11,
+  f22_over_f11, f33_over_f11)`: the `-HYD.ExtData` file for one of
+  Petzold's stations: F11 = vsf / b at Petzold's 55 angles, from 180
+  degrees down as the manual's example orders them, and the three
+  ratios, which Petzold did not measure, with no default (a number for
+  every angle, or 55 values). The two cross-section lines carry the
+  station's c and b in 1/m, which `-HYD.Model 3` does not read; the
+  comment line says so, and that the file is for that model. The angles
+  below 0.169 degree at the clearer stations are the report's extension
+  and warn, as `vsf_at` does.
+- `hydrolight_ac9_file(water, wavelengths, /, *, depths_m,
+  pure_water)`: the standard-format file, with `pure_water` as
+  `(a_w, b_w)` on the wavelengths, the values HydroLight adds back, and
+  at least two depths, ascending from 0, since HydroLight fits linear
+  splines between them.
+
+In each, a value that turns negative after the pure water is subtracted
+is refused (`ValueError` naming the wavelength): a code would read it as
+a negative absorption or scattering. NaN and infinity are refused, a
+water without a or b raises `MissingQuantityError`, and flagged values
+warn as they do from `Water`. A Jerlov type does not vary with depth, so
+every depth carries the same values; the depths are the caller's, to
+match the run. Three public names, 116 in all.
+
+**The example.** `examples/radiative_transfer_inputs.py`, the
+twenty-seventh, for people who run OSOAA or HydroLight: Jerlov III's
+files at 440 nm for OSOAA, with the pure seawater OSOAA adds back as
+the caller would read it from OSOAA's own table, and the HydroLight file
+from 400 to 700 nm, with every choice stated; and the OSOAA command line
+that uses them. It runs neither code.
+
+**Checks.** Each file parsed back by the rules its document states (the
+header counts, the column order, the end marker) and the values
+recovered exactly; the subtraction added back gives `Water.a` and `c`;
+the refusals; the warnings. The OSOAA runs above are recorded in DATA.md
+with the commit, the compiler and the numbers, as a check made by hand
+outside CI.
+
+**Version.** 1.14.0: three public names.
