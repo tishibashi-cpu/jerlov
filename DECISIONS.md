@@ -5067,3 +5067,21 @@ make?
 
 **Version.** 1.15.3: no package code changes; a tool, test data, tests
 and DATA.md section 39.
+
+**Differences from the plan, noted after the code was written.**
+
+- The plan took for granted that a type's total could always be given to
+  OSOAA. It cannot from 650 nm: OSOAA adds its own pure water, which
+  there is above the aw Williamson & Hollins built a on (0.340 against
+  0.3315 per m at 650 nm, 0.624 against 0.5722 at 700), so a profile of
+  their total less OSOAA's water would be negative, and the writer
+  refuses it. Those 46 runs are kept as `not_run`, and a further 72 were
+  added: every type's contents on OSOAA's own water, which can always be
+  run. 408 runs in all, not about 300.
+- The pure water factor is "a - aw_WH + aw_X" as planned; the contents on
+  OSOAA's water are the same factor with aw_X OSOAA's.
+- The seabed check was made on IB at 425 nm and 5C at 675 nm, since 5C at
+  700 nm cannot be run.
+- A sentence of the first draft of DATA.md section 39, that the gap for
+  II and III was within the conditions, held only against 1976, and now
+  says so; a test checks it against both editions.

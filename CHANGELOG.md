@@ -4,6 +4,28 @@ Every release is archived on Zenodo under the concept DOI
 [10.5281/zenodo.22321312](https://doi.org/10.5281/zenodo.22321312), which
 always resolves to the latest version.
 
+## 1.15.3 — 2026-11-15
+
+Where the closure between IOPs and Kd fails: Williamson & Hollins's a and b
+for six Jerlov types, run through OSOAA, against the Kd Jerlov printed
+(DECISIONS.md section 90). No package code, value or name changes.
+
+**Data.** DATA.md section 39 (note), from 408 OSOAA runs kept in
+`tests/data/osoaa_closure/` (not in the wheel) and made by
+`tools/osoaa_closure.py`:
+
+- OSOAA's Kd over Jerlov's (1976) is 1.00-1.36 for IB, 0.87-1.07 for II
+  and 0.79-0.95 for III, but down to 0.48 for 3C and 0.54 for 1C and 5C.
+- Of the conditions a type leaves open, the sun moves Kd most (-7.1 to
+  +20.7 percent), then the pure water under the type's contents (-12.0 to
+  +6.2); the Petzold station, the aerosol and the wind move it by under
+  1.5 percent.
+- Against 1976, II and III lie within what the sun and the pure water can
+  make; IB in the blue and the coastal types do not.
+- 46 runs could not be made: from 650 nm OSOAA's own pure water is above
+  the aw Williamson & Hollins built a on, so their total a there cannot be
+  given to OSOAA.
+
 ## 1.15.2 — 2026-11-15
 
 Two open questions recorded beside the data they bear on (DECISIONS.md
