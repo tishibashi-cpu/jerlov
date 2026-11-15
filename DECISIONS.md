@@ -5085,3 +5085,62 @@ and DATA.md section 39.
 - A sentence of the first draft of DATA.md section 39, that the gap for
   II and III was within the conditions, held only against 1976, and now
   says so; a test checks it against both editions.
+
+## 91. Open questions in a document of their own, and an example for each (1.15.4): the plan
+
+The user asked on 2026-11-15 for the work of sections 89 and 90, putting
+numbers on what is unsettled in the literature, to go on, and for what it
+finds to be shown, with the code that found it in `examples/`. They left
+the names and form to this plan, asked that every document of the package
+stay in English, and asked for it in the next version. Nothing in the
+package's code changes; this is the plan, committed before the text.
+
+**Why a document of its own.** DATA.md records what each shipped table
+is and what is wrong with it. What sections 21, 29 and 39 found is of a
+different kind: not about one table, but about where two sources, or a
+source and a code, disagree, and by how much the unrecorded conditions
+can account for it. Kept inside DATA.md, it is found only by someone
+already reading about that table.
+
+**`OPEN_QUESTIONS.md`**, at the top of the repository beside DATA.md and
+DECISIONS.md, one section per question, each in the same five parts:
+
+- *The question*, in a sentence a reader outside the field can follow;
+- *What was done*: the data, the code, how many runs;
+- *What was found*, every figure recomputed by a test;
+- *What is not known*, and what measurement or calculation would move it;
+- *Where*: the DATA.md and DECISIONS.md sections, the example, the release.
+
+It opens by saying what the package does and does not do here: it does
+not settle these questions, which need new measurements; it states how far
+apart the published values are and how much of that the conditions a
+source leaves unrecorded can explain. Three questions to begin with:
+pure water absorption in the violet (DATA.md section 29), scattering below
+Petzold's first angle (section 21), and the closure between Williamson &
+Hollins's IOPs and Jerlov's Kd (section 39). Where a first draft said more
+than the numbers did, as section 90 records, the document says so.
+
+**On the documentation site**, a page `open_questions` lists each question
+with its finding in a line and links to `OPEN_QUESTIONS.md` on GitHub, as
+the site already links to DATA.md and DECISIONS.md, so that the text is
+kept in one place. A test checks that every question in the document has
+its line on the page.
+
+**`examples/closure_with_jerlov_kd.py`**, the twenty-eighth example: it
+reads the OSOAA runs of section 90, needing neither OSOAA nor anything not
+in the repository, and prints, computing each figure as it goes, OSOAA's
+Kd beside Jerlov's in both editions, how far each condition moves it, the
+backscatter ratio the coastal types would need, and the runs that could
+not be made. The tables and conclusions in `OPEN_QUESTIONS.md` are the
+example's output, and a test runs it and compares.
+
+**The runs move to `examples/data/osoaa_closure/`.** The examples run
+against the installed package, but this one needs the runs, which are
+results of the package rather than data it ships and stay out of the
+wheel. So the example reads them from beside itself, and says that it
+needs the repository; CI runs the examples from the repository. The tests
+of section 90 read the same files, and are skipped away from the source
+tree. `tools/osoaa_closure.py` writes there. Section 90's paths are left
+as written, this section moving them.
+
+**Version.** 1.15.4: a document, a page, an example, and data moved.
