@@ -5144,3 +5144,73 @@ tree. `tools/osoaa_closure.py` writes there. Section 90's paths are left
 as written, this section moving them.
 
 **Version.** 1.15.4: a document, a page, an example, and data moved.
+
+## 92. Section 90 was wrong: OSOAA's truncation, a Monte Carlo instead, and the closure again (1.15.4): the plan
+
+The closure of section 90 rested on OSOAA's Kd, and OSOAA's Kd were too
+low. Found on 2026-11-15, when Williamson & Hollins's own paper (Appl.
+Opt. 61, 9951-9961, section 3.D and Table 5) reported their averaged a
+and b agreeing with Jerlov's Kd to a mean absolute error of 14 to 17
+percent, where section 39 had the coastal types at half of Jerlov's. The
+user asked for the cause to be found, a replacement to be checked, and
+the closure to be done again, in this release, before 1.15.4 is merged.
+This is the plan, committed before the code.
+
+**What was wrong.** OSOAA always truncates the forward peak of the
+hydrosols' phase function (its User Manual V2.0, section 4.2.3, p. 96).
+Given Petzold's phase functions, it reported a truncation coefficient of
+1.90 to 1.95 (`PM_PHYTO.txt`), that is 95 to 98 percent of the hydrosols'
+scattering treated as unscattered, where Petzold's own functions hold 84 to
+89 percent within 23 degrees and 52 to 64 within 5. The share stayed
+there when OSOAA was rebuilt with its hydrosol truncation angles narrowed
+from 32 and 23 degrees to 8 and 5 (`CTE_HYD_MU1_TRONCA`,
+`CTE_HYD_MU2_TRONCA` in `inc/OSOAA.h`), and when a 0 degree row was added
+to the phase function; Kd did not move either. The spreading of light by
+many small-angle scatterings, which raises Kd with depth, was lost: its
+Kd/a stayed at 1.12 to 1.20 to six optical depths whatever b/a was. Why
+OSOAA treats these phase functions so was not traced further; it is
+recorded, and the closure no longer rests on it. The writers of section
+86 are not wrong, but `osoaa_phase_function`'s docstring will say this.
+
+**The replacement.** `tools/kd_monte_carlo.py`, written for this: a
+homogeneous, infinitely deep water lit by a collimated beam at the
+refracted sun, photons on exponential paths with weight b/c kept at each
+scattering and Russian roulette below a small weight, the scattering
+angle drawn from Petzold's tabulated function (a power law between his
+angles and, below 0.1 degree, his extension). It models no sky, no
+atmosphere and no surface reflection. Checked on 2026-11-15:
+
+- with no scattering, Kd is a / mu0 within the noise (0.996 of it);
+- against the relation of Morel and Loisel for optical depth 1, as
+  Williamson & Hollins print it (their Eq. 2), for b/a from 0.5 to 10:
+  within 1 percent with NUC 2240's phase function (bb/b 0.018), within 4
+  with AUTEC 7's (0.026) and up to 8 percent lower with HAOCE 5's
+  (0.014), the departures following the phase function's backscattering,
+  which that relation does not take;
+- against Solonenko and Mobley's relation for optical depth about 2.3
+  (their Eq. 3), 2 to 10 percent lower; recorded.
+
+It is a tool, checked only as far as this; it is not part of the package.
+
+**The closure again**, with it: the six types at the twelve wavelengths,
+the base as in section 90 (the type's own total a, the nearest Petzold
+station, the sun at 30 degrees); then on IB and III the sun at 0 and 60
+degrees, the stations AUTEC 8, HAOCE 5 and NUC 2200, and the pure water of
+Pope & Fry, Mason et al. and Lee et al. in place of Williamson &
+Hollins's. The aerosol and the wind are dropped: the Monte Carlo has no
+sky. With no OSOAA water underneath, every run can be made. Kd over the
+first penetration depth and to 10 percent. The runs, their seeds and
+their Kd are kept in `examples/data/kd_closure/`, made by
+`tools/kd_closure.py`. The OSOAA runs of section 90 stay in
+`examples/data/osoaa_closure/` as the record of what went wrong, and the
+tests use them to show OSOAA's Kd against the Monte Carlo's.
+
+**The documents.** DATA.md section 39 is rewritten: what was found, what
+had been wrong and why, OSOAA's Kd beside the Monte Carlo's. Section 38
+gains the truncation. `OPEN_QUESTIONS.md`'s third question is rewritten
+from the new runs and says plainly that the version published in 1.15.3
+was wrong, and why. `closure_with_jerlov_kd.py` reads the new runs. The
+statements of section 90 stay as written, this section correcting them.
+
+**Version.** Still 1.15.4: the correction goes into its pull request,
+which has not been merged.
