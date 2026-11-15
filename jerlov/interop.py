@@ -232,6 +232,14 @@ def osoaa_phase_function(scattering, /, *, minus_f12_over_f11,
     model, with :func:`osoaa_user_profile`, and its comment line says so.
     At the Bahamas and southern California stations the values below
     0.169 degree are the report's extension, and warn.
+
+    OSOAA truncates the forward peak of the hydrosols' phase function, and
+    with Petzold's it reported treating 95 to 98 percent of the
+    hydrosols' scattering as unscattered, more than Petzold's functions
+    hold within 23 degrees; its Kd then came out 7 to 29 percent below a
+    Monte Carlo's and below Morel and Loisel's relation, the more so the
+    larger b/a (DATA.md section 38, DECISIONS.md section 92). Check
+    ``PM_PHYTO.txt``'s truncation coefficient before trusting a run.
     """
     if not isinstance(scattering, ScatteringFunction):
         raise TypeError(
