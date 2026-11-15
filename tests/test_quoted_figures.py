@@ -2103,3 +2103,58 @@ def test_reference_images_report_only_their_warnings(reference_example):
     for message in reference_example[1]["caught"]:
         assert message.startswith(("ProvenanceWarning: ",
                                    "GamutWarning: "))
+
+
+# -- Radiative transfer inputs (radiative_transfer_inputs.py, section 86) --
+
+
+@pytest.fixture(scope="module")
+def transfer_example():
+    return _run_example("radiative_transfer_inputs")
+
+
+@source_tree
+def test_examples_README_figures_for_radiative_transfer_inputs(
+        transfer_example):
+    text = (ROOT / "examples" / "README.md").read_text()
+    for quoted in ("c = **0.433**", "b/c = 0.7206", "**9.6 percent** in IB",
+                   "1.1 percent in 5C", "from 650 nm in IB"):
+        assert quoted in text, quoted
+    out = transfer_example[1]
+    osoaa, hydrolight = out["osoaa"], out["hydrolight"]
+    assert round(osoaa["a"] + osoaa["b"], 3) == 0.433
+    assert round(osoaa["b"] / (osoaa["a"] + osoaa["b"]), 4) == 0.7206
+    assert round(100 * osoaa["short"]["IB"], 1) == 9.6
+    assert round(100 * osoaa["short"]["5C"], 1) == 1.1
+    assert hydrolight["first"]["IB"] == 650.0
+    assert round(100 * hydrolight["largest"]) == 10
+
+
+@source_tree
+def test_the_example_refuses_where_the_function_does(transfer_example):
+    """Every type the example says is refused with Pope & Fry's aw is
+    refused by hydrolight_ac9_file, and only those."""
+    module, out = transfer_example
+    wl = module["HYDROLIGHT_NM"]
+    pope = jerlov.pure_water_absorption_table(wl, source="pope1997")
+    bw = jerlov.pure_water_scattering(wl, salinity_psu=35.0)
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", jerlov.ProvenanceWarning)
+        for water_type, refused in out["hydrolight"]["refused"].items():
+            if refused.size:
+                at = ", ".join(f"{w:g}" for w in refused)
+                with pytest.raises(ValueError, match=f"negative at {at} nm"):
+                    jerlov.hydrolight_ac9_file(
+                        jerlov.water(water_type), wl, depths_m=[0, 1],
+                        pure_water=(pope, bw))
+            else:
+                jerlov.hydrolight_ac9_file(
+                    jerlov.water(water_type), wl, depths_m=[0, 1],
+                    pure_water=(pope, bw))
+
+
+@source_tree
+def test_radiative_transfer_inputs_report_only_their_warnings(
+        transfer_example):
+    for message in transfer_example[1]["caught"]:
+        assert message.startswith("ProvenanceWarning: ")

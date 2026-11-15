@@ -65,6 +65,11 @@ from .scene import (
     Scene,
     veiling_radiance_estimate,
 )
+from .interop import (
+    hydrolight_ac9_file,
+    osoaa_phase_function,
+    osoaa_user_profile,
+)
 from .materials import (
     USGS2017_MATERIALS,
     MeasuredReflectance,
@@ -249,6 +254,9 @@ __all__ = [
     "usgs2017_reflectance",
     "MeasuredReflectance",
     "USGS2017_MATERIALS",
+    "osoaa_user_profile",
+    "osoaa_phase_function",
+    "hydrolight_ac9_file",
 ]
 
-__version__ = "1.13.0"
+__version__ = "1.14.0"

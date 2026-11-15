@@ -581,6 +581,33 @@ spectra go to Mitsuba 3 or pbrt-v4 without an RGB step.
 `examples/rendering_export.py` writes all three for Mitsuba 3, pbrt-v4
 and Blender (DECISIONS.md section 82).
 
+## Water for a radiative transfer code
+
+```python
+iii = jerlov.water("III")
+profile = jerlov.osoaa_user_profile(       # OSOAA's -HYD.UserProfile
+    iii, 440.0, depths_m=[0, 10, 50],
+    pure_water=(0.00635, 0.00501629))      # what OSOAA adds back at 440 nm
+phase = jerlov.osoaa_phase_function(       # OSOAA's -HYD.ExtData
+    jerlov.petzold_scattering("NUC 2200"), minus_f12_over_f11=0.0,
+    f22_over_f11=1.0, f33_over_f11=1.0)    # Petzold measured none of these
+wl = [440.0, 550.0]
+ac9 = jerlov.hydrolight_ac9_file(          # HydroLight's standard ac-9 format
+    iii, wl, depths_m=[0, 50],
+    pure_water=(jerlov.pure_water_absorption(wl),     # the aw under III's a
+                jerlov.pure_water_scattering(wl, salinity_psu=35.0)))
+```
+
+This package does not solve the radiative transfer equation; OSOAA and
+HydroLight do. Each function returns the text of an input file for one of
+them. Both codes add their own pure water back, so the pure water to take
+off is the one the run will add: there is no default, and a coefficient
+that turns negative without it is refused. Petzold measured no
+polarization, so OSOAA's ratios are yours too. The OSOAA files were run in
+OSOAA by hand and gave back Jerlov III's c and b/c; HydroLight was not
+available, and its file follows the documentation (DATA.md section 38).
+`examples/radiative_transfer_inputs.py` writes all three.
+
 ## Solar heating of the upper ocean
 
 Ocean circulation models absorb shortwave radiation as a sum of two
@@ -635,7 +662,7 @@ python examples/phase_function_choice.py       Henyey-Greenstein against Petzold
 python examples/reference_images.py            measured materials through three types
 ```
 
-Twenty-six scripts, each aimed at a different reader; `examples/README.md` says
+Twenty-seven scripts, each aimed at a different reader; `examples/README.md` says
 which to start with. CI runs all of them on every push, so an example that has
 stopped working is a failed build. Every one ends with the assumptions it
 made.
@@ -643,7 +670,7 @@ made.
 ## Provenance and design
 
 `DATA.md` records, for every shipped table, where it came from, what was
-verified, and what is known to be wrong with it. Thirty-seven entries are
+verified, and what is known to be wrong with it. Thirty-eight entries are
 documented there: thirteen confirmed defects in the source literature, three
 questions the first edition of Jerlov settled, and the rest notes.
 

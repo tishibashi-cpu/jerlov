@@ -3,7 +3,7 @@
 What every shipped table is, where it came from, what was verified, and what
 is known to be wrong with it.
 
-Thirty-seven entries are recorded below. Thirteen are confirmed defects, three were
+Thirty-eight entries are recorded below. Thirteen are confirmed defects, three were
 open questions that the first edition of Jerlov settled, and the rest are
 notes rather than defects. None of them is repaired silently: values that
 could be recovered carry `status = reconstructed` and say how, values that
@@ -2118,3 +2118,42 @@ was prepared, and not whether a pigment was a powder. These are dry
 samples measured in a laboratory; under water a surface is wet, which
 changes its reflectance, and another sample of the same kind of
 material would not reflect the same.
+
+## 38. Input files for OSOAA and HydroLight: what was run and what was not (note)
+
+`osoaa_user_profile`, `osoaa_phase_function` and `hydrolight_ac9_file`
+write a water's absorption and scattering, and one of Petzold's phase
+functions, in the input formats of two radiative transfer codes
+(DECISIONS.md section 86). No table is shipped for them; this section
+records how the files were checked against the codes.
+
+**OSOAA**, run by hand outside CI. The code is CNES's
+`RadiativeTransferCode-OSOAA` (GPL v3), commit `8e4914f` (2025-04-03),
+built with GNU Fortran 13.3.0 from its own Makefile; the formats are
+those of its User Manual V2.0, sections 3.6.3 and 3.6.4, pp. 80-82, and
+its limits are `CTE_NZ_MAX_USER_PROFILE` (500) and `CTE_MAXNB_ANG_EXT`
+(200) in `inc/OSOAA.h`. The pure seawater it adds back is the row for
+440 nm of its `fic/OSOAA_SEA_MOL_COEFFS_JUNE_2013.txt`: a = 0.00635 and
+b = 0.00501629 per m.
+
+The files of `examples/radiative_transfer_inputs.py`, Jerlov III at 440
+nm with depths 0, 10 and 50 m, and HAOCE 5 with -F12/F11 = 0 and F22/F11
+= F33/F11 = 1, byte for byte, were run with `-OSOAA.Wa 0.440
+-HYD.Model 3 -SEA.Depth 50.0`, a sun at 30 degrees, a black seabed and
+the code's maritime aerosol. OSOAA read both without complaint, and its
+sea profile (`PROFILE_SEA.txt`) gives an optical thickness of 21.64933
+at 50 m, a total extinction of 0.4330 per m, and a share of scattering
+of 0.01155 + 0.70899 = 0.72054. Williamson and Hollins's c and b/c for
+Jerlov III at 440 nm are 0.433 and 0.72055. Before the functions were
+written, two runs that differed only in the cross-section lines at the
+head of the phase function file gave byte-identical radiances and
+fluxes: `-HYD.Model 3` does not read them.
+
+What was not checked: the radiances themselves against any other code
+or measurement, other wavelengths, other stations, and polarization
+ratios other than these.
+
+**HydroLight** was not available and was not run. `hydrolight_ac9_file`
+follows the "standard format for ac-9 data" of the HydroLight 5.1
+Technical Documentation (Mobley 2012), section 7.3, pp. 55-56; its tests
+read the file back by that description and nothing more.
