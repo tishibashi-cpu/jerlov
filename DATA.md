@@ -1058,6 +1058,23 @@ slope and counts it in s: 3.4 to 14.5 percent of s, in line with its "3 to
 15 percent". The report puts the low-angle data at plus or minus 20 percent,
 30 at 0.169 degree in the clearest water, and the general-angle data at 5.
 
+**Below 0.1 degree, turbulence scatters too (an open question).**
+Bogucki, Domaradzki, Ecke and Truman (2004), "Light scattering on
+oceanic turbulence", Appl. Opt. 43(30), 5662-5668, DOI
+`10.1364/AO.43.005662`, measured the volume scattering function from
+1e-7 to 1e-3 rad, about 6e-6 to 0.06 degree, all of it below Petzold's
+first angle. Their abstract: "The total scattering coefficient b, due to
+scattering on turbulent inhomogeneities, is between 1 and 10 m-1 under
+typical oceanographic conditions", and "optical measurements at small
+angles are affected by turbulence-related scattering". The report's
+extension below 0.1 degree is a power law of the scattering it measured;
+scattering on turbulence, which depends on how the water is being mixed
+that day rather than on what is in it, is not in it. So the 3.4 to 14.5
+percent of s below 0.1 degree, and everything that rests on it, such as
+`ScatteringFunction.mean_cosine`, describe the extension, not the water.
+How much of the light near the beam turbulence takes, against particles,
+was not settled in the literature found on 2026-11-15.
+
 **What these are not.** They are the scattering of eight particular waters on
 particular days in 1971, total of water and particles, at 530 nm, the
 wavelength the report gives for c; the scattering meters measured through a
@@ -1738,6 +1755,19 @@ and 555 nm. Against this table: 0.0031 at 410 and 415 nm; 0.0132 is the
 value at 490 nm; 0.0302 at 510 nm as printed; at 443 nm the table gives
 0.0050 by linear interpolation, not 0.0048; and 555 nm is outside the
 table, which ends at 550. Not tested, only recorded.
+
+**How far apart they are (an open question).** Which is right in the
+violet and near ultraviolet is not settled, and the package does not
+choose. From the shipped tables, Pope & Fry over Mason et al. is 7.95 at
+380 nm, 2.99 at 400, 1.46 at 420 and 1.22 at 440, and between 0.97 and
+1.08 from 460 to 550 nm; Lee et al. over Mason et al. is 2.59 at 380 nm
+and 1.03 at 420. Smith & Baker, derived from natural waters, is above all
+three below 450 nm. At 440 nm Pope & Fry and Mason et al. alone differ
+by a fifth, and in the clearest Jerlov types pure water is much of a:
+`radiative_transfer_inputs.py` shows a difference of 0.004 m-1 in aw,
+between another pair, leaving IB's a short by 9.6 percent (DECISIONS.md
+section 86). No laboratory measurement newer than Mason et al. (2016)
+was found on 2026-11-15.
 
 **Not used.** The standard deviations and Delta aw are in the CSVs but
 the function does not return them. Pope & Fry and Mason et al. measured

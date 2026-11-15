@@ -2196,3 +2196,49 @@ def test_DATA_figures_for_reading_osoaa(transfer_read_example):
                    "0.145 in the\n  second", "own a and b for the type, "):
         assert quoted in text, quoted
     assert round(transfer_read_example["read"]["kd"], 4) == 0.1381
+
+
+# -- Open questions recorded in DATA.md (DECISIONS.md section 89) ----------
+
+
+@source_tree
+def test_DATA_figures_for_how_far_apart_pure_water_is():
+    text = (ROOT / "DATA.md").read_text()
+    for quoted in ("is 7.95 at\n380 nm, 2.99 at 400, 1.46 at 420 and 1.22 at 440",
+                   "between 0.97 and\n1.08 from 460 to 550 nm",
+                   "2.59 at 380 nm\nand 1.03 at 420"):
+        assert quoted in text, quoted
+    assert "7.95" in jerlov.pure_water_absorption_table.__doc__
+
+    def aw(wl, source):
+        return jerlov.pure_water_absorption_table(np.asarray(wl, float),
+                                                  source=source)
+    ratio = aw([380, 400, 420, 440], "pope1997") / aw(
+        [380, 400, 420, 440], "mason2016")
+    assert [round(float(r), 2) for r in ratio] == [7.95, 2.99, 1.46, 1.22]
+    wl = np.arange(460.0, 551.0, 2.0)
+    later = aw(wl, "pope1997") / aw(wl, "mason2016")
+    assert round(float(later.min()), 2) == 0.97
+    assert round(float(later.max()), 2) == 1.08
+    lee = aw([380, 420], "lee2015") / aw([380, 420], "mason2016")
+    assert [round(float(r), 2) for r in lee] == [2.59, 1.03]
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", jerlov.ProvenanceWarning)
+        wl = np.arange(380.0, 450.0, 10.0)
+        smith = aw(wl, "smith1981")
+        assert np.all(smith > np.maximum.reduce(
+            [aw(wl, s) for s in ("pope1997", "mason2016", "lee2015")]))
+    # Pope & Fry and Mason at 440 nm: a fifth apart.
+    assert round(float(ratio[3] - 1), 1) == 0.2
+
+
+@source_tree
+def test_DATA_quotes_Bogucki_2004():
+    text = " ".join((ROOT / "DATA.md").read_text().split())
+    for quoted in ("10.1364/AO.43.005662", "from 1e-7 to 1e-3 rad",
+                   "between 1 and 10 m-1 under typical oceanographic "
+                   "conditions"):
+        assert quoted in text, quoted
+    # 1e-3 rad is below Petzold's first angle, 0.1 degree.
+    assert math.degrees(1e-3) < 0.1 and round(math.degrees(1e-3), 2) == 0.06
+    assert round(math.degrees(1e-7), 7) == 0.0000057
