@@ -2158,3 +2158,41 @@ def test_radiative_transfer_inputs_report_only_their_warnings(
         transfer_example):
     for message in transfer_example[1]["caught"]:
         assert message.startswith("ProvenanceWarning: ")
+
+
+@pytest.fixture(scope="module")
+def transfer_read_example():
+    import contextlib
+    import io
+    import runpy
+    module = runpy.run_path(
+        str(ROOT / "examples" / "radiative_transfer_inputs.py"),
+        run_name="radiative_transfer_inputs")
+    with contextlib.redirect_stdout(io.StringIO()), warnings.catch_warnings():
+        warnings.simplefilter("error", jerlov.ProvenanceWarning)
+        warnings.simplefilter("error", FutureWarning)
+        return module["main"](
+            results=ROOT / "tests" / "data" / "osoaa_iii_440")
+
+
+@source_tree
+def test_examples_README_figures_for_reading_osoaa(transfer_read_example):
+    text = (ROOT / "examples" / "README.md").read_text()
+    for quoted in ("mean Kd of **0.138** per m", "Jerlov's 0.129 (1968)",
+                   "0.145 (1976)", "HydroLight made 0.123"):
+        assert quoted in text, quoted
+    read = transfer_read_example["read"]
+    assert (read["wavelength"], read["sun"], read["depth"]) == (
+        440.0, 30.0, 50.0)
+    assert round(read["kd"], 3) == 0.138
+    compared = read["compared"]
+    assert [round(v, 3) for v in compared.values()] == [0.129, 0.145, 0.123]
+
+
+@source_tree
+def test_DATA_figures_for_reading_osoaa(transfer_read_example):
+    text = (ROOT / "DATA.md").read_text()
+    for quoted in ("is 0.1381 per m", "0.129 in the first edition",
+                   "0.145 in the\n  second", "own a and b for the type, "):
+        assert quoted in text, quoted
+    assert round(transfer_read_example["read"]["kd"], 4) == 0.1381

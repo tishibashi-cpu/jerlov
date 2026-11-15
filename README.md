@@ -608,6 +608,24 @@ OSOAA by hand and gave back Jerlov III's c and b/c; HydroLight was not
 available, and its file follows the documentation (DATA.md section 38).
 `examples/radiative_transfer_inputs.py` writes all three.
 
+```python
+from pathlib import Path
+run = Path("results")                                 # OSOAA's -OSOAA.ResRoot
+flux = jerlov.read_osoaa_flux((run / "Advanced_outputs/Flux.txt").read_text())
+flux.kd(0.0, 50.0)                        # mean Kd of Ed, 1/m
+flux.total_down, flux.total_up            # normalized: the sun above is pi
+lu = jerlov.read_osoaa_radiance_vs_depth(
+    (run / "Standard_outputs/RESLUM_vsZ.txt").read_text())
+lu.radiance, lu.reflectance               # pi L / Esun and pi L / Ed
+```
+
+OSOAA's results read back, as it prints them, normalized to the sun
+above the atmosphere, which OSOAA leaves to you and so does this package.
+`read_osoaa_radiance_vs_vza` reads the radiance against the viewing angle.
+OSOAA's "direct" flux is not the unscattered beam: it counts the forward
+peak it truncates from the phase function as transmitted. HydroLight's
+outputs are not read; no file from it was available to test against.
+
 ## Solar heating of the upper ocean
 
 Ocean circulation models absorb shortwave radiation as a sum of two

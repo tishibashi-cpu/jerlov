@@ -1,4 +1,5 @@
-"""Input files for OSOAA and HydroLight (DECISIONS.md section 86).
+"""Input files for OSOAA and HydroLight (DECISIONS.md section 86), and
+OSOAA's results read back (section 87).
 
 Each file is read back by its format's own description: the OSOAA User
 Manual V2.0, sections 3.6.3 and 3.6.4, and the HydroLight 5.1 Technical
@@ -8,6 +9,8 @@ the water's own a, b and c.
 
 from __future__ import annotations
 
+import math
+import pathlib
 import warnings
 
 import numpy as np
@@ -216,3 +219,183 @@ def test_positional_only():
     with pytest.warns(FutureWarning, match="by position"):
         jerlov.osoaa_user_profile(water=water, wavelength_nm=440.0,
                                   depths_m=[0], pure_water=OSOAA_440)
+
+
+# -- OSOAA's results read back (DECISIONS.md section 87) -------------------
+
+#: One OSOAA run: Jerlov III at 440 nm, HAOCE 5, sun at 30 degrees, from
+#: the files of examples/radiative_transfer_inputs.py (DATA.md section 38).
+RUN = pathlib.Path(__file__).resolve().parent / "data" / "osoaa_iii_440"
+
+
+def _read(name):
+    return (RUN / name).read_text()
+
+
+@pytest.fixture(scope="module")
+def flux():
+    return jerlov.read_osoaa_flux(_read("Flux.txt"))
+
+
+def test_the_run_is_the_examples_files():
+    """The inputs OSOAA ran are what the writers write today."""
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", jerlov.ProvenanceWarning)
+        assert jerlov.osoaa_user_profile(
+            jerlov.water("III"), 440.0, depths_m=[0, 10, 50],
+            pure_water=OSOAA_440) == _read("profile_III_440.txt")
+        assert jerlov.osoaa_phase_function(
+            jerlov.petzold_scattering("HAOCE 5"), minus_f12_over_f11=0.0,
+            f22_over_f11=1.0, f33_over_f11=1.0) == _read("phase_HAOCE5.txt")
+
+
+def test_flux_levels(flux):
+    np.testing.assert_array_equal(flux.level, np.arange(108))
+    assert flux.altitude_m[0] == 300000.0
+    # The surface: once above, twice below, then the sea down to 50 m.
+    assert not flux.in_sea[26] and flux.altitude_m[26] == 0
+    assert flux.in_sea[27] and flux.in_sea[28] and flux.in_sea.sum() == 81
+    np.testing.assert_array_equal(flux.sea_depths_m[:2], [0.0, 0.0])
+    assert flux.sea_depths_m[-1] == 50.0
+    assert np.all(np.diff(flux.sea_depths_m) >= 0)
+
+
+def test_flux_is_normalized_to_pi(flux):
+    """The direct flux at the top of the atmosphere is pi cos 30 degrees:
+    an extraterrestrial irradiance of pi."""
+    assert flux.direct_down[0] == pytest.approx(
+        math.pi * math.cos(math.radians(30.0)), abs=1e-5)
+    assert flux.diffuse_down[0] == 0
+
+
+def test_flux_totals_and_ratio(flux):
+    np.testing.assert_allclose(flux.direct_down + flux.diffuse_down,
+                               flux.total_down, rtol=1e-5, atol=1e-6)
+    np.testing.assert_allclose(flux.direct_up + flux.diffuse_up,
+                               flux.total_up, rtol=1e-5, atol=1e-6)
+    ok = flux.total_down > 0
+    ratio = np.where(ok, flux.total_up / np.where(ok, flux.total_down, 1), 0)
+    np.testing.assert_allclose(flux.up_over_down, ratio, rtol=2e-5,
+                               atol=1e-6)
+
+
+def test_direct_is_not_the_unscattered_beam(flux):
+    """OSOAA's truncation counts the forward peak as transmitted: its
+    direct flux falls far slower than c / cos(theta_w)."""
+    z = flux.sea_depths_m[1:]
+    direct = flux.direct_down[flux.in_sea][1:]
+    k_direct = math.log(direct[0] / direct[1]) / (z[1] - z[0])
+    theta_w = math.asin(math.sin(math.radians(30.0)) / 1.34)
+    assert k_direct == pytest.approx(0.144, abs=5e-4)
+    assert 0.433 / math.cos(theta_w) == pytest.approx(0.467, abs=5e-4)
+
+
+def test_kd(flux):
+    z = flux.sea_depths_m
+    ed = flux.total_down[flux.in_sea]
+    # Between two levels Kd is the printed ratio, the first surface level
+    # standing for 0.
+    expected = math.log(ed[0] / ed[-1]) / 50.0
+    assert flux.kd(0, 50) == pytest.approx(expected, rel=1e-12)
+    assert flux.kd(0, 50) == pytest.approx(0.1381, abs=5e-5)
+    k = 10
+    assert flux.kd(z[k], z[k + 1]) == pytest.approx(
+        math.log(ed[k] / ed[k + 1]) / (z[k + 1] - z[k]), rel=1e-12)
+    # Between levels ln Ed is linear.
+    mid = 0.5 * (z[k] + z[k + 1])
+    assert flux.kd(z[k], mid) == pytest.approx(flux.kd(z[k], z[k + 1]),
+                                               rel=1e-12)
+    for upper, lower in ((0, 50.1), (10, 10), (20, 10), (-1, 5),
+                         (0, np.nan)):
+        with pytest.raises(ValueError):
+            flux.kd(upper, lower)
+
+
+@pytest.fixture(scope="module")
+def profile():
+    return jerlov.read_osoaa_radiance_vs_depth(_read("RESLUM_vsZ.txt"))
+
+
+def test_radiance_vs_depth(profile, flux):
+    assert profile.direction == "upward"
+    assert profile.relative_azimuth_deg == 0
+    assert profile.viewing_zenith_deg == 0
+    # The same levels as the sea's in Flux.txt.
+    np.testing.assert_allclose(profile.depth_m, flux.sea_depths_m,
+                               atol=1e-5)
+    # The reflectance is pi I / Ed, Ed from the other file.
+    ed = flux.total_down[flux.in_sea]
+    np.testing.assert_allclose(profile.reflectance,
+                               math.pi * profile.radiance / ed, rtol=2e-5)
+    assert profile.radiance[0] == pytest.approx(0.588088e-2, rel=1e-9)
+    assert np.all(profile.scattering_angle_deg == 158.09)
+
+
+def test_radiance_vs_vza():
+    scan = jerlov.read_osoaa_radiance_vs_vza(_read("RESLUM_vsVZA.txt"))
+    assert scan.altitude_m == -10.0
+    assert scan.level.startswith("Value of the depth selected")
+    assert (scan.azimuth_negative_deg, scan.azimuth_positive_deg) == (
+        180.0, 0.0)
+    assert scan.viewing_zenith_deg[0] == -89.07
+    # The nadir is printed twice, as -0 (one half-plane) and 0 (the
+    # other), with one value.
+    step = np.diff(scan.viewing_zenith_deg)
+    assert np.sum(step == 0) == 1 and np.all(step >= 0)
+    k = int(np.argmin(step))
+    assert scan.radiance[k] == scan.radiance[k + 1]
+    assert scan.radiance.size == 102
+    np.testing.assert_allclose(
+        scan.polarized_radiance / scan.radiance,
+        scan.polarization_percent / 100, atol=5e-4)
+
+
+@pytest.mark.parametrize("line, altitude", [
+    (" TOA level - Altitude (km) :   300.0", 300000.0),
+    (" Sea bottom level - Depth (m) :  -50.0 (limited to the maximum "
+     "computed depth)", -50.0),
+    (" Above sea surface level 0+ - Altitude (km) :   0.0", 0.0),
+    (" Under sea surface level 0- - Depth (m) :  -0.0", 0.0),
+    (" Altitude (km) :   2.5", 2500.0),
+    (" Altitude (km) :   400.0  limited to the maximum altitude   300.0",
+     300000.0),
+    (" Requested value of the depth for the output(m) :  -80.0 ==> "
+     "limited to the max computed depth :  -50.0", -50.0),
+])
+def test_every_form_of_the_output_level(line, altitude):
+    """The forms OSOAA_SOS.F can print; the run had only one."""
+    text = _read("RESLUM_vsVZA.txt").replace(
+        " Value of the depth selected for the output (m) :  "
+        "-10.000000000000000", line)
+    assert jerlov.read_osoaa_radiance_vs_vza(text).altitude_m == altitude
+
+
+def test_readers_refuse():
+    text = _read("Flux.txt")
+    lines = text.splitlines()
+    first_row = next(k for k, line in enumerate(lines)
+                     if line.split()[:1] == ["0"])
+    for bad, match in (
+            (text.replace("0.272070E+001", "**************", 1), r"\*\*\*"),
+            (text.replace("0.272070E+001", "NaN", 1), "not finite"),
+            ("\n".join(lines[:first_row] + [lines[first_row] + " 1.0"]
+                       + lines[first_row + 1:]), "10 values"),
+            (_read("RESLUM_vsZ.txt"), "expects a file"),
+            ("", "expects a file")):
+        with pytest.raises(ValueError, match=match):
+            jerlov.read_osoaa_flux(bad)
+    with pytest.raises(TypeError, match="read_text"):
+        jerlov.read_osoaa_flux(RUN / "Flux.txt")
+    with pytest.raises(ValueError, match="viewing zenith"):
+        jerlov.read_osoaa_radiance_vs_vza(_read("RESLUM_vsZ.txt"))
+    with pytest.raises(ValueError, match="against depth"):
+        jerlov.read_osoaa_radiance_vs_depth(_read("RESLUM_vsVZA.txt"))
+    with pytest.raises(ValueError, match="no output level"):
+        jerlov.read_osoaa_radiance_vs_vza(_read("RESLUM_vsVZA.txt").replace(
+            "Value of the depth selected", "Something else"))
+
+
+def test_results_are_read_only(flux, profile):
+    for array in (flux.total_down, flux.in_sea, profile.radiance,
+                  profile.depth_m):
+        assert not array.flags.writeable

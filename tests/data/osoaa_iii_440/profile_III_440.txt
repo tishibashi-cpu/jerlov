@@ -1,0 +1,8 @@
+Column 1: Depth (in m)
+Column 2: Hydrosols absorption coefficient (in m-1)
+Column 3: Hydrosols scattering coefficient (in m-1)
+Comment: Jerlov III at 440 nm from jerlov; source: C. A. Williamson and R. C. Hollins, 'Measured IOPs of Jerlov water types', Appl. Opt. 61, 9951-9961 (2022)
+Comment: less pure water a_w = 0.00635, b_w = 0.00501629 per m, which OSOAA adds back
+0 0.11465 0.30698371
+10 0.11465 0.30698371
+50 0.11465 0.30698371

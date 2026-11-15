@@ -5,6 +5,12 @@ codes and want a Jerlov type as its water:
 
     python examples/radiative_transfer_inputs.py                 # print
     python examples/radiative_transfer_inputs.py --write out/    # also files
+    python examples/radiative_transfer_inputs.py --read RESULTS/ # and OSOAA's
+
+With --read, the folder of an OSOAA run made with these files
+(-OSOAA.ResRoot), it also reads OSOAA's results back and sets the Kd OSOAA
+made of the water beside Jerlov's own Kd and the Kd HydroLight made of
+another source's IOPs for the same type.
 
 It writes Jerlov III at 440 nm for OSOAA, with Petzold's HAOCE 5 phase
 function, and Jerlov III from 400 to 700 nm for HydroLight, and prints the
@@ -182,8 +188,71 @@ def write_part(osoaa, hydrolight, out_dir):
     return list(written)
 
 
-def main(out_dir=None):
-    """Print the files; write them to ``out_dir`` if given."""
+def _result(results, name):
+    """A result file, in OSOAA's own folders or all in one."""
+    for sub in ("", "Advanced_outputs", "Standard_outputs"):
+        path = pathlib.Path(results) / sub / name
+        if path.exists():
+            return path.read_text()
+    raise FileNotFoundError(f"no {name} under {results}")
+
+
+def _parameter(list_param, key):
+    """One value of OSOAA's ListParam.txt, ' -KEY : value'."""
+    for line in list_param.splitlines():
+        fields = line.split(":", 1)
+        if fields[0].strip() == key:
+            return float(fields[1])
+    raise KeyError(key)
+
+
+def read_part(results, caught):
+    rule("3. OSOAA's results, read back")
+    params = _result(results, "ListParam.txt")
+    wavelength = 1000 * _parameter(params, "-OSOAA.Wa")
+    sun = _parameter(params, "-ANG.Thetas")
+    depth = _parameter(params, "-SEA.Depth")
+    flux = jerlov.read_osoaa_flux(_result(results, "Flux.txt"))
+    profile = jerlov.read_osoaa_radiance_vs_depth(
+        _result(results, "RESLUM_vsZ.txt"))
+    kd_osoaa = flux.kd(0.0, depth)
+    # Jerlov's own Kd for the type, in both editions, and the Kd that
+    # another code, HydroLight, made of other IOPs for it: Solonenko &
+    # Mobley's (2015) K_d^H, from their retrieved a and b with Petzold's
+    # average particle phase function, a clear sky and deep water.
+    compared = {}
+    for source, label, method in (
+            ("jerlov1968", "Jerlov (1968)", "kd"),
+            ("jerlov1976", "Jerlov (1976)", "kd"),
+            ("solonenko2015", "HydroLight, Solonenko 2015", "kd_hydrolight")):
+        water = jerlov.water(WATER_TYPE, source=source)
+        compared[label] = float(caught_by_type(
+            caught, getattr(water, method), wavelength))
+    sea = flux.in_sea
+    reflectance = float(flux.up_over_down[sea][0])
+    # Q = Eu / Lu just below the surface, from the nadir-viewing radiance
+    # (both normalized alike, so the normalization cancels).
+    if profile.direction != "upward" or profile.viewing_zenith_deg != 0:
+        raise ValueError("Q needs the upward radiance at a viewing zenith "
+                         "angle of 0")
+    q = float(flux.total_up[sea][0] / profile.radiance[0])
+    print(f"""The run: {wavelength:g} nm, the sun {sun:g} degrees from the zenith, {depth:g} m of
+water. Williamson & Hollins's IOPs for Jerlov {WATER_TYPE}, through OSOAA, give a mean
+Kd of Ed from 0 to {depth:g} m of {kd_osoaa:.4f} per m. Beside it:""")
+    for label, kd in compared.items():
+        print(f"  {label:<27} {kd:.4f}  (OSOAA {100 * (kd_osoaa / kd - 1):+.1f}%)")
+    print(f"""Just below the surface Eu/Ed = {reflectance:.5f} and Q = Eu/Lu = {q:.3f} sr. The
+Kd of a single run depends on its sun, sky and surface, which a Jerlov
+type does not fix: these are this run's. OSOAA's 'direct' flux is not the
+unscattered beam (it counts the truncated forward peak as transmitted), so
+only the totals are used.""")
+    return dict(wavelength=wavelength, sun=sun, depth=depth, kd=kd_osoaa,
+                compared=compared, reflectance=reflectance, q=q)
+
+
+def main(out_dir=None, results=None):
+    """Print the files; write them to ``out_dir`` if given; read an OSOAA
+    run's results from ``results`` if given."""
     _banner()
     caught = set()
     osoaa = osoaa_part(caught)
@@ -191,6 +260,10 @@ def main(out_dir=None):
     written = write_part(osoaa, hydrolight, out_dir) if out_dir else None
     if out_dir is None:
         print("\nRun with --write DIR to write the three files.")
+    read = read_part(results, caught) if results else None
+    if results is None:
+        print("Run with --read DIR, the folder of an OSOAA run made with them, "
+              "to read its results.")
     if caught:
         rule("Warnings")
         print("Raised along the way, and caught by type:")
@@ -209,15 +282,21 @@ def main(out_dir=None):
   - The OSOAA files were run once by hand with OSOAA outside CI (DATA.md
     section 38); the HydroLight file follows its documentation and has not
     been run.
+  - OSOAA's results are normalized to the sun above the atmosphere; the
+    ratios above (Kd, Eu/Ed, Q) do not depend on it.
 """)
     return dict(osoaa=osoaa, hydrolight=hydrolight, written=written,
-                caught=caught)
+                read=read, caught=caught)
 
 
 if __name__ == "__main__":
-    # Only an explicit --write DIR writes files: run through runpy from
-    # "python -c", as CI runs the examples, sys.argv carries this script's
-    # own path, which must not be taken for a directory.
+    # Only an explicit --write DIR writes files, and only --read DIR reads:
+    # run through runpy from "python -c", as CI runs the examples, sys.argv
+    # carries this script's own path, which must not be taken for a
+    # directory.
     args = sys.argv[1:]
-    main(args[args.index("--write") + 1]
-         if "--write" in args[:-1] else None)
+
+    def option(name):
+        return args[args.index(name) + 1] if name in args[:-1] else None
+
+    main(option("--write"), option("--read"))

@@ -2157,3 +2157,40 @@ ratios other than these.
 follows the "standard format for ac-9 data" of the HydroLight 5.1
 Technical Documentation (Mobley 2012), section 7.3, pp. 55-56; its tests
 read the file back by that description and nothing more.
+
+**OSOAA's results, read back (1.15.0).** The run above is kept in
+`tests/data/osoaa_iii_440/`, for the tests and not in the wheel: its
+`Flux.txt`, `RESLUM_vsZ.txt`, `RESLUM_vsVZA.txt` and `ListParam.txt`, as
+OSOAA wrote them, and the two input files, which the package's writers
+still produce byte for byte (DECISIONS.md section 87). OSOAA is GPL v3;
+these are the results of a run, not its code. Besides the parameters
+above, the run had a maritime aerosol (Shettle and Fenn, 98 percent
+relative humidity) of optical thickness 0.1 at 550 nm, a wind of 7 m/s,
+a black seabed at 50 m, and its radiances at 10 m depth and at nadir.
+`ListParam.txt` names the files `je.txt` and `jp.txt`, the names they
+were run under, and prints the user profile under the label
+`-HYD.ExtData`.
+
+What the readers recover from it:
+
+- The direct flux at the top of the atmosphere is 2.72070, pi cos 30
+  degrees: the extraterrestrial irradiance is pi, as OSOAA's manual
+  says. Totals are direct plus diffuse, and the printed Eu/Ed is their
+  ratio, to the printed digits.
+- The surface is printed once above (0.00000) and twice below
+  (-0.00000), the two levels of optical thickness 0 and 1e-4 in the sea.
+  The radiance against depth has the same 81 levels.
+- The reflectance of `RESLUM_vsZ.txt` is pi I / Ed with Ed from
+  `Flux.txt`, to five digits.
+- The nadir appears twice in `RESLUM_vsVZA.txt`, as -0.00 and 0.00, one
+  row for each half-plane, with one value.
+- OSOAA's direct flux in the sea falls at 0.144 per m, not at c /
+  cos(theta_w) = 0.467: OSOAA truncates the forward peak of the hydrosols'
+  phase function and counts the light so removed as transmitted (User
+  Manual V2.0, section 4.2.3, p. 96). Only the totals are fit for Kd.
+- The mean Kd of Ed from 0 to 50 m is 0.1381 per m. Jerlov's Kd for type
+  III at 440 nm is 0.129 in the first edition (1968) and 0.145 in the
+  second (1976); the Kd that HydroLight made of Solonenko and Mobley's
+  (2015) own a and b for the type, under a clear sky in deep water, is
+  0.123. The run's sun, sky and surface are its own, and a Jerlov type
+  does not fix them.

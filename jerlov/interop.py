@@ -1,4 +1,5 @@
-"""Input files for radiative transfer codes: OSOAA and HydroLight.
+"""Input files for radiative transfer codes, OSOAA and HydroLight, and
+OSOAA's results read back.
 
 This package does not solve the radiative transfer equation (DECISIONS.md
 sections 12 and 38). These functions write a Jerlov type's absorption and
@@ -18,11 +19,20 @@ Both codes add pure water back to what they are given, their own pure
 water, so the pure water to subtract is the caller's, with no default:
 with the values the code will add, the code's total is the Jerlov type.
 Each function returns the file's text; writing it is the caller's.
+
+OSOAA's results are read back by :func:`read_osoaa_flux`,
+:func:`read_osoaa_radiance_vs_depth` and :func:`read_osoaa_radiance_vs_vza`
+(DECISIONS.md section 87), each from the text of one file, the values as
+OSOAA prints them: normalized to the extraterrestrial solar irradiance,
+which OSOAA leaves to the user and so does this package.
 """
 
 from __future__ import annotations
 
+import math
+import re
 import warnings
+from dataclasses import dataclass
 
 import numpy as np
 
@@ -327,3 +337,327 @@ def hydrolight_ac9_file(water, wavelengths, /, *, depths_m,
     records += [f"{d:.6g} {values}" for d in z]
     records.append(f"-1.0 {values}")
     return "\n".join(header + records) + "\n"
+
+
+# -- OSOAA's results (DECISIONS.md section 87) ------------------------------
+
+
+def _text(text, name: str) -> list[str]:
+    if not isinstance(text, str):
+        raise TypeError(
+            f"{name} reads the text of the file, not "
+            f"{type(text).__name__}: pass pathlib.Path(...).read_text()")
+    return text.splitlines()
+
+
+def _expect(lines: list[str], first: str, name: str) -> None:
+    head = lines[0].strip() if lines else ""
+    if not head.startswith(first):
+        raise ValueError(
+            f"{name} expects a file whose first line starts {first!r}; "
+            f"this one starts {head[:60]!r}")
+
+
+def _numbers(line: str, k: int, n: int) -> list[float]:
+    fields = line.split()
+    if len(fields) != n:
+        raise ValueError(
+            f"line {k + 1} has {len(fields)} values, not {n}: "
+            f"{line.strip()!r}")
+    if any("*" in f for f in fields):
+        raise ValueError(
+            f"line {k + 1} has a field OSOAA could not print (***): "
+            f"{line.strip()!r}")
+    try:
+        values = [float(f) for f in fields]
+    except ValueError:
+        raise ValueError(
+            f"line {k + 1} is not all numbers: {line.strip()!r}") from None
+    if not all(math.isfinite(v) for v in values):
+        raise ValueError(f"line {k + 1} has a value that is not finite: "
+                         f"{line.strip()!r}")
+    return values
+
+
+def _rows(lines: list[str], column_head: str, n: int, name: str):
+    """The numeric rows after the line of column names."""
+    starts = [k for k, line in enumerate(lines)
+              if line.split()[:1] == [column_head]]
+    if not starts:
+        raise ValueError(f"{name}: no line of column names starting "
+                         f"{column_head!r}")
+    start = starts[-1] + 1
+    rows = [(k, line) for k, line in enumerate(lines[start:], start)
+            if line.strip()]
+    if not rows:
+        raise ValueError(f"{name}: no values after the column names")
+    return [(k, line, _numbers(line, k, n)) for k, line in rows]
+
+
+def _frozen(*arrays) -> None:
+    for array in arrays:
+        array.setflags(write=False)
+
+
+def _header_value(lines: list[str], label: str, name: str) -> float:
+    for line in lines:
+        if line.strip().startswith(label):
+            try:
+                return float(line.split(":", 1)[1].split()[0])
+            except (IndexError, ValueError):
+                break
+    raise ValueError(f"{name}: no {label!r} line with a value")
+
+
+@_data.compared_by_value
+@dataclass(frozen=True, eq=False)
+class OsoaaFlux:
+    """OSOAA's profile of fluxes, ``Flux.txt``, as it prints them.
+
+    The fluxes are normalized so that the extraterrestrial solar irradiance
+    is pi: multiply by Esun / pi for W/m2 (OSOAA User Manual V2.0, section
+    3.5.6). "Direct" is not the unscattered beam: OSOAA truncates the
+    forward peak of the hydrosols' phase function and counts the light so
+    removed as transmitted (section 4.2.3). The totals are unaffected.
+    """
+
+    level: np.ndarray
+    """OSOAA's level numbers, from the top of the atmosphere down."""
+    altitude_m: np.ndarray
+    """As printed: positive in the atmosphere, negative in the sea."""
+    in_sea: np.ndarray
+    """True for the levels in the sea, the sign of the printed altitude,
+    -0.00000 included: OSOAA prints the surface once above (0.00000) and
+    twice below."""
+    direct_down: np.ndarray
+    """The direct downward flux, normalized, after OSOAA's truncation."""
+    diffuse_down: np.ndarray
+    """The diffuse downward flux, normalized."""
+    total_down: np.ndarray
+    """Ed, normalized."""
+    direct_up: np.ndarray
+    """The direct upward flux, normalized."""
+    diffuse_up: np.ndarray
+    """The diffuse upward flux, normalized."""
+    total_up: np.ndarray
+    """Eu, normalized."""
+    up_over_down: np.ndarray
+    """Eu / Ed as OSOAA prints it."""
+
+    @property
+    def sea_depths_m(self) -> np.ndarray:
+        """The depths of the sea's levels, positive, from the surface."""
+        return -self.altitude_m[self.in_sea]
+
+    def kd(self, upper_m: float, lower_m: float) -> float:
+        """The mean Kd of Ed between two depths, 1/m.
+
+        ``ln(Ed(upper) / Ed(lower)) / (lower - upper)``, with ln Ed
+        interpolated linearly between OSOAA's levels and the first level
+        below the surface standing for depth 0. Depths outside the levels
+        are refused.
+        """
+        upper = float(upper_m)
+        lower = float(lower_m)
+        z = self.sea_depths_m
+        ed = self.total_down[self.in_sea]
+        # Keep the first of levels at equal depth: the two at the surface.
+        keep = np.concatenate([[True], np.diff(z) > 0])
+        z, ed = z[keep], ed[keep]
+        if not (math.isfinite(upper) and math.isfinite(lower)):
+            raise ValueError("the depths must be finite")
+        if not 0 <= upper < lower:
+            raise ValueError("need 0 <= upper_m < lower_m")
+        if lower > z[-1]:
+            raise ValueError(
+                f"lower_m = {lower:g} m is below the deepest level, "
+                f"{z[-1]:g} m")
+        if np.any(ed <= 0):
+            raise ValueError("Ed is not positive at every level")
+        log_ed = np.interp([upper, lower], z, np.log(ed))
+        return float((log_ed[0] - log_ed[1]) / (lower - upper))
+
+
+@_data.positional_only()
+def read_osoaa_flux(text, /) -> OsoaaFlux:
+    """Read OSOAA's ``Advanced_outputs/Flux.txt``.
+
+    ``text`` is the file's text. Five header lines, then for each level
+    its number, altitude and the seven columns of the OSOAA User Manual
+    V2.0, section 3.5.6, pp. 75-76. Lines that are not nine numbers, and
+    fields OSOAA could not print, are refused.
+    """
+    name = "read_osoaa_flux"
+    lines = _text(text, name)
+    _expect(lines, "Profile of downward and upward fluxes", name)
+    rows = _rows(lines, "Level", 9, name)
+    values = np.array([r[2] for r in rows])
+    sea = np.array([line.split()[1].startswith("-") for _, line, _ in rows])
+    level = values[:, 0].astype(int)
+    columns = [np.ascontiguousarray(values[:, k]) for k in range(1, 9)]
+    _frozen(level, sea, *columns)
+    return OsoaaFlux(level, columns[0], sea, *columns[1:])
+
+
+@_data.compared_by_value
+@dataclass(frozen=True, eq=False)
+class OsoaaRadianceProfile:
+    """OSOAA's radiance against depth, ``RESLUM_vsZ.txt``, as it prints
+    it.
+
+    The radiances are normalized, I = pi L / Esun in 1/sr (multiply by
+    Esun / pi for W/m2/sr), and the reflectances are pi L / Ed (OSOAA User
+    Manual V2.0, section 3.5.1). Angles are in degrees.
+    """
+
+    direction: str
+    """``"upward"`` or ``"downward"``, as the header says."""
+    relative_azimuth_deg: float
+    """The relative azimuth of the header (180: sensor and sun in the same
+    half-plane)."""
+    viewing_zenith_deg: float
+    """The viewing zenith angle of the header."""
+    depth_m: np.ndarray
+    """Positive, from the surface; OSOAA prints them negative."""
+    scattering_angle_deg: np.ndarray
+    """The scattering angle of each row."""
+    radiance: np.ndarray
+    """I = pi L / Esun, 1/sr."""
+    reflectance: np.ndarray
+    """pi L / Ed."""
+    polarization_percent: np.ndarray
+    """The degree of polarization, percent."""
+    polarized_radiance: np.ndarray
+    """pi L_pol / Esun, 1/sr."""
+    polarized_reflectance: np.ndarray
+    """pi L_pol / Ed."""
+
+
+@_data.compared_by_value
+@dataclass(frozen=True, eq=False)
+class OsoaaRadianceScan:
+    """OSOAA's radiance against the viewing zenith angle,
+    ``RESLUM_vsVZA.txt``, as it prints it.
+
+    The radiances are normalized, I = pi L / Esun in 1/sr (multiply by
+    Esun / pi for W/m2/sr), and the reflectances are pi L / Ed (OSOAA User
+    Manual V2.0, section 3.5.1). Angles are in degrees.
+    """
+
+    level: str
+    """The header's line naming the output level, as printed."""
+    altitude_m: float
+    """That level's altitude, m: negative in the sea."""
+    azimuth_negative_deg: float
+    """The relative azimuth for negative viewing zenith angles."""
+    azimuth_positive_deg: float
+    """The relative azimuth for positive viewing zenith angles."""
+    viewing_zenith_deg: np.ndarray
+    """Signed by the half-plane, as OSOAA prints them; the angle 0
+    appears twice, as -0 and 0, one row for each half-plane."""
+    scattering_angle_deg: np.ndarray
+    """The scattering angle of each row."""
+    radiance: np.ndarray
+    """I = pi L / Esun, 1/sr."""
+    reflectance: np.ndarray
+    """pi L / Ed."""
+    polarization_percent: np.ndarray
+    """The degree of polarization, percent."""
+    polarized_radiance: np.ndarray
+    """pi L_pol / Esun, 1/sr."""
+    polarized_reflectance: np.ndarray
+    """pi L_pol / Ed."""
+
+
+def _radiance_columns(rows) -> list[np.ndarray]:
+    values = np.array([r[2] for r in rows])
+    columns = [np.ascontiguousarray(values[:, k]) for k in range(7)]
+    _frozen(*columns)
+    return columns
+
+
+@_data.positional_only()
+def read_osoaa_radiance_vs_depth(text, /) -> OsoaaRadianceProfile:
+    """Read OSOAA's ``Standard_outputs/RESLUM_vsZ.txt``.
+
+    ``text`` is the file's text: the header's relative azimuth and viewing
+    zenith angle, then for each depth the six columns of the OSOAA User
+    Manual V2.0, section 3.5.1. The two rows at depth 0 are OSOAA's two
+    levels just below the surface.
+    """
+    name = "read_osoaa_radiance_vs_depth"
+    lines = _text(text, name)
+    _expect(lines, "STANDARD RESULTS", name)
+    if not any("RADIANCE FIELD VERSUS THE SEA DEPTH" in line
+               for line in lines[:3]):
+        raise ValueError(f"{name}: not a file of radiance against depth")
+    azimuth = _header_value(lines, "Simulated relative azimuth", name)
+    for label, direction in (("Upward direction VZA", "upward"),
+                             ("Downward direction VZA", "downward")):
+        if any(line.strip().startswith(label) for line in lines):
+            vza = _header_value(lines, label, name)
+            break
+    else:
+        raise ValueError(f"{name}: no viewing zenith angle in the header")
+    z, *columns = _radiance_columns(_rows(lines, "Z", 7, name))
+    depth = np.abs(z)
+    if np.any(z > 0):
+        raise ValueError(f"{name}: a depth is printed positive")
+    _frozen(depth)
+    return OsoaaRadianceProfile(direction, azimuth, vza, depth, *columns)
+
+
+#: The forms of the output level in RESLUM_vsVZA.txt's header (OSOAA's
+#: OSOAA_SOS.F), and the factor from the printed value to metres.
+_LEVELS = (
+    ("TOA level - Altitude (km) :", 1000.0),
+    ("Sea bottom level - Depth (m) :", 1.0),
+    ("Above sea surface level 0+ - Altitude (km) :", 1000.0),
+    ("Under sea surface level 0- - Depth (m) :", 1.0),
+    ("Requested value of the depth for the output(m) :", None),
+    ("Value of the depth selected for the output (m) :", 1.0),
+    ("Altitude (km) :", 1000.0),
+)
+
+
+def _level(lines: list[str], name: str) -> tuple[str, float]:
+    for line in lines:
+        stripped = line.strip()
+        for label, factor in _LEVELS:
+            if not stripped.startswith(label):
+                continue
+            rest = stripped[len(label):]
+            numbers = re.findall(r"-?\d+\.?\d*(?:[Ee][-+]?\d+)?", rest)
+            if not numbers:
+                break
+            if factor is None:
+                # "... ==> limited to the max computed depth : Z": the last.
+                return stripped, float(numbers[-1])
+            if label == "Altitude (km) :" and len(numbers) > 1:
+                # "Altitude (km) : asked limited to the maximum altitude Z".
+                return stripped, float(numbers[-1]) * factor
+            return stripped, float(numbers[0]) * factor
+    raise ValueError(f"{name}: no output level in the header")
+
+
+@_data.positional_only()
+def read_osoaa_radiance_vs_vza(text, /) -> OsoaaRadianceScan:
+    """Read OSOAA's ``Standard_outputs/RESLUM_vsVZA.txt``.
+
+    ``text`` is the file's text: the header's two relative azimuths and the
+    output level, then for each viewing zenith angle the six columns of
+    the OSOAA User Manual V2.0, section 3.5.1.
+    """
+    name = "read_osoaa_radiance_vs_vza"
+    lines = _text(text, name)
+    _expect(lines, "STANDARD RESULTS", name)
+    if not any("RADIANCE FIELD VERSUS THE VIEWING ZENITH ANGLE" in line
+               for line in lines[:3]):
+        raise ValueError(
+            f"{name}: not a file of radiance against viewing zenith angle")
+    negative = _header_value(lines, "for VZA < 0", name)
+    positive = _header_value(lines, "for VZA > 0", name)
+    level, altitude = _level(lines, name)
+    vza, *columns = _radiance_columns(_rows(lines, "VZA", 7, name))
+    return OsoaaRadianceScan(level, altitude, negative, positive, vza,
+                             *columns)
