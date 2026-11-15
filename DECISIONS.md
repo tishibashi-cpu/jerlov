@@ -4948,3 +4948,42 @@ small in the test; the three cases of the writers refused or written in
 full; the ratios outside [-1, 1] refused and 1 and -1 accepted.
 
 **Version.** 1.15.1.
+
+## 89. Two open questions recorded beside the data they bear on (1.15.2): the plan
+
+The user asked on 2026-11-15 which questions in ocean optics have long
+stayed open, and then for the recent literature on them. Two of them bear
+directly on what the package ships, and the user asked for both to be
+recorded in its documents. Nothing in the code changes; this is the plan,
+committed before the text. Each statement is one that was read in the
+source itself, not in a search engine's summary of it: two such
+summaries, that turbulence outweighs particles in scattering "up to
+0.1 degree" and that Mason et al. are "lower by a factor of up to 5"
+than Pope & Fry, are not in those papers' abstracts and are not used.
+
+**1. Pure water absorption in the violet and near ultraviolet (DATA.md
+section 29).** Which of the published spectra is right below about 450
+nm is unsettled. The package ships four, and their ratios can be computed
+from the shipped tables rather than quoted: Pope & Fry over Mason et al.
+is 7.95 at 380 nm, 2.99 at 400, 1.46 at 420 and 1.22 at 440, and between
+0.97 and 1.08 from 460 to 550 nm; Lee et al. over Mason et al. is 2.59 at
+380 nm. These go into section 29, with a test that recomputes them, and
+the docstring of `pure_water_absorption_table` points there. The package
+continues not to choose.
+
+**2. Scattering below Petzold's first angle (DATA.md section 21).**
+Bogucki, Domaradzki, Ecke and Truman (2004), "Light scattering on
+oceanic turbulence", Appl. Opt. 43(30), 5662-5668, DOI
+10.1364/AO.43.005662, measured the volume scattering function from 1e-7
+to 1e-3 rad (about 6e-6 to 0.06 degree, below Petzold's first angle of
+0.1 degree) and found that "the total scattering coefficient b, due to
+scattering on turbulent inhomogeneities, is between 1 and 10 m-1 under
+typical oceanographic conditions", and that "optical measurements at
+small angles are affected by turbulence-related scattering" (the
+abstract). Petzold's extension below 0.1 degree is a power law of the
+measured particle and water scattering; scattering by turbulence is not
+in it, and how much of it a given water has depends on the day's mixing,
+not on its particles. This goes into section 21, beside the extension it
+qualifies.
+
+**Version.** 1.15.2: documents only.
