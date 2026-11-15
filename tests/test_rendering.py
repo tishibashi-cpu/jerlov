@@ -502,3 +502,38 @@ def test_transmittance_needs_its_arguments():
         _quiet(jerlov.rgb_transmittance,
                jerlov.water("5C", source="solonenko2015"), [1.0],
                colour_space="acescg", illuminant=jerlov.d65())
+
+
+# -- The review of 1.11.0-1.15.0 (DECISIONS.md section 88) -----------------
+
+
+def test_transmittance_in_blocks_is_the_same_to_the_bit(monkeypatch):
+    """A long table is formed in blocks of distances, each row exactly as
+    alone: memory no longer grows with the table."""
+    water = jerlov.water("III")
+    distances = np.linspace(0.0, 10.0, 37)
+    kwargs = dict(colour_space="acescg", illuminant=jerlov.d65())
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", jerlov.ProvenanceWarning)
+        whole = jerlov.rgb_transmittance(water, distances, **kwargs)
+        monkeypatch.setattr(rendering, "_BLOCK", 5)
+        blocked = jerlov.rgb_transmittance(water, distances, **kwargs)
+        one = [jerlov.rgb_transmittance(water, float(r), **kwargs)
+               .transmittance for r in distances]
+    np.testing.assert_array_equal(blocked.transmittance, whole.transmittance)
+    np.testing.assert_array_equal(blocked.transmittance, np.array(one))
+
+
+def test_a_long_table_stays_small():
+    import tracemalloc
+    water = jerlov.water("III")
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", jerlov.ProvenanceWarning)
+        tracemalloc.start()
+        jerlov.rgb_transmittance(water, np.linspace(0.0, 10.0, 20000),
+                                 colour_space="acescg",
+                                 illuminant=jerlov.d65())
+        _, peak = tracemalloc.get_traced_memory()
+        tracemalloc.stop()
+    # 20,000 x 471 x 3 doubles is 226 MB; in blocks, far less.
+    assert peak < 100e6, peak

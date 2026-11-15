@@ -85,6 +85,18 @@ def _depths(depths_m, *, minimum: int, limit: int | None) -> np.ndarray:
     return z
 
 
+def _printed(values: np.ndarray, name: str) -> list[str]:
+    """Each value as written to a file, in full; refused if, read back, the
+    printed values do not ascend strictly (DECISIONS.md section 88)."""
+    text = [f"{float(v):.15g}" for v in values]
+    back = np.array([float(s) for s in text])
+    if np.any(np.diff(back) <= 0):
+        raise ValueError(
+            f"{name} must be strictly ascending as written: two of them "
+            "print alike to 15 significant digits")
+    return text
+
+
 def _pure_water(pure_water, shape, label: str):
     if pure_water is None:
         raise ValueError(
@@ -183,7 +195,8 @@ def osoaa_user_profile(water, wavelength_nm, /, *, depths_m,
         f"Comment: less pure water a_w = {a_w[0]:.9g}, b_w = {b_w[0]:.9g} "
         "per m, which OSOAA adds back",
     ]
-    lines += [f"{d:.6g} {a[0]:.9g} {b[0]:.9g}" for d in z]
+    lines += [f"{d} {a[0]:.9g} {b[0]:.9g}"
+              for d in _printed(z, "depths_m")]
     # The manual: no blank line at the end of the file.
     return "\n".join(lines)
 
@@ -206,8 +219,9 @@ def osoaa_phase_function(scattering, /, *, minus_f12_over_f11,
     minus_f12_over_f11, f22_over_f11, f33_over_f11:
         The polarization ratios -F12/F11, F22/F11 and F33/F11 of the
         Mueller matrix, each a number for every angle or one value per
-        angle in Petzold's order (0.1 to 180 degrees). Petzold measured
-        intensity only, so they have no default.
+        angle in Petzold's order (0.1 to 180 degrees), each in [-1, 1]:
+        no element of the Mueller matrix exceeds F11 in magnitude. Petzold
+        measured intensity only, so they have no default.
 
     Notes
     -----
@@ -244,6 +258,12 @@ def osoaa_phase_function(scattering, /, *, minus_f12_over_f11,
                 "angle")
         if not np.all(np.isfinite(v)):
             raise ValueError(f"{name} must be finite")
+        outside = np.flatnonzero(np.abs(v) > 1)
+        if outside.size:
+            raise ValueError(
+                f"{name} is {v[outside[0]]:g} at {angles[outside[0]]:g} "
+                "degrees: no element of a Mueller matrix of scattering "
+                "exceeds F11 in magnitude, so the ratio lies in [-1, 1]")
         ratios.append(v)
     flagged = [f"{a:g}" for a, s in zip(angles, scattering.statuses)
                if s in _data.QUESTIONABLE]
@@ -315,6 +335,8 @@ def hydrolight_ac9_file(water, wavelengths, /, *, depths_m,
     a_w, b_w = _pure_water(pure_water, wl.shape, "HydroLight")
     a = _subtract(np.asarray(water.a(wl), dtype=float), a_w, wl, "a")
     c = _subtract(np.asarray(water.c(wl), dtype=float), a_w + b_w, wl, "c")
+    wl_text = _printed(wl, "wavelengths")
+    z_text = _printed(z, "depths_m")
     header = [
         f"{water._label()}: absorption a and beam attenuation c, 1/m, less "
         "pure water, from jerlov",
@@ -329,12 +351,12 @@ def hydrolight_ac9_file(water, wavelengths, /, *, depths_m,
         "Records 12 on: depth, a(wavelength 1..n), c(wavelength 1..n)",
         "The last record repeats the previous one with depth -1",
         "Written by jerlov; not run in HydroLight",
-        "depth " + " ".join(f"a({w:g})" for w in wl) + " "
-        + " ".join(f"c({w:g})" for w in wl),
+        "depth " + " ".join(f"a({w})" for w in wl_text) + " "
+        + " ".join(f"c({w})" for w in wl_text),
     ]
-    records = [f"{wl.size} " + " ".join(f"{w:g}" for w in wl)]
+    records = [f"{wl.size} " + " ".join(wl_text)]
     values = " ".join(f"{v:.9g}" for v in np.concatenate([a, c]))
-    records += [f"{d:.6g} {values}" for d in z]
+    records += [f"{d} {values}" for d in z_text]
     records.append(f"-1.0 {values}")
     return "\n".join(header + records) + "\n"
 

@@ -4,6 +4,28 @@ Every release is archived on Zenodo under the concept DOI
 [10.5281/zenodo.22321312](https://doi.org/10.5281/zenodo.22321312), which
 always resolves to the latest version.
 
+## 1.15.1 — 2026-11-15
+
+Three defects found in a review of the code added in 1.11.0-1.15.0
+(DECISIONS.md section 88). No shipped value changed, and no name is added
+or removed.
+
+**Fixed.**
+
+- `rgb_transmittance` formed the spectra of every distance at once, so a
+  long table took memory in proportion: 20,000 distances took 678 MB. The
+  distances are now formed in blocks, each row exactly as before, so every
+  value is unchanged to the last bit.
+- `osoaa_user_profile` and `hydrolight_ac9_file` printed depths, and
+  HydroLight's wavelengths, to six significant digits: distinct depths
+  such as 100.0000001 and 100.0000002 m were written alike, a profile no
+  longer ascending, and 1234.56789 m was written 1234.57. They are now
+  printed to 15 digits, and a list whose printed values do not ascend
+  strictly is refused. Depths such as 0, 10 and 50 are written as before.
+- `osoaa_phase_function` accepted polarization ratios of any size. Each
+  of -F12/F11, F22/F11 and F33/F11 must now lie in [-1, 1], since no
+  element of a Mueller matrix of scattering exceeds F11 in magnitude.
+
 ## 1.15.0 — 2026-11-15
 
 OSOAA's results read back (DECISIONS.md section 87). No shipped value

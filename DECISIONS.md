@@ -4899,3 +4899,52 @@ names, 122 in all.
 - The example finds its files either in OSOAA's own folders
   (`Advanced_outputs/`, `Standard_outputs/`) or all in one, as
   `tests/data` keeps them.
+
+## 88. A review of 1.11.0-1.15.0: three defects (1.15.1): the plan
+
+The user asked on 2026-11-15 for the code added since the review of
+1.10.1 (sections 80 and 81) to be reviewed: `rendering.py`,
+`ScatteringFunction.mean_cosine`, `materials.py` and `interop.py`. Each
+function was given inputs at and past its edges, and the input formats
+were read again against OSOAA's and HydroLight's documents. Three defects
+were found, each reproduced; the user asked for all three to be fixed, as
+1.15.1. No shipped value changes, and no name is added or removed. This
+release was written by Claude at the user's request, and its commits and
+pull request name Claude as their author.
+
+**1. `rgb_transmittance` holds every distance's spectrum at once.** The
+transmittance is formed from an array of distances by wavelengths by
+three channels, so memory grows with the table: 20,000 distances took
+678 MB, and a 256 x 256 table, 65,536 distances, would take about 2.2 GB.
+The fix forms it in blocks of distances, each row computed exactly as
+before, so the values are unchanged to the last bit. `rgb_attenuation`
+uses at most 4001 distances and was never affected.
+
+**2. The writers print depths and wavelengths to six digits.**
+`osoaa_user_profile` and `hydrolight_ac9_file` format each depth, and
+the HydroLight file each wavelength, with `.6g`. Depths 0, 100.0000001
+and 100.0000002 m are accepted as strictly ascending and written as 0,
+100 and 100: a profile OSOAA would read as not ascending. Wavelengths
+440.0000001 and 440.0000002 nm are both written 440, and a depth of
+1234.56789 m is written 1234.57. The fix prints them with `.15g`, which
+writes 0, 10 and 50 as before, so the run of section 86 is unchanged
+byte for byte, and refuses a list whose printed values, read back, are
+not strictly ascending.
+
+**3. `osoaa_phase_function` takes polarization ratios of any size.** It
+wrote -F12/F11 = 5 and F22/F11 = -3 without complaint. No element of a
+Mueller matrix of scattering exceeds F11 in magnitude, so each of the
+three ratios lies in [-1, 1]; the fix refuses a value outside it, naming
+the ratio and the angle.
+
+**Not changed.** `pure_water=(True, 0.0)` is read as (1.0, 0.0), as a
+boolean wavelength is elsewhere in the package (`Water.a(True)`): a
+convention, not a defect of these functions.
+
+**Checks.** Each defect's reproduction becomes a test that fails before
+the fix: the transmittance of 20,000 distances equal, bit for bit, to
+the same distances asked for one at a time, with the block size made
+small in the test; the three cases of the writers refused or written in
+full; the ratios outside [-1, 1] refused and 1 and -1 accepted.
+
+**Version.** 1.15.1.
