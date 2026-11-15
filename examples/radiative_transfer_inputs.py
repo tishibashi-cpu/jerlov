@@ -91,8 +91,8 @@ def osoaa_part(caught):
     print(f"""Williamson & Hollins's a = {a:.4g} and b = {b:.4g} per m. Less OSOAA's own pure
 seawater ({OSOAA_PURE_WATER[0]:g} and {OSOAA_PURE_WATER[1]:g}), the profile gives the hydrosols
 a = {float(hydrosol[0]):.5g} and b = {float(hydrosol[1]):.5g}, and OSOAA adds its water back: c = {a + b:.4g},
-b/c = {b / (a + b):.4f}. The phase function is {STATION}'s vsf / b at Petzold's 55
-angles.
+b/c = {b / (a + b):.4f}. The phase function is 4 pi times {STATION}'s vsf / b at
+Petzold's 55 angles: OSOAA takes its integral over the sphere as 4 pi.
 
 The profile:
 """)

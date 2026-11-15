@@ -2178,13 +2178,13 @@ def transfer_read_example():
 @source_tree
 def test_examples_README_figures_for_reading_osoaa(transfer_read_example):
     text = (ROOT / "examples" / "README.md").read_text()
-    for quoted in ("mean Kd of **0.138** per m", "Jerlov's 0.129 (1968)",
+    for quoted in ("mean Kd of **0.158** per m", "Jerlov's 0.129 (1968)",
                    "0.145 (1976)", "HydroLight made 0.123"):
         assert quoted in text, quoted
     read = transfer_read_example["read"]
     assert (read["wavelength"], read["sun"], read["depth"]) == (
         440.0, 30.0, 50.0)
-    assert round(read["kd"], 3) == 0.138
+    assert round(read["kd"], 3) == 0.158
     compared = read["compared"]
     assert [round(v, 3) for v in compared.values()] == [0.129, 0.145, 0.123]
 
@@ -2192,10 +2192,10 @@ def test_examples_README_figures_for_reading_osoaa(transfer_read_example):
 @source_tree
 def test_DATA_figures_for_reading_osoaa(transfer_read_example):
     text = (ROOT / "DATA.md").read_text()
-    for quoted in ("is 0.1381 per m", "0.129 in the first edition",
+    for quoted in ("is 0.1577 per m", "0.129 in the first edition",
                    "0.145 in the\n  second", "own a and b for the type, "):
         assert quoted in text, quoted
-    assert round(transfer_read_example["read"]["kd"], 4) == 0.1381
+    assert round(transfer_read_example["read"]["kd"], 4) == 0.1577
 
 
 # -- Open questions recorded in DATA.md (DECISIONS.md section 89) ----------

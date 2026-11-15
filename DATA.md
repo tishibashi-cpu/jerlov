@@ -2229,16 +2229,21 @@ What the readers recover from it:
   `Flux.txt`, to five digits.
 - The nadir appears twice in `RESLUM_vsVZA.txt`, as -0.00 and 0.00, one
   row for each half-plane, with one value.
-- OSOAA's direct flux in the sea falls at 0.144 per m, not at c /
+- OSOAA's direct flux in the sea falls at 0.235 per m, not at c /
   cos(theta_w) = 0.467: OSOAA truncates the forward peak of the hydrosols'
   phase function and counts the light so removed as transmitted (User
-  Manual V2.0, section 4.2.3, p. 96). Only the totals are fit for Kd.
-- The mean Kd of Ed from 0 to 50 m is 0.1381 per m. Jerlov's Kd for type
+  Manual V2.0, section 4.2.3, p. 96). Its truncation coefficient for this
+  run, in `PM_PHYTO.txt`, is 1.40215, and c (1 - (b/c) A/2) /
+  cos(theta_w) is 0.231. Only the totals are fit for Kd.
+- The mean Kd of Ed from 0 to 50 m is 0.1577 per m. Jerlov's Kd for type
   III at 440 nm is 0.129 in the first edition (1968) and 0.145 in the
   second (1976); the Kd that HydroLight made of Solonenko and Mobley's
   (2015) own a and b for the type, under a clear sky in deep water, is
   0.123. The run's sun, sky and surface are its own, and a Jerlov type
   does not fix them.
+- Until release 1.15.5 this run was made with the phase function 4 pi too
+  small (below), and OSOAA's Kd came out lower; release 1.15.4 keeps
+  those files.
 
 ## 39. Williamson & Hollins's IOPs against Jerlov's Kd (note)
 
