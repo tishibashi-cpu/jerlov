@@ -5233,3 +5233,56 @@ which has not been merged.
 - `tests/test_osoaa_closure.py`, which checked figures no document now
   quotes, is replaced by `tests/test_kd_closure.py`, which also runs the
   Monte Carlo's checks and makes one stored run again from its seed.
+
+## 93. The fault was the package's: `osoaa_phase_function` wrote F11 4 pi too small (1.15.5): the plan
+
+Section 92 put the low Kd of section 90 down to OSOAA truncating Petzold's
+phase functions too far, and said why OSOAA did so had not been traced.
+The user asked whether that had come from reading OSOAA's source; it had
+not, and they asked for it to be traced. It was, on 2026-11-15, and the
+fault is in this package.
+
+**What OSOAA does.** For a user's phase function (`-HYD.ExtData`,
+`OSOAA_HYDROSOLS.F`, the branch IMOD = 2), OSOAA splines F11 in the cosine
+onto its Gauss angles and passes it, unnormalised, to
+`SOS_DECOMPO_LEGENDRE` (`OSOAA_PARTICLES_RAD.F`), which truncates it and
+takes the truncation coefficient as A = 2 (1 - beta_0), with beta_0 =
+(1/2) sum of F11 times the Gauss weights. That holds only if F11 is
+normalised so that (1/2) of its integral over the cosine is 1, that is
+its integral over the sphere is 4 pi. The manual does not say so in words
+(section 3.6.3, p. 81: "phase function in intensity P11"), but its
+example, an aerosol's F11 of 0.419 at 180 degrees, is of that scale.
+
+**What the package wrote.** `osoaa_phase_function` (1.14.0 to 1.15.4)
+wrote F11 = vsf / b, whose integral over the sphere is 1: 4 pi times too
+small. Section 86 had said OSOAA normalises it; it does not, before the
+truncation coefficient is taken. With the file multiplied by 4 pi and
+nothing else changed, OSOAA truncated 65 to 70 percent instead of 96.5 to
+97.8, and its Kd came within 2 to 8 percent of the Monte Carlo's for 5C
+at 550 nm, IB at 450, III at 550 and 3C at 450.
+
+**The fix.** `osoaa_phase_function` writes F11 = 4 pi vsf / b, says so,
+and a test checks the normalisation; the docstring's warning about
+OSOAA's truncation, which blamed OSOAA, goes. This changes the files the
+function writes, a fix to a defect, not a change of behaviour the package
+promised; the CHANGELOG says so under "Fixed".
+
+**What is done again with OSOAA, by hand outside CI.**
+
+- The run of sections 86 and 87, kept in `tests/data/osoaa_iii_440/`,
+  with the corrected phase function. The readers' tests and the figures
+  quoted from it (Kd of 0.1381 per m, the example's `--read` part) are
+  recomputed.
+- The 408 runs of section 90, with the corrected files, kept in
+  `examples/data/osoaa_closure/` in place of the old ones, with their
+  truncation coefficients. They become a second, independent calculation
+  beside the Monte Carlo of section 92, whose conclusions do not change.
+
+**The documents.** DATA.md sections 38 and 39, `OPEN_QUESTIONS.md`, the
+example `closure_with_jerlov_kd.py`, `radiative_transfer_inputs.py`'s
+figures and the README are corrected: the first answer of 1.15.3 was
+wrong because the package wrote the phase function 4 pi too small, not
+because of OSOAA, and section 92's account of the cause was itself wrong.
+Sections 86, 90 and 92 stay as written, this section correcting them.
+
+**Version.** 1.15.5.
