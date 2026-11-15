@@ -61,6 +61,10 @@ _SPACES: dict[str, tuple[tuple[tuple[float, float], ...],
 
 #: The distances at which a channel's transmittance is fitted.
 _FIT_POINTS = 201
+#: Distances formed at once: the spectra of a block take _BLOCK x about
+#: 470 wavelengths x 3 channels of memory, whatever the table's length
+#: (DECISIONS.md section 88).
+_BLOCK = 1024
 
 
 def _xyz_to_rgb(colour_space: str) -> np.ndarray:
@@ -266,11 +270,17 @@ class _ChannelLight:
         """T_k(r) through the coefficient ``name``, for a 1-D array r."""
         coefficient = self.coefficients[name]
 
-        def at(r: np.ndarray) -> np.ndarray:
+        def block(r: np.ndarray) -> np.ndarray:
             spectra = self.light[None, :] * np.exp(-np.outer(r, coefficient))
-            rgb = _data.trapezoid(
+            return _data.trapezoid(
                 spectra[:, :, None] * self.response[None, :, :], self.wl,
                 axis=1)
+
+        def at(r: np.ndarray) -> np.ndarray:
+            # Each row is computed alone, so blocks change no value.
+            rgb = np.concatenate(
+                [block(r[k:k + _BLOCK]) for k in range(0, r.size, _BLOCK)]
+            ) if r.size else np.empty((0, 3))
             return rgb / self.rgb0
         return at
 

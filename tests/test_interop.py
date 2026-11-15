@@ -399,3 +399,48 @@ def test_results_are_read_only(flux, profile):
     for array in (flux.total_down, flux.in_sea, profile.radiance,
                   profile.depth_m):
         assert not array.flags.writeable
+
+
+# -- The review of 1.11.0-1.15.0 (DECISIONS.md section 88) -----------------
+
+
+def test_depths_and_wavelengths_are_written_in_full():
+    water = jerlov.water("III")
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", jerlov.ProvenanceWarning)
+        _, rows = _profile(jerlov.osoaa_user_profile(
+            water, 440.0, depths_m=[0, 10.25, 1234.56789],
+            pure_water=OSOAA_440))
+        np.testing.assert_array_equal(rows[:, 0], [0, 10.25, 1234.56789])
+        _, wl, rows = _ac9(jerlov.hydrolight_ac9_file(
+            water, [440.0000001, 440.0000002], depths_m=[0, 1234.56789],
+            pure_water=(0.0, 0.0)))
+    np.testing.assert_array_equal(wl, [440.0000001, 440.0000002])
+    np.testing.assert_array_equal(rows[:, 0], [0, 1234.56789, -1])
+
+
+def test_depths_that_would_print_alike_are_refused():
+    water = jerlov.water("III")
+    close = [0, 100.0, 100.0 + 1e-13]
+    with pytest.raises(ValueError, match="ascending"):
+        jerlov.osoaa_user_profile(water, 440.0, depths_m=close,
+                                  pure_water=OSOAA_440)
+    with pytest.raises(ValueError, match="ascending"):
+        jerlov.hydrolight_ac9_file(water, WL, depths_m=close,
+                                   pure_water=(0.0, 0.0))
+    with pytest.raises(ValueError, match="ascending"):
+        jerlov.hydrolight_ac9_file(water, [440.0, 440.0 + 1e-13],
+                                   depths_m=[0, 1], pure_water=(0.0, 0.0))
+
+
+@pytest.mark.parametrize("name", ["minus_f12_over_f11", "f22_over_f11",
+                                  "f33_over_f11"])
+def test_polarization_ratios_lie_in_minus_one_to_one(name):
+    scattering = jerlov.petzold_scattering("NUC 2200")
+    kwargs = dict(minus_f12_over_f11=0.0, f22_over_f11=1.0,
+                  f33_over_f11=1.0)
+    for bad in (1.0001, -5.0, [0.0] * 54 + [1.5]):
+        with pytest.raises(ValueError, match=name):
+            jerlov.osoaa_phase_function(scattering, **{**kwargs, name: bad})
+    for good in (1.0, -1.0):
+        jerlov.osoaa_phase_function(scattering, **{**kwargs, name: good})
