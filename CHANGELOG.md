@@ -4,6 +4,23 @@ Every release is archived on Zenodo under the concept DOI
 [10.5281/zenodo.22321312](https://doi.org/10.5281/zenodo.22321312), which
 always resolves to the latest version.
 
+## 1.15.2 — 2026-11-15
+
+Two open questions recorded beside the data they bear on (DECISIONS.md
+section 89). Documents only: no code, value or name changes.
+
+**Documents.**
+
+- DATA.md section 29: how far apart the four published spectra of pure
+  water absorption are, computed from the shipped tables. Pope & Fry over
+  Mason et al. is 7.95 at 380 nm, 1.22 at 440, and within 0.97-1.08 from
+  460 to 550 nm; which is right in the violet is not settled.
+  `pure_water_absorption_table`'s docstring points there.
+- DATA.md section 21: below Petzold's first angle, 0.1 degree, Bogucki et
+  al. (2004) measured scattering on oceanic turbulence of 1 to 10 m-1 in
+  total; Petzold's extension there is a power law of particle and water
+  scattering and does not include it.
+
 ## 1.15.1 — 2026-11-15
 
 Three defects found in a review of the code added in 1.11.0-1.15.0

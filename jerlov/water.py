@@ -1190,7 +1190,9 @@ def pure_water_absorption_table(wavelength_nm, /, *, source: str):
     source built its a on, this returns a spectrum published for its own
     sake, for use where a pure water absorption must be supplied, such as
     the ``pure_water`` of :func:`qaa_v6` and :func:`qaa_ioccg2006`. There is
-    no default: which one to use is the caller's choice.
+    no default: which one to use is the caller's choice. Below about 450
+    nm they disagree, by a factor of 7.95 between Pope & Fry and Mason et
+    al. at 380 nm, and which is right is not settled (DATA.md section 29).
 
     ``source`` is one of:
 
