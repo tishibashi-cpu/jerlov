@@ -5286,3 +5286,29 @@ because of OSOAA, and section 92's account of the cause was itself wrong.
 Sections 86, 90 and 92 stay as written, this section correcting them.
 
 **Version.** 1.15.5.
+
+**Differences from the plan.**
+
+- The plan put the new OSOAA runs "in place of the old ones". The old
+  runs are kept instead, in `examples/data/osoaa_closure_f11_too_small/`,
+  so that the figures the documents still quote from them (96.5 to 97.8
+  percent, 0.7 to 23.1 percent) stay recomputed by a test, as the rest of
+  this package's figures are. The single run in `tests/data/` is
+  replaced; release 1.15.4 keeps its old files, and the documents quote
+  no figure from them.
+- `tests/data/osoaa_iii_440/` gains the run's `PM_PHYTO.txt`, so that its
+  truncation coefficient, 1.40215, is read by a test, and
+  `tools/osoaa_closure.py` writes `truncation.csv` itself instead of a
+  script outside the repository.
+- With the corrected file OSOAA's Kd is 1.007 to 1.096 times the Monte
+  Carlo's over the 62 base runs; the four trial runs, 2 to 8 percent
+  above, are among them, with the same results. It is the higher the bluer the light and the
+  clearer the water. OSOAA's sky, which the Monte Carlo lacks, may account
+  for it; that was not checked. The station moves OSOAA's Kd by -5.8 to
+  +14.9 percent, against the Monte Carlo's -6.4 to +14.5. Against Jerlov
+  (1976) OSOAA's Kd lies outside the reach of the three conditions at the
+  same places as the Monte Carlo's but for 5C at 425 nm, which it brings
+  just inside. The documents say so.
+- The first rerun stopped when the disk filled (each run keeps about
+  60 MB of OSOAA's own files); the bulky files of finished runs were
+  deleted as the runs went, which does not change the results.

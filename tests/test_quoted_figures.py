@@ -2274,9 +2274,12 @@ def test_open_questions_closure_figures_are_the_examples(closure_example):
     assert f"{verdict['down']:.2f} to {verdict['up']:.2f} times" in text
     assert set(verdict["beyond"]) == {"IB", "1C", "3C", "5C"}
     osoaa = out["osoaa"]
-    assert osoaa["n"] == 62
-    assert (f"{100 * (1 - osoaa['high'][0]):.1f} to "
-            f"{100 * (1 - osoaa['low'][0]):.1f} percent") in text
+    ratios = osoaa["now"]["ratios"]
+    assert len(ratios) == 62
+    assert f"{ratios[0][0]:.3f} to {ratios[-1][0]:.3f} times" in text
+    before = osoaa["before"]["ratios"]
+    assert (f"{100 * (1 - before[-1][0]):.1f} to "
+            f"{100 * (1 - before[0][0]):.1f} percent") in text
     assert len(out["runs"]) == 240
 
 

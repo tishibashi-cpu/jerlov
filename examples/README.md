@@ -392,8 +392,10 @@ for the same types? It reads 240 Monte Carlo runs kept in
 to 0.98 for III, but down to **0.51** for 3C at 425 nm. The sun moves Kd by
 -7.7 to +22.4 percent, the phase function by -6.4 to +14.5 and the pure
 water by -10.9 to +9.3; together they cover the gap except at the blue
-end. The OSOAA runs of 1.15.3, kept beside them, gave Kd up to 23.1
-percent too low.
+end. OSOAA, run as a second calculation, gives Kd 1.007 to 1.096 times
+the Monte Carlo's. The OSOAA runs of 1.15.3, made with the phase function
+4 pi too small, gave Kd up to 23.1 percent too low; they are kept as the
+record.
 
 ## What they do not show
 

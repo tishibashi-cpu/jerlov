@@ -2183,20 +2183,23 @@ What was not checked: the radiances themselves against any other code
 or measurement, other wavelengths, other stations, and polarization
 ratios other than these.
 
-**OSOAA truncates Petzold's phase functions too far (found later).**
-OSOAA always truncates the forward peak of the hydrosols' phase function
-(User Manual V2.0, section 4.2.3, p. 96), and each run reports the
-truncation coefficient in `Advanced_outputs/PM_PHYTO.txt`, twice the share
-of the scattering treated as unscattered. With Petzold's functions it was
-1.930 to 1.956 in all 362 runs of section 39's first version (96.5 to
-97.8 percent), although those functions hold 84 to 89 percent of their
-scattering within 23 degrees. Narrowing OSOAA's hydrosol truncation
-angles from 32 and 23 to 8 and 5 degrees (`CTE_HYD_MU1_TRONCA` and
-`CTE_HYD_MU2_TRONCA` in `inc/OSOAA.h`, rebuilt) left the share at 95 to
-96 percent and Kd unchanged, and so did adding a 0 degree row to the
-phase function. Its Kd then fall below a Monte Carlo's, by up to 23
-percent (section 39). Why OSOAA treats these functions so was not traced.
-`osoaa_phase_function` warns of it in its docstring.
+**The phase function was written 4 pi too small (found later; fixed in
+1.15.5).** OSOAA always truncates the forward peak of the hydrosols' phase
+function (User Manual V2.0, section 4.2.3, p. 96), and each run reports the
+truncation coefficient A in `Advanced_outputs/PM_PHYTO.txt`; A / 2 of the
+hydrosols' scattering is treated as unscattered. For a phase function
+given in a file, OSOAA splines F11 in the cosine and takes A from it
+without normalising it (`OSOAA_HYDROSOLS.F`, `SOS_DECOMPO_LEGENDRE` in
+`OSOAA_PARTICLES_RAD.F`): it expects F11 whose integral over the sphere is
+4 pi. `osoaa_phase_function` wrote vsf / b, whose integral is 1, from
+release 1.14.0 to 1.15.4, and OSOAA treated 96.5 to 97.8 percent of the
+scattering as unscattered in every run of section 39's first version,
+where Petzold's functions hold 84 to 89 percent within 23 degrees. Release
+1.15.4 put this down to OSOAA (DECISIONS.md section 92); that was wrong,
+and the fault was this package's (section 93). The runs were not checked
+against the code's source until the user asked whether they had been.
+Since 1.15.5 the function writes 4 pi vsf / b, and the runs here and in
+section 39 were made again.
 
 **HydroLight** was not available and was not run. `hydrolight_ac9_file`
 follows the "standard format for ac-9 data" of the HydroLight 5.1
@@ -2251,7 +2254,7 @@ Does a Jerlov type's a and b, put through a radiative transfer
 calculation, give back the Kd Jerlov printed for it, and which of the
 conditions a type does not fix move the answer most? The first answer to
 this, in release 1.15.3, was wrong; it is kept at the end of this section
-with the reason (DECISIONS.md sections 90 and 92).
+with the reason (DECISIONS.md sections 90, 92 and 93).
 
 **Williamson & Hollins's waters were chosen by their Kd.** Their code and
 data (figshare `10.6084/m9.figshare.20290782`, `20221121-Dstl_MIOP_code_v3.py`
@@ -2318,16 +2321,39 @@ consistent within the conditions neither records. At the blue end, the
 clearest type's measured IOPs attenuate more than Jerlov's Kd, and the
 coastal types' less. Why, the package cannot say.
 
+**A second calculation: OSOAA (1.15.5).** The 408 runs of OSOAA (CNES,
+commit `8e4914f`, section 38) of the first version, made again with the
+phase function corrected, are kept in `examples/data/osoaa_closure/`:
+the same a and b and the same stations, with OSOAA's own sky (a maritime
+aerosol of optical thickness 0.1 at 550 nm), a surface under a 7 m/s wind
+and a black seabed six of Jerlov's penetration depths down; on IB and
+III, the sun, the station, the pure water, the aerosol and the wind are
+varied. 46 runs cannot be made: from 650 nm OSOAA's own pure water is
+above the aw Williamson & Hollins built a on, and OSOAA always adds its
+own back.
+
+- In the 62 base runs it can make, OSOAA's Kd is 1.007 to 1.096 times the
+  Monte Carlo's, the higher the bluer the light and the clearer the
+  water: 1.096 for IB at 425 nm, 1.007 for 1C at 675 nm. OSOAA's sky,
+  which the Monte Carlo lacks, may account for that; it was not checked.
+- OSOAA treats 56.2 to 72.7 percent of the hydrosols' scattering as
+  unscattered (`truncation.csv`, from each run's `PM_PHYTO.txt`).
+- The station moves its Kd by -5.8 to +14.9 percent, against the Monte
+  Carlo's -6.4 to +14.5; the aerosol and the wind by -0.3 to +0.8.
+- Against Jerlov (1976), OSOAA's Kd lies outside the reach of the three
+  conditions at the same places as the Monte Carlo's, but for 5C at
+  425 nm, which it brings just inside.
+
 **What 1.15.3 said, and why it was wrong.** Release 1.15.3 made this
-comparison with OSOAA (CNES, commit `8e4914f`, section 38), in 408 runs
-kept in `examples/data/osoaa_closure/`, and concluded that the coastal
-types' IOPs give down to half of Jerlov's Kd, that the phase function
-hardly matters (under 1.5 percent), and that the backscatter ratio needed
-was beyond any Petzold measured. OSOAA truncates the hydrosols' forward
-peak; in every one of its runs it treated 96.5 to 97.8 percent of their
-scattering as unscattered (`truncation.csv`, from each run's
-`PM_PHYTO.txt`), where Petzold's functions hold 84 to 89 percent within
-23 degrees. Its Kd were 0.7 to 23.1 percent below the Monte Carlo's in
-the 62 base runs it could make, the more so the larger b/a, and with the
-scattering truncated, the phase function could not show its effect. Those
-runs are kept as the record. The conclusions above replace them.
+comparison with OSOAA alone and concluded that the coastal types' IOPs
+give down to half of Jerlov's Kd, that the phase function hardly matters
+(under 1.5 percent), and that the backscatter ratio needed was beyond any
+Petzold measured. The package had written OSOAA's phase function 4 pi too
+small (section 38), and OSOAA treated 96.5 to 97.8 percent of the
+scattering as unscattered. Its Kd were 0.7 to 23.1 percent below the
+Monte Carlo's in the 62 base runs it could make, the more so the larger
+b/a, and with the scattering truncated, the phase function could not show
+its effect. Release 1.15.4 found the Kd too low but put the cause in
+OSOAA; release 1.15.5 found it in the package. Those runs are kept in
+`examples/data/osoaa_closure_f11_too_small/` as the record. The
+conclusions above replace them.
