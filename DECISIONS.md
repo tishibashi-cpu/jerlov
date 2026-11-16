@@ -6281,3 +6281,57 @@ and its rounding note) with a pointer; README; docs/api.rst; CHANGELOG;
   Kw is 1.23 times the whole change. At 0.3 and above the editions agree
   within 9 percent from 412 to 670 nm, and give the same nearest Jerlov
   type; at 0.03 they give IA (1988) and I (2001).
+
+## 102. The clearest natural waters: Morel et al. (2007) (1.20.0): the plan
+
+NEXT_STEPS section 0b, B, item 12; the paper supplied by the user: Morel,
+Gentili, Claustre, Babin, Bricaud, Ras and Tièche (2007), "Optical
+properties of the 'clearest' natural waters", Limnol. Oceanogr. 52(1),
+217-229, doi:10.4319/lo.2007.52.1.0217. Measurements in the South Pacific
+gyre (BIOSOPE, November 2004).
+
+**What it gives in tables** (the Kd and R spectra are figures only):
+
+- Table 1 (p. 220): eight stations, STB-4 to STB-15: position and date;
+  [Chl] at 5 m and at 30-40 m; Zeu; the depth and [Chl] of the deep
+  maximum; Kd at 420 and 310 nm; ap at 420 and 310 nm; Rmax and its
+  wavelength; derived atot at 420 and 310 nm and ay1 and ay2 at 310 nm.
+- Table 2 (p. 224): aw1, 300-500 nm every 5 (Buiteveld et al. 1994 from
+  Boivin et al. 1986 below 366 nm, Pope & Fry 1997 from 420 nm, a smooth
+  join between); aw2, 300-370 nm (from Quickenden & Irvin 1980, joined
+  at 366 nm); bsw, 300-500 nm (Buiteveld et al. times 1.30 for salt);
+  bbsw = bsw / 2. They call aw1 and aw2 a "tentative upper bound" for pure
+  water from in situ data.
+
+Checks made before the plan: ay2 - ay1 at 310 nm should be aw1(310) -
+aw2(310) = 0.0183 for every station, since atot and ap are shared; it is
+0.0182 for six and 0.0082 for GYR-5 and STB-14, so one of their ay values
+is likely misprinted by 0.0100. The Fig. 5 caption gives Morel &
+Maritorena's (2001) Kbio(420) = 0.1227 [Chl]^0.659, which is their Table
+2's chi and e at 420 nm rounded. Table 2's aw from 420 nm should be Pope
+& Fry's: to be checked against the shipped pope1997_aw.csv.
+
+**Shipped.** `jerlov/data/morel2007_aw.csv` (wavelength_nm, aw1_per_m,
+aw2_per_m, bsw_per_m, status, note) and `morel2007_stations.csv`
+(station, then the quantities of Table 1, one column each, with status
+and note), from literals in `tools/build_morel2007.py`, which runs the
+checks above. The two ay2 values are `suspect`, kept as printed.
+
+**Public.**
+
+- `pure_water_absorption_table` gains `"morel2007"` (aw1, 300-500 nm)
+  and `"morel2007_aw2"` (aw2, 300-370 nm); bsw is in the table, not
+  returned.
+- `morel2007_stations()` -> a tuple of `ClearWaterStation` (frozen
+  dataclass, the quantities of Table 1 as attributes, with units in the
+  names); a flagged value comes with a ProvenanceWarning when read
+  through the function's records' `statuses`.
+
+**Example.** A part of `ocean_colour_and_secchi.py`: each station's
+Kd(420) beside Morel & Maritorena's (2001) and Morel's (1988) Kd at its
+[Chl] at 5 m, Jerlov's (1976) type I, Austin & Petzold's (1986) type I
+and pure sea water (aw + bsw / 2, from each pure water table that covers
+420 nm). Read off: how much lower the clearest waters are than Jerlov I.
+
+**Documents.** DATA.md section 46; README; docs/api.rst; CHANGELOG;
+.zenodo.json. 1.20.0: two public names.
