@@ -107,5 +107,11 @@ def test_the_literature_is_quoted_with_its_pages():
     for quoted in ("(1976, *Marine Optics*, p. 133)", "(p. 137)",
                    "pp. 122 and 124", "doi:10.5697/oc.55-2.471, p. 477",
                    "43(2), 139-168, p. 146",
-                   "Rep. Dept. Phys. Oceanogr. 36, Univ. Copenhagen, 46 pp."):
+                   "Rep. Dept. Phys. Oceanogr. 36, Univ. Copenhagen, 46 pp.",
+                   "doi:10.4319/lo.1978.23.5.1076",
+                   "average optical conditions for coastal waters rich in "
+                   "yellow substance\" (p. 1078)",
+                   "doi:10.1029/91JC01822, pp. 17,003-17,004",
+                   "*Mar. Environ. Res.* 4, 65-79, p. 78"):
         assert quoted in data, quoted
+    assert "Højerslev (1978, p. 1078)" in _flat("OPEN_QUESTIONS.md")

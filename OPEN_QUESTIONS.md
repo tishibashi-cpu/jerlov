@@ -202,9 +202,12 @@ read in 1.15.8, states no reason: it calls the coastal types a special
 classification of northern waters rich in yellow substance, fortified by
 new data (Marine Optics, p. 137). Aas et al. (2013, p. 477) note that
 waters of coastal Kd in the open sea are often blooms, not water rich in
-yellow substance; that fits the gap but is not shown to cause it. Jerlov's
-1978 report, where he reduced the coastal types to three, has not been
-obtained. Which of IB's
+yellow substance; that fits the gap but is not shown to cause it.
+Højerslev (1978, p. 1078), from Jerlov's own institute, describes the 1976
+coastal types as "average optical conditions for coastal waters rich in
+yellow substance". Jerlov's 1978 report, where he reduced the coastal
+types to three and, by Højerslev & Aas (1991, p. 17,004), dropped values he
+may have doubted, has not been obtained. Which of IB's
 six campaigns are right. Why a is at or above the Kd measured in the same
 campaign in 30 of the 211 matched entries for Jerlov III, 9 of 88 for II,
 3 of 11 for IB, 3 of 79 for 3C, 3 of 12 for 5C and none of 68 for 1C. HydroLight was not run on these waters; the

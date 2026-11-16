@@ -5745,3 +5745,37 @@ the reader who chooses a phase function); NEXT_STEPS's item 6 of section
   extension "only in the third figure"; AUTEC 7's mean cosine goes from
   0.914 to 0.900, a change in the second. It now gives the size of the
   change.
+
+**Added after the PR was opened** (2026-11-16). The user obtained and
+supplied seven papers: Højerslev (1978), Højerslev & Aas (1991), Aas et
+al. (2013) and Aas & Højerslev (2001) (the last two already read), and,
+as possibly related, Topliss, Hunter & Simpson (1980), Kampa (1970) and
+Jorde & Klavestad (1963). Read with the pages checked:
+
+- Højerslev (1978), Limnol. Oceanogr. 23(5), 1076-1079,
+  doi:10.4319/lo.1978.23.5.1076, p. 1078: "Jerlov's classification of
+  coastal waters (Jerlov 1976) was selected for the purpose because it
+  takes into consideration average optical conditions for coastal waters
+  rich in yellow substance"; p. 1079: a daylight spectrum measured where
+  the Baltic meets the Kattegat "is intermediate to and conforms with
+  Jerlov's coastal types 3 and 5".
+- Højerslev & Aas (1991), J. Geophys. Res. 96(C9), 17003-17005,
+  doi:10.1029/91JC01822, pp. 17,003-17,004: the classification's values
+  at 310 nm "seem to be based on six stations from the western Pacific and
+  the Indonesian seas and one from the Mediterranean. These values were
+  omitted in his last work [Jerlov, 1978], which may indicate that he
+  doubted their representativity"; the Baltic, Kattegat, Skagerrak,
+  German Bight and North Sea "are characterized by high contents of
+  yellow substance".
+- Topliss, Hunter & Simpson (1980), Mar. Environ. Res. 4, 65-79, p. 78:
+  at one near-shore site in North Wales "all classes of coastal optical
+  water type were present at some time of the year".
+- Kampa (1970) is about the oceanic types in the eastern North Atlantic,
+  and Jorde & Klavestad (1963) is part 4 of the Hardangerfjord series, on
+  benthic algae, not Aas (1971), which is part 9; neither is used.
+
+They add a contemporary of Jerlov's, from his institute, describing the
+1976 coastal types as average conditions for coastal waters rich in
+yellow substance, and the record that Jerlov dropped values he may have
+doubted in 1978. They still state no reason for the coastal blue of 1976.
+DATA.md section 41 and `OPEN_QUESTIONS.md`'s third question say so.

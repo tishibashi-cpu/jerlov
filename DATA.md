@@ -2553,6 +2553,26 @@ while its blue Kd stays well below the yellow-substance-rich waters
 Jerlov's coastal types came from. It is not shown to be the cause; the
 campaigns' yellow substance is not in the data.
 
+Three more papers, obtained by the user, add to this. Højerslev (1978),
+*Limnol. Oceanogr.* 23(5), 1076-1079, doi:10.4319/lo.1978.23.5.1076,
+writing from Jerlov's own institute, chose "Jerlov's classification of
+coastal waters (Jerlov 1976) ... because it takes into consideration
+average optical conditions for coastal waters rich in yellow substance"
+(p. 1078), and found a daylight spectrum where the Baltic meets the
+Kattegat "intermediate to and conforms with Jerlov's coastal types 3 and
+5" (p. 1079). Højerslev & Aas (1991), *J. Geophys. Res.* 96(C9),
+17003-17005, doi:10.1029/91JC01822, pp. 17,003-17,004, note that the
+classification's values at 310 nm "seem to be based on six stations from
+the western Pacific and the Indonesian seas and one from the
+Mediterranean. These values were omitted in his last work [Jerlov,
+1978], which may indicate that he doubted their representativity", and
+that the waters of the Baltic, Kattegat, Skagerrak, German Bight and North
+Sea "are characterized by high contents of yellow substance". Topliss,
+Hunter & Simpson (1980), *Mar. Environ. Res.* 4, 65-79, p. 78, found "all
+classes of coastal optical water type" at one near-shore site in North
+Wales over a year. None states why the coastal blue of 1976 is higher
+than that of 1968.
+
 Not obtained, and the likeliest places for the answer: Jerlov (1978), *The
 optical classification of sea water in the euphotic zone*, Rep. Dept.
 Phys. Oceanogr. 36, Univ. Copenhagen, 46 pp., in which the coastal types

@@ -23,7 +23,9 @@ kept in `examples/data/below_0_1/`.
 1976 (Marine Optics, pp. 133 and 137); he describes the coastal types as a
 special classification of northern waters rich in yellow substance,
 fortified by new data. Aas et al. (2013) note that waters of coastal Kd in
-the open sea are often blooms, not yellow-substance-rich water. Both are
+the open sea are often blooms, not yellow-substance-rich water, and
+Højerslev (1978) describes Jerlov's 1976 coastal types as average
+conditions for coastal waters rich in yellow substance. All are
 recorded in DATA.md sections 21 and 41 and in `OPEN_QUESTIONS.md`'s second
 and third questions, with the reports not obtained.
 
