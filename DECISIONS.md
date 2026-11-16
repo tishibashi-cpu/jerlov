@@ -6488,3 +6488,19 @@ the real archive against the figures quoted.
 
 **Documents.** DATA.md section 48; sources/README.md; README;
 docs/api.rst; CHANGELOG; .zenodo.json. 1.22.0: two public names.
+
+**Differences from the plan.**
+
+- No example: the archive is not in CI, and an example that needs a file
+  the reader must fetch would not run there. The README shows the call.
+- The test of the real archive reads lin-approx.tar from inside the
+  archive and compares it with the shipped Appendix B, value by value.
+
+**What was found** (DATA.md section 48).
+
+- The paper's printed Appendix B equals the distributed lin-approx.tar in
+  all 252 values.
+- f.dat at a zenith sun is within 0.62 percent of Table 1's f0, and the
+  nadir row of f/Q within 1.19 percent of Table 3's f0/Q0.
+- R-gothic is for winds 0, 4, 6, 8 and 16 m/s and a flat sea; the paper
+  says 0, 4, 10 and 16.

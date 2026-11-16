@@ -128,6 +128,7 @@ from .ocean_colour import (
 from .absorption_meter import (rottgers2013_a715,
                                rottgers2013_scatter_correction)
 from .clearest import ClearWaterStation, morel2007_stations
+from .fq_tables import Morel2002FQTables, morel2002_fq_tables
 from .qaa import (QAAResult, RamanCorrection, lee2013_raman_correction,
                   qaa_ioccg2006, qaa_v6)
 from .sources import (
@@ -245,6 +246,8 @@ __all__ = [
     "morel2007_stations",
     "morel2002_nadir_fq",
     "NadirFQ",
+    "morel2002_fq_tables",
+    "Morel2002FQTables",
     "ClearWaterStation",
     "morel2001_kd",
     "morel2001_bbp",
@@ -296,4 +299,4 @@ __all__ = [
     "OsoaaRadianceScan",
 ]
 
-__version__ = "1.21.0"
+__version__ = "1.22.0"

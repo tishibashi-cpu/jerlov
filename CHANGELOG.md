@@ -4,6 +4,23 @@ Every release is archived on Zenodo under the concept DOI
 [10.5281/zenodo.22321312](https://doi.org/10.5281/zenodo.22321312), which
 always resolves to the latest version.
 
+## 1.22.0 — 2026-11-16
+
+Morel et al.'s (2002) full f/Q tables, read from the user's own copy of
+the authors' archive (DECISIONS.md section 104). No earlier value changed.
+
+**New.** `morel2002_fq_tables(path, /)` and `Morel2002FQTables`: f, f/Q
+for 17 nadir angles in water by 13 azimuths, and the surface factor
+R-gothic, at the archive's own values only. The archive states no licence
+and is not shipped; the function checks its MD5 and says where to get it.
+
+**Found.** The archive's linear approximations equal the paper's printed
+Appendix B in all 252 values; its R-gothic is for 0, 4, 6, 8 and 16 m/s and
+a flat sea, where the paper says 0, 4, 10 and 16.
+
+**Documents.** DATA.md section 48, sources/README.md, the README, the API
+reference.
+
 ## 1.21.0 — 2026-11-16
 
 f and Q for an upward radiance from the nadir, Morel et al. (2002),

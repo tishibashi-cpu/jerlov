@@ -491,6 +491,11 @@ jerlov.pure_water_absorption_table([310, 420], source="morel2007")
 fq = jerlov.morel2002_nadir_fq(490.0, chlorophyll_mg_m3=0.3, sun_zenith_deg=40.0)
 fq.f, fq.q, fq.correction
 
+# Other views need the authors' full tables, which are not shipped: fetch
+# DISTRIB_fQ_with_Raman.tar.gz from ftp://oceane.obs-vlfr.fr/pub/gentili/AppliedOptics2002/
+tables = jerlov.morel2002_fq_tables("DISTRIB_fQ_with_Raman.tar.gz")
+tables.f_over_q(560.0, sun_zenith_deg=45.0, chlorophyll_mg_m3=1.0, nadir_deg=36.64, azimuth_deg=135.0)
+
 # From the same chlorophyll: absorption by phytoplankton (Bricaud et al. 1995)
 # and backscattering by particles (Morel & Maritorena 2001). Water, and the
 # rest of what absorbs, are not included.
@@ -732,7 +737,7 @@ made.
 ## Provenance and design
 
 `DATA.md` records, for every shipped table, where it came from, what was
-verified, and what is known to be wrong with it. Forty-seven entries are
+verified, and what is known to be wrong with it. Forty-eight entries are
 documented there: thirteen confirmed defects in the source literature, three
 questions the first edition of Jerlov settled, and the rest notes.
 

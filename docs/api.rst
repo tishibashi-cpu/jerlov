@@ -313,6 +313,11 @@ Kd without a water type, Rrs and the Secchi depth
    :members:
    :undoc-members:
 
+.. autofunction:: morel2002_fq_tables
+
+.. autoclass:: Morel2002FQTables
+   :members:
+
 .. autofunction:: rottgers2013_scatter_correction
 
 .. autofunction:: rottgers2013_a715

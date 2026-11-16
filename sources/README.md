@@ -12,6 +12,7 @@ Obtain them as follows, then run the scripts in `tools/`.
 |---|---|---|
 | `sources/20290782/` | Dstl IOP dataset, **Version 3** | figshare DOI `10.6084/m9.figshare.20290782` (Crown copyright, Dstl; Open Government Licence v3.0) |
 | `sources/usgs2017/ASCIIdata_splib07a.zip` | USGS Spectral Library Version 7, the spectra in ASCII, as measured | ScienceBase, DOI `10.5066/F7RR1WDJ`, the child item "Spectra of materials in ASCII format" (CC0 1.0) |
+| `sources/morel2002/` | `DISTRIB_fQ_with_Raman.tar.gz`, Morel et al.'s (2002) full f/Q tables (1.22.0). **Not shipped and not needed to build**: `morel2002_fq_tables` reads the user's own copy, and the tests that need it are skipped without it | ftp://oceane.obs-vlfr.fr/pub/gentili/AppliedOptics2002/ (no licence stated; DATA.md section 48) |
 | `sources/mobley_rho/` | `rhoTable_AO1999.txt` and `rhoTable_AO2015.txt`, Mobley's rho tables (1.17.0) | the Ocean Optics Web Book, "Surface Reflectance Factors" (Creative Commons Attribution); `tools/build_mobley_rho.py` checks their MD5 |
 | `sources/21710252/` | Dstl depth profile dataset | figshare DOI `10.6084/m9.figshare.21710252` (CC BY 4.0, unlike the 2022 dataset). **Not the DOI in the paper's Data Availability Statement, which points to an unrelated dataset; see DATA.md section 13** |
 
