@@ -4,6 +4,38 @@ Every release is archived on Zenodo under the concept DOI
 [10.5281/zenodo.22321312](https://doi.org/10.5281/zenodo.22321312), which
 always resolves to the latest version.
 
+## 1.15.6 — 2026-11-16
+
+A check of the Monte Carlo behind `OPEN_QUESTIONS.md`'s third question
+against HydroLight, and a fourth question. No shipped value changed, and
+no name changes (DECISIONS.md section 94).
+
+**Examples.** `closure_with_jerlov_kd.py` gains two parts. Part 5 runs
+Williamson & Hollins's IOPs again with pure water's share of the
+scattering turned by water's own phase function and a clear sky: Kd rises
+by 1.3 to 7.6 percent, and OSOAA's Kd, which had been 1.007 to 1.096 times
+the Monte Carlo's, is 0.991 to 1.018 times it; the blue cells where the
+IOPs and Jerlov (1976) disagree beyond the unrecorded conditions stay,
+with IB at 500 nm added, just beyond. Part 6 puts Solonenko & Mobley's
+(2015) retrieved a and b through the Monte Carlo and sets the result
+beside the Kd HydroLight made of them: a median of 0.970 times, 94.4
+percent of 143 cells within 10 percent, the criterion written down before
+the runs met; OSOAA, given the same totals, agrees with the Monte Carlo
+within 4 percent.
+
+**Data.** 2457 Monte Carlo runs in `examples/data/sm_closure/` and 286
+OSOAA runs in `examples/data/osoaa_sm_closure/`, neither in the wheel.
+
+**Tools.** `tools/kd_monte_carlo.py` gains two options, pure water's own
+scattering and a sky, both off by default, when it reproduces the runs of
+1.15.4 bit for bit; `--check` checks both. New: `tools/sm_closure.py` and
+`tools/osoaa_sm_closure.py`. `tools/osoaa_closure.py` takes another way of
+making its inputs, which it does not use itself.
+
+**Documents.** `OPEN_QUESTIONS.md` gains a fourth question and its third is
+updated; the site's "Open questions" page; DATA.md section 40, and section
+39 says where OSOAA's excess went; the READMEs.
+
 ## 1.15.5 — 2026-11-15
 
 A fix: `osoaa_phase_function` wrote OSOAA's phase function 4 pi too small,

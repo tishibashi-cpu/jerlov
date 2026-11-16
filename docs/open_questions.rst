@@ -26,3 +26,12 @@ what is still not known, and where the details are. In a line each:
    example
    `closure_with_jerlov_kd.py <https://github.com/tishibashi-cpu/jerlov/blob/main/examples/closure_with_jerlov_kd.py>`_
    prints every figure.
+4. **Does the Monte Carlo give back HydroLight's Kd from the same IOPs?**
+   From Solonenko & Mobley's (2015) a and b, with pure water's own
+   scattering and a clear sky, its Kd is a median 0.970 of the Kd
+   HydroLight made of them, 94.4 percent of 143 cells within 10 percent,
+   which meets the criterion set before the runs; OSOAA agrees with the
+   Monte Carlo within 4 percent. With one phase function and no sky, as
+   first run, the Monte Carlo had come out a few percent low, which was
+   also why OSOAA's Kd had been up to 9.6 percent above it in the third
+   question.

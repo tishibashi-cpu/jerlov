@@ -68,3 +68,13 @@ cores. Each run is seeded. `osoaa_closure.py`'s runs, made again in 1.15.5
 with the phase function corrected (DECISIONS.md section 93), are a second
 calculation beside them; those of the version that was wrong are kept in
 `examples/data/osoaa_closure_f11_too_small/`.
+
+`sm_closure.py` (1.15.6, DECISIONS.md section 94) uses the Monte Carlo
+with its two options, pure water's own scattering and a sky, to write
+`examples/data/sm_closure/runs.csv`: 2457 runs of Solonenko & Mobley's
+IOPs, to set beside their HydroLight Kd, and of Williamson & Hollins's
+again, in about half an hour on four cores. Each cell's runs share a seed.
+`osoaa_sm_closure.py` runs OSOAA, built as for `osoaa_closure.py`, on the
+same cells of Solonenko & Mobley's and writes
+`examples/data/osoaa_sm_closure/`, 286 runs, by hand outside CI. Both are
+for DATA.md section 40; `examples/closure_with_jerlov_kd.py` reads them.

@@ -5312,3 +5312,181 @@ Sections 86, 90 and 92 stay as written, this section correcting them.
 - The first rerun stopped when the disk filled (each run keeps about
   60 MB of OSOAA's own files); the bulky files of finished runs were
   deleted as the runs went, which does not change the results.
+
+## 94. Solonenko & Mobley's IOPs through the Monte Carlo and OSOAA, against their HydroLight Kd (1.15.6): the plan
+
+The Monte Carlo of section 92 has been checked against a relation (Morel
+and Loisel's) and, since 1.15.5, against OSOAA, which gives Kd 1.007 to
+1.096 times its own. It has not been checked against HydroLight, and
+OSOAA's excess has not been explained. The package already ships what
+such a check needs: Solonenko & Mobley's (2015) retrieved a and b for
+ten Jerlov types, and the K_d^H that HydroLight computed from them
+(`kd_hydrolight`, DATA.md section 19). The user agreed on 2026-11-15 to
+put those a and b through the Monte Carlo and OSOAA and set the result
+beside K_d^H.
+
+**What the paper says of the HydroLight runs** (Appl. Opt. 54, 5392-5401;
+journal page = PDF page + 5391, checked page by page):
+
+- p. 5396 (section 4): the retrieved a and b, "a Petzold average-particle
+  phase function and appropriate boundary conditions (sun zenith angle,
+  clear sky, infinite water depth)", no inelastic scattering.
+- p. 5394: the phase function is eta beta_w + (1 - eta) beta_p (Eq. 2),
+  eta = bw / (bw + bp); beta_w's shape "can be found in" Morel & Loisel;
+  beta_p is "the averaged Petzold phase function obtained by averaging the
+  coastal, harbor, and ocean phase functions", mean cosine 0.924. The
+  pure water absorption is an average of Pope & Fry, Buiteveld et al. and
+  Pegau et al., not printed.
+- p. 5395: bw = 5.83e-3 (400 / lambda)^4.322 (Eq. 8a), the coefficient
+  and exponent the package's `ScatteringConstants` for this source hold.
+- p. 5401 (Appendix A): HydroLight's modelling depth was 10 scattering
+  lengths, 6 for Jerlov III.
+- p. 5393: Jerlov measured the oceanic types at a sun elevation of 75
+  degrees and the coastal at 45; p. 5394 uses those (mu_w 0.98 and 0.85)
+  in the paper's own Kd relation, Eq. (3).
+
+**What is not stated, and what is done about it.** Decided before any run.
+
+- The sun of the HydroLight runs: not printed. The base takes the paper's
+  own choice for Eq. (3), 15 degrees from the zenith for I to III and 45
+  for the coastal types; 0, 30 and 60 degrees are run as a factor.
+- The average-particle phase function: not shipped (section 27, "No
+  average") and not in hand. The base takes the Petzold station whose mean
+  cosine is nearest the paper's 0.924: NUC 2240 (0.9255; its bb/b is
+  0.018). All eight stations are run as a factor; what they span stands in
+  for not knowing the average's shape. If the user obtains the average's
+  table, it can be run on the same cells.
+- The sky: "clear sky", nothing more. The base takes the share of Ed just
+  below the surface that is diffuse from `gregg1990_irradiance`, for the
+  run's sun and wavelength, with the atmosphere of
+  `examples/sunlight_and_d65.py` (day 172, 1013.25 hPa, air mass type 1,
+  80 percent, 1.5 cm, winds 3 and 5 m/s, 300 DU) and tau_a(550) = 0.2;
+  0.05 and 0.4 as a factor; and none at all, as section 92 ran. The sky's
+  radiance is taken as uniform in the air.
+- Which depth K_d^H belongs to: not stated (the modelling depth is not
+  that). Kd is taken, as in section 92, from the surface to the first
+  penetration depth and to 10 percent of Ed; the latter, which the
+  paper's Eq. (3) uses (optical depth about 2.3), is the one compared, the
+  other reported beside it.
+- The pure water: the Monte Carlo needs only the totals a and b, which
+  are what is shipped. OSOAA adds its own pure water back, so its own aw
+  and bw are subtracted (`osoaa_user_profile(pure_water=...)`) and the
+  totals it runs are S&M's; the share of b it scatters as water is then
+  OSOAA's own bw, not Eq. (8a). Where S&M's a is below OSOAA's aw the run
+  cannot be made and is recorded as not run, as in section 90.
+
+**The Monte Carlo gains two options** (`tools/kd_monte_carlo.py`, not the
+package), both off by default, and off it draws exactly the same random
+numbers as before, so the 240 runs of section 92 are reproduced bit for
+bit (checked on a run before and after):
+
+- `water_share`, eta: at each scattering the photon is turned by pure
+  water's phase function, 1 + 0.835 cos^2 (the shape of
+  `pure_water_vsf`, Morel's delta = 0.09; whether it is the very shape of
+  Morel & Loisel's paper is not checked), with probability eta, and by
+  the station's otherwise. The station's function is Petzold's measured
+  total, water included, as OSOAA was given it in sections 90 and 93;
+  nothing is subtracted from it.
+- `sky_share`: that fraction of Ed just below the surface enters as
+  diffuse light, uniform in radiance in the air, weighted by Fresnel's
+  transmittance (n = 1.34, unpolarised) and refracted; the rest is the
+  sun's beam, as before.
+
+New checks, in `--check`: with no scattering and only the sky, Kd equals
+a over the mean cosine of the refracted, Fresnel-weighted uniform sky,
+computed by quadrature, within the noise; with eta = 1 the sampled angles
+have a mean cosine of 0 and half go backwards.
+
+**The runs** (`tools/sm_closure.py`, written to
+`examples/data/sm_closure/`): the 143 cells of the ten types from 350 to
+700 nm every 25 nm where a, b and K_d^H are all given (flags kept in the
+file). On every cell: (1) as section 92 (no water share, no sky, the
+base sun and station); (2) the water share alone; (3) the base: water
+share and sky. On the base, one at a time: the seven other stations, the
+sun at 0, 30 and 60 degrees, tau_a(550) 0.05 and 0.4. About 2000 runs of
+400 000 photons, seeded by run number.
+
+Then Williamson & Hollins's 72 base cells of section 92 again with the
+water share (their scattering constants hold the same Eq. 8a), and with
+the water share and the sky (sun 30 degrees, tau_a 0.2), to see how far
+section 92's figures and OSOAA's excess over the Monte Carlo move.
+
+OSOAA (as built for section 93, by hand, outside CI): the 143 cells as the
+base above, with OSOAA's own atmosphere (its maritime model of section 90
+at an AOT of 0.2, and 0.05) and a wind of 2 m/s, the phase function of
+NUC 2240 as `osoaa_phase_function` writes it since 1.15.5.
+
+**What will be read off, decided now.**
+
+1. The Monte Carlo against HydroLight, at the base, Kd to 10 percent:
+   the ratio to K_d^H, per type and over all cells. It is called in
+   agreement if the median lies within 0.95 to 1.05 and 90 percent of the
+   cells within 0.90 to 1.10; otherwise the documents say it is not, and
+   by how much.
+2. The cells where K_d^H lies outside what the factors (station, sun,
+   aerosol, the depth Kd is taken to) move the base's Kd: listed.
+3. OSOAA against the Monte Carlo on the same inputs: the ratio, beside
+   section 93's 1.007 to 1.096.
+4. Whether the water share and the sky move the Monte Carlo toward OSOAA
+   on Williamson & Hollins's runs, and by how much; and how far the
+   figures of section 92 and `OPEN_QUESTIONS.md`'s third question move.
+   If they move, the documents are corrected and say so.
+
+None of this says anything about Jerlov's Kd: K_d^H and the Monte Carlo
+are both computed from the same retrieved IOPs.
+
+**The documents.** A fourth question in `OPEN_QUESTIONS.md` (and the
+site's page), DATA.md section 40, a part of
+`examples/closure_with_jerlov_kd.py` that reads the new runs, the README
+of `tools/` and of the examples, the figures recomputed in
+`tests/test_quoted_figures.py`. Nothing shipped changes.
+
+**Version.** 1.15.6.
+
+**Differences from the plan.**
+
+- Seeds: the plan said "seeded by run number". Before the first run every
+  run of one cell was given the same seed instead, so that the
+  differences between them are not swamped by the noise; the runs of
+  Williamson & Hollins's cells take the seeds of their runs in
+  `examples/data/kd_closure/`.
+- Added after the first run: section 92's 168 factor runs (sun, station,
+  pure water) with the water share and the sky. The first run had only
+  the base with them, and part 5 of the example needs the reach of the
+  conditions taken from the same Monte Carlo. They were appended, so the
+  first 2289 rows are byte for byte those of the first run (checked);
+  2457 runs in all, not "about 2000".
+- OSOAA: 286 runs (the base at an AOT of 0.2 and again at 0.05); at 29 of
+  the 143 cells S&M's a or b is below OSOAA's own pure water, and those
+  are recorded as not run.
+
+**What was found** (2026-11-16), as read off in the plan:
+
+1. The Monte Carlo with the water share and the sky over K_d^H, Kd to 10
+   percent: median 0.970, 94.4 percent of the 143 cells within 10
+   percent. The criterion is met. With the water share alone, 0.951 and
+   90.2 percent (met); as section 92 ran it, 0.945 and 79.7 percent (not).
+2. No cell lies outside what the stations, the sun, the aerosol and the
+   depth make of the base's Kd.
+3. OSOAA over the Monte Carlo on the same inputs: 0.986 to 1.037 at the
+   114 cells it can run; over K_d^H, median 0.978.
+4. On Williamson & Hollins's cells the water share moves the Monte
+   Carlo's Kd by -0.1 to +4.7 percent, with the sky +1.3 to +7.6, and
+   OSOAA over it goes from 1.007-1.096 to 0.991-1.018: section 93's
+   excess is accounted for. The conditions' reach becomes 0.79 to 1.44
+   (was 0.77 to 1.53); against Jerlov (1976) the same blue cells lie
+   beyond it, and IB at 500 nm (1.27) just beyond. `OPEN_QUESTIONS.md`'s
+   third question says so; its conclusion does not change. DATA.md
+   section 39 and the example's parts 1 to 4 keep section 92's figures
+   as what was first run.
+
+**Caught before the commit, by reading the output.** The example's part 5
+first printed "the same places as in section 3", because it looked only
+for cells that came inside the reach, not for IB at 500 nm, which went
+outside; it now reports both. DATA.md section 40's first draft said the
+ratio was 0.93 to 1.00 "for most types" (it is six of ten) and that
+"three codes" agree to a few percent (HydroLight was not given the same
+phase function; only OSOAA and the Monte Carlo were); both were
+corrected. A test first required the sky to raise Kd by more than 3
+percent, a figure not taken from any calculation; it failed at 2.1
+percent, and now requires only a rise.

@@ -395,7 +395,11 @@ water by -10.9 to +9.3; together they cover the gap except at the blue
 end. OSOAA, run as a second calculation, gives Kd 1.007 to 1.096 times
 the Monte Carlo's. The OSOAA runs of 1.15.3, made with the phase function
 4 pi too small, gave Kd up to 23.1 percent too low; they are kept as the
-record.
+record. Parts 5 and 6 read 2457 more runs in `examples/data/sm_closure/`
+with pure water's own scattering and a clear sky: OSOAA then gives 0.991
+to 1.018 times the Monte Carlo's Kd, and from Solonenko & Mobley's a and
+b the Monte Carlo gives a median **0.970** of the Kd HydroLight made of
+them, 94.4 percent of 143 cells within 10 percent.
 
 ## What they do not show
 

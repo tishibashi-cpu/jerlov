@@ -146,6 +146,16 @@ below.
   to 1.096 times the Monte Carlo's in the 62 base runs it can make, and
   lies beyond the reach at the same places, but for 5C at 425 nm, which
   it brings just inside.
+- The figures above are the Monte Carlo's as first run, with one phase
+  function for all the scattering and no sky. Run again (release 1.15.6)
+  with pure water's share of b turned by water's own phase function and a
+  clear sky, Kd rises by +1.3 to +7.6 percent, and OSOAA's Kd comes to
+  0.991 to 1.018 times it: that difference was the gap. Over Jerlov (1976)
+  the Kd become 1.00 to 1.55 for IB, 0.86 to 1.03 for III and down to 0.53
+  for 3C at 425 nm; the conditions move them by 0.79 to 1.44 times, and
+  they lie beyond that at the same blue cells as before, 5C at 425 nm
+  included, and also IB at 500 nm, just beyond. The conclusion does not
+  change.
 
 **The first answer was wrong, and so was the first account of why.**
 Release 1.15.3 made this comparison with OSOAA alone and concluded that
@@ -163,13 +173,68 @@ are kept as the record.
 
 **What is not known.** Why the blue end disagrees: the clearest type's
 measured IOPs attenuate more than Jerlov's Kd there, the coastal types'
-less. Why OSOAA's Kd is up to 9.6 percent above the Monte Carlo's, the
-more the bluer the light and the clearer the water; its sky, which the
-Monte Carlo lacks, may account for it, but that was not checked. HydroLight was not
-run.
+less. HydroLight was not run on these waters; the fourth question checks
+the Monte Carlo against it on Solonenko & Mobley's.
 
 **Where.** DATA.md sections 38 and 39; DECISIONS.md sections 90 to 93;
 `examples/closure_with_jerlov_kd.py`; `tools/kd_monte_carlo.py`,
 `tools/kd_closure.py` and `examples/data/kd_closure/`; OSOAA's runs in
 `tools/osoaa_closure.py` and `examples/data/osoaa_closure/`, and the old
-ones in `examples/data/osoaa_closure_f11_too_small/`.
+ones in `examples/data/osoaa_closure_f11_too_small/`; the runs with pure
+water's scattering and the sky in `tools/sm_closure.py` and
+`examples/data/sm_closure/` (DATA.md section 40, DECISIONS.md section 94).
+
+## 4. Does the Monte Carlo give back HydroLight's Kd from the same IOPs?
+
+**The question.** The third question rests on a Monte Carlo written for
+it. Checked against a relation and against OSOAA, it had not been checked
+against HydroLight, the code most of the field uses. Solonenko & Mobley
+(2015) printed, beside the a and b they retrieved for ten Jerlov types,
+the Kd HydroLight made of them, K_d^H. Given the same a and b, does the
+Monte Carlo give back K_d^H, and does OSOAA?
+
+**What was done.** The paper states HydroLight's phase function (pure
+water's and the particles', weighted by their shares of b, the particles'
+an average of three of Petzold's with a mean cosine of 0.924), a clear sky
+and infinitely deep water; it does not print the sun, the average phase
+function itself, or the depth K_d^H belongs to. The Monte Carlo was given
+pure water's own scattering and a sky, and run at the 143 cells from 350
+to 700 nm where a, b and K_d^H are all given, with the sun of the paper's
+own Kd relation, the Petzold station nearest a mean cosine of 0.924
+(NUC 2240), and the sky of Gregg & Carder's model; then with the other
+seven stations, other suns and other aerosols, in 2457 runs. OSOAA was run
+on the same cells. What would count as agreement was written down before
+any run (DECISIONS.md section 94).
+`examples/closure_with_jerlov_kd.py` prints every figure below.
+
+**What was found.**
+
+- The Monte Carlo's Kd over K_d^H, to 10 percent of the surface light:
+
+  | Monte Carlo | Median | Within 10 percent |
+  |---|---|---|
+  | One phase function, no sky (as first run) | 0.945 | 79.7 percent |
+  | With pure water's own scattering | 0.951 | 90.2 percent |
+  | With it and a clear sky | 0.970 | 94.4 percent |
+
+  The criterion set beforehand, a median within 0.95 to 1.05 and 90
+  percent of the cells within 10 percent, is met.
+- K_d^H lies at every one of the 143 cells within what the unprinted
+  conditions make of the Monte Carlo's Kd: the other stations move it by
+  -12.7 to +26.0 percent, the sun by -12.7 to +21.5.
+- OSOAA, given the same totals, phase function and a sky of its own,
+  gives 0.986 to 1.037 times the Monte Carlo's Kd at the 114 cells it can
+  run, and 0.877 to 1.158 times K_d^H.
+
+**What is not known.** Which of the remaining differences are HydroLight's
+average-particle phase function, its sun and its depth, and which the
+codes: the paper prints none of the three, and the stations alone move Kd
+more than the whole difference. Why II comes out up to 1.16 times K_d^H
+at 425 to 500 nm, and III, the type HydroLight was run to 6 scattering
+lengths instead of 10, at 0.88 to 0.96. 29 cells cannot be run in OSOAA,
+whose own pure water exceeds Solonenko & Mobley's a or b there.
+
+**Where.** DATA.md sections 19 and 40; DECISIONS.md section 94;
+`examples/closure_with_jerlov_kd.py`, parts 5 and 6; `tools/sm_closure.py`
+and `examples/data/sm_closure/`; `tools/osoaa_sm_closure.py` and
+`examples/data/osoaa_sm_closure/`.
