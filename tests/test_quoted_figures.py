@@ -2499,3 +2499,32 @@ def test_the_clearest_waters(secchi_example):
                    "the measured Kd is 0.71 to 0.97 of it",
                    "aw1 + bsw / 2 at 420 nm, is 0.0073"):
         assert quoted in data, quoted
+
+
+# -- f and Q for a nadir view (ocean_colour_and_secchi.py, part 12,
+#    DECISIONS.md section 103) ----------------------------------------------
+
+
+@source_tree
+def test_nadir_f_and_q(secchi_example):
+    n = secchi_example["nadir_fq"]
+    c = n["correction"]
+    assert round(n["low"], 3) == 0.825
+    assert round(c[(412.5, 10.0)][-1], 3) == 0.903
+    assert round(c[(560.0, 0.03)][-1], 3) == 1.034
+    assert round(max(abs(x - 1) for w in (412.5, 560.0)
+                     for x in c[(w, 0.1)]), 4) == 0.0022
+    assert round(100 * n["eq17_off"], 1) == 2.6
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", jerlov.ProvenanceWarning)
+        worst = max(abs(jerlov.morel2002_nadir_fq(
+            w, chlorophyll_mg_m3=0.1, sun_zenith_deg=s).correction - 1)
+            for w in (412.5, 442.5, 490.0, 510.0, 560.0, 620.0, 660.0)
+            for s in (0.0, 15.0, 30.0, 45.0, 60.0, 75.0))
+    assert round(100 * worst, 2) == 0.52
+    data = _flat("DATA.md")
+    for quoted in ("0.903 at 412.5 nm and 0.825 at 560 nm",
+                   "to 1.034 at 560 nm", "Table 2 is within 2.6 percent",
+                   "within 1.37 percent", "(0.52 percent at the worst",
+                   "within 0.22 percent of 1 at every sun"):
+        assert quoted in data, quoted

@@ -27,6 +27,7 @@ the reflectance to a and bb, is in :mod:`jerlov.qaa`.
 from __future__ import annotations
 
 import warnings
+from dataclasses import dataclass
 from functools import lru_cache
 from types import MappingProxyType
 
@@ -1244,3 +1245,127 @@ def rrs_from_above_water(lt, lsky, ed, /, *, rho):
     if np.any(r < 0):
         raise ValueError("rho must not be negative")
     return _result((lt - r * lsky) / ed, lt, lsky, ed, r)
+
+
+# -- f and Q for a nadir view, Morel et al. (2002), Appendix B --------------
+
+_FQ_WAVELENGTHS = (412.5, 442.5, 490.0, 510.0, 560.0, 620.0, 660.0)
+_FQ_CHL = (0.03, 0.1, 0.3, 1.0, 3.0, 10.0)
+#: Eqs. (B1) and (B2) hold to 60 degrees, Eq. (B4) to 75 (pp. 6304-6305).
+_FQ_SUN_FQ, _FQ_SUN_RATIO = 60.0, 75.0
+
+
+@lru_cache(maxsize=None)
+def _fq_table():
+    out: dict = {}
+    for r in _data._rows("morel2002_nadir_fq.csv"):
+        out[(r["quantity"], float(r["chl_mg_m3"]),
+             float(r["wavelength_nm"]))] = float(r["value"])
+    return out
+
+
+@dataclass(frozen=True)
+class NadirFQ:
+    """Morel et al.'s (2002) f and Q for the radiance from the nadir.
+
+    ``f`` relates the irradiance reflectance below the surface to the
+    IOPs, Eu/Ed = f bb/a (their Eq. 11); ``q`` is Qn = Eu/Lu for the
+    upward radiance from the nadir (Eq. 10); both from Eqs. (B1) and
+    (B2), NaN with the sun beyond 60 degrees. ``f_over_q`` is Eq. (B4),
+    fitted to 75 degrees. ``correction`` is (f0/Q0) / (f/Qn), the factor
+    of Eq. (B3) that takes a normalised water-leaving radiance measured
+    with the sun at ``sun_zenith_deg`` to the sun at the zenith, from Eq.
+    (B4).
+    """
+
+    wavelength_nm: float
+    chlorophyll_mg_m3: float
+    sun_zenith_deg: float
+    f: float
+    q: float
+    f_over_q: float
+    correction: float
+
+
+def morel2002_nadir_fq(wavelength_nm, /, *, chlorophyll_mg_m3,
+                       sun_zenith_deg):
+    """f, Q and their ratio for an upward radiance from the nadir.
+
+    Morel, A., Antoine, D. and Gentili, B. (2002), "Bidirectional
+    reflectance of oceanic waters: accounting for Raman emission and
+    varying particle scattering phase function", Appl. Opt. 41(30),
+    6289-6306, doi:10.1364/AO.41.006289, Appendix B, Tables 1-3, Raman
+    emission included, case 1 water::
+
+        f(theta_s)   = f0 + Sf (1 - cos theta_s)            (B1)
+        Qn(theta_s)  = Q0 + SQ (1 - cos theta_s)            (B2)
+        f/Qn         = f0/Q0 + Sf/Q (1 - cos theta_s)       (B4)
+
+    Only the nadir view is tabulated in the paper; the full tables, for
+    other views, are on a server this package could not reach (DATA.md
+    section 47).
+
+    Parameters
+    ----------
+    wavelength_nm:
+        One of 412.5, 442.5, 490, 510, 560, 620 and 660, the paper's
+        own. No value between them is given: each was fitted on its own.
+    chlorophyll_mg_m3:
+        One of 0.03, 0.1, 0.3, 1, 3 and 10, the paper's own. No default.
+    sun_zenith_deg:
+        The sun's zenith angle above the surface, 0 to 75 degrees. No
+        default. Eqs. (B1) and (B2) hold to 60 degrees ("may reach 2%" off
+        at 60 for B1), and beyond it ``f`` and ``q`` are NaN; Eq. (B4)
+        holds to 75 with errors that "might reach +-3.4%". From 60
+        degrees on a :class:`ProvenanceWarning` is given.
+
+    Returns
+    -------
+    :class:`NadirFQ`.
+
+    Raises
+    ------
+    ValueError
+        For a wavelength or chlorophyll that is not one of the table's, or
+        a sun outside 0 to 75 degrees.
+
+    Notes
+    -----
+    DECISIONS.md section 103, DATA.md section 47.
+    """
+    try:
+        wl = float(wavelength_nm)
+        chl = float(chlorophyll_mg_m3)
+        sun = float(sun_zenith_deg)
+    except (TypeError, ValueError):
+        raise ValueError("wavelength_nm, chlorophyll_mg_m3 and "
+                         "sun_zenith_deg must each be one number") from None
+    if wl not in _FQ_WAVELENGTHS:
+        raise ValueError(
+            f"wavelength_nm must be one of {_FQ_WAVELENGTHS}, the "
+            "wavelengths of Morel et al.'s (2002) Tables 1-3; each was "
+            "fitted on its own and none is given between them")
+    if chl not in _FQ_CHL:
+        raise ValueError(
+            f"chlorophyll_mg_m3 must be one of {_FQ_CHL}, those of Morel "
+            "et al.'s (2002) Tables 1-3; none is given between them")
+    if not 0.0 <= sun <= _FQ_SUN_RATIO:
+        raise ValueError("sun_zenith_deg must lie in 0 to 75 degrees, the "
+                         "range of Morel et al.'s (2002) Eq. (B4)")
+    if sun >= _FQ_SUN_FQ:
+        _warn("Morel et al.'s (2002) Eqs. (B1) and (B2) hold to 60 degrees "
+              "(B1 'may reach 2%' off there), and Eq. (B4) to 75 with "
+              "errors that 'might reach +-3.4%'; f and Q are NaN beyond "
+              "60.")
+    t = _fq_table()
+    x = 1.0 - np.cos(np.radians(sun))
+    ratio = t[("f0_over_Q0", chl, wl)] + t[("S_f_over_Q", chl, wl)] * x
+    if sun <= _FQ_SUN_FQ:
+        f = t[("f0", chl, wl)] + t[("Sf", chl, wl)] * x
+        q = t[("Q0", chl, wl)] + t[("SQ", chl, wl)] * x
+    else:
+        f = q = float("nan")
+    return NadirFQ(wavelength_nm=wl, chlorophyll_mg_m3=chl,
+                   sun_zenith_deg=sun, f=float(f), q=float(q),
+                   f_over_q=float(ratio),
+                   correction=float(t[("f0_over_Q0", chl, wl)] / ratio))

@@ -6412,3 +6412,20 @@ Eq. (17) against Table 2 at 490 nm; Table 3 against Tables 1 and 2.
 
 **Documents.** DATA.md section 47; README; docs/api.rst; CHANGELOG;
 .zenodo.json. 1.21.0: two public names.
+
+**Differences from the plan.**
+
+- The text's "0.08 - 0.12" for f0/Q0 is rounded: the table goes to
+  0.078632. The build checks the table's own range, and DATA.md section
+  47 says so.
+- Eq. (17) is Aas & Højerslev's from 465-474 nm; the paper compares it
+  with its values at 490 nm and 0.1 mg m^-3, and so does the example.
+
+**What was found** (DATA.md section 47).
+
+- Table 3's f0/Q0 is within 1.37 percent of Table 1 over Table 2.
+- Table 2 is within 2.6 percent of Eq. (17) at 0-45 degrees.
+- The correction of Eq. (B3) is within 0.22 percent of 1 at 0.1 mg m^-3
+  at 412.5 and 560 nm (0.52 percent at the worst wavelength),
+  falls to 0.825 at 560 nm, 10 mg m^-3 and the sun at 75 degrees, and
+  rises to 1.034 at 0.03 mg m^-3 there.

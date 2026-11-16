@@ -307,6 +307,12 @@ Kd without a water type, Rrs and the Secchi depth
 
 .. autofunction:: rrs_from_above_water
 
+.. autofunction:: morel2002_nadir_fq
+
+.. autoclass:: NadirFQ
+   :members:
+   :undoc-members:
+
 .. autofunction:: rottgers2013_scatter_correction
 
 .. autofunction:: rottgers2013_a715

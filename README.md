@@ -486,6 +486,11 @@ jerlov.morel1988_kd([443, 490, 555], pigment_mg_m3=0.3)
 stations = jerlov.morel2007_stations()
 jerlov.pure_water_absorption_table([310, 420], source="morel2007")
 
+# f and Q for an upward radiance from the nadir (Morel et al. 2002, Appendix B),
+# at the paper's own wavelengths and chlorophylls only.
+fq = jerlov.morel2002_nadir_fq(490.0, chlorophyll_mg_m3=0.3, sun_zenith_deg=40.0)
+fq.f, fq.q, fq.correction
+
 # From the same chlorophyll: absorption by phytoplankton (Bricaud et al. 1995)
 # and backscattering by particles (Morel & Maritorena 2001). Water, and the
 # rest of what absorbs, are not included.
@@ -727,7 +732,7 @@ made.
 ## Provenance and design
 
 `DATA.md` records, for every shipped table, where it came from, what was
-verified, and what is known to be wrong with it. Forty-six entries are
+verified, and what is known to be wrong with it. Forty-seven entries are
 documented there: thirteen confirmed defects in the source literature, three
 questions the first edition of Jerlov settled, and the rest notes.
 

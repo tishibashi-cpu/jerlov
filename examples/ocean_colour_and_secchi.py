@@ -806,6 +806,56 @@ is of about one penetration depth. The warnings:""")
                 austin_i=austin_i, kd_sw=kd_sw)
 
 
+FQ_CHL = (0.03, 0.1, 0.3, 1.0, 3.0, 10.0)
+FQ_SUNS = (0.0, 15.0, 30.0, 45.0, 60.0, 75.0)
+
+
+def nadir_fq_part():
+    rule("12. Measured from below, looking up: f and Q for a nadir view")
+    print("""Below the surface, a radiometer looking up from the nadir reads Lu, and
+the water-leaving radiance it gives depends on the sun through f and Q,
+the factors of R = f bb/a and Q = Eu/Lu. Morel et al. (2002) print them
+for that view, for case 1 water (`morel2002_nadir_fq`). The factor of
+their Eq. (B3), (f0/Q0) / (f/Qn), takes a radiance measured with the sun
+at theta_s to the sun at the zenith:
+""")
+    head = "".join(f" {f'{s:g}':>6}" for s in FQ_SUNS)
+    out = {}
+    with warnings.catch_warnings(record=True) as record:
+        warnings.simplefilter("always")
+        for wl in (412.5, 560.0):
+            print(f"  {wl:g} nm, Chl mg/m3{head}")
+            for chl in FQ_CHL:
+                row = [jerlov.morel2002_nadir_fq(
+                    wl, chlorophyll_mg_m3=chl, sun_zenith_deg=s).correction
+                    for s in FQ_SUNS]
+                out[(wl, chl)] = row
+                print(f"  {chl:>17g}" + "".join(f" {x:>6.3f}" for x in row))
+        at_490 = {s: jerlov.morel2002_nadir_fq(
+            490.0, chlorophyll_mg_m3=0.1, sun_zenith_deg=s).q
+            for s in (0.0, 15.0, 30.0, 45.0)}
+    for w in record:
+        if not issubclass(w.category, jerlov.ProvenanceWarning):
+            warnings.warn_explicit(w.message, w.category, w.filename,
+                                   w.lineno)
+    eq17 = {s: 5.20 - 1.82 * np.cos(np.radians(s)) for s in at_490}
+    off = max(abs(at_490[s] / eq17[s] - 1) for s in at_490)
+    low = min(min(v) for v in out.values())
+    print(f"""
+With the sun low and the water rich in chlorophyll the factor falls to
+{low:.2f}: a radiance measured with the sun at 75 degrees is multiplied by
+that to compare with one under a zenith sun. At 0.03 mg/m3 it rises a
+little above 1 instead, by {100 * (out[(560.0, 0.03)][-1] - 1):.1f} percent at 560 nm. From 60 degrees the
+paper's fits of f and Q stop and only their ratio goes on (it warns).
+Aas & Højerslev's relation from Mediterranean measurements at 465-474 nm,
+Qn = 5.20 - 1.82 cos theta_s (the paper's Eq. 17), is within {100 * off:.1f} percent of
+Table 2 at 490 nm and 0.1 mg/m3, the paper's estimate for those waters, at
+0 to 45 degrees. Only the nadir view is
+printed in the paper; the tables for other views are on a server this
+package could not reach. DATA.md section 47.""")
+    return dict(correction=out, eq17_off=off, low=low)
+
+
 def main():
     _banner()
     caught = set()
@@ -821,6 +871,7 @@ def main():
     above_water = above_water_part(caught)
     editions = editions_part()
     clearest = clearest_part()
+    nadir_fq = nadir_fq_part()
     if caught:
         rule("Warnings")
         print("Raised along the way, each a ProvenanceWarning:")
@@ -853,7 +904,8 @@ def main():
                 depends=depends, by_pair=by_pair, by_ratio=by_ratio, products=products, nearest=nearest,
                 recovered=recovered, case1=case1, geometry=geometry,
                 pure_water=pure_water, above_water=above_water,
-                editions=editions, clearest=clearest, caught=caught)
+                editions=editions, clearest=clearest,
+                nadir_fq=nadir_fq, caught=caught)
 
 
 if __name__ == "__main__":
