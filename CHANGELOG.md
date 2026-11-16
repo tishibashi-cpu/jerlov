@@ -4,6 +4,24 @@ Every release is archived on Zenodo under the concept DOI
 [10.5281/zenodo.22321312](https://doi.org/10.5281/zenodo.22321312), which
 always resolves to the latest version.
 
+## 1.15.9 — 2026-11-16
+
+What the choice of pure water absorption does to the colour of the
+clearest water. No shipped value changed, and no name changes
+(DECISIONS.md section 97).
+
+**Examples.** `ocean_colour_and_secchi.py` gains part 8. With pure sea water
+alone, the five pure water absorption spectra the package ships give
+remote sensing reflectances up to 6.85 times apart at 380 nm, 2.62 at 443
+and 1.13 at 550, and Rrs(443)/Rrs(550) from 10.73 to 24.75. In Jerlov IB
+they move Rrs by 1.12 to 1.34 times, less at every wavelength than the
+particles' backscatter ratio does over Petzold's eight measured values.
+Below 443 nm the pure sea water figures lie, for three spectra, outside the
+data Lee et al.'s (2011) relation was fitted to, and the example says so.
+
+**Documents.** `OPEN_QUESTIONS.md`'s first question, DATA.md section 29 and
+the README of the examples.
+
 ## 1.15.8 — 2026-11-16
 
 What the literature says of Jerlov's coastal blue, and what rests on

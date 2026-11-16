@@ -2342,3 +2342,45 @@ def test_every_open_question_is_on_the_site():
 def test_closure_example_reports_only_provenance_warnings(closure_example):
     for message in closure_example[1]["caught"]:
         assert message.startswith("ProvenanceWarning: ")
+
+
+# -- Pure water and the colour of clear water (ocean_colour_and_secchi.py,
+#    part 8, DECISIONS.md section 97) ---------------------------------------
+
+
+@source_tree
+def test_pure_water_and_the_reflectance(secchi_example):
+    p = secchi_example["pure_water"]
+    lee = p["found"]["lee2011"]
+    assert [round(float(x), 2) for x in lee["a_spread"]] == [
+        6.85, 4.90, 4.28, 2.62, 1.47, 1.18, 1.13]
+    assert (round(float(lee["b_spread"][0].min()), 2),
+            round(float(lee["b_spread"][1].max()), 2)) == (1.12, 1.34)
+    assert (round(float(lee["by_ratio"].min()), 2),
+            round(float(lee["by_ratio"].max()), 2)) == (1.88, 2.61)
+    assert list(lee["verdict"]) == ["particles"] * 5
+    assert p["same_verdict"]
+    assert (round(p["a443"][0], 2), round(p["a443"][1], 2)) == (10.73, 24.75)
+    assert (round(p["b443"][0], 2), round(p["b443"][1], 2)) == (2.03, 2.84)
+    assert (round(p["a412"][0], 2), round(p["a412"][1], 2)) == (13.13, 49.56)
+    assert round(100 * p["off_violet"], 1) == 26.4
+    assert round(100 * p["off_rest"], 1) == 5.7
+    assert round(100 * p["ib_off"], 1) == 3.3
+    assert p["outside"] == {"mason2016": [380, 400, 412],
+                            "lee2015": [380, 400, 412],
+                            "williamson2022": [380]}
+    data, oq = _flat("DATA.md"), _flat("OPEN_QUESTIONS.md")
+    for quoted in ("6.85 times apart at 380 nm, 4.90 at 400, 4.28 at 412, "
+                   "2.62 at 443, 1.47 at 490, 1.18 at 510 and 1.13 at 550",
+                   "Rrs(443)/Rrs(550) of 10.73 to 24.75",
+                   "move Rrs by 1.12 to 1.34 times and the B/S by 1.88 to "
+                   "2.61", "up to 26.4 percent different, and within 5.7 "
+                   "percent from 443 nm"):
+        assert quoted in data, quoted
+    for quoted in ("6.85 times apart at 380 nm, 4.28 at 412, 2.62 at 443 and "
+                   "1.13 at 550", "from 10.73 to 24.75",
+                   "only 1.12 to 1.34 times", "up to 26.4 percent"):
+        assert quoted in oq, quoted
+    readme = _flat("examples/README.md")
+    assert "up to **6.85** times at 380 nm and 2.62 at 443" in readme
+    assert "by 1.12 to 1.34 times" in readme

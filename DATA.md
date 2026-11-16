@@ -1785,6 +1785,22 @@ was found on 2026-11-15.
 the function does not return them. Pope & Fry and Mason et al. measured
 fresh water; no salinity or temperature correction is applied.
 
+**What the choice does to the reflectance (1.15.9, DECISIONS.md section
+97).** With pure sea water alone (a = aw, bb = bw / 2, bw from Williamson &
+Hollins's constants) and Lee et al.'s (2011) nadir relation, the five
+spectra shipped here (the four above and `pure_water_absorption()`) give
+remote sensing reflectances up to 6.85 times apart at 380 nm, 4.90 at 400,
+4.28 at 412, 2.62 at 443, 1.47 at 490, 1.18 at 510 and 1.13 at 550, and
+Rrs(443)/Rrs(550) of 10.73 to 24.75. For Williamson & Hollins's IB, its
+contents laid on each spectrum and bb built from each of Petzold's eight
+measured B/S, the spectra move Rrs by 1.12 to 1.34 times and the B/S by
+1.88 to 2.61: the particles matter more at every wavelength from 412 to
+550 nm. Pure sea water lies outside the bb / (a + bb) of Lee et al.'s fit
+(above 0.37) with Mason et al.'s and Lee et al.'s spectra at 380 to 412 nm
+and with Williamson & Hollins's at 380 nm; there Gordon et al.'s (1988)
+relation gives spreads up to 26.4 percent different, and within 5.7
+percent from 443 nm. `examples/ocean_colour_and_secchi.py`, part 8.
+
 ## 30. Removing Raman scattering from Rrs: Table 2 of Lee et al. (2013) (note)
 
 `lee2013_raman_correction` (DECISIONS.md section 71) carries the six rows

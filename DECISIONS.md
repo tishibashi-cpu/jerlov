@@ -5835,3 +5835,28 @@ a part 8 of `examples/ocean_colour_and_secchi.py`; the figures in
 package's own functions.
 
 **Version.** 1.15.9.
+
+**What was found** (2026-11-16), as read off in the plan:
+
+1. Pure sea water: the five spectra give Rrs up to 6.85 times apart at 380
+   nm, 4.90 at 400, 4.28 at 412, 2.62 at 443, 1.47 at 490, 1.18 at 510 and
+   1.13 at 550. IB: 1.12 to 1.34 times, about the same for every r.
+2. IB with Pope & Fry's water: the eight B/S move Rrs by 1.88 to 2.61
+   times. At every wavelength from 412 to 550 nm the particles' ratio moves
+   Rrs more than the choice of pure water, for every r.
+3. Rrs(443)/Rrs(550): 10.73 to 24.75 in pure sea water, 2.03 to 2.84 in IB
+   over all eight B/S; Rrs(412)/Rrs(550): 13.13 to 49.56 and 1.95 to 3.21.
+4. Not within 10 percent everywhere. Gordon et al.'s relation gives IB's
+   spreads within 3.3 percent and the same verdict at every wavelength,
+   and pure sea water's within 5.7 percent from 443 nm; at 380 to 412 nm
+   they differ by up to 26.4 percent. There pure sea water lies outside the
+   bb / (a + bb) Lee et al. fitted (above 0.37) for Mason et al.'s and Lee
+   et al.'s spectra at 380 to 412 nm and Williamson & Hollins's at 380 nm,
+   and the package warns. The documents use Lee et al.'s relation and say
+   so.
+
+**Caught before the commit, by reading the output.** The example's first
+wording said the violet figures "rest on an extrapolation of either
+relation"; the package gives no fitted range for Gordon et al.'s, so it
+now says only that they rest on Lee et al.'s outside its data, where the
+two part.

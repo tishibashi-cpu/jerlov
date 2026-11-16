@@ -471,6 +471,142 @@ outside their fit, as above.""")
                 moved=moved)
 
 
+#: The five pure water spectra the package ships (DATA.md section 29).
+PURE_WATERS = ("pope1997", "smith1981", "mason2016", "lee2015",
+               "williamson2022")
+BAND_NM = np.array([380.0, 400.0, 412.0, 443.0, 490.0, 510.0, 550.0])
+
+
+def _aw(source, wl):
+    if source == "williamson2022":
+        return jerlov.pure_water_absorption(wl)
+    return jerlov.pure_water_absorption_table(wl, source=source)
+
+
+def _rrs(a, bb, bbw, relation, record_into):
+    with warnings.catch_warnings(record=True) as record:
+        warnings.simplefilter("always")
+        if relation == "lee2011":
+            out = jerlov.lee2011_rrs(
+                a, bb, bb_water=bbw,
+                coefficients=jerlov.LEE2011_RRS_COEFFICIENTS[(0.0, 0.0, 0.0)])
+        else:
+            out = jerlov.above_surface_rrs(jerlov.subsurface_rrs(
+                a, bb, coefficients=jerlov.GORDON1988_RRS_COEFFICIENTS))
+    expect_provenance(record, record_into)
+    return np.asarray(out, dtype=float)
+
+
+def pure_water_part(caught):
+    rule("8. What the choice of pure water does to the colour of clear water")
+    water = jerlov.water("IB")
+    constants = water.source.scattering
+    stations = {s: jerlov.petzold_scattering(s).backscatter_ratio
+                for s in jerlov.PETZOLD_STATIONS}
+    out = {}
+    for relation in ("lee2011", "gordon1988"):
+        wl = BAND_NM
+        bw = constants.bw_coeff * (400.0 / wl) ** constants.bw_exponent
+        pure = {src: _rrs(_aw(src, wl), bw / 2, bw / 2, relation, caught)
+                for src in PURE_WATERS}
+        # Williamson & Hollins's IB, measured from 412 nm.
+        wb = BAND_NM[2:]
+        bwb = bw[2:]
+        contents = water.a(wb) - jerlov.pure_water_absorption(wb)
+        ib = {}
+        for station, r in stations.items():
+            bb = water.bb(wb, particle_backscatter_ratio=r)
+            ib[station] = {src: _rrs(contents + _aw(src, wb), bb, bwb / 2,
+                                     relation, caught)
+                           for src in PURE_WATERS}
+        out[relation] = dict(pure=pure, ib=ib)
+
+    def spread(by_source):
+        stack = np.array(list(by_source.values()))
+        return stack.max(axis=0) / stack.min(axis=0)
+
+    def ratios(by_source, i, j):
+        return {src: float(v[i] / v[j]) for src, v in by_source.items()}
+
+    found = {}
+    for relation, r in out.items():
+        a_spread = spread(r["pure"])
+        b_spread = {st: spread(v) for st, v in r["ib"].items()}
+        by_ratio = (np.array([r["ib"][st]["pope1997"]
+                              for st in stations]).max(axis=0)
+                    / np.array([r["ib"][st]["pope1997"]
+                                for st in stations]).min(axis=0))
+        stack_b = np.array(list(b_spread.values()))
+        verdict = np.where(stack_b.min(axis=0) > by_ratio, "pure water",
+                           np.where(stack_b.max(axis=0) < by_ratio,
+                                    "particles", "depends on r"))
+        found[relation] = dict(
+            a_spread=a_spread, b_spread=(stack_b.min(axis=0),
+                                         stack_b.max(axis=0)),
+            by_ratio=by_ratio, verdict=verdict,
+            a_443_550=ratios(r["pure"], 3, 6), a_412_550=ratios(r["pure"], 2, 6),
+            b_443_550=[ratios(v, 1, 4) for v in r["ib"].values()],
+            b_412_550=[ratios(v, 0, 4) for v in r["ib"].values()])
+    lee = found["lee2011"]
+    print("""The five pure water absorption spectra the package ships, under (A) pure
+sea water alone and (B) Williamson & Hollins's IB, its contents laid on
+each spectrum, bb from Petzold's eight measured B/S in turn. Rrs by Lee et
+al. (2011), nadir. Largest over smallest Rrs among the five spectra, and,
+for IB, among the eight B/S with Pope & Fry's water:
+
+  nm   (A) pure water   (B) IB: spectra      (B) IB: B/S    larger""")
+    for k, wl in enumerate(BAND_NM):
+        if k < 2:
+            print(f"  {wl:3.0f}  {lee['a_spread'][k]:10.2f}")
+            continue
+        i = k - 2
+        print(f"  {wl:3.0f}  {lee['a_spread'][k]:10.2f}       "
+              f"{lee['b_spread'][0][i]:.2f} to {lee['b_spread'][1][i]:.2f}"
+              f"{lee['by_ratio'][i]:14.2f}    {lee['verdict'][i]}")
+
+    def span(d):
+        values = list(d.values()) if isinstance(d, dict) else [
+            x for item in d for x in item.values()]
+        return min(values), max(values)
+
+    a443, a412 = span(lee["a_443_550"]), span(lee["a_412_550"])
+    b443, b412 = span(lee["b_443_550"]), span(lee["b_412_550"])
+    g = found["gordon1988"]
+    off = np.abs(g["a_spread"] / lee["a_spread"] - 1)
+    violet = BAND_NM <= 412
+    ib_off = float(np.max(np.abs(
+        np.concatenate([g["b_spread"][0] / lee["b_spread"][0],
+                        g["b_spread"][1] / lee["b_spread"][1],
+                        g["by_ratio"] / lee["by_ratio"]]) - 1)))
+    # Where pure sea water lies outside the bb / (a + bb) Lee et al. fitted.
+    bw = constants.bw_coeff * (400.0 / BAND_NM) ** constants.bw_exponent
+    outside = {src: [int(wl) for wl, u in zip(
+        BAND_NM, (bw / 2) / (_aw(src, BAND_NM) + bw / 2)) if u > 0.37]
+        for src in PURE_WATERS}
+    outside = {k: v for k, v in outside.items() if v}
+    same = all((g["verdict"] == lee["verdict"]))
+    print(f"""
+Rrs(443)/Rrs(550), which chlorophyll algorithms read, is {a443[0]:.2f} to {a443[1]:.2f} over the
+five spectra in pure sea water and {b443[0]:.2f} to {b443[1]:.2f} in IB (all eight B/S);
+Rrs(412)/Rrs(550) is {a412[0]:.2f} to {a412[1]:.2f} and {b412[0]:.2f} to {b412[1]:.2f}.
+
+Gordon et al.'s (1988) relation gives IB's spreads within {100 * ib_off:.1f} percent of Lee
+et al.'s, {"and the same verdict at every wavelength" if same else "but not the same verdict"}, and pure sea water's within {100 * float(np.max(off[~violet])):.1f} percent
+from 443 nm. Not below: at 380 to 412 nm they differ by up to {100 * float(np.max(off[violet])):.1f} percent, and
+there pure sea water lies outside the range of bb / (a + bb) Lee et al.
+fitted (above 0.37) for""")
+    for src, wls in outside.items():
+        print(f"  {src}: {', '.join(str(w) for w in wls)} nm")
+    print("""so the violet figures for pure sea water rest on Lee et al.'s relation
+outside the data it was fitted to, where the two relations part. Which
+spectrum is right is not settled (DATA.md section 29); this is what the
+choice does.""")
+    return dict(found=found, a443=a443, a412=a412, b443=b443, b412=b412,
+                ib_off=ib_off, off_violet=float(np.max(off[violet])),
+                off_rest=float(np.max(off[~violet])), outside=outside,
+                same_verdict=same, stations=stations)
+
+
 def main():
     _banner()
     caught = set()
@@ -482,6 +618,7 @@ def main():
     recovered = qaa_part()
     case1 = case1_part(caught)
     geometry = geometry_part(kd, caught)
+    pure_water = pure_water_part(caught)
     if caught:
         rule("Warnings")
         print("Raised along the way, each a ProvenanceWarning:")
@@ -505,11 +642,15 @@ def main():
   - Part 6's a and bb are built from means as well, and from choices
     that are stated, not determined: the nonalgal slope, the share of
     CDOM, and Pope & Fry's pure water.
+  - Part 8 takes pure water's scattering from Williamson & Hollins's
+    constants, not Morel's formula, so as to match their IB, and reads
+    IB's averaged a as published, which part 7 of
+    closure_with_jerlov_kd.py finds high in the blue.
 """)
     return dict(worst=worst, depths=depths, findings=findings,
                 depends=depends, by_pair=by_pair, by_ratio=by_ratio, products=products, nearest=nearest,
                 recovered=recovered, case1=case1, geometry=geometry,
-                caught=caught)
+                pure_water=pure_water, caught=caught)
 
 
 if __name__ == "__main__":
