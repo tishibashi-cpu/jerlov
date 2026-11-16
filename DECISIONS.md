@@ -5958,3 +5958,44 @@ in `euphotic_zone.py` (1) and `solar_heating.py` (2); DATA.md section 42;
 README, `docs/api.rst`, the CHANGELOG.
 
 **Version.** 1.16.0: four public names.
+
+**Differences from the plan.**
+
+- 490 nm is not one of Solonenko & Mobley's or Williamson & Hollins's
+  wavelengths; a(490) and b(490) are read between the tabulated ones, as
+  `water(...).a(490)` does. The plan did not say how.
+- E_VIS is called Ed (downwelling irradiance) in the 2005 paper and the
+  "downwelling vector irradiance" in 2007; the docstrings give both, not
+  the "planar" the plan said.
+- Text that NumPy reads as a number ("0.1") is accepted for a490, bb490,
+  depth_m, the sun and the fraction, as `lee2005_kd` already accepts it;
+  only `visible_fraction` refuses it, with the check `_single` uses. The
+  plan said non-numbers are refused; the shared helpers were not changed
+  for this.
+- The shortwave function warns of K_IR's fitted depths only above 0.01 m
+  (not at 0, where T is 1 whatever K_IR is), and not below 3 m, where the
+  paper says E_IR "is negligible" (p. 3). `lee2005_kir` warns at both.
+- Comparison 2 reads off, besides the plan's ratios, how much F_VIS and r
+  each move T. The F_VIS factor and the eight r were run; the sun was held
+  at Table XXI's footnote, as planned.
+- Comparison 3 (PAR's 1 percent depth from Jerlov's 1976 Kd) is printed
+  in `euphotic_zone.py` part 7 for the 1 percent level only.
+
+**What was found** (DATA.md section 42).
+
+- Jerlov's (1977) quanta levels: Lee et al.'s depths are a median 1.13 of
+  his with Solonenko & Mobley's a and b, and 0.91 with Williamson &
+  Hollins's; r and the sun together move a depth by up to 2.4 times, and
+  his depth lies within that in 38 of 48 cells. Outside: with Solonenko &
+  Mobley's IOPs, the 1 percent level of IA and IB (too deep); with
+  Williamson & Hollins's, every level of IB and II (too shallow). For I
+  and IA the model from a and bb is nearer his 1 percent depth than PAR
+  from his own (1976) Kd and D65 (1.23 and 1.28 against 1.62 and 1.43).
+- Table XXI: at 1 m Lee et al.'s T is 0.91 to 1.08 of the table over the
+  ten types, against Paulson & Simpson's 0.98 to 1.46 over the oceanic
+  five; the model misses less than the fit in 3 or 4 of the five oceanic
+  types at 1 to 10 m, and in at most 1 below. F_VIS of 0.40 and 0.45 moves
+  T by 4.3 to 6.1 percent; r moves it more, for the turbid types from 2 m.
+- Solonenko & Mobley's b(490) of I and IA rests on values flagged suspect
+  and warns; with their I and IA, the model's K_VIS falls below 0.04 per m
+  at the deeper levels, outside its fit, and warns.

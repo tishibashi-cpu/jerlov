@@ -96,6 +96,8 @@ from .sky import SurfaceIrradiance, gregg1990_irradiance
 from .shortwave import (
     ShortwaveParameters,
     jerlov1968_solar_fraction,
+    lee2005_kir,
+    lee2005_shortwave_transmittance,
     shortwave_parameters,
     solar_fraction,
 )
@@ -109,6 +111,8 @@ from .ocean_colour import (
     gordon1989_d0,
     gordon1989_kd,
     lee2005_kd,
+    lee2005_kvis,
+    lee2007_depth_of_fraction,
     lee2011_rrs,
     lee2013_kd,
     lee2015_secchi_depth,
@@ -209,6 +213,8 @@ __all__ = [
     "shortwave_parameters",
     "solar_fraction",
     "jerlov1968_solar_fraction",
+    "lee2005_kir",
+    "lee2005_shortwave_transmittance",
     "bb_from_vsf",
     "particulate_chi",
     "pure_water_vsf",
@@ -233,6 +239,8 @@ __all__ = [
     "gordon1989_d0",
     "gordon1989_kd",
     "lee2005_kd",
+    "lee2005_kvis",
+    "lee2007_depth_of_fraction",
     "lee2013_kd",
     "subsurface_rrs",
     "above_surface_rrs",
@@ -271,4 +279,4 @@ __all__ = [
     "OsoaaRadianceScan",
 ]
 
-__version__ = "1.15.9"
+__version__ = "1.16.0"
