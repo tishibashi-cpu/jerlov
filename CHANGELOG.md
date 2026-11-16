@@ -4,6 +4,27 @@ Every release is archived on Zenodo under the concept DOI
 [10.5281/zenodo.22321312](https://doi.org/10.5281/zenodo.22321312), which
 always resolves to the latest version.
 
+## 1.20.0 — 2026-11-16
+
+The clearest natural waters, Morel et al. (2007) (DECISIONS.md section
+102). No earlier value changed.
+
+**New.** `morel2007_stations()` and `ClearWaterStation`: the eight
+stations of their Table 1, South Pacific gyre, 2004. `pure_water_absorption_table`
+gains `source="morel2007"` (aw1, 300-500 nm) and `"morel2007_aw2"` (aw2,
+300-370 nm), their Table 2.
+
+**Data.** `morel2007_aw.csv` and `morel2007_stations.csv`, from literals in
+`tools/build_morel2007.py`.
+
+**Found.** At GYR-5 and STB-14, ay2 - ay1 is 0.0100 short of what Table 2
+requires: a likely misprint, kept and flagged. aw1 from 420 nm is Pope &
+Fry's at every 10 nm, and the mean of their neighbours at 425-455 nm.
+
+**Examples.** `ocean_colour_and_secchi.py` part 11: the stations' Kd(420)
+is 0.52 to 0.99 of Jerlov's type I, and at seven of eight below Austin &
+Petzold's pure sea water.
+
 ## 1.19.0 — 2026-11-16
 
 Morel's (1988) Kd from the pigment concentration, beside the 2001 edition

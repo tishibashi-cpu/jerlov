@@ -6335,3 +6335,24 @@ and pure sea water (aw + bsw / 2, from each pure water table that covers
 
 **Documents.** DATA.md section 46; README; docs/api.rst; CHANGELOG;
 .zenodo.json. 1.20.0: two public names.
+
+**Differences from the plan.**
+
+- The caption's "the values beyond 420 nm are those of Pope and Fry" was
+  checked and does not hold at 425, 435, 445 and 455 nm, where aw1 is the
+  mean of Pope & Fry's neighbours; the build checks that instead.
+- `morel2007_stations()` warns on every call while two rows are suspect,
+  as `water()` does for flagged values, rather than through the records.
+- The example's pure sea water is the paper's own aw1 + bsw / 2 at 420 nm,
+  not every pure water table: bsw is theirs, and the others would mix
+  scattering of another salinity.
+
+**What was found** (DATA.md section 46).
+
+- ay2 - ay1 at 310 nm is 0.0100 short at GYR-5 and STB-14: a likely
+  misprint, flagged.
+- aw1 is Pope & Fry's at every 10 nm from 420 nm, and the mean of their
+  neighbours at 425-455 nm.
+- The stations' Kd(420) is 0.52 to 0.99 of Jerlov's type I, below Austin
+  & Petzold's pure sea water at seven of eight, and 0.71 to 0.97 of Morel
+  & Maritorena's Kd at the same chlorophyll.

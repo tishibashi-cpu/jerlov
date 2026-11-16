@@ -74,6 +74,12 @@ Light for photosynthesis
 
 .. autodata:: QUANTA_BAND_NM
 
+.. autofunction:: morel2007_stations
+
+.. autoclass:: ClearWaterStation
+   :members:
+   :undoc-members:
+
 Looking at something through water
 ----------------------------------
 

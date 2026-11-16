@@ -1160,7 +1160,15 @@ _AW_TABLES = {
     "lee2015_smoothed": ("lee2015_aw.csv",
                          "Lee et al. (2015), Appl. Opt. 54, 546-558, "
                          "Table 1, smoothed column"),
+    "morel2007": ("morel2007_aw.csv",
+                  "Morel et al. (2007), Limnol. Oceanogr. 52, 217-229, "
+                  "Table 2, aw1"),
+    "morel2007_aw2": ("morel2007_aw.csv",
+                      "Morel et al. (2007), Limnol. Oceanogr. 52, 217-229, "
+                      "Table 2, aw2"),
 }
+#: The column of each table that is not called aw_per_m.
+_AW_COLUMN = {"morel2007": "aw1_per_m", "morel2007_aw2": "aw2_per_m"}
 
 
 def _aw_table(source: str):
@@ -1169,9 +1177,11 @@ def _aw_table(source: str):
         raise KeyError(f"unknown pure water absorption table {source!r} "
                        f"(available: {', '.join(_AW_TABLES)})")
     filename = _AW_TABLES[source][0]
-    rows = _data._rows(filename)
+    column = _AW_COLUMN.get(source, "aw_per_m")
+    # aw2 stops at 370 nm; its blank rows are not part of it.
+    rows = [r for r in _data._rows(filename) if r[column].strip()]
     wl = np.array([float(r["wavelength_nm"]) for r in rows])
-    aw = np.array([float(r["aw_per_m"]) for r in rows])
+    aw = np.array([float(r[column]) for r in rows])
     statuses = [r["status"] for r in rows]
     notes = [r["note"] for r in rows]
     if source == "lee2015_smoothed":
@@ -1214,6 +1224,14 @@ def pure_water_absorption_table(wavelength_nm, /, *, source: str):
     - ``"lee2015_smoothed"``: the same, with the paper's smoothed values at
       360, 370, 385, 395 and 400 nm, where it attributes dips to imperfect
       removal of Raman scattering.
+    - ``"morel2007"``: Morel et al. (2007), Limnol. Oceanogr. 52, 217-229,
+      Table 2, aw1: "a tentative upper bound" from the clearest waters of
+      the South Pacific gyre, 300-500 nm every 5 nm; Buiteveld et al.
+      (1994) from Boivin et al. (1986) below 366 nm, Pope & Fry's values
+      from 420 nm (at 425, 435, 445 and 455 nm the mean of theirs 5 nm
+      either side), a smooth join between.
+    - ``"morel2007_aw2"``: the same table's aw2, 300-370 nm, from
+      Quickenden & Irvin (1980), joined to aw1 at 366 nm.
 
     Linear interpolation between the printed wavelengths, no
     extrapolation. Uncertainties are in the tables but not returned. See

@@ -481,6 +481,11 @@ jerlov.morel2001_kd([443, 490, 555], chlorophyll_mg_m3=0.3)
 # The 1988 edition, whose C is chlorophyll a plus pheophytin a.
 jerlov.morel1988_kd([443, 490, 555], pigment_mg_m3=0.3)
 
+# The clearest ocean water measured (Morel et al. 2007): eight stations of the
+# South Pacific gyre, and their pure water absorption.
+stations = jerlov.morel2007_stations()
+jerlov.pure_water_absorption_table([310, 420], source="morel2007")
+
 # From the same chlorophyll: absorption by phytoplankton (Bricaud et al. 1995)
 # and backscattering by particles (Morel & Maritorena 2001). Water, and the
 # rest of what absorbs, are not included.
@@ -722,7 +727,7 @@ made.
 ## Provenance and design
 
 `DATA.md` records, for every shipped table, where it came from, what was
-verified, and what is known to be wrong with it. Forty-five entries are
+verified, and what is known to be wrong with it. Forty-six entries are
 documented there: thirteen confirmed defects in the source literature, three
 questions the first edition of Jerlov settled, and the rest notes.
 

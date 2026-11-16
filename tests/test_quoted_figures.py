@@ -2476,3 +2476,26 @@ def test_morels_two_editions(secchi_example):
                    "the change in Kw is 1.23 times the whole change",
                    "IA from 1988, I from 2001"):
         assert quoted in data, quoted
+
+
+# -- the clearest waters (ocean_colour_and_secchi.py, part 11, DECISIONS.md
+#    section 102) -------------------------------------------------------------
+
+
+@source_tree
+def test_the_clearest_waters(secchi_example):
+    c = secchi_example["clearest"]
+    assert (round(c["kd"].min() / c["jerlov_i"], 2),
+            round(c["kd"].max() / c["jerlov_i"], 2)) == (0.52, 0.99)
+    assert int(np.sum(c["kd"] < c["austin_i"])) == 7
+    assert (round(c["to_2001"].min(), 2), round(c["to_2001"].max(), 2)) \
+        == (0.71, 0.97)
+    assert round(c["jerlov_i"], 4) == 0.0232
+    assert round(c["austin_i"], 4) == 0.0191
+    assert round(c["kd_sw"], 4) == 0.0073
+    data = _flat("DATA.md")
+    for quoted in ("so they are 0.52 to 0.99 of it",
+                   "is 0.0191, and seven of the eight stations are below it",
+                   "the measured Kd is 0.71 to 0.97 of it",
+                   "aw1 + bsw / 2 at 420 nm, is 0.0073"):
+        assert quoted in data, quoted
