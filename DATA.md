@@ -1075,6 +1075,18 @@ percent of s below 0.1 degree, and everything that rests on it, such as
 How much of the light near the beam turbulence takes, against particles,
 was not settled in the literature found on 2026-11-15.
 
+**What rests on the extension (1.15.8, DECISIONS.md section 96).** Without
+it, the phase function renormalised over 0.1 to 180 degrees and b taken as
+b (1 - f), the mean cosine at the eight stations falls by 0.004 to 0.015,
+B/S rises by 3.5 to 17.0 percent, and the Henyey-Greenstein g fitted to the
+backscatter falls by 0.004 to 0.016. Kd hardly moves: in 32 Monte Carlo
+cases (each station, b/a of 0.5 to 10, the sun at 30 degrees,
+`examples/data/below_0_1/`) treating the light scattered by less than 0.1
+degree as unscattered moves Kd by -0.63 to +0.13 percent, and spreading it
+over 0.1 to 180 degrees with b kept by +0.11 to +4.40. The extension
+decides how much of b is counted as scattering; Kd does not depend on it.
+`examples/phase_function_choice.py`, part 3.
+
 **What these are not.** They are the scattering of eight particular waters on
 particular days in 1971, total of water and particles, at 530 nm, the
 wavelength the report gives for c; the scattering meters measured through a
@@ -2507,4 +2519,67 @@ function, sun or sky, and they enter the averages as they are.
 measured a at 412, 440 and 488 nm rises by 1.2 to 2.1 pooled standard
 deviations and b by 0.9 to 1.4: the types overlap, and a single campaign
 can sit nearer its neighbour's average than its own.
+
+**What Jerlov and his colleagues wrote (1.15.8, DECISIONS.md section 96).**
+Chapter 10 of both editions was read. Jerlov (1976, *Marine Optics*,
+p. 133) states the changes from 1968 only for the oceanic types: higher at
+600 nm for I, IA, IB and II, and for III lower at 550 and 575 nm and
+"somewhat higher values around 425 nm which may be caused by chlorophyll
+absorption". Of the coastal types he says (p. 137) that they "are derived
+from observations along the coast of Scandinavia and western North
+America. These northern water masses are characterized by a relatively
+high amount of yellow substance. Some recent material (Aas, 1967, 1969 and
+Højerslev, 1974a) has substantially fortified the basis for this special
+classification." Jerlov (1968, *Optical Oceanography*, pp. 122 and 124)
+gives the same origin, without yellow substance, and "evidence that
+coastal waters which contain a variable amount of terrigeneous material
+show divergent behaviour in the shortwave part of the spectrum". No reason
+for the higher coastal blue of 1976 is stated in either.
+
+Two later papers by Jerlov's Copenhagen colleagues bear on it. Aas,
+Højerslev, Høkedal and Sørensen (2013), *Oceanologia* 55(2), 471-482,
+doi:10.5697/oc.55-2.471, p. 477: in the open Nordic Seas "coastal types
+from 1 to 5 occur frequently. These coastal types are not real coastal
+waters with high contents of yellow substance and inorganic particles;
+they are caused by algal blooms". Aas & Højerslev (2001), *Oceanologia*
+43(2), 139-168, p. 146: the constants of the linear relations between
+Kd at a wavelength and at 465 nm, on which the classification rests, "may
+change from one oceanic area to another", and their own such relations for
+the Norwegian Sea "appear to be valid only for the type of water from
+which they were obtained". That is consistent with what was found above:
+Williamson & Hollins typed campaigns by matching Kd over all wavelengths,
+which a water of coastal turbidity but little yellow substance can do
+while its blue Kd stays well below the yellow-substance-rich waters
+Jerlov's coastal types came from. It is not shown to be the cause; the
+campaigns' yellow substance is not in the data.
+
+Three more papers, obtained by the user, add to this. Højerslev (1978),
+*Limnol. Oceanogr.* 23(5), 1076-1079, doi:10.4319/lo.1978.23.5.1076,
+writing from Jerlov's own institute, chose "Jerlov's classification of
+coastal waters (Jerlov 1976) ... because it takes into consideration
+average optical conditions for coastal waters rich in yellow substance"
+(p. 1078), and found a daylight spectrum where the Baltic meets the
+Kattegat "intermediate to and conforms with Jerlov's coastal types 3 and
+5" (p. 1079). Højerslev & Aas (1991), *J. Geophys. Res.* 96(C9),
+17003-17005, doi:10.1029/91JC01822, pp. 17,003-17,004, note that the
+classification's values at 310 nm "seem to be based on six stations from
+the western Pacific and the Indonesian seas and one from the
+Mediterranean. These values were omitted in his last work [Jerlov,
+1978], which may indicate that he doubted their representativity", and
+that the waters of the Baltic, Kattegat, Skagerrak, German Bight and North
+Sea "are characterized by high contents of yellow substance". Topliss,
+Hunter & Simpson (1980), *Mar. Environ. Res.* 4, 65-79, p. 78, found "all
+classes of coastal optical water type" at one near-shore site in North
+Wales over a year. None states why the coastal blue of 1976 is higher
+than that of 1968.
+
+Not obtained, and the likeliest places for the answer: Jerlov (1978), *The
+optical classification of sea water in the euphotic zone*, Rep. Dept.
+Phys. Oceanogr. 36, Univ. Copenhagen, 46 pp., in which the coastal types
+were reduced to 1, 3 and 5; Aas (1969), *On submarine irradiance
+measurements*, Rep. 6 of the same series; Højerslev's reports of 1974
+(Rep. 23, the Baltic, and Rep. 26, the Western Mediterranean, lettered a
+and b differently by different authors); and what Jerlov cites as Aas
+(1967), possibly Aas (1971), *Sarsia* 46, 59-78, "Irradiance in
+Hardangerfjorden 1967". None has a DOI that was found.
 

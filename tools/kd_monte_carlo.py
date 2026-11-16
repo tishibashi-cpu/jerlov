@@ -51,14 +51,16 @@ def refracted_cosine(sun_zenith_deg: float) -> float:
     return math.sqrt(1.0 - s * s)
 
 
-def petzold_sampler(station: str):
+def petzold_sampler(station: str, without_extension: bool = False):
     """Inverse cumulative distribution of the scattering angle (radians)
     for one of Petzold's stations, and its backscatter share.
 
     The vsf is taken as a power law between the printed angles, as
     ScatteringFunction.vsf_at takes it, and below 0.1 degree, down to
     0.001 degree, as the report's extension continues it, with the slope
-    of the first two printed angles."""
+    of the first two printed angles. With ``without_extension`` the
+    distribution starts at 0.1 degree instead (DECISIONS.md section 96);
+    the default is unchanged."""
     s = jerlov.petzold_scattering(station)
     angles = np.asarray(s.angles_deg, dtype=float)
     vsf = np.asarray(s.vsf, dtype=float)
@@ -67,6 +69,8 @@ def petzold_sampler(station: str):
     theta = np.concatenate([
         np.logspace(-3.0, math.log10(angles[0]), 400, endpoint=False),
         np.logspace(math.log10(angles[0]), math.log10(180.0), 6000)])
+    if without_extension:
+        theta = theta[400:]
     log_vsf = np.where(
         theta < angles[0],
         math.log(vsf[0]) + slope * (np.log(theta) - math.log(angles[0])),

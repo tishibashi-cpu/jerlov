@@ -4,7 +4,7 @@ Examples
 Twenty-eight scripts, each for one kind of reader. Each runs against the
 installed package, needs nothing beyond NumPy, and prints what it
 computes; ``closure_with_jerlov_kd.py`` also reads results kept beside
-it. CI runs every one of them, so an example that has stopped working is
+it, and so does part 3 of ``phase_function_choice.py``. CI runs every one of them, so an example that has stopped working is
 a failed build rather than something a reader discovers. They are in the
 repository, not in the installed package; from a clone:
 

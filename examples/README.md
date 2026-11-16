@@ -2,7 +2,8 @@
 
 Twenty-eight scripts. Each runs against the installed package and needs nothing beyond
 NumPy; `closure_with_jerlov_kd.py` also reads results kept beside it in
-`examples/data/`, so it needs the repository.
+`examples/data/`, so it needs the repository, and so does part 3 of
+`phase_function_choice.py`, which says so when they are not there.
 
 ```
 python examples/sources_disagree.py
@@ -356,7 +357,10 @@ Petzold's eight stations, with g matched either way. Within 1 degree of
 the sun's beam HG scatters **0.07 to 0.59** of the measured light towards
 the eye, and at 90 degrees 1.08 to 1.80 times it. The stations scatter
 0.20 to 0.37 of their light within 1 degree of forward; HG 0.004 to
-0.046, moving the tight glow around the sun out to wider angles.
+0.046, moving the tight glow around the sun out to wider angles. Part 3:
+without the report's power-law extension below 0.1 degree, the mean
+cosine falls by 0.004 to 0.015 and B/S rises by 3.5 to 17.0 percent, while
+Kd, by Monte Carlo, moves by **-0.63 to +0.13** percent.
 
 **`reference_images.py`** — ten materials whose reflectance the USGS
 Spectral Library measured, from white PVC to cobalt violet, seen through
