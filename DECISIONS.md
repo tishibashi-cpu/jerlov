@@ -6189,3 +6189,29 @@ al. cannot be had, the example is left out and that is said.
 
 **Documents.** DATA.md section 44; README; docs/api.rst; CHANGELOG;
 .zenodo.json. 1.18.0: two public names.
+
+**Differences from the plan.**
+
+- Zaneveld et al. (1994) arrived before the code was finished (the user
+  supplied it with three other papers). Their Eq. (21) is Röttgers et
+  al.'s Eq. (2a); they derive it with the reference at 712 nm.
+- The example's tube is Zaneveld et al.'s: 0.25 m, a perfect reflector up
+  to 41 degrees (the R = 100 percent case of their Eqs. 5-6, so no
+  reflection counts are needed), a = 0.4 per m. The c-meter's 0.93
+  degrees is Röttgers et al.'s, after Boss et al. (2009). The true a(715)
+  is set to 0, 0.002 and 0.01 per m, not taken from a type: Williamson &
+  Hollins's a(715) is itself a corrected measurement.
+- The example integrates with its own trapezoid rule, as numpy.trapezoid
+  is NumPy 2 only, and passes on any warning but Eq. (5)'s.
+
+**What was found** (DATA.md section 44).
+
+- With a(715) = 0, Eq. (4) is not Eq. (2b): the correction differs by
+  (cm715 - am715) / cm715, and in the example proportional+ is then off by
+  2.6 to 9.9 percent where proportional is exact.
+- From Petzold's stations, ea is 5.7 to 12.5 percent; HAOCE 11's 5.7
+  matches Zaneveld et al.'s "Coastal mixed", the others are not
+  identified. ec within 0.93 degrees is 16 to 27 percent, larger than any
+  of Zaneveld et al.'s Mie models at 0.9 degrees.
+- With a(715) = 0.01 per m in Jerlov III, the flat and proportional
+  methods fall 28 to 40 percent short at 555 and 676 nm.

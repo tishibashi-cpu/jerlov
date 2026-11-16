@@ -78,7 +78,8 @@ def rottgers2013_scatter_correction(am, cm, am_ref, cm_ref, /, *, method,
 
     Returns
     -------
-    a, 1/m. A float if am and cm are numbers, an array otherwise.
+    The corrected absorption, 1/m: a float if am and cm are numbers, an
+    array otherwise.
 
     Raises
     ------
@@ -145,7 +146,8 @@ def rottgers2013_a715(am715, /):
 
     Returns
     -------
-    a715, 1/m. A float for a number, an array otherwise.
+    The estimated absorption at 715 nm, 1/m: a float for a number, an
+    array otherwise.
 
     Notes
     -----

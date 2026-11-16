@@ -3,7 +3,7 @@
 What every shipped table is, where it came from, what was verified, and what
 is known to be wrong with it.
 
-Forty-three entries are recorded below. Thirteen are confirmed defects, three were
+Forty-four entries are recorded below. Thirteen are confirmed defects, three were
 open questions that the first edition of Jerlov settled, and the rest are
 notes rather than defects. None of them is repaired silently: values that
 could be recovered carry `status = reconstructed` and say how, values that
@@ -2767,3 +2767,59 @@ and Sun glint and the sky's colour make it depend on wavelength (Mobley
 1999, section 4; Lee et al. 2010, Opt. Express 18, 26313). Which table is
 nearer a real sky is not known here; the 2015 one is for a Rayleigh sky,
 "at best an approximation to an extremely clear sky" (the Web Book).
+
+## 44. Scatter correction of reflective-tube absorption meters (note)
+
+An ac-9 or ac-s reads too much absorption, because its reflective tube
+misses the light scattered beyond its angle, and too little attenuation,
+because its c-meter catches the light within its acceptance angle.
+Zaneveld, Kitchen & Moore (1994), Proc. SPIE 2258, 44-55: am = a + ea b,
+cm = c - ec b (their Eq. 1). Since 1.18.0, `rottgers2013_scatter_correction`
+gives the four corrections Röttgers, McKee & Woźniak (2013), Methods in
+Oceanography 7, 21-39, compared, and `rottgers2013_a715` their estimate of
+the true absorption at 715 nm (DECISIONS.md section 100).
+
+**The methods, as printed.** Flat, a = am - am715 (Röttgers et al. Eq. 1);
+proportional, a = am - am715 [(1/ec) cm - am] / [(1/ec) cm715 - am715]
+(Eq. 2b; with ec = 1 it is Eq. 2a, which is Zaneveld et al.'s Eq. 21 with
+their reference wavelength); flat+ and proportional+, the same with am715
+- a715 for am715 (Eqs. 3 and 4), a715 the true absorption at 715 nm. Eq.
+(4) puts a715 in the denominator where Eq. (2b) puts am715, so with a715
+= 0 the two differ by the factor (cm715 - am715) / cm715 in the
+correction; and its numerator has "ac", "either am or a", where am is
+used here. Zaneveld et al. derived the proportional method with the
+reference wavelength 712 nm (p. 50) and use 715 nm later; the function
+takes the reference values, whatever the wavelength.
+
+**Eq. (5)**, a715 = 0.212 am715^1.135, was fitted to 85 coastal samples,
+cultures left out, against a PSICAM (r2 = 0.930); their Fig. 4 spans am715
+of about 0.02 to 8 per m, and outside that the function warns.
+
+**Zaneveld et al.'s errors from Petzold's data.** Their Table II gives,
+for a tube 0.25 m long reflecting all it can up to 41 degrees and a = 0.4
+per m, ea of 8.4, 5.7 and 9.2 percent from Petzold's scattering for
+waters they call "Gyre deep", "Coastal mixed" and "Harbor", without
+naming the stations, and say that "values from the first degree were not
+included in b". From the package's eight stations, with their Eqs. (5)
+and (6) for a perfect reflector and b from 0.1 degree (Petzold's measured
+angles), `examples/from_one_measurement.py` part 7 gets 5.7 percent for
+HAOCE 11, 5.9 for HAOCE 5, 8.1 to 8.9 for the three NUC stations and 9.8
+to 12.5 for the AUTEC stations. HAOCE 11 matches their coastal value; the
+others are not identified, and leaving out the first degree of b, as
+their words may mean, raises every one (HAOCE 11 to 7.8). The share of b
+within the ac-9's 0.93 degrees, ec, is 16 to 27 percent for these
+stations, against the 1.12 to 16.90 percent of Zaneveld et al.'s six Mie
+models at 0.9 degrees (their Table I).
+
+**What the methods do with that.** For Jerlov III's water part
+(Williamson & Hollins's a and b) and each station's ea and ec, the median
+over the stations of the error in a at 440, 555 and 676 nm: with no
+absorption at 715 nm, flat is off by 3.7, 7.5 and 1.3 percent and
+proportional by nothing, since ea is the same at every wavelength in this
+model; with a715 = 0.01 per m (Röttgers et al.'s Baltic and German Bight
+samples had 0.01 to 0.23), flat by -5.3, -29.6 and -28.4 percent and
+proportional by -10.7, -40.4 and -30.2. Given the true a715, flat+ is back
+to flat's own error; proportional+ is off by 2.6, 9.9 and 7.4 percent even
+with a715 = 0, the difference in its denominator above. Eq. (5) applied
+to water this clear lies outside its fit. How Williamson & Hollins's
+campaigns corrected their absorption is not recorded in this package.

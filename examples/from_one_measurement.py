@@ -285,6 +285,144 @@ print("""
   wavelengths (DATA.md section 3); Austin & Petzold (1986) replace it.""")
 
 # --------------------------------------------------------------------------
+rule("7. An absorption meter, and the light it does not catch")
+
+print("""A reflective-tube absorption meter (an ac-9) misses the light scattered
+beyond its tube's angle, so it reads am = a + ea b; its attenuation side
+catches the light within its acceptance angle, cm = c - ec b (Zaneveld,
+Kitchen & Moore 1994, Eq. 1; pure water taken off). Here ea is computed
+from each of Petzold's eight measured scattering functions as Zaneveld et
+al. did (their Eqs. 5-6: a tube 0.25 m long, reflecting all it can up to
+41 degrees, a = 0.4 per m), and ec as the share of b within 0.93 degrees,
+the ac-9's acceptance (Röttgers et al. 2013, p. 36). DECISIONS.md section
+100.""")
+
+AC9_NM = np.array([412.0, 440.0, 488.0, 510.0, 555.0, 630.0, 650.0,
+                   676.0, 715.0])
+TUBE_M, TUBE_ABSORPTION, TUBE_DEG, C_METER_DEG = 0.25, 0.4, 41.0, 0.93
+GRID = np.radians(np.linspace(0.1, 180.0, 200001))
+
+
+def trapezoid(y, x):
+    """The trapezoid rule (numpy.trapezoid is NumPy 2 only)."""
+    return float(np.sum(0.5 * (y[1:] + y[:-1]) * np.diff(x)))
+
+
+def tube_errors(station):
+    """ea and ec of one of Petzold's stations, over 0.1 to 180 degrees
+    (his measured angles; the extension below 0.1 degree is left out)."""
+    f = jerlov.petzold_scattering(station)
+    angles = np.radians(np.asarray(f.angles_deg, dtype=float))
+    beta = np.exp(np.interp(np.log(GRID), np.log(angles),
+                            np.log(np.asarray(f.vsf, dtype=float))))
+    weight = 2 * np.pi * beta * np.sin(GRID)
+    b = trapezoid(weight, GRID)
+    # Zaneveld et al.'s D(theta, a) for a perfect reflector, averaged over
+    # where along the tube the light was scattered.
+    k = 1 / np.cos(np.minimum(GRID, np.radians(89.9))) - 1
+    alk = TUBE_ABSORPTION * TUBE_M * k
+    d = np.where(alk > 0, -np.expm1(-alk) / np.where(alk > 0, alk, 1), 1.0)
+    inside = GRID <= np.radians(TUBE_DEG)
+    ea = 1 - trapezoid((weight * d)[inside], GRID[inside]) / b
+    cone = GRID <= np.radians(C_METER_DEG)
+    ec = trapezoid(weight[cone], GRID[cone]) / b
+    return float(ea), float(ec)
+
+
+ERRORS = {s: tube_errors(s) for s in jerlov.PETZOLD_STATIONS}
+print(f"\n  {'station':>9} {'ea':>6} {'ec':>6}")
+for station, (ea, ec) in ERRORS.items():
+    print(f"  {station:>9} {100 * ea:>5.1f}% {100 * ec:>5.1f}%")
+print("""
+  Zaneveld et al.'s Table II gives, for the same tube and Petzold's data,
+  8.4, 5.7 and 9.2 percent for waters they call gyre deep, coastal mixed
+  and harbor, without naming the stations. HAOCE 11 comes out at their
+  5.7; the clear AUTEC stations at more than any of their three.""")
+
+TYPE_HERE = "III"
+water = jerlov.water(TYPE_HERE, source="williamson2022")
+constants = water.source.scattering
+a_n = water.a(AC9_NM) - jerlov.pure_water_absorption(
+    AC9_NM, source="williamson2022")
+b_n = water.b(AC9_NM) - constants.bw_coeff * (
+    400.0 / AC9_NM) ** constants.bw_exponent
+TRUE_A715 = (0.0, 0.002, 0.01)
+SHOWN = (440.0, 555.0, 676.0)
+cols = [AC9_NM.tolist().index(w) for w in SHOWN]
+
+print(f"""
+Jerlov {TYPE_HERE}, Williamson & Hollins's a and b, the water's own part. The
+meters' readings are made from them with each station's ea and ec; then a
+is recovered by each of Röttgers et al.'s methods. The true a at 715 nm,
+which the plain methods assume zero, is set to 0, 0.002 and 0.01 per m
+(Williamson & Hollins's types have 0.0003 to 0.006; Röttgers et al.'s
+Baltic and German Bight samples 0.01 to 0.23). The median over the eight
+stations of the error in a, in percent:
+""")
+head = "".join(f" {f'{w:g}':>7}" for w in SHOWN)
+print(f"  {'a(715)':>7} {'method':<34}{head}")
+METHODS = (("flat", {}), ("proportional", dict(ec=1.0)),
+           ("flat+", "true"), ("proportional+", "true"),
+           ("proportional+", "eq5"))
+found = {}
+with warnings.catch_warnings(record=True) as caught:
+    warnings.simplefilter("always")
+    for a715 in TRUE_A715:
+        a_true = a_n.copy()
+        a_true[-1] = a715
+        for method, how in METHODS:
+            offs = []
+            for ea, ec in ERRORS.values():
+                am = a_true + ea * b_n
+                cm = a_true + (1 - ec) * b_n
+                kwargs = dict(how) if isinstance(how, dict) else {}
+                if how == "true":
+                    kwargs = dict(a_ref=a715)
+                elif how == "eq5":
+                    kwargs = dict(a_ref=jerlov.rottgers2013_a715(am[-1]))
+                if method.startswith("proportional"):
+                    kwargs.setdefault("ec", 1.0)
+                got = jerlov.rottgers2013_scatter_correction(
+                    am[:-1], cm[:-1], am[-1], cm[-1], method=method,
+                    **kwargs)
+                offs.append(got[cols] / a_true[cols] - 1)
+            label = method + (" (a715 from Eq. 5)" if how == "eq5"
+                              else "")
+            median = np.median(offs, axis=0)
+            found[(a715, label)] = median
+            print(f"  {a715:>7g} {label:<34}"
+                  + "".join(f" {100 * x:>6.0f}%" for x in median))
+for w in caught:
+    # Only the ProvenanceWarning of Eq. (5) is expected; anything else is
+    # passed on to the reader.
+    if not issubclass(w.category, jerlov.ProvenanceWarning):
+        warnings.warn_explicit(w.message, w.category, w.filename, w.lineno)
+eq5 = sorted({str(w.message)[:60] for w in caught
+              if issubclass(w.category, jerlov.ProvenanceWarning)})
+for message in eq5:
+    print(f"\n  It warns: {message}...")
+zero = found[(0.0, "proportional")]
+plus = found[(0.0, "proportional+")]
+worst = found[(TRUE_A715[-1], "proportional")]
+flat0 = found[(0.0, "flat")]
+print(f"""
+  With nothing absorbing at 715 nm the proportional method is exact here
+  (off by at most {100 * np.max(np.abs(zero)):.0f} percent), since ea is the same at every
+  wavelength, as Zaneveld et al. assumed; the flat one leaves the
+  difference between the scattering at 715 nm and elsewhere. Where the
+  water absorbs at 715 nm, both take that absorption off every wavelength
+  and fall short, most where a is small: with a(715) = {TRUE_A715[-1]:g} per m the
+  proportional method is off by {100 * worst[0]:.0f}, {100 * worst[1]:.0f} and {100 * worst[2]:.0f} percent at 440, 555 and 676
+  nm, the kind of underestimate Röttgers et al. found against their PSICAM.
+  Given the true a(715), flat+ is back to the flat method's own error at
+  a(715) = 0, {100 * flat0[0]:.0f}, {100 * flat0[1]:.0f} and {100 * flat0[2]:.0f} percent; proportional+, Eq. (4), is off
+  by {100 * plus[0]:.0f}, {100 * plus[1]:.0f} and {100 * plus[2]:.0f} percent even with a(715) = 0, because its denominator
+  uses a(715) where Eq. (2b)'s uses am(715). Eq. (5)'s estimate of a(715)
+  is a fit to coastal samples, and in water this clear it lies outside the
+  fit and warns. How Williamson & Hollins's campaigns corrected their own
+  absorption is not recorded here. DATA.md section 44.""")
+
+# --------------------------------------------------------------------------
 rule("What each of these assumed")
 
 print("""  - The Kd reconstruction is a two-parameter model fitted to Pacific and

@@ -299,6 +299,10 @@ Kd without a water type, Rrs and the Secchi depth
 
 .. autofunction:: rrs_from_above_water
 
+.. autofunction:: rottgers2013_scatter_correction
+
+.. autofunction:: rottgers2013_a715
+
 .. autofunction:: gordon1989_d0
 
 .. autofunction:: gordon1989_kd

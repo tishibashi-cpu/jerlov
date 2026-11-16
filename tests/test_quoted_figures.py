@@ -2416,3 +2416,41 @@ def test_rho_and_the_reflectance_above_the_water(secchi_example):
                    "1999 table gives 0.0283 (between 4 and 6 m/s) and the "
                    "2015 table 0.0411", "(0.0287 and 0.0306)"):
         assert quoted in data, quoted
+
+
+# -- the absorption meter (from_one_measurement.py, part 7, DECISIONS.md
+#    section 100) -------------------------------------------------------------
+
+
+@source_tree
+def test_the_absorption_meter_figures():
+    import contextlib
+    import io
+    import runpy
+    with contextlib.redirect_stdout(io.StringIO()), warnings.catch_warnings():
+        warnings.simplefilter("error", jerlov.ProvenanceWarning)
+        g = runpy.run_path(str(ROOT / "examples" / "from_one_measurement.py"),
+                           run_name="from_one_measurement")
+    errors = {s: (round(100 * a, 1), round(100 * c, 1))
+              for s, (a, c) in g["ERRORS"].items()}
+    assert errors["HAOCE 11"][0] == 5.7 and errors["HAOCE 5"][0] == 5.9
+    assert [errors[s][0] for s in ("NUC 2240", "NUC 2040")] == [8.1, 8.9]
+    assert min(e[0] for e in errors.values()) == 5.7
+    assert max(e[0] for e in errors.values()) == 12.5
+    assert (min(e[1] for e in errors.values()),
+            max(e[1] for e in errors.values())) == (16.2, 26.6)
+    f = {k: [round(100 * float(x), 1) for x in v]
+         for k, v in g["found"].items()}
+    assert f[(0.0, "flat")] == [3.7, 7.5, 1.3]
+    assert f[(0.0, "proportional")] == [0.0, 0.0, 0.0]
+    assert f[(0.01, "flat")] == [-5.3, -29.6, -28.4]
+    assert f[(0.01, "proportional")] == [-10.7, -40.4, -30.2]
+    assert f[(0.0, "proportional+")] == [2.6, 9.9, 7.4]
+    data = _flat("DATA.md")
+    for quoted in ("flat is off by 3.7, 7.5 and 1.3 percent",
+                   "flat by -5.3, -29.6 and -28.4 percent",
+                   "proportional by -10.7, -40.4 and -30.2",
+                   "proportional+ is off by 2.6, 9.9 and 7.4 percent",
+                   "5.7 percent for HAOCE 11, 5.9 for HAOCE 5, 8.1 to 8.9",
+                   "9.8 to 12.5 for the AUTEC"):
+        assert quoted in data, quoted

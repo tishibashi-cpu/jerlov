@@ -510,6 +510,10 @@ rho = jerlov.mobley_rho(source="mobley1999", wind_speed=5.0, sun_zenith_deg=30.0
                         view_nadir_deg=40.0, view_azimuth_deg=135.0)
 jerlov.rrs_from_above_water(lt, lsky, ed, rho=rho)
 
+# An ac-9's absorption corrected for the light its tube misses, by one of the
+# four methods Röttgers et al. (2013) compared; the method has no default.
+jerlov.rottgers2013_scatter_correction(am, cm, am715, cm715, method="proportional", ec=1.0)
+
 # Or above the surface with water and particles apart, at one of the seven
 # viewing geometries Lee et al. (2011) print; (0, 0, 0) is straight down.
 jerlov.lee2011_rrs(a, bb, bb_water=bb_water,
@@ -716,7 +720,7 @@ made.
 ## Provenance and design
 
 `DATA.md` records, for every shipped table, where it came from, what was
-verified, and what is known to be wrong with it. Forty-three entries are
+verified, and what is known to be wrong with it. Forty-four entries are
 documented there: thirteen confirmed defects in the source literature, three
 questions the first edition of Jerlov settled, and the rest notes.
 

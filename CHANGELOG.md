@@ -4,6 +4,27 @@ Every release is archived on Zenodo under the concept DOI
 [10.5281/zenodo.22321312](https://doi.org/10.5281/zenodo.22321312), which
 always resolves to the latest version.
 
+## 1.18.0 — 2026-11-16
+
+Scatter correction of reflective-tube absorption meters (ac-9, ac-s);
+DECISIONS.md section 100. No earlier value changed.
+
+**New.** `rottgers2013_scatter_correction(am, cm, am_ref, cm_ref, /, *,
+method, ec=None, a_ref=None)`: the flat, proportional, flat+ and
+proportional+ corrections of Röttgers, McKee & Woźniak (2013), each as
+printed, the method with no default, ec required by the proportional
+methods and a_ref (the true absorption at the reference wavelength) by the
+"+" methods. `rottgers2013_a715(am715, /)`: their estimate of a(715) from
+the uncorrected reading, which warns outside the span of their samples.
+
+**Examples.** `from_one_measurement.py` part 7: the absorption meter's
+error from each of Petzold's eight scattering functions, as Zaneveld,
+Kitchen & Moore (1994) computed it (HAOCE 11 gives their 5.7 percent),
+and what each correction then recovers for Jerlov III: with a(715) of
+0.01 per m, the proportional method falls 40 percent short at 555 nm.
+
+**Documents.** DATA.md section 44, the README, the API reference.
+
 ## 1.17.0 — 2026-11-16
 
 The sea surface's reflectance factor rho, and Rrs from radiances measured
