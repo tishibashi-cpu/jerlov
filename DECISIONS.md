@@ -5629,3 +5629,91 @@ the example's new part; NEXT_STEPS's items 5, 7 and 9 of section 0d.
   cells needs a 1.0 to 1.8 SD lower.
 - a at or above Kd in the matched set: IB 3 of 11, II 9 of 88, III 30 of
   211, 1C 0 of 68, 3C 3 of 79, 5C 3 of 12.
+
+## 96. What the literature says of the coastal blue, and what rests on the extension below 0.1 degree (1.15.8): the plan
+
+Two things, agreed with the user on 2026-11-16.
+
+**1. Why Jerlov's coastal blue is what it is: the literature.** Section 95
+found that the waters Williamson & Hollins typed 1C, 3C and 5C measured
+blue Kd of about half Jerlov's (1976), and that his 1968 values are lower
+than his 1976 ones there. The user supplied chapter 10 of both editions.
+Read, with the page numbers checked page by page (1976: book page = PDF
+page + 126):
+
+- Jerlov (1976), p. 133: the changes from 1968 that he states are at
+  600 nm (higher for I, IA, IB and II) and for type III (lower at 550 and
+  575, somewhat higher around 425 nm). No change to the coastal types is
+  stated.
+- Jerlov (1976), p. 137: the coastal types "are derived from observations
+  along the coast of Scandinavia and western North America. These northern
+  water masses are characterized by a relatively high amount of yellow
+  substance. Some recent material (Aas, 1967, 1969 and Højerslev, 1974a)
+  has substantially fortified the basis for this special classification."
+- Jerlov (1968), pp. 122 and 124: the same origin, with "evidence that
+  coastal waters which contain a variable amount of terrigeneous material
+  show divergent behaviour in the shortwave part of the spectrum", and no
+  mention of yellow substance.
+- Aas, Højerslev, Høkedal and Sørensen (2013), Oceanologia 55(2), 471-482,
+  doi:10.5697/oc.55-2.471, p. 477: in the open Nordic Seas "coastal types
+  from 1 to 5 occur frequently. These coastal types are not real coastal
+  waters with high contents of yellow substance and inorganic particles;
+  they are caused by algal blooms"; p. 472: Jerlov (1978) reduced the
+  coastal types to 1, 3 and 5.
+- Aas & Højerslev (2001), Oceanologia 43(2), 139-168, p. 146: Jerlov's
+  classification rests on linear relations between Kd at a wavelength and
+  at 465 nm, whose constants "may change from one oceanic area to
+  another" and are "valid only for the type of water from which they were
+  obtained".
+
+Not obtained: Jerlov (1978), Rep. Dept. Phys. Oceanogr. 36, Univ.
+Copenhagen; Aas (1969), Rep. 6 of the same series; Højerslev's 1974
+reports (numbered 1974a and 1974b differently by different authors); and
+whatever Jerlov meant by "Aas, 1967" (perhaps Aas 1971, Sarsia 46,
+"Irradiance in Hardangerfjorden 1967").
+
+What the documents will say: Jerlov states no reason for the 1976 coastal
+blue; he describes the coastal types as a special classification of
+northern waters rich in yellow substance, fortified by new data in 1976.
+That, and Aas et al.'s remark that waters of coastal Kd at 465 or 475 nm
+need not be yellow-substance-rich, is consistent with section 95's
+finding, since Williamson & Hollins typed campaigns by matching Kd over
+all wavelengths. It is not shown to be the cause: the yellow substance of
+the campaigns is not in the data. A regional split of the campaigns by
+latitude and longitude was looked at (2026-11-16) and is not used: the
+boxes were the author's, the northern European groups had 4 to 8
+campaigns, and it was not planned.
+
+Documents: DATA.md section 41 and `OPEN_QUESTIONS.md`'s third question;
+NEXT_STEPS's item 13 of section 0d.
+
+**2. What rests on the extension below 0.1 degree** (`OPEN_QUESTIONS.md`'s
+second question). Petzold's report extends each vsf below 0.1 degree by a
+power law and counts it in s, 3.4 to 14.5 percent at the eight stations
+(DATA.md section 21), and `ScatteringFunction.mean_cosine` counts it at a
+cosine of 1. Without it, the phase function is renormalised over 0.1 to
+180 degrees and b becomes b (1 - f), f the share below 0.1 degree. From
+the public API: the mean cosine (g - f) / (1 - f), the backscatter ratio
+B / (1 - f), and the Henyey-Greenstein g for each of
+`henyey_greenstein_fit`'s two methods (for the backscatter ratio, the HG
+g whose backscatter is B / (1 - f), solved by bisection on HG's closed
+form). And Kd, by the Monte Carlo: `petzold_sampler` gains an option to
+start at 0.1 degree, off by default (when it draws the same numbers as
+before; checked on a stored run). For each station, a = 0.1 per m, b/a of
+0.5, 1, 3 and 10, the sun at 30 degrees, no sky: Kd over the first
+penetration depth (i) as shipped, (ii) without the extension and b (1 - f)
+(the light below 0.1 degree treated as unscattered), (iii) without it and
+b kept (that light spread over 0.1 to 180 degrees). The same seed for the
+three of each case.
+
+What will be read off, decided now: the shift in mean cosine, B/S and the
+HG g at each station; and, if (ii) moves Kd by less than 1 percent in
+every case, the documents say Kd does not rest on the extension while the
+mean cosine and g do; otherwise by how much it does.
+
+Documents: `OPEN_QUESTIONS.md`'s second question; DATA.md section 21; the
+example `phase_function_choice.py` gains a part (it is the example for
+the reader who chooses a phase function); NEXT_STEPS's item 6 of section
+0d.
+
+**Version.** 1.15.8. Nothing shipped changes.
