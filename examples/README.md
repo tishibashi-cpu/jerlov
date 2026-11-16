@@ -292,7 +292,11 @@ Gordon et al.'s (1988), within the range of bb/(a + bb) Lee et al.
 fitted to; Jerlov III at 412-488 nm lies outside it, and says so. Lee et al.'s (2013) Raman correction puts the
 Raman part of a measured reflectance at 2 to 11 percent of its elastic
 part for these waters. The choice of reflectance model moves the Secchi
-depth by at most 2.4 percent.
+depth by at most 2.4 percent. An eighth asks what the choice among the five
+pure water absorption spectra does to the reflectance of the clearest
+water: in pure sea water it moves Rrs by up to **6.85** times at 380 nm and
+2.62 at 443, and in Jerlov IB by 1.12 to 1.34 times, less than the
+particles' backscatter ratio does at every wavelength.
 
 **`sunlight_and_d65.py`** — the clear sky at the sea surface by the model
 of Gregg & Carder (1990), for one stated maritime atmosphere and the sun

@@ -42,6 +42,17 @@ tables themselves, not quoted from elsewhere (release 1.15.2).
 - The choice matters: in the clearest Jerlov types pure water is much of the
   total absorption. A difference of 0.004 per m in it leaves the absorption
   of Jerlov IB short by 9.6 percent at 440 nm.
+- What it does to the colour seen from above (release 1.15.9): in pure sea
+  water the five spectra the package ships give remote sensing
+  reflectances up to 6.85 times apart at 380 nm, 4.28 at 412, 2.62 at 443
+  and 1.13 at 550, and Rrs(443)/Rrs(550) from 10.73 to 24.75. In Jerlov IB,
+  whose own contents absorb more, they move Rrs by only 1.12 to 1.34
+  times, less at every wavelength than the particles' backscatter ratio,
+  which no source gives, does over Petzold's eight measured values. Below
+  443 nm the pure sea water figures lie, for three of the spectra,
+  outside the data Lee et al.'s (2011) relation was fitted to, and Gordon
+  et al.'s (1988) relation gives spreads up to 26.4 percent different
+  there.
 
 A search engine's summary said Mason et al. were "lower by a factor of up
 to 5" than Pope & Fry; that is not in their abstract, and the ratio from
@@ -52,8 +63,9 @@ laboratory measurement newer than Mason et al. (2016) was found on
 2026-11-15. The package does not choose: every function that needs a pure
 water absorption takes it from the caller.
 
-**Where.** DATA.md section 29; DECISIONS.md section 89;
-`pure_water_absorption_table`.
+**Where.** DATA.md section 29; DECISIONS.md sections 89 and 97;
+`pure_water_absorption_table`; `examples/ocean_colour_and_secchi.py`,
+part 8.
 
 ## 2. What happens to light scattered at less than 0.1 degree?
 

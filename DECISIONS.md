@@ -5779,3 +5779,84 @@ They add a contemporary of Jerlov's, from his institute, describing the
 yellow substance, and the record that Jerlov dropped values he may have
 doubted in 1978. They still state no reason for the coastal blue of 1976.
 DATA.md section 41 and `OPEN_QUESTIONS.md`'s third question say so.
+
+## 97. What the choice of pure water absorption does to the colour of the clearest water (1.15.9): the plan
+
+`OPEN_QUESTIONS.md`'s first question puts numbers on how far the published
+absorption spectra of pure water disagree (Pope & Fry over Mason et al.,
+7.95 at 380 nm) and on what that does to a Jerlov type's absorption. It
+does not say what it does to anything measured from above. The user chose
+on 2026-11-16 to put it into the remote sensing reflectance of the
+clearest water, which is the quantity Lee et al. (2015) inverted to get
+theirs.
+
+**The spectra.** The five the package ships: `pure_water_absorption_table`
+with `pope1997`, `smith1981`, `mason2016` and `lee2015`, and
+`pure_water_absorption()`, the aw Williamson & Hollins built their a on.
+At 380, 400, 412, 443, 490, 510 and 550 nm, inside every one's range.
+
+**Two waters**, so that the answer does not rest on one guess:
+
+- (A) Pure seawater and nothing else: a = aw, bb = bbw = bw / 2, bw from
+  Williamson & Hollins's Eq. 8a constants (0.00583 (400 / lambda)^4.322,
+  `Water.source.scattering`). No particle is assumed. 380 to 550 nm.
+- (B) Williamson & Hollins's IB, its contents on each aw: a = a_IB -
+  aw_WH + aw, bb = bw / 2 + r (b - bw), as `Water.bb(particle_backscatter_
+  ratio=r)` builds it. r is not known for any Jerlov type (DATA.md section
+  10); all eight of Petzold's measured B/S, 0.013 to 0.044, are used. 412
+  to 550 nm, where IB's a and b were measured (section 95 found IB's
+  averaged a high in the blue; it is used as published).
+
+**Rrs.** `lee2011_rrs` with the nadir coefficients (0, 0, 0); and, as a
+second relation, `subsurface_rrs` with Gordon et al.'s (1988)
+coefficients and `above_surface_rrs`. Warnings (Lee et al.'s fitted range
+of bb / (a + bb)) are caught by type and reported.
+
+**What will be read off, decided now.**
+
+1. At each wavelength, the largest over the smallest Rrs among the five
+   spectra, for (A) and, for each r, for (B).
+2. For (B), the largest over the smallest Rrs among the eight r with Pope &
+   Fry's aw. At each wavelength the documents say the choice of pure water
+   moves Rrs more than the particles' backscatter ratio if the ratio of 1
+   exceeds that of 2 for every r, less if it falls below it for every r,
+   and otherwise that it depends on r.
+3. The band ratios Rrs(443)/Rrs(550) and Rrs(412)/Rrs(550), which
+   chlorophyll algorithms read: their range among the five spectra, for (A)
+   and (B).
+4. Whether the two Rrs relations agree on 1 to 3 within 10 percent; the
+   documents use Lee et al.'s and say if they do not.
+
+Nothing here says which spectrum is right.
+
+**Documents.** `OPEN_QUESTIONS.md`'s first question; DATA.md section 29;
+a part 8 of `examples/ocean_colour_and_secchi.py`; the figures in
+`tests/test_quoted_figures.py`. No Monte Carlo: every number comes from the
+package's own functions.
+
+**Version.** 1.15.9.
+
+**What was found** (2026-11-16), as read off in the plan:
+
+1. Pure sea water: the five spectra give Rrs up to 6.85 times apart at 380
+   nm, 4.90 at 400, 4.28 at 412, 2.62 at 443, 1.47 at 490, 1.18 at 510 and
+   1.13 at 550. IB: 1.12 to 1.34 times, about the same for every r.
+2. IB with Pope & Fry's water: the eight B/S move Rrs by 1.88 to 2.61
+   times. At every wavelength from 412 to 550 nm the particles' ratio moves
+   Rrs more than the choice of pure water, for every r.
+3. Rrs(443)/Rrs(550): 10.73 to 24.75 in pure sea water, 2.03 to 2.84 in IB
+   over all eight B/S; Rrs(412)/Rrs(550): 13.13 to 49.56 and 1.95 to 3.21.
+4. Not within 10 percent everywhere. Gordon et al.'s relation gives IB's
+   spreads within 3.3 percent and the same verdict at every wavelength,
+   and pure sea water's within 5.7 percent from 443 nm; at 380 to 412 nm
+   they differ by up to 26.4 percent. There pure sea water lies outside the
+   bb / (a + bb) Lee et al. fitted (above 0.37) for Mason et al.'s and Lee
+   et al.'s spectra at 380 to 412 nm and Williamson & Hollins's at 380 nm,
+   and the package warns. The documents use Lee et al.'s relation and say
+   so.
+
+**Caught before the commit, by reading the output.** The example's first
+wording said the violet figures "rest on an extrapolation of either
+relation"; the package gives no fitted range for Gordon et al.'s, so it
+now says only that they rest on Lee et al.'s outside its data, where the
+two part.
