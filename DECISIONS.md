@@ -6125,3 +6125,67 @@ names.
   percent at 443, 555 and 670 nm and QAA_v6's a(443) by 37 percent, or
   makes Rrs(670) negative; at (30, 90) the tables differ by 0.0018, and
   recovering with one what the other made is off by 2 to 88 percent.
+
+## 100. Scatter correction of reflective-tube absorption measurements (1.18.0): the plan
+
+The user chose (2026-11-16) all four of NEXT_STEPS section 0b's B items
+still open; this is item 9. Read: Röttgers, McKee & Woźniak (2013),
+"Evaluation of scatter corrections for ac-9 absorption measurements in
+coastal waters", Methods in Oceanography 7, 21-39,
+doi:10.1016/j.mio.2013.11.001, which states the methods as equations and
+tests them against a PSICAM. Zaneveld, Kitchen & Moore (1994), "The
+scattering error correction of reflecting-tube absorption meters", Proc.
+SPIE 2258, 44-55, doi:10.1117/12.190095, the origin of the proportional
+method, has been asked of the user; what it adds is recorded when it is
+read.
+
+**What Röttgers et al. give** (their Table 1 and Eqs. 1-5; am and cm the
+absorption and attenuation the instrument reads after its temperature,
+salinity and pure-water corrections; 715 the ac-9's reference channel):
+
+- flat (Eq. 1): a = am - am715
+- proportional (Eq. 2b; 2a with ec = 1): a = am - am715 [(1/ec) cm - am]
+  / [(1/ec) cm715 - am715]
+- flat+ (Eq. 3): a = am - (am715 - a715)
+- proportional+ (Eq. 4): a = am - (am715 - a715) [(1/ec) cm - ac] /
+  [(1/ec) cm715 - a715], ac "either am or a" (they found the difference
+  negligible)
+- a715 estimated from am715 (Eq. 5): a715 = 0.212 am715^1.135 (n = 85,
+  r2 = 0.930, natural samples, cultures left out)
+- ec: 1 (no correction of the attenuation) or 0.56, which they took from
+  Boss et al. (2009) for turbid water and the ac-9's 0.93-degree
+  acceptance angle.
+
+Eq. 4 with a715 = 0 does not become Eq. 2b: the denominators differ by
+am715. Each is implemented as printed, under its own name, and the
+difference is recorded (DATA.md section 44).
+
+**The functions** (public; no defaults):
+
+- `rottgers2013_scatter_correction(am, cm, am_ref, cm_ref, /, *, method,
+  ec=None, a_ref=None)`: method one of "flat", "proportional", "flat+",
+  "proportional+"; ec required for the proportional methods and refused
+  for the flat ones; a_ref (the true absorption at the reference
+  wavelength) required for the "+" methods and refused for the others.
+  In proportional+, ac is am (measurable). The reference wavelength is
+  the caller's: am_ref and cm_ref are values.
+- `rottgers2013_a715(am715, /)`: Eq. 5, with a ProvenanceWarning where
+  am715 lies outside the range of their natural samples' fit (read from
+  their Fig. 4: about 0.02 to 8 per m), since the fit is theirs and for
+  715 nm on an ac-9.
+
+Refused: inf, a negative or zero denominator; NaN passes as a gap.
+
+**Tests.** Each equation by hand; ec = 1 makes Eq. 2b into Eq. 2a; a715 =
+0 in Eq. 3 gives Eq. 1; Eq. 4 with a715 = 0 is not Eq. 2b (the recorded
+difference); Eq. 5 at points; refusals.
+
+**Example.** `from_one_measurement.py` gains a part: with a and b of
+Jerlov types and each of Petzold's eight VSFs, am and cm made by losing
+the light scattered beyond the reflective tube's angle (from Zaneveld et
+al. 1994, once read) and gaining that within the c-meter's 0.93 degrees,
+and a(715) of the type; then a recovered by each method. If Zaneveld et
+al. cannot be had, the example is left out and that is said.
+
+**Documents.** DATA.md section 44; README; docs/api.rst; CHANGELOG;
+.zenodo.json. 1.18.0: two public names.
