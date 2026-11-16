@@ -425,6 +425,226 @@ moves OSOAA's Kd by {_span(aot_move)} percent.""")
                 aot_move=(min(aot_move), max(aot_move)))
 
 
+PRINTED = (310, 350, 375, 400, 425, 450, 475, 500, 525, 550, 575, 600, 625,
+           650, 675, 700)
+COASTAL = ("1C", "3C", "5C")
+
+
+def _read(name):
+    with open(DATA / "blue_end" / name) as handle:
+        return list(csv.DictReader(handle))
+
+
+def _quartiles(values):
+    q1, q2, q3 = np.percentile(values, [25, 50, 75])
+    return float(q1), float(q2), float(q3)
+
+
+def editions_part(caught):
+    """Jerlov (1968) over Jerlov (1976) where both printed a value."""
+    ratio = {}
+    for t in SM_TYPES:
+        old = jerlov.water(t, source="jerlov1968")
+        new = jerlov.water(t, source="jerlov1976")
+        for wl in PRINTED:
+            r = (float(caught_by_type(caught, old.kd, float(wl)))
+                 / float(caught_by_type(caught, new.kd, float(wl))))
+            if np.isfinite(r):
+                ratio[(t, wl)] = r
+    return ratio
+
+
+#: The bands the campaigns' wavelengths cluster in, named by their centre.
+BANDS = {412: (410, 414), 443: (440, 445), 490: (486, 491), 510: (508, 512),
+         555: (550, 560)}
+
+
+def campaigns_part(caught):
+    """Each campaign's measured Kd over Jerlov's at its own wavelength (the
+    1 nm tables), by type and by band."""
+    groups = {}
+    for r in _read("kd_campaigns.csv"):
+        wl = int(r["wavelength_nm"])
+        nearest = next((band for band, (lo, hi) in BANDS.items()
+                        if lo <= wl <= hi), None)
+        if nearest is None:
+            continue
+        for source in ("jerlov1976", "jerlov1968"):
+            water = jerlov.water(r["water_type"], source=source)
+            k = float(caught_by_type(caught, water.kd, float(wl)))
+            if np.isfinite(k):
+                groups.setdefault((r["water_type"], nearest, source),
+                                  []).append(float(r["kd"]) / k)
+    return {key: (_quartiles(v), len(v)) for key, v in groups.items()}
+
+
+def matched_part():
+    """The Monte Carlo from each campaign's own a and b over the Kd
+    measured in it; and where its a is at or above that Kd."""
+    runs = _read("runs.csv")
+    base = {}
+    variants = {}
+    for r in runs:
+        if r["status"] != "ok":
+            continue
+        ratio = float(r["kd_first_penetration_depth"]) / float(
+            r["kd_measured"])
+        key = (r["water_type"], int(r["wavelength_nm"]))
+        if r["factor"] == "base":
+            base.setdefault(key, []).append(ratio)
+        variants.setdefault((key, r["factor"], r["value"]), []).append(ratio)
+    # The median under each sun and station: how far they move it.
+    reach = {}
+    for (key, _, _), v in variants.items():
+        lo, hi = reach.get(key, (np.inf, -np.inf))
+        reach[key] = (min(lo, float(np.median(v))),
+                      max(hi, float(np.median(v))))
+    not_run = sum(1 for r in runs
+                  if r["factor"] == "base" and r["status"] != "ok")
+    above = {}
+    for r in _read("matched.csv"):
+        key = r["Jerlov"].split("_", 1)[1]
+        n, k = above.get(key, (0, 0))
+        above[key] = (n + 1, k + (float(r["Val_a"]) >= float(r["Val_Kd"])))
+    return dict(base={k: (float(np.median(v)), len(v), min(v), max(v))
+                      for k, v in base.items()},
+                reach=reach,
+                not_run=not_run, above=above)
+
+
+def ib_campaigns_part():
+    """IB's six IOP campaigns: a against the Kd measured in the same
+    campaign within 3 nm."""
+    kd = {}
+    for r in _read("kd_campaigns.csv"):
+        kd.setdefault(r["campaign"], {})[int(r["wavelength_nm"])] = float(
+            r["kd"])
+    out = []
+    for r in _read("iop_campaigns.csv"):
+        if r["water_type"] != "IB" or r["quantity"] != "a":
+            continue
+        wl = int(r["wavelength_nm"])
+        own = kd.get(r["campaign"], {})
+        near = [w for w in own if abs(w - wl) <= 3]
+        if near:
+            w = min(near, key=lambda x: abs(x - wl))
+            out.append((int(r["campaign"]), wl, float(r["value"]), w,
+                        own[w]))
+    return sorted(out)
+
+
+def spread_part(caught):
+    """The a that would close each blue cell, against the spread of the
+    type's measured points."""
+    rows = []
+    for r in _read("closing_a.csv"):
+        t, wl = r["water_type"], int(r["wavelength_nm"])
+        points = caught_by_type(caught, jerlov.measured_points, t, "a")
+        w = np.asarray(points.wavelengths, dtype=float)
+        sd = float(np.interp(wl, w, np.asarray(points.std_dev, dtype=float)))
+        n = float(np.interp(wl, w, np.asarray(points.n_campaigns,
+                                                dtype=float)))
+        change = float(r["closing_a"]) - float(r["a"])
+        rows.append((t, wl, float(r["a"]), float(r["closing_a"]),
+                     change / sd, change / (sd / np.sqrt(n))))
+    return rows
+
+
+NEIGHBOURS = ("IB", "II", "III", "1C", "3C", "5C")
+
+
+def neighbours_part(caught):
+    """The difference between neighbouring types' measured points, in
+    units of their pooled SD, at the blue wavelengths."""
+    out = {}
+    for quantity in ("a", "b"):
+        for lower, upper in zip(NEIGHBOURS, NEIGHBOURS[1:]):
+            p = caught_by_type(caught, jerlov.measured_points, lower,
+                               quantity)
+            q = caught_by_type(caught, jerlov.measured_points, upper,
+                               quantity)
+            for wl in (412, 440, 488):
+                i = list(p.wavelengths).index(wl)
+                j = list(q.wavelengths).index(wl)
+                pooled = np.sqrt((p.std_dev[i] ** 2 + q.std_dev[j] ** 2) / 2)
+                out[(quantity, lower, upper, wl)] = float(
+                    (q.values[j] - p.values[i]) / pooled)
+    return out
+
+
+def blue_end_part(caught, water_and_sky):
+    rule("7. The blue end, from the Kd measured in the same waters")
+    editions = editions_part(caught)
+    campaigns = campaigns_part(caught)
+    matched = matched_part()
+    ib = ib_campaigns_part()
+    spread = spread_part(caught)
+    neighbours = neighbours_part(caught)
+    print("""Williamson & Hollins gave each campaign of measured Kd the Jerlov type
+nearest it over all its wavelengths, within 25 percent on average; their
+a and b are averages over the campaigns so typed. Their dataset keeps
+every campaign. Measured Kd over Jerlov's, median (and quartiles), by the
+type each campaign was given:
+""")
+    print(f"  {'Type':<5}{'nm':>5}{'n':>6}{'over 1976':>22}{'over 1968':>22}")
+    for t in ("IB",) + COASTAL:
+        for wl in (412, 443, 490):
+            cells = []
+            for source in ("jerlov1976", "jerlov1968"):
+                (q1, q2, q3), n = campaigns[(t, wl, source)]
+                cells.append(f"{q2:.2f} ({q1:.2f}-{q3:.2f})")
+            print(f"  {t:<5}{wl:>5}{n:>6}{cells[0]:>22}{cells[1]:>22}")
+    ws = water_and_sky["ratios"]
+    print(f"""
+The averaged IOPs gave, by the Monte Carlo of part 5, {ws[("1C", "jerlov1976")][425]:.2f}, {ws[("3C", "jerlov1976")][425]:.2f} and {ws[("5C", "jerlov1976")][425]:.2f} of
+Jerlov's (1976) at 425 nm for 1C, 3C and 5C, and {min(ws[("IB", "jerlov1976")][w] for w in (425, 450, 475)):.2f} to {max(ws[("IB", "jerlov1976")][w] for w in (425, 450, 475)):.2f} for IB at
+425 to 475 nm.
+
+Jerlov's own two editions differ there: 1968 over 1976 at 425 nm is""")
+    print("  " + ", ".join(f"{t} {editions[(t, 425)]:.2f}"
+                           for t in ("IB",) + COASTAL))
+    base = matched["base"]
+    print(f"""
+In {sum(n for n, _ in matched["above"].values())} entries a, b and Kd were measured in the same campaign at the same
+wavelength. The Monte Carlo from each entry's own a and b (as part 5,
+the sun at 30 degrees, NUC 2240), over the Kd measured in it, median:""")
+    for t in ("II", "III") + COASTAL + ("IB",):
+        cells = [f"{wl} nm {base[(t, wl)][0]:.2f} (n {base[(t, wl)][1]})"
+                 for wl in (412, 510, 555) if (t, wl) in base]
+        print(f"  {t:<4} " + ", ".join(cells))
+    reach = matched["reach"]
+    print("With the sun at 0 or 60 degrees, or the stations HAOCE 11 or AUTEC 8,\n"
+          "the median at 412 nm lies between " + ", ".join(
+              f"{reach[(t, 412)][0]:.2f} and {reach[(t, 412)][1]:.2f} for {t}"
+              for t in COASTAL) + ".")
+    print("""In some entries the measured a is at or above the measured Kd, which no
+radiative transfer calculation can give back:""")
+    print("  " + ", ".join(f"{t} {k} of {n}" for t, (n, k)
+                           in sorted(matched["above"].items(),
+                                     key=lambda x: SM_TYPES.index(x[0]))))
+    print("\nIB's averages rest on six campaigns of a. Where the same campaign "
+          "measured\nKd within 3 nm, a and Kd:")
+    for campaign, wl, a, w, k in ib:
+        if wl <= 510:
+            flag = "  a at or above Kd" if a >= k else ""
+            print(f"  campaign {campaign:>5}: a({wl}) {a:.4f}, Kd({w}) "
+                  f"{k:.4f}{flag}")
+    print("""
+The a that would make the Monte Carlo give Jerlov's (1976) Kd, b held,
+against the spread of the type's measured points (SD, and the standard
+error SD / sqrt(n)):""")
+    for t, wl, a, a_star, sds, ses in spread:
+        print(f"  {t:<4}{wl:>4} nm: a {a:.4f} -> {a_star:.4f}, "
+              f"{sds:+.1f} SD, {ses:+.1f} SE")
+    a_steps = [v for (q, *_), v in neighbours.items() if q == "a"]
+    b_steps = [v for (q, *_), v in neighbours.items() if q == "b"]
+    print(f"""
+From one type to the next (IB to 5C) the measured a at 412, 440 and 488 nm
+rises by {min(a_steps):.1f} to {max(a_steps):.1f} pooled SDs, and b by {min(b_steps):.1f} to {max(b_steps):.1f}.""")
+    return dict(editions=editions, campaigns=campaigns, matched=matched,
+                ib=ib, spread=spread, neighbours=neighbours)
+
+
 def main():
     """Print the comparison; every figure is computed from the runs."""
     _banner()
@@ -439,6 +659,7 @@ def main():
     print(f"\n{len(sm_runs)} more Monte Carlo runs from {DATA / 'sm_closure'}")
     water_and_sky = water_and_sky_part(caught, sm_runs, found, verdict)
     hydrolight = hydrolight_part(sm_runs)
+    blue_end = blue_end_part(caught, water_and_sky)
     if caught:
         rule("Warnings")
         print("Raised along the way, and caught by type:")
@@ -459,10 +680,13 @@ def main():
   - Jerlov's Kd and Williamson & Hollins's IOPs are each summaries of many
     waters under one name; Williamson & Hollins chose their waters by
     matching measured Kd to Jerlov (1976) within 25 percent.
+  - Part 7 takes each campaign's Kd, a and b as Williamson & Hollins's
+    dataset gives them (examples/data/blue_end/); the sun of each
+    campaign is not recorded, and 30 degrees was assumed for it.
 """)
     return dict(runs=runs, found=found, factors=factors, verdict=verdict,
                 osoaa=osoaa, sm_runs=sm_runs, water_and_sky=water_and_sky,
-                hydrolight=hydrolight, caught=caught)
+                hydrolight=hydrolight, blue_end=blue_end, caught=caught)
 
 
 if __name__ == "__main__":

@@ -14,9 +14,11 @@ Obtain them as follows, then run the scripts in `tools/`.
 | `sources/usgs2017/ASCIIdata_splib07a.zip` | USGS Spectral Library Version 7, the spectra in ASCII, as measured | ScienceBase, DOI `10.5066/F7RR1WDJ`, the child item "Spectra of materials in ASCII format" (CC0 1.0) |
 | `sources/21710252/` | Dstl depth profile dataset | figshare DOI `10.6084/m9.figshare.21710252` (CC BY 4.0, unlike the 2022 dataset). **Not the DOI in the paper's Data Availability Statement, which points to an unrelated dataset; see DATA.md section 13** |
 
-Only two files inside it are read: `ip_jerlov.csv` and
+Only these files inside it are read: `ip_jerlov.csv` and
 `20221121-Dstl_MIOP_analysis_v3.xlsx`, plus `op_STEP_6_a.csv` and
-`op_STEP_6_b.csv`.
+`op_STEP_6_b.csv`; and, by `tools/blue_end.py` (1.15.7), `op_STEP_5_k.csv`,
+`op_STEP_5_a.csv`, `op_STEP_5_b.csv` and `op_STEP_7_kab.csv`, whose MD5 it
+checks against figshare's.
 
 `tools/build_austin1986.py` needs no input: the values are transcribed from
 the paper and are literals inside the script, checked against the paper's own

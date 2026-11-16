@@ -4,6 +4,37 @@ Every release is archived on Zenodo under the concept DOI
 [10.5281/zenodo.22321312](https://doi.org/10.5281/zenodo.22321312), which
 always resolves to the latest version.
 
+## 1.15.7 — 2026-11-16
+
+Why IOPs and Jerlov's Kd disagree at the blue end, from the Kd measured in
+the same waters. No shipped value changed, and no name changes
+(DECISIONS.md section 95).
+
+**Examples.** `closure_with_jerlov_kd.py` gains part 7. Williamson &
+Hollins's dataset keeps the Kd of every campaign they typed, and, for
+473 entries, a, b and Kd measured in the same campaign. The campaigns
+typed 1C, 3C and 5C measured Kd at 412 nm of a median 0.59, 0.53 and 0.56
+of Jerlov's (1976), what their averaged IOPs give, and the Monte Carlo
+from each campaign's own a and b gives 0.90, 0.93 and 1.06 of its own Kd:
+the coastal blue gap is between those waters and Jerlov's 1976 values,
+not in the IOPs. Against his 1968 edition the measured Kd are 0.85, 0.66
+and 0.62. The campaigns typed IB measured Kd of 1.02 to 1.12 of Jerlov's;
+IB's high averaged a rests on six campaigns, in two of which a is at or
+above the Kd measured in the same campaign. Part 7 also gives the two
+editions' ratio at 425 nm, the a that would close each blue cell in
+standard deviations of the measured points, and the separation of
+neighbouring types.
+
+**Data.** `examples/data/blue_end/`: four files reduced from the figshare
+dataset (Crown copyright (2022), Dstl, Open Government Licence v3.0), and
+2365 Monte Carlo runs; not in the wheel.
+
+**Tools.** New: `tools/blue_end.py`, which checks the four source files
+against figshare's MD5.
+
+**Documents.** `OPEN_QUESTIONS.md`'s third question, the site's page,
+DATA.md section 41, the READMEs and `sources/README.md`.
+
 ## 1.15.6 — 2026-11-16
 
 A check of the Monte Carlo behind `OPEN_QUESTIONS.md`'s third question

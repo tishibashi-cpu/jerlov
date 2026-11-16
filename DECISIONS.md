@@ -5592,3 +5592,40 @@ three files.
 the example's new part; NEXT_STEPS's items 5, 7 and 9 of section 0d.
 
 **Version.** 1.15.7.
+
+**Differences from the plan.**
+
+- Part 2 grouped the campaigns by the nearest of Jerlov's printed
+  wavelengths within 12.5 nm. Run, that put the many measurements at
+  412 nm with 400 nm (12 nm away) and left 425 nm all but empty. Before
+  any figure was read off, the grouping was changed to the bands the
+  measurement wavelengths cluster in (410-414, 440-445, 486-491, 508-512
+  and 550-560 nm, named 412, 443, 490, 510 and 555), each campaign against
+  Jerlov's 1 nm table at its own wavelength, and only 310 to 700 nm, which
+  both editions cover. The coastal criterion's "at 425 nm" is therefore
+  read at 412 nm, and IB's "425 to 475 nm" at 412, 443 and 490 nm.
+- No matched entry had a not positive or b below pure water's: none was
+  left unrun.
+- The closing a converged to a residual below 1e-4 in the logarithm of
+  Kd but for IB at 475 nm, 4e-4, after eight secant steps; recorded in
+  `closing_a.csv`.
+- Part 3's "factor" is reported as how far the sun and the stations move
+  the median of each type, not the range over single entries, which spans
+  the entries' own spread (0.51 to 3.01 at 412 nm for the coastal types)
+  and says nothing about the conditions.
+
+**What was found** (2026-11-16).
+
+- Coastal types: the campaigns typed 1C, 3C and 5C measured Kd at 412 nm
+  of a median 0.59, 0.53 and 0.56 of Jerlov (1976), within 0.10 of their
+  averaged IOPs' 0.59, 0.53 and 0.66; part 3's median at 412 nm is 0.90,
+  0.93 and 1.06. The criterion is met: the coastal blue gap is between the
+  waters typed and Jerlov's 1976 values. Against 1968 the measured Kd are
+  0.85, 0.66 and 0.62.
+- IB: the campaigns typed IB measured Kd of 1.02, 1.12 and 1.03 of Jerlov
+  (1976) at 412, 443 and 490 nm. The criterion is met: the IB gap is in
+  the averaged IOPs. Of its six IOP campaigns, two have a at or above
+  their own Kd and two have a at 412 nm a third of it; closing the blue
+  cells needs a 1.0 to 1.8 SD lower.
+- a at or above Kd in the matched set: IB 3 of 11, II 9 of 88, III 30 of
+  211, 1C 0 of 68, 3C 3 of 79, 5C 3 of 12.

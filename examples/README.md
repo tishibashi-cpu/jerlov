@@ -399,7 +399,12 @@ record. Parts 5 and 6 read 2457 more runs in `examples/data/sm_closure/`
 with pure water's own scattering and a clear sky: OSOAA then gives 0.991
 to 1.018 times the Monte Carlo's Kd, and from Solonenko & Mobley's a and
 b the Monte Carlo gives a median **0.970** of the Kd HydroLight made of
-them, 94.4 percent of 143 cells within 10 percent.
+them, 94.4 percent of 143 cells within 10 percent. Part 7 reads the Kd
+that Williamson & Hollins's own campaigns measured
+(`examples/data/blue_end/`): the waters typed 1C and 3C measured Kd at 412
+nm of **0.59** and 0.53 of Jerlov's (1976), what their IOPs give, while
+IB's high blue rests on six campaigns, two of which measured a at or
+above their own Kd.
 
 ## What they do not show
 
