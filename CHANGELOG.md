@@ -19,7 +19,8 @@ Appendix B in all 252 values; its R-gothic is for 0, 4, 6, 8 and 16 m/s and
 a flat sea, where the paper says 0, 4, 10 and 16.
 
 **Documents.** DATA.md section 48, sources/README.md, the README, the API
-reference.
+reference. The Zenodo description, which had grown into one long paragraph,
+is set out as short paragraphs and lists by topic; its content is unchanged.
 
 ## 1.21.0 — 2026-11-16
 
