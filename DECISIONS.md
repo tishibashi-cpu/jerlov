@@ -6262,3 +6262,22 @@ part 4 does for 2001.
 **Documents.** DATA.md section 45, and section 27 corrected (its "590-600"
 and its rounding note) with a pointer; README; docs/api.rst; CHANGELOG;
 .zenodo.json. 1.19.0: one public name.
+
+**Differences from the plan.**
+
+- The example's split of the change at 412 nm takes Kw as each function
+  at a vanishing C (1e-12 mg m^-3), under a suppressed warning, rather
+  than reading the tables; the difference is below 1e-8 per m.
+- The example records the 1988 function's own warning beyond 650 nm and
+  says it in its text rather than adding it to part 8's list, which is of
+  the warnings the other parts report.
+
+**What was found** (DATA.md section 45).
+
+- Morel & Maritorena's (2001) chi and e equal Morel's (1988) from 560 nm,
+  29 rows; section 27's "beyond 590-600 nm" was their text, not their
+  table, and is corrected there with a pointer.
+- At 0.03 mg m^-3, 2001's Kd is 0.69 of 1988's at 412 nm; the change in
+  Kw is 1.23 times the whole change. At 0.3 and above the editions agree
+  within 9 percent from 412 to 670 nm, and give the same nearest Jerlov
+  type; at 0.03 they give IA (1988) and I (2001).

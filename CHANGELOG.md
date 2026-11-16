@@ -4,6 +4,29 @@ Every release is archived on Zenodo under the concept DOI
 [10.5281/zenodo.22321312](https://doi.org/10.5281/zenodo.22321312), which
 always resolves to the latest version.
 
+## 1.19.0 — 2026-11-16
+
+Morel's (1988) Kd from the pigment concentration, beside the 2001 edition
+(DECISIONS.md section 101). No earlier value changed.
+
+**New.** `morel1988_kd(wavelengths, /, *, pigment_mg_m3)`: K = Kw + chi
+C^e with Morel's (1988) Table 2, 400-700 nm; C is chlorophyll a plus
+pheophytin a, not the HPLC chlorophyll of `morel2001_kd`, and has no
+default. It warns outside 0.03-30 mg m^-3 and beyond 650 nm, where the
+paper fitted chi and e to mesotrophic and eutrophic waters only.
+
+**Data.** `morel1988_kd.csv`, 61 rows, from literals in
+`tools/build_morel1988.py`.
+
+**Found.** Morel & Maritorena (2001) kept the 1988 chi and e unchanged
+from 560 nm, not only beyond 590-600 nm as DATA.md section 27 said from
+their text; section 27 is corrected and points to section 45, which also
+explains its unexplained rounding from 560 nm.
+
+**Examples.** `ocean_colour_and_secchi.py` part 10: the two editions side
+by side; at 0.03 mg m^-3 2001's Kd is 0.69 of 1988's at 412 nm, and the
+revised Kw alone accounts for more than the whole change.
+
 ## 1.18.0 — 2026-11-16
 
 Scatter correction of reflective-tube absorption meters (ac-9, ac-s);

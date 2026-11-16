@@ -478,6 +478,8 @@ w = jerlov.Water.from_measurements(
 ```python
 # Kd of case 1 water from its chlorophyll, mg m^-3 (Morel & Maritorena 2001).
 jerlov.morel2001_kd([443, 490, 555], chlorophyll_mg_m3=0.3)
+# The 1988 edition, whose C is chlorophyll a plus pheophytin a.
+jerlov.morel1988_kd([443, 490, 555], pigment_mg_m3=0.3)
 
 # From the same chlorophyll: absorption by phytoplankton (Bricaud et al. 1995)
 # and backscattering by particles (Morel & Maritorena 2001). Water, and the
@@ -720,7 +722,7 @@ made.
 ## Provenance and design
 
 `DATA.md` records, for every shipped table, where it came from, what was
-verified, and what is known to be wrong with it. Forty-four entries are
+verified, and what is known to be wrong with it. Forty-five entries are
 documented there: thirteen confirmed defects in the source literature, three
 questions the first edition of Jerlov settled, and the rest notes.
 
