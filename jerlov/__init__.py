@@ -122,6 +122,8 @@ from .ocean_colour import (
     rrs_from_above_water,
     subsurface_rrs,
 )
+from .absorption_meter import (rottgers2013_a715,
+                               rottgers2013_scatter_correction)
 from .qaa import (QAAResult, RamanCorrection, lee2013_raman_correction,
                   qaa_ioccg2006, qaa_v6)
 from .sources import (
@@ -247,6 +249,8 @@ __all__ = [
     "subsurface_rrs",
     "above_surface_rrs",
     "mobley_rho",
+    "rottgers2013_scatter_correction",
+    "rottgers2013_a715",
     "rrs_from_above_water",
     "GORDON1988_RRS_COEFFICIENTS",
     "LEE2002_RRS_COEFFICIENTS",
