@@ -6356,3 +6356,59 @@ and pure sea water (aw + bsw / 2, from each pure water table that covers
 - The stations' Kd(420) is 0.52 to 0.99 of Jerlov's type I, below Austin
   & Petzold's pure sea water at seven of eight, and 0.71 to 0.97 of Morel
   & Maritorena's Kd at the same chlorophyll.
+
+## 103. The f and Q factors for a nadir view: Morel et al. (2002), Appendix B (1.21.0): the plan
+
+NEXT_STEPS section 0b, B, item 7; the paper supplied by the user: Morel,
+Antoine & Gentili (2002), "Bidirectional reflectance of oceanic waters:
+accounting for Raman emission and varying particle scattering phase
+function", Appl. Opt. 41(30), 6289-6306, doi:10.1364/AO.41.006289.
+
+**What can be had.** The full tables of f and f/Q (7 wavelengths, 6 sun
+angles, 6 Chl, 17 nadir angles by 13 azimuths) are on an anonymous ftp
+server (oceane.obs-vlfr.fr, Appendix A) that does not answer from here.
+Appendix B prints, for the radiance from the nadir (theta' = 0) and with
+Raman emission included, linear fits in (1 - cos theta_s):
+
+- Eq. (B1), Table 1: f(theta_s) = f0 + Sf (1 - cos theta_s), "within
+  this domain" 0 < theta_s < 60, departure from linearity "less than 0.5%
+  when theta_s < 45 deg and may reach 2% in some cases (when theta_s =
+  60 deg)";
+- Eq. (B2), Table 2: Qn(theta_s) = Q0 + SQ (1 - cos theta_s), 0-60
+  degrees, "the relative error always remains below 1%";
+- Eq. (B4), Table 3: (f/Qn)(theta_s) = f0/Q0 + Sf/Q (1 - cos theta_s),
+  acceptable "even as great as theta_s = 75 deg", relative errors "might
+  reach +-3.4%";
+- Eq. (B3): [Lw]N^ex = [Lw]N (f0/Q0) (f/Qn)^-1, the exact normalised
+  water-leaving radiance for the in-water (nadir) method.
+
+Each for 412.5, 442.5, 490, 510, 560, 620 and 660 nm and Chl 0.03, 0.1,
+0.3, 1, 3 and 10 mg m^-3, case 1 water. f is that of R = Eu/Ed = f bb/a
+(Eq. 11), Q = Eu/Lu (Eq. 10). The 252 numbers were read from the text
+layer and checked against the page images (including the minus signs of
+Sf/Q at 0.03 and 0.1 mg m^-3).
+
+**Checks the paper allows.** Table 3's f0/Q0 against Table 1's f0 over
+Table 2's Q0 (separate fits, so close, not equal); the paper's ranges:
+f0/Q0 "0.08-0.12", in the blue "between 0.086 and 0.097", Q0 "from
+approximately 3.1 to 4.4"; and its Eq. (17), Qn = 5.20 - 1.82 cos theta_s
+from measurements at 490 nm and Chl 0.1 mg m^-3, which the paper says
+agrees with its predictions over 0-45 degrees.
+
+**Shipped.** `jerlov/data/morel2002_nadir_fq.csv` (quantity, chl_mg_m3,
+wavelength_nm, value; 6 quantities x 6 x 7 = 252 rows), from literals in
+`tools/build_morel2002.py`, which runs the checks.
+
+**Public.** `morel2002_nadir_fq(wavelength_nm, /, *, chlorophyll_mg_m3,
+sun_zenith_deg)` -> `NadirFQ` (frozen dataclass: f, q, f_over_q (B4), and
+`correction` = (f0/Q0) / (f/Qn) of Eq. B3 from B4). The wavelength and the
+Chl must be the table's own (the paper fitted each separately and gives
+no rule between them); the sun 0 to 75 degrees, with f and q NaN above 60
+(not fitted there) and a ProvenanceWarning from 60 on. Scalar inputs.
+
+**Example.** A part of `ocean_colour_and_secchi.py`: the correction of Eq.
+(B3) for the sun at 0-75 degrees and each Chl, at 412.5 and 560 nm;
+Eq. (17) against Table 2 at 490 nm; Table 3 against Tables 1 and 2.
+
+**Documents.** DATA.md section 47; README; docs/api.rst; CHANGELOG;
+.zenodo.json. 1.21.0: two public names.
