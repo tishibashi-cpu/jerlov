@@ -3,7 +3,7 @@
 What every shipped table is, where it came from, what was verified, and what
 is known to be wrong with it.
 
-Forty-six entries are recorded below. Thirteen are confirmed defects, three were
+Forty-seven entries are recorded below. Thirteen are confirmed defects, three were
 open questions that the first edition of Jerlov settled, and the rest are
 notes rather than defects. None of them is repaired silently: values that
 could be recovered carry `status = reconstructed` and say how, values that
@@ -54,6 +54,7 @@ could not are `missing`, and values that are used but doubtful are `suspect`.
 | `morel1988_kd.csv` | Kw, chi and e of K = Kw + chi C^e for case 1 water, Morel (1988) Table 2, C the Chl a + Pheo a concentration. 5 nm, 400-700 nm | 61 |
 | `morel2007_aw.csv` | Pure water absorption aw1 (300-500 nm) and aw2 (300-370 nm), and pure sea water scattering bsw, Morel et al. (2007) Table 2. 5 nm | 41 |
 | `morel2007_stations.csv` | The eight stations of the clearest waters, South Pacific gyre 2004: Chl, Zeu, Kd and ap at 420 and 310 nm, Rmax, atot and ay; Morel et al. (2007) Table 1 | 8 |
+| `morel2002_nadir_fq.csv` | f0, Sf, Q0, SQ, f0/Q0 and Sf/Q of the linear fits for the radiance from the nadir, Morel et al. (2002) Appendix B, Tables 1-3. 7 wavelengths, 412.5-660 nm, 6 Chl | 252 |
 
 The four tables drawn from the two Dstl datasets (`williamson2022_iop`,
 `williamson2022_measured`, `solonenko2015_iop` and `williamson2023_depth`)
@@ -2911,3 +2912,43 @@ since 1.20.0 they are `morel2007_stations()` and
   [Chl]^0.659, their Table 2's chi and e at 420 nm (0.12269, 0.65917)
   rounded.
 - The Kd and reflectance spectra are in figures only, and were not read.
+
+## 47. f and Q for a nadir view: Morel et al. (2002), Appendix B (note)
+
+Morel, A., Antoine, D. and Gentili, B. (2002), "Bidirectional reflectance
+of oceanic waters: accounting for Raman emission and varying particle
+scattering phase function", *Appl. Opt.* 41(30), 6289-6306,
+doi:10.1364/AO.41.006289, supplied by the user. Since 1.21.0,
+`morel2002_nadir_fq` gives f (R = Eu/Ed = f bb/a, their Eq. 11), Qn
+(Eu/Lu for the radiance from the nadir, Eq. 10), their ratio and the
+correction of Eq. (B3) (DECISIONS.md section 103).
+
+- **Only the nadir view.** The full tables, f and f/Q for 7
+  wavelengths, 6 sun angles, 6 Chl and 17 by 13 viewing directions, are
+  distributed by anonymous ftp from oceane.obs-vlfr.fr (Appendix A),
+  which did not answer from here (2026-11-16). The paper itself prints
+  only Appendix B's linear fits for the nadir view: Tables 1-3, 252
+  numbers, read from the text layer and checked against the page images;
+  `tools/build_morel2002.py` carries them as literals.
+- **The fits' ranges, as the paper gives them.** Eq. (B1), f: the sun at
+  0-60 degrees, off by "less than 0.5% when theta_s < 45 deg" and up to
+  2 percent at 60. Eq. (B2), Qn: 0-60 degrees, "below 1%". Eq. (B4), f/Qn:
+  "even as great as theta_s = 75 deg", errors that "might reach +-3.4%".
+  The function gives f and Q only to 60 degrees and the ratio to 75, and
+  warns from 60.
+- **Table 3 is a fit of its own.** Its f0/Q0 is within 1.37 percent of
+  Table 1's f0 over Table 2's Q0 everywhere.
+- **The text's ranges are rounded.** f0/Q0 "0.08 - 0.12": the table goes
+  down to 0.078632 (660 nm, 10 mg m^-3). In the blue "between 0.086 and
+  0.097": 0.086690 to 0.097576. Q0 "from approximately 3.1 to 4.4": 3.11668
+  to 4.42719.
+- **Against a measurement.** The paper's Eq. (17), Qn = 5.20 - 1.82 cos
+  theta_s, is Aas & Højerslev's from Mediterranean waters at 465-474 nm;
+  the paper compares it with its own values at 490 nm and Chl 0.1 mg m^-3
+  and finds them in agreement over 0-45 degrees. Table 2 is within 2.6
+  percent of it there (`examples/ocean_colour_and_secchi.py` part 12).
+- **What the correction does.** The factor (f0/Q0) / (f/Qn) of Eq. (B3),
+  from Eq. (B4): at 0.1 mg m^-3 within 0.22 percent of 1 at every sun
+  angle at 412.5 and 560 nm (0.52 percent at the worst of the seven
+  wavelengths); at 10 mg m^-3 and the sun at 75 degrees 0.903 at 412.5 nm and
+  0.825 at 560 nm; at 0.03 mg m^-3 above 1, to 1.034 at 560 nm.

@@ -118,7 +118,9 @@ from .ocean_colour import (
     lee2015_secchi_depth,
     mobley_rho,
     morel2001_bbp,
+    NadirFQ,
     morel1988_kd,
+    morel2002_nadir_fq,
     morel2001_kd,
     rrs_from_above_water,
     subsurface_rrs,
@@ -241,6 +243,8 @@ __all__ = [
     "receptor_noise_distance",
     "morel1988_kd",
     "morel2007_stations",
+    "morel2002_nadir_fq",
+    "NadirFQ",
     "ClearWaterStation",
     "morel2001_kd",
     "morel2001_bbp",
@@ -292,4 +296,4 @@ __all__ = [
     "OsoaaRadianceScan",
 ]
 
-__version__ = "1.20.0"
+__version__ = "1.21.0"

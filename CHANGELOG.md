@@ -4,6 +4,25 @@ Every release is archived on Zenodo under the concept DOI
 [10.5281/zenodo.22321312](https://doi.org/10.5281/zenodo.22321312), which
 always resolves to the latest version.
 
+## 1.21.0 — 2026-11-16
+
+f and Q for an upward radiance from the nadir, Morel et al. (2002),
+Appendix B (DECISIONS.md section 103). No earlier value changed.
+
+**New.** `morel2002_nadir_fq(wavelength_nm, /, *, chlorophyll_mg_m3,
+sun_zenith_deg)` and `NadirFQ`: f, Qn and f/Qn from their Eqs. (B1),
+(B2) and (B4), and the correction of Eq. (B3) to a zenith sun. Only the
+paper's seven wavelengths and six chlorophylls; f and Q to 60 degrees, the
+ratio to 75, with a warning from 60. Other viewing directions need the
+full tables, on a server that did not answer.
+
+**Data.** `morel2002_nadir_fq.csv`, 252 values, from literals in
+`tools/build_morel2002.py`.
+
+**Examples.** `ocean_colour_and_secchi.py` part 12: the correction falls
+to 0.83 at 560 nm, 10 mg m^-3 and the sun at 75 degrees; Aas &
+Højerslev's measured Qn is within 2.6 percent of Table 2.
+
 ## 1.20.0 — 2026-11-16
 
 The clearest natural waters, Morel et al. (2007) (DECISIONS.md section
