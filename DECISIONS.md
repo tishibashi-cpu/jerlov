@@ -6215,3 +6215,50 @@ al. cannot be had, the example is left out and that is said.
   of Zaneveld et al.'s Mie models at 0.9 degrees.
 - With a(715) = 0.01 per m in Jerlov III, the flat and proportional
   methods fall 28 to 40 percent short at 555 and 676 nm.
+
+## 101. Morel's (1988) Kd from the pigment concentration, as a second edition beside 2001 (1.19.0): the plan
+
+NEXT_STEPS section 0b, B, item 11, chosen by the user with the rest of B
+(2026-11-16); the paper supplied by the user: Morel, A. (1988), "Optical
+modeling of the upper ocean in relation to its biogenous matter content
+(case I waters)", J. Geophys. Res. 93(C9), 10749-10768,
+doi:10.1029/JC093iC09p10749.
+
+**What it gives.** K(lambda) = Kw(lambda) + chi(lambda) C^e(lambda) (Eq. 9,
+p. 10,753), Kw = aw + bw/2 for pure sea water (Eq. 8), with Table 2 (p.
+10,754): Kw, chi and e every 5 nm from 400 to 700 nm, 61 rows, from 176
+K spectra. C is the pigment concentration, Chl a + Pheo a, mg m^-3,
+averaged over the layer; Morel & Maritorena (2001) use Chl a (+ divinyl
+Chl a) by HPLC. The paper runs the model from 0.03 to 30 mg m^-3 (Figs.
+10, 12, 13). Beyond 650 nm "the chi and e values ... are only extracted
+from the mesotrophic and eutrophic waters" (p. 10,755), and Fig. 6 shows
+the number of spectra falling from about 170 to few there.
+
+Table 2 was read from the page image and the text layer, which agree in
+all 61 rows. Checked before the plan: Kw(450) = 0.0168 is the 0.0168 of
+Fig. 7a's ordinate, K450 - 0.0168. And: Morel & Maritorena's (2001) chi
+and e are the 1988 values exactly from 560 nm to 700 nm (29 rows), where
+DATA.md section 27 says, after their p. 7168, "beyond 590-600 nm"; their
+Kw differs at every wavelength. This also explains section 27's
+unexplained rounding of chi and e from 560 nm.
+
+**Shipped.** `jerlov/data/morel1988_kd.csv` (wavelength_nm, Kw_per_m,
+chi_per_m, e_exponent, status, note), from literals in
+`tools/build_morel1988.py`, which checks the Fig. 7a value and that 560-
+700 nm equal the shipped `morel2001_kd.csv`'s chi and e. Rows above 650 nm
+carry a note.
+
+**Function.** `morel1988_kd(wavelengths, /, *, pigment_mg_m3)`: as
+`morel2001_kd`, linear between the 5 nm points, 400-700 nm, refused
+outside; the argument named for what it is (Chl a + Pheo a), no default;
+a ProvenanceWarning outside 0.03-30 mg m^-3, and beyond 650 nm.
+
+**Example.** A part of `ocean_colour_and_secchi.py`: the two editions'
+Kd at 0.03, 0.3, 3 and 30 mg m^-3, at 412, 443, 490, 555 and 670 nm,
+their ratio, and where the difference lies (Kw below 560 nm; chi and e
+also below 560 nm; only Kw above). The nearest Jerlov type for each, as
+part 4 does for 2001.
+
+**Documents.** DATA.md section 45, and section 27 corrected (its "590-600"
+and its rounding note) with a pointer; README; docs/api.rst; CHANGELOG;
+.zenodo.json. 1.19.0: one public name.
