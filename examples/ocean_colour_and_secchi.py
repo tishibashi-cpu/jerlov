@@ -625,7 +625,8 @@ def above_water_part(caught):
 Lsky) / Ed (Mobley 1999). rho is not a property of the surface: it depends
 on the sun, the view, the wind and the sky. Mobley's two tables
 (`mobley_rho`) give it for a clear sky at 550 nm: 1999, unpolarised; 2015,
-polarised, for a Rayleigh sky. Here Jerlov IB's Rrs, as in part 5 with
+polarised, for a Rayleigh sky, a table that calls itself preliminary and
+warns so. Here Jerlov IB's Rrs, as in part 5 with
 bbp/bp = {PETZOLD_RATIO}, is the truth; Lsky / Ed is that of a uniform sky carrying
 Gregg & Carder's diffuse irradiance (Lsky = Ed,diffuse / pi, a stand-in,
 not a sky model); the sun is at {SUN_ZENITH_DEG:g} degrees and the wind {WIND:g} m/s. Lt is

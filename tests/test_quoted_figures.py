@@ -1562,10 +1562,12 @@ def test_the_secchi_example_warns_only_as_it_reports(secchi_example):
     """Every warning it caught is printed; each is about the depths of the
     Secchi check (lee2015_secchi_depth), from part 6 about Kd below the
     range of lee2013_kd, which part 6 reports, or from part 7 about the
-    range lee2011_rrs was fitted to, which part 7 reports."""
+    range lee2011_rrs was fitted to, which part 7 reports, or from part 9
+    about Mobley's 2015 table calling itself preliminary, which part 9
+    reports."""
     for message in secchi_example["caught"]:
         assert ("0.1 to 30 m" in message or "0.02 to 5 1/m" in message
-                or "0.0002-0.37" in message)
+                or "0.0002-0.37" in message or "preliminary" in message)
     # Part 7: Lee et al.'s (2011) fit range, only where it reports it.
     assert any("0.0002-0.37" in m for m in secchi_example["caught"]) \
         == bool(secchi_example["geometry"]["outside"])
