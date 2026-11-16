@@ -283,6 +283,8 @@ Kd without a water type, Rrs and the Secchi depth
 
 .. autofunction:: morel2001_kd
 
+.. autofunction:: morel1988_kd
+
 .. autofunction:: bricaud1995_aph
 
 .. autofunction:: morel2001_bbp

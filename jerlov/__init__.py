@@ -118,6 +118,7 @@ from .ocean_colour import (
     lee2015_secchi_depth,
     mobley_rho,
     morel2001_bbp,
+    morel1988_kd,
     morel2001_kd,
     rrs_from_above_water,
     subsurface_rrs,
@@ -237,6 +238,7 @@ __all__ = [
     "MissingQuantityError",
     "visual_pigment_template",
     "receptor_noise_distance",
+    "morel1988_kd",
     "morel2001_kd",
     "morel2001_bbp",
     "bricaud1995_aph",
@@ -287,4 +289,4 @@ __all__ = [
     "OsoaaRadianceScan",
 ]
 
-__version__ = "1.18.0"
+__version__ = "1.19.0"

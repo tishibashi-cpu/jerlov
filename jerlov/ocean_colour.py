@@ -235,6 +235,72 @@ def morel2001_kd(wavelengths, /, *, chlorophyll_mg_m3: float):
     return _like_input(out, wavelengths)
 
 
+#: The pigment range Morel (1988) runs his model over (Figs. 10, 12 and
+#: 13), mg m^-3; and the wavelength beyond which chi and e were fitted to
+#: mesotrophic and eutrophic waters only (p. 10,755).
+_MOREL1988_C, _MOREL1988_RED = (0.03, 30.0), 650.0
+
+
+@_data.positional_only()
+def morel1988_kd(wavelengths, /, *, pigment_mg_m3: float):
+    """Kd of case 1 water from its pigment concentration, Morel's (1988)
+    edition.
+
+    Morel, A. (1988), "Optical modeling of the upper ocean in relation to
+    its biogenous matter content (case I waters)", J. Geophys. Res.
+    93(C9), 10749-10768, doi:10.1029/JC093iC09p10749. Eqs. (8) and (9)::
+
+        K = Kw + chi C^e,    Kw = aw + bw / 2
+
+    with Kw, chi and e from Table 2, 400-700 nm every 5 nm; K is computed
+    on that grid and interpolated linearly between. :func:`morel2001_kd`
+    is the revision of Morel & Maritorena (2001), which keeps this
+    edition's chi and e from 560 nm on and changes Kw everywhere (DATA.md
+    section 45).
+
+    Parameters
+    ----------
+    wavelengths:
+        nm, a number or an array, within 400-700 nm.
+    pigment_mg_m3:
+        C, mg m^-3: chlorophyll a plus pheophytin a, averaged over the
+        layer, not the HPLC chlorophyll a of :func:`morel2001_kd`. One
+        number; no default.
+
+    Returns
+    -------
+    Kd, 1/m: a float for a number, an array otherwise.
+
+    Notes
+    -----
+    Fitted to 176 spectra of case 1 water; the paper uses the model from
+    0.03 to 30 mg m^-3 and outside that range the result comes with a
+    :class:`ProvenanceWarning`. Beyond 650 nm "the chi and e values ...
+    are only extracted from the mesotrophic and eutrophic waters" (p.
+    10,755), and those wavelengths warn too. DECISIONS.md section 101.
+    """
+    c = _single(pigment_mg_m3, "pigment_mg_m3", "mg m^-3")
+    query = np.atleast_1d(np.asarray(wavelengths, dtype=float))
+    grid, kw, chi, e = _data.morel1988()
+    if (not np.all(np.isfinite(query)) or np.any(query < grid[0])
+            or np.any(query > grid[-1])):
+        raise ValueError(
+            f"wavelengths must lie within {grid[0]:g}-{grid[-1]:g} nm, the "
+            "range of Morel's (1988) Table 2. This package does not "
+            "extrapolate.")
+    lo, hi = _MOREL1988_C
+    if not lo <= c <= hi:
+        _warn(f"C = {c:g} mg m^-3 is outside the {lo:g}-{hi:g} Morel (1988) "
+              "runs his model over; the result is the relation carried "
+              "beyond it.")
+    if np.any(query > _MOREL1988_RED):
+        _warn("beyond 650 nm Morel's (1988) chi and e were fitted to "
+              "mesotrophic and eutrophic waters only (p. 10,755).")
+    kd = kw + chi * c ** e
+    out = np.interp(query.ravel(), grid, kd).reshape(query.shape)
+    return _like_input(out, wavelengths)
+
+
 #: The [Chl] range of Bricaud et al. (1995), mg m^-3 (abstract).
 _BRICAUD_CHL = (0.02, 25.0)
 

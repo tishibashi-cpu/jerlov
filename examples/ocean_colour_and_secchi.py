@@ -705,6 +705,57 @@ followed here (Mobley 1999, section 4; Lee et al. 2010). DATA.md section
                 worst_red=worst_red)
 
 
+EDITION_C = (0.03, 0.3, 3.0, 30.0)
+EDITION_NM = (412.0, 443.0, 490.0, 555.0, 670.0)
+
+
+def editions_part():
+    rule("10. Morel's two editions of Kd from chlorophyll")
+    wl = np.arange(400.0, 701.0, 5.0)
+    print("""Morel (1988) and Morel & Maritorena (2001) give Kd = Kw + chi C^e for
+case 1 water, the second a revision of the first. 1988's C is chlorophyll
+a plus pheophytin a; 2001's is chlorophyll a by HPLC; the same number is
+put into both here, which is itself an assumption. Kd 2001 / Kd 1988:
+""")
+    head = "".join(f" {f'{w:g}':>6}" for w in EDITION_NM)
+    print(f"  {'C mg/m3':>8}{head}   nearest type, 1988 and 2001")
+    ratios, nearest = {}, {}
+    with warnings.catch_warnings(record=True) as record:
+        warnings.simplefilter("always")
+        for c in EDITION_C:
+            k88 = jerlov.morel1988_kd(wl, pigment_mg_m3=c)
+            k01 = jerlov.morel2001_kd(wl, chlorophyll_mg_m3=c)
+            r = np.interp(EDITION_NM, wl, k01 / k88)
+            ratios[c] = r
+            nearest[c] = (jerlov.classify_kd(wl, k88).water_type,
+                          jerlov.classify_kd(wl, k01).water_type)
+            print(f"  {c:>8g}" + "".join(f" {x:>6.2f}" for x in r)
+                  + f"   {nearest[c][0]:>4} {nearest[c][1]:>4}")
+    for w in record:
+        if not issubclass(w.category, jerlov.ProvenanceWarning):
+            warnings.warn_explicit(w.message, w.category, w.filename,
+                                   w.lineno)
+    clear = ratios[EDITION_C[0]]
+    c = EDITION_C[0]
+    with warnings.catch_warnings():
+        # Only the split below; the warnings were reported above.
+        warnings.simplefilter("ignore", jerlov.ProvenanceWarning)
+        k88 = jerlov.morel1988_kd(412.0, pigment_mg_m3=c)
+        k01 = jerlov.morel2001_kd(412.0, chlorophyll_mg_m3=c)
+        kw88 = jerlov.morel1988_kd(412.0, pigment_mg_m3=1e-12)
+        kw01 = jerlov.morel2001_kd(412.0, chlorophyll_mg_m3=1e-12)
+    kw_share = (kw01 - kw88) / (k01 - k88)
+    print(f"""
+In the clearest water the 2001 edition's Kd is {clear[0]:.2f} of 1988's at 412 nm and
+{clear[2]:.2f} at 490. At 412 nm and {c:g} mg/m3 the change in Kw, pure sea water's
+own term, is {kw_share:.2f} times the whole change: Kw alone lowers Kd by more than
+it falls, and the revised chi C^e takes some of it back. From 560 nm on,
+2001 kept 1988's chi and e unchanged and replaced only Kw, where DATA.md
+section 27 had put the unrevised range at 590-600 nm from the paper's own
+words. 1988's warning beyond 650 nm is its own. DATA.md section 45.""")
+    return dict(ratios=ratios, nearest=nearest, kw_share=kw_share)
+
+
 def main():
     _banner()
     caught = set()
@@ -718,6 +769,7 @@ def main():
     geometry = geometry_part(kd, caught)
     pure_water = pure_water_part(caught)
     above_water = above_water_part(caught)
+    editions = editions_part()
     if caught:
         rule("Warnings")
         print("Raised along the way, each a ProvenanceWarning:")
@@ -750,7 +802,7 @@ def main():
                 depends=depends, by_pair=by_pair, by_ratio=by_ratio, products=products, nearest=nearest,
                 recovered=recovered, case1=case1, geometry=geometry,
                 pure_water=pure_water, above_water=above_water,
-                caught=caught)
+                editions=editions, caught=caught)
 
 
 if __name__ == "__main__":

@@ -302,6 +302,18 @@ def morel2001() -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray,
 
 
 @lru_cache(maxsize=None)
+def morel1988() -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    """Return ``(wavelengths, Kw, chi, e)`` from Morel (1988) Table 2."""
+    rows = sorted(_rows("morel1988_kd.csv"),
+                  key=lambda r: float(r["wavelength_nm"]))
+    wl = np.array([float(r["wavelength_nm"]) for r in rows])
+    kw = np.array([float(r["Kw_per_m"]) for r in rows])
+    chi = np.array([float(r["chi_per_m"]) for r in rows])
+    e = np.array([float(r["e_exponent"]) for r in rows])
+    return _frozen(wl), _frozen(kw), _frozen(chi), _frozen(e)
+
+
+@lru_cache(maxsize=None)
 def bricaud1995() -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     """Return ``(wavelengths, A, B)`` from Bricaud et al. (1995) Table 2."""
     rows = sorted(_rows("bricaud1995_aph.csv"),

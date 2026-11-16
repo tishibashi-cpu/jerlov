@@ -3,7 +3,7 @@
 What every shipped table is, where it came from, what was verified, and what
 is known to be wrong with it.
 
-Forty-four entries are recorded below. Thirteen are confirmed defects, three were
+Forty-five entries are recorded below. Thirteen are confirmed defects, three were
 open questions that the first edition of Jerlov settled, and the rest are
 notes rather than defects. None of them is repaired silently: values that
 could be recovered carry `status = reconstructed` and say how, values that
@@ -51,6 +51,7 @@ could not are `missing`, and values that are used but doubtful are `suspect`.
 | `usgs2017_reflectance.csv` | Absolute reflectance of ten materials, the USGS Spectral Library Version 7's ASD records, as measured. 1 nm, 350-830 nm | 4810 |
 | `mobley1999_rho.csv` | The sea surface's reflectance factor rho for above-water radiometry, Mobley (1999), as the Ocean Optics Web Book distributes it: 550 nm, wind 0-14 m/s, sun 0-80 degrees, 118 viewing directions | 8496 |
 | `mobley2015_rho.csv` | The same, Mobley (2015), polarised, a Rayleigh sky; wind 0-15 m/s, sun 0-87.5 degrees; **calls itself preliminary** | 11800 |
+| `morel1988_kd.csv` | Kw, chi and e of K = Kw + chi C^e for case 1 water, Morel (1988) Table 2, C the Chl a + Pheo a concentration. 5 nm, 400-700 nm | 61 |
 
 The four tables drawn from the two Dstl datasets (`williamson2022_iop`,
 `williamson2022_measured`, `solonenko2015_iop` and `williamson2023_depth`)
@@ -1591,8 +1592,12 @@ properties of oceanic waters: A reappraisal", *J. Geophys. Res.* 106(C4),
 - The paper says its new data could not be used beyond 590-600 nm, so
   those values are Morel's (1988), not revised (p. 7168). The rows from
   595 nm say so in `note`; they are `ok`, as the paper presents them.
+  (Corrected in 1.19.0: chi and e are Morel's (1988) exactly from 560 nm,
+  not only beyond 590-600; Kw differs at every wavelength. Section 45.)
 - From 560 nm, as below 400 nm, e and chi are printed rounded to two or
   three digits, where 400-555 nm have five. The paper does not say why.
+  (From 560 nm they are Morel's (1988) values, printed with the digits of
+  his Table 2; section 45.)
 - The text gives Kw at 380 nm from Pope & Fry (1997) as 0.0167 (p. 7169);
   Table 2 has 0.01510 there. The table is used as printed.
 - Kd here is the attenuation of the upper layer, from the surface to the
@@ -2823,3 +2828,39 @@ to flat's own error; proportional+ is off by 2.6, 9.9 and 7.4 percent even
 with a715 = 0, the difference in its denominator above. Eq. (5) applied
 to water this clear lies outside its fit. How Williamson & Hollins's
 campaigns corrected their absorption is not recorded in this package.
+
+## 45. Morel's (1988) Kd from the pigment concentration, and what 2001 kept of it (note)
+
+Morel, A. (1988), "Optical modeling of the upper ocean in relation to its
+biogenous matter content (case I waters)", *J. Geophys. Res.* 93(C9),
+10749-10768, doi:10.1029/JC093iC09p10749, supplied by the user.
+`morel1988_kd.csv` is Table 2 (p. 10,754), all 61 rows, 400-700 nm every 5
+nm, read from the page image and checked against the text layer, which
+agrees in every row; `tools/build_morel1988.py` carries them as literals
+and checks Kw(450) = 0.0168 against Fig. 7a's ordinate, "K450 - 0.0168".
+Since 1.19.0, `morel1988_kd` gives K = Kw + chi C^e (Eqs. 8 and 9)
+(DECISIONS.md section 101).
+
+- **C is not the same quantity as 2001's [Chl].** Morel's C is "the Chl a
+  + Pheo a concentration" averaged over the layer; Morel & Maritorena
+  (2001) use chlorophyll a and divinyl chlorophyll a by HPLC (section 27).
+  The function's argument is named `pigment_mg_m3` for that reason.
+- **The range.** The paper runs the model from 0.03 to 30 mg m^-3 (Figs.
+  10, 12 and 13); outside that the function warns. Beyond 650 nm "the chi
+  and e values ... are only extracted from the mesotrophic and eutrophic
+  waters" (p. 10,755); those rows carry a note and the function warns.
+- **What Morel & Maritorena (2001) kept.** Their chi and e are this
+  table's, digit for digit, at every wavelength from 560 to 700 nm (29
+  rows), checked by the build script against the shipped
+  `morel2001_kd.csv`; at 555 nm and below they differ. Their Kw differs at
+  every wavelength from 400 to 700 nm. Section 27, after their p. 7168,
+  had put the unrevised range "beyond 590-600 nm"; it begins at 560 nm,
+  and it is why chi and e are printed with fewer digits from there.
+- **What the revision changes.** `examples/ocean_colour_and_secchi.py`
+  part 10, with the same number for C and [Chl] (itself an assumption):
+  2001's Kd over 1988's at 412, 443, 490, 555 and 670 nm is 0.69, 0.78,
+  0.84, 0.89 and 1.02 at 0.03 mg m^-3, and 0.93, 0.95, 0.94, 0.91 and 1.02
+  at 0.3. At 412 nm and 0.03 mg m^-3 the change in Kw is 1.23 times the
+  whole change: the revised Kw alone lowers Kd by more than it falls, and
+  the revised chi C^e raises it a little. The nearest Jerlov type (1976)
+  differs only at 0.03 mg m^-3: IA from 1988, I from 2001.

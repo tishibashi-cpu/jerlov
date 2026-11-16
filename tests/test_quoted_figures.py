@@ -2454,3 +2454,25 @@ def test_the_absorption_meter_figures():
                    "5.7 percent for HAOCE 11, 5.9 for HAOCE 5, 8.1 to 8.9",
                    "9.8 to 12.5 for the AUTEC"):
         assert quoted in data, quoted
+
+
+# -- Morel's two editions (ocean_colour_and_secchi.py, part 10,
+#    DECISIONS.md section 101) ----------------------------------------------
+
+
+@source_tree
+def test_morels_two_editions(secchi_example):
+    e = secchi_example["editions"]
+    r = {c: [round(float(x), 2) for x in v] for c, v in e["ratios"].items()}
+    assert r[0.03] == [0.69, 0.78, 0.84, 0.89, 1.02]
+    assert r[0.3] == [0.93, 0.95, 0.94, 0.91, 1.02]
+    assert all(abs(x - 1) <= 0.09 for c in (0.3, 3.0, 30.0) for x in r[c])
+    assert round(e["kw_share"], 2) == 1.23
+    assert e["nearest"][0.03] == ("IA", "I")
+    assert all(a == b for c, (a, b) in e["nearest"].items() if c != 0.03)
+    data = _flat("DATA.md")
+    for quoted in ("0.69, 0.78, 0.84, 0.89 and 1.02 at 0.03 mg m^-3",
+                   "0.93, 0.95, 0.94, 0.91 and 1.02 at 0.3",
+                   "the change in Kw is 1.23 times the whole change",
+                   "IA from 1988, I from 2001"):
+        assert quoted in data, quoted
