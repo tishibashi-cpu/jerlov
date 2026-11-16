@@ -5779,3 +5779,59 @@ They add a contemporary of Jerlov's, from his institute, describing the
 yellow substance, and the record that Jerlov dropped values he may have
 doubted in 1978. They still state no reason for the coastal blue of 1976.
 DATA.md section 41 and `OPEN_QUESTIONS.md`'s third question say so.
+
+## 97. What the choice of pure water absorption does to the colour of the clearest water (1.15.9): the plan
+
+`OPEN_QUESTIONS.md`'s first question puts numbers on how far the published
+absorption spectra of pure water disagree (Pope & Fry over Mason et al.,
+7.95 at 380 nm) and on what that does to a Jerlov type's absorption. It
+does not say what it does to anything measured from above. The user chose
+on 2026-11-16 to put it into the remote sensing reflectance of the
+clearest water, which is the quantity Lee et al. (2015) inverted to get
+theirs.
+
+**The spectra.** The five the package ships: `pure_water_absorption_table`
+with `pope1997`, `smith1981`, `mason2016` and `lee2015`, and
+`pure_water_absorption()`, the aw Williamson & Hollins built their a on.
+At 380, 400, 412, 443, 490, 510 and 550 nm, inside every one's range.
+
+**Two waters**, so that the answer does not rest on one guess:
+
+- (A) Pure seawater and nothing else: a = aw, bb = bbw = bw / 2, bw from
+  Williamson & Hollins's Eq. 8a constants (0.00583 (400 / lambda)^4.322,
+  `Water.source.scattering`). No particle is assumed. 380 to 550 nm.
+- (B) Williamson & Hollins's IB, its contents on each aw: a = a_IB -
+  aw_WH + aw, bb = bw / 2 + r (b - bw), as `Water.bb(particle_backscatter_
+  ratio=r)` builds it. r is not known for any Jerlov type (DATA.md section
+  10); all eight of Petzold's measured B/S, 0.013 to 0.044, are used. 412
+  to 550 nm, where IB's a and b were measured (section 95 found IB's
+  averaged a high in the blue; it is used as published).
+
+**Rrs.** `lee2011_rrs` with the nadir coefficients (0, 0, 0); and, as a
+second relation, `subsurface_rrs` with Gordon et al.'s (1988)
+coefficients and `above_surface_rrs`. Warnings (Lee et al.'s fitted range
+of bb / (a + bb)) are caught by type and reported.
+
+**What will be read off, decided now.**
+
+1. At each wavelength, the largest over the smallest Rrs among the five
+   spectra, for (A) and, for each r, for (B).
+2. For (B), the largest over the smallest Rrs among the eight r with Pope &
+   Fry's aw. At each wavelength the documents say the choice of pure water
+   moves Rrs more than the particles' backscatter ratio if the ratio of 1
+   exceeds that of 2 for every r, less if it falls below it for every r,
+   and otherwise that it depends on r.
+3. The band ratios Rrs(443)/Rrs(550) and Rrs(412)/Rrs(550), which
+   chlorophyll algorithms read: their range among the five spectra, for (A)
+   and (B).
+4. Whether the two Rrs relations agree on 1 to 3 within 10 percent; the
+   documents use Lee et al.'s and say if they do not.
+
+Nothing here says which spectrum is right.
+
+**Documents.** `OPEN_QUESTIONS.md`'s first question; DATA.md section 29;
+a part 8 of `examples/ocean_colour_and_secchi.py`; the figures in
+`tests/test_quoted_figures.py`. No Monte Carlo: every number comes from the
+package's own functions.
+
+**Version.** 1.15.9.
