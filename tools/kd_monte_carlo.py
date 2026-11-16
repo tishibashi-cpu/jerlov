@@ -6,8 +6,18 @@ travel exponential paths of mean 1/c, keep the fraction b/c of their
 weight at each interaction (Russian roulette below a small weight), and
 turn by an angle drawn from a tabulated phase function. Ed(z) is the
 weight crossing the plane z downwards: the planar irradiance. Light that
-leaves through the surface is lost; the sky, the atmosphere and the
-surface's reflection are not modelled.
+leaves through the surface is lost; the atmosphere and the surface's
+reflection of light from below are not modelled.
+
+Two options, off by default (DECISIONS.md section 94), and off they draw
+exactly the random numbers section 92's runs drew:
+
+- ``water_share``: at each scattering the photon is turned by pure water's
+  phase function (the shape of ``jerlov.pure_water_vsf``) with that
+  probability, and by the given one otherwise;
+- ``sky_share``: that fraction of Ed just below the surface enters as
+  diffuse light, uniform in radiance in the air, weighted by Fresnel's
+  transmittance and refracted; the rest is the sun's beam.
 
     python tools/kd_monte_carlo.py --check
 
@@ -75,6 +85,51 @@ def petzold_sampler(station: str):
     return sample, backscatter
 
 
+def water_sampler():
+    """Inverse cumulative distribution of the scattering angle (radians)
+    for pure water: the shape of ``jerlov.pure_water_vsf``, 1 + 0.835
+    cos^2 for Morel's delta of 0.09."""
+    theta = np.linspace(0.0, 180.0, 18001)
+    vsf = np.asarray(jerlov.pure_water_vsf(theta, 500.0, salinity_psu=35.0))
+    radians = np.radians(theta)
+    density = vsf * np.sin(radians)
+    cumulative = np.concatenate([[0.0], np.cumsum(
+        0.5 * (density[1:] + density[:-1]) * np.diff(radians))])
+    cumulative /= cumulative[-1]
+
+    def sample(u: np.ndarray) -> np.ndarray:
+        return np.interp(u, cumulative, radians)
+
+    return sample
+
+
+def fresnel_transmittance(cos_air: np.ndarray) -> np.ndarray:
+    """Fresnel's transmittance from air into water, unpolarised."""
+    cos_air = np.asarray(cos_air, dtype=float)
+    sin_w = np.sqrt(np.maximum(0.0, 1.0 - cos_air ** 2)) / N_WATER
+    cos_w = np.sqrt(1.0 - sin_w ** 2)
+    rs = ((cos_air - N_WATER * cos_w) / (cos_air + N_WATER * cos_w)) ** 2
+    rp = ((cos_w - N_WATER * cos_air) / (cos_w + N_WATER * cos_air)) ** 2
+    return 1.0 - 0.5 * (rs + rp)
+
+
+def sky_cosines():
+    """The cosines below the surface of light from a sky uniform in
+    radiance, with the share of the planar irradiance each carries.
+
+    In the air the planar irradiance from zenith angle t goes as cos t
+    sin t dt; each part is multiplied by Fresnel's transmittance and
+    refracted. Returns (cosine below the surface, cumulative share)."""
+    t = np.linspace(0.0, math.pi / 2, 20001)
+    density = (np.cos(t) * np.sin(t)
+               * fresnel_transmittance(np.cos(t)))
+    cumulative = np.concatenate([[0.0], np.cumsum(
+        0.5 * (density[1:] + density[:-1]) * np.diff(t))])
+    cumulative /= cumulative[-1]
+    sin_w = np.sin(t) / N_WATER
+    return np.sqrt(1.0 - sin_w ** 2), cumulative
+
+
 def isotropic_sampler():
     """Isotropic scattering, for a check with a known answer."""
     def sample(u: np.ndarray) -> np.ndarray:
@@ -83,8 +138,11 @@ def isotropic_sampler():
 
 
 def ed_profile(a: float, b: float, sample, mu0: float, depth_m: float,
-               photons: int = 400_000, planes: int = 121, seed: int = 1):
+               photons: int = 400_000, planes: int = 121, seed: int = 1,
+               water_share: float = 0.0, sky_share: float = 0.0):
     """Ed(z) / Ed(0) at evenly spaced planes from 0 to depth_m."""
+    if not 0.0 <= water_share <= 1.0 or not 0.0 <= sky_share <= 1.0:
+        raise ValueError("water_share and sky_share lie in [0, 1]")
     rng = np.random.default_rng(seed)
     c = a + b
     albedo = b / c if c > 0 else 0.0
@@ -97,6 +155,18 @@ def ed_profile(a: float, b: float, sample, mu0: float, depth_m: float,
     uz = np.full(photons, mu0)
     weight = np.ones(photons)
     alive = np.ones(photons, dtype=bool)
+    if sky_share > 0.0:
+        diffuse = rng.random(photons) < sky_share
+        n_sky = int(diffuse.sum())
+        cosines, cumulative = sky_cosines()
+        w_sky = np.interp(rng.random(n_sky), cumulative, cosines)
+        phi_sky = 2.0 * math.pi * rng.random(n_sky)
+        s_sky = np.sqrt(np.maximum(0.0, 1.0 - w_sky ** 2))
+        ux[diffuse] = s_sky * np.cos(phi_sky)
+        uy[diffuse] = s_sky * np.sin(phi_sky)
+        uz[diffuse] = w_sky
+    if water_share > 0.0:
+        water = water_sampler()
     while alive.any():
         idx = np.flatnonzero(alive)
         z0 = z[idx]
@@ -133,6 +203,9 @@ def ed_profile(a: float, b: float, sample, mu0: float, depth_m: float,
             break
         theta = sample(rng.random(stay.size))
         phi = 2.0 * math.pi * rng.random(stay.size)
+        if water_share > 0.0:
+            by_water = rng.random(stay.size) < water_share
+            theta[by_water] = water(rng.random(int(by_water.sum())))
         ct, st = np.cos(theta), np.sin(theta)
         cp, sp = np.cos(phi), np.sin(phi)
         x, y, w = ux[stay], uy[stay], uz[stay]
@@ -157,14 +230,16 @@ def mean_kd(z: np.ndarray, ed: np.ndarray, drop: float) -> float:
 
 
 def kd(a: float, b: float, sample, sun_zenith_deg: float,
-       optical_depths=(1.0,), photons: int = 400_000, seed: int = 1):
+       optical_depths=(1.0,), photons: int = 400_000, seed: int = 1,
+       water_share: float = 0.0, sky_share: float = 0.0):
     """Mean Kd to each of ``optical_depths`` (in units of Kd itself)."""
     mu0 = refracted_cosine(sun_zenith_deg)
     # Deep enough for the largest optical depth even if Kd is 3 a / mu0.
     guess = a / mu0
     depth = 1.6 * max(optical_depths) / guess
     z, ed = ed_profile(a, b, sample, mu0, depth, photons=photons,
-                       seed=seed)
+                       seed=seed, water_share=water_share,
+                       sky_share=sky_share)
     return [mean_kd(z, ed, d) for d in optical_depths]
 
 
@@ -181,8 +256,30 @@ def solonenko_mobley(b_over_a, mu, eta):
                                      - (0.205 + 0.521 * eta))) / mu
 
 
+def sky_only_kd(a: float, sun_zenith_deg: float, sky_share: float,
+                drop: float) -> float:
+    """Kd with no scattering, by quadrature: Ed(z) is the sum over the
+    light's directions of exp(-a z / mu), the sun's at mu0 and the sky's
+    over the distribution of ``sky_cosines``."""
+    mu0 = refracted_cosine(sun_zenith_deg)
+    cosines, cumulative = sky_cosines()
+    cosines, cumulative = cosines[::10], cumulative[::10]
+    share = np.diff(cumulative)
+    mid = 0.5 * (cosines[1:] + cosines[:-1])
+    z = np.linspace(0.0, 3.0 * drop * max(1.0 / mid.min(), 1.0 / mu0) / a,
+                    20001)
+    # Summed in pieces to keep the memory small.
+    ed = np.empty_like(z)
+    for start in range(0, z.size, 5000):
+        part = z[start:start + 5000, None]
+        ed[start:start + 5000] = (
+            (1.0 - sky_share) * np.exp(-a * part[:, 0] / mu0)
+            + sky_share * (share * np.exp(-a * part / mid)).sum(axis=1))
+    return mean_kd(z, ed, drop)
+
+
 def check():
-    """The checks of DECISIONS.md section 92."""
+    """The checks of DECISIONS.md sections 92 and 94."""
     mu0 = refracted_cosine(30.0)
     out = {}
     # 1. No scattering: Ed falls as exp(-a z / mu0), exactly.
@@ -204,6 +301,18 @@ def check():
                          morel_loisel(ratio, mu0, 0.0), k23 / 0.1,
                          solonenko_mobley(ratio, mu0, 0.0)))
     out["against_formulas"] = rows
+    # 4. (Section 94.) No scattering, a sky share of 0.3: Kd against the
+    #    quadrature of the same directions.
+    for drop in (1.0, 2.302585092994046):
+        (k,) = kd(0.1, 0.0, sample, 30.0, optical_depths=(drop,),
+                  photons=400_000, sky_share=0.3)
+        out[f"sky_no_scattering_{drop:.1f}"] = (
+            k / sky_only_kd(0.1, 30.0, 0.3, drop))
+    # 5. (Section 94.) Pure water's phase function: mean cosine 0, half
+    #    backwards.
+    angles = water_sampler()(np.random.default_rng(7).random(2_000_000))
+    out["water_mean_cosine"] = float(np.cos(angles).mean())
+    out["water_backward_share"] = float((angles > math.pi / 2).mean())
     return out
 
 
@@ -217,3 +326,10 @@ if __name__ == "__main__":
     for row in result["against_formulas"]:
         print(f"{row[0]:8} {row[1]:.4f} {row[2]:5.1f}  {row[3]:.3f}  "
               f"{row[4]:.3f}  {row[5]:.3f}  {row[6]:.3f}")
+    for drop in ("1.0", "2.3"):
+        print(f"sky share 0.3, no scattering, Kd to optical depth {drop}: "
+              f"{result['sky_no_scattering_' + drop]:.4f} of the "
+              "quadrature")
+    print(f"pure water's phase function: mean cosine "
+          f"{result['water_mean_cosine']:+.4f}, backward share "
+          f"{result['water_backward_share']:.4f}")

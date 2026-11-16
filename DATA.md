@@ -3,7 +3,7 @@
 What every shipped table is, where it came from, what was verified, and what
 is known to be wrong with it.
 
-Thirty-nine entries are recorded below. Thirteen are confirmed defects, three were
+Forty entries are recorded below. Thirteen are confirmed defects, three were
 open questions that the first edition of Jerlov settled, and the rest are
 notes rather than defects. None of them is repaired silently: values that
 could be recovered carry `status = reconstructed` and say how, values that
@@ -2334,8 +2334,9 @@ own back.
 
 - In the 62 base runs it can make, OSOAA's Kd is 1.007 to 1.096 times the
   Monte Carlo's, the higher the bluer the light and the clearer the
-  water: 1.096 for IB at 425 nm, 1.007 for 1C at 675 nm. OSOAA's sky,
-  which the Monte Carlo lacks, may account for that; it was not checked.
+  water: 1.096 for IB at 425 nm, 1.007 for 1C at 675 nm. Section 40
+  accounts for it: OSOAA scatters pure water's share of b by water's own
+  phase function and has a sky, and the Monte Carlo here does neither.
 - OSOAA treats 56.2 to 72.7 percent of the hydrosols' scattering as
   unscattered (`truncation.csv`, from each run's `PM_PHYTO.txt`).
 - The station moves its Kd by -5.8 to +14.9 percent, against the Monte
@@ -2357,3 +2358,80 @@ its effect. Release 1.15.4 found the Kd too low but put the cause in
 OSOAA; release 1.15.5 found it in the package. Those runs are kept in
 `examples/data/osoaa_closure_f11_too_small/` as the record. The
 conclusions above replace them.
+
+## 40. Solonenko & Mobley's IOPs through the Monte Carlo and OSOAA, against their HydroLight Kd (note)
+
+Solonenko & Mobley (2015) printed, beside the a and b they retrieved for
+ten Jerlov types, the Kd HydroLight computed from them, K_d^H (section
+19). That is a check on any other calculation given the same a and b,
+and the only one the package ships against a widely used code
+(DECISIONS.md section 94).
+
+**What the paper says of the HydroLight runs.** The retrieved a and b,
+"a Petzold average-particle phase function", a clear sky, infinitely deep
+water and no inelastic scattering (p. 5396); the phase function as pure
+water's and the particles' weighted by their shares of b, the particles'
+the average of Petzold's coastal, harbor and ocean functions with a mean
+cosine of 0.924 (p. 5394); pure water's b as 5.83e-3 (400 / lambda)^4.322
+(Eq. 8a, p. 5395); a modelling depth of 10 scattering lengths, 6 for
+Jerlov III (p. 5401). It does not print the sun, the average phase
+function or the depth K_d^H belongs to.
+
+**The calculation.** `tools/kd_monte_carlo.py` (section 39) with two
+options added: pure water's share of b turned by water's own phase
+function (the shape of `pure_water_vsf`), and a share of Ed below the
+surface coming from a sky uniform in radiance in the air, weighted by
+Fresnel's transmittance and refracted. Off, it draws the same random
+numbers as before and reproduces section 39's runs bit for bit; its new
+checks (`--check`) put a sky with no scattering within 0.2 percent of the
+quadrature and water's phase function at a mean cosine of 0.
+`tools/sm_closure.py` made 2457 runs, kept in
+`examples/data/sm_closure/runs.csv`: the 143 cells of the ten types from
+350 to 700 nm every 25 nm where a, b and K_d^H are all given, with the sun
+of the paper's own Eq. (3) (15 degrees from the zenith for I to III, 45
+for the coastal types), NUC 2240's phase function (mean cosine 0.926,
+the nearest to 0.924), and the sky's share from `gregg1990_irradiance`
+for an open-ocean aerosol of optical thickness 0.2 at 550 nm; on every
+cell, the other seven stations, the sun at 0, 30 and 60 degrees and the
+aerosol at 0.05 and 0.4. Then section 39's 240 runs of Williamson &
+Hollins's IOPs again with the water's scattering and the sky. 30 of the
+143 cells carry a b flagged suspect (section 6); they are kept and
+marked. Kd is taken to 10 percent of the surface light.
+
+**Against HydroLight.** The Monte Carlo's Kd over K_d^H:
+
+| Monte Carlo | Median | Within 10 percent | Range |
+|---|---|---|---|
+| As section 39: one phase function, no sky | 0.945 | 79.7 percent | 0.769 to 1.110 |
+| With pure water's own scattering | 0.951 | 90.2 percent | 0.852 to 1.138 |
+| With it and a sky | 0.970 | 94.4 percent | 0.881 to 1.157 |
+
+The criterion set before the runs, a median within 0.95 to 1.05 and 90
+percent of the cells within 10 percent, is met by the last two rows. By
+type, the ratio is 0.93 to 1.00 for I, IA, IB, 3C, 5C and 9C, 1.00 to 1.08
+for 1C and 1.00 to 1.10 for 7C; II reaches 1.16 (1.13 to 1.16 from 425 to
+500 nm), and III, the one type HydroLight ran to 6 scattering lengths,
+stays at 0.88 to 0.96. The other stations move the Monte Carlo's Kd by
+-12.7 to +26.0 percent, the sun by -12.7 to +21.5 and the aerosol by -1.8
+to +2.0; K_d^H lies inside what they and the depth make of it at all 143
+cells. With the average-particle phase function unknown, the Monte Carlo
+and HydroLight agree as closely as can be told.
+
+**OSOAA on the same cells**, with its own pure water taken off and added
+back so that it runs Solonenko & Mobley's totals, NUC 2240, its own
+aerosol and a 2 m/s wind (`tools/osoaa_sm_closure.py`,
+`examples/data/osoaa_sm_closure/`): 29 of the 143 cells cannot be run,
+where a or b is below OSOAA's own pure water. At the 114 it can run, its
+Kd is 0.986 to 1.037 times the Monte Carlo's and 0.877 to 1.158 times
+K_d^H (median 0.978). Given the same IOPs and the same phase function,
+OSOAA and the Monte Carlo agree within 4 percent.
+
+**Section 39 again.** With pure water's scattering and the sky,
+Williamson & Hollins's Kd rise by +1.3 to +7.6 percent, and OSOAA's Kd
+there is 0.991 to 1.018 times the Monte Carlo's instead of 1.007 to
+1.096: that was the gap. The conditions now move Kd by 0.79 to 1.44
+times; against Jerlov (1976) the Kd lie beyond that at the same blue
+cells as before (IB at 425 to 475 nm, now 1.41 to 1.55 times Jerlov's; 1C
+and 5C at 425 nm; 3C at 425 and 450 nm), and also IB at 500 nm (1.27),
+just beyond.
+

@@ -5442,3 +5442,51 @@ of `tools/` and of the examples, the figures recomputed in
 `tests/test_quoted_figures.py`. Nothing shipped changes.
 
 **Version.** 1.15.6.
+
+**Differences from the plan.**
+
+- Seeds: the plan said "seeded by run number". Before the first run every
+  run of one cell was given the same seed instead, so that the
+  differences between them are not swamped by the noise; the runs of
+  Williamson & Hollins's cells take the seeds of their runs in
+  `examples/data/kd_closure/`.
+- Added after the first run: section 92's 168 factor runs (sun, station,
+  pure water) with the water share and the sky. The first run had only
+  the base with them, and part 5 of the example needs the reach of the
+  conditions taken from the same Monte Carlo. They were appended, so the
+  first 2289 rows are byte for byte those of the first run (checked);
+  2457 runs in all, not "about 2000".
+- OSOAA: 286 runs (the base at an AOT of 0.2 and again at 0.05); at 29 of
+  the 143 cells S&M's a or b is below OSOAA's own pure water, and those
+  are recorded as not run.
+
+**What was found** (2026-11-16), as read off in the plan:
+
+1. The Monte Carlo with the water share and the sky over K_d^H, Kd to 10
+   percent: median 0.970, 94.4 percent of the 143 cells within 10
+   percent. The criterion is met. With the water share alone, 0.951 and
+   90.2 percent (met); as section 92 ran it, 0.945 and 79.7 percent (not).
+2. No cell lies outside what the stations, the sun, the aerosol and the
+   depth make of the base's Kd.
+3. OSOAA over the Monte Carlo on the same inputs: 0.986 to 1.037 at the
+   114 cells it can run; over K_d^H, median 0.978.
+4. On Williamson & Hollins's cells the water share moves the Monte
+   Carlo's Kd by -0.1 to +4.7 percent, with the sky +1.3 to +7.6, and
+   OSOAA over it goes from 1.007-1.096 to 0.991-1.018: section 93's
+   excess is accounted for. The conditions' reach becomes 0.79 to 1.44
+   (was 0.77 to 1.53); against Jerlov (1976) the same blue cells lie
+   beyond it, and IB at 500 nm (1.27) just beyond. `OPEN_QUESTIONS.md`'s
+   third question says so; its conclusion does not change. DATA.md
+   section 39 and the example's parts 1 to 4 keep section 92's figures
+   as what was first run.
+
+**Caught before the commit, by reading the output.** The example's part 5
+first printed "the same places as in section 3", because it looked only
+for cells that came inside the reach, not for IB at 500 nm, which went
+outside; it now reports both. DATA.md section 40's first draft said the
+ratio was 0.93 to 1.00 "for most types" (it is six of ten) and that
+"three codes" agree to a few percent (HydroLight was not given the same
+phase function; only OSOAA and the Monte Carlo were); both were
+corrected. A test first required the sky to raise Kd by more than 3
+percent, a figure not taken from any calculation; it failed at 2.1
+percent, and now requires only a rise.

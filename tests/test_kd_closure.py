@@ -276,7 +276,8 @@ def test_osoaa_against_the_monte_carlo(closure):
     assert "Kd 1.007 to 1.096 times the Monte Carlo's" in _flat(
         "OPEN_QUESTIONS.md")
     assert "but for 5C at 425 nm" in _flat("OPEN_QUESTIONS.md")
-    assert "up to 9.6 percent above" in _flat("OPEN_QUESTIONS.md")
+    # Section 40 accounts for it (tests/test_sm_closure.py).
+    assert "up to 9.6 percent above" in _flat("docs/open_questions.rst")
     assert round(100 * (ratios[-1][0] - 1), 1) == 9.6
     assert "1.007 to 1.096 times" in _flat("examples/README.md")
     assert "within 10 percent" in _flat("docs/open_questions.rst")

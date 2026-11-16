@@ -129,8 +129,13 @@ def inputs(run, root):
     return profile, phase, depth, aw_x
 
 
-def run_osoaa(run, root: pathlib.Path, work: pathlib.Path):
+def run_osoaa(run, root: pathlib.Path, work: pathlib.Path,
+              make_inputs=None):
     """OSOAA's Flux for one run, or None where OSOAA cannot be given it.
+
+    ``make_inputs(run, root)`` gives the run's profile, phase function,
+    seabed depth and total pure water; :func:`inputs` unless another is
+    given (``tools/osoaa_sm_closure.py``, DECISIONS.md section 94).
 
     OSOAA always adds its own pure water back. Where the total to be run
     is below OSOAA's own pure water, as Williamson & Hollins's a is in the
@@ -141,7 +146,8 @@ def run_osoaa(run, root: pathlib.Path, work: pathlib.Path):
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", jerlov.ProvenanceWarning)
         try:
-            profile, phase, depth, aw_x = inputs(run, root)
+            profile, phase, depth, aw_x = (make_inputs or inputs)(run,
+                                                                  root)
         except ValueError as refused:
             if "less the pure water given is negative" not in str(refused):
                 raise
