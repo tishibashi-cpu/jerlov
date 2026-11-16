@@ -3,7 +3,7 @@
 What every shipped table is, where it came from, what was verified, and what
 is known to be wrong with it.
 
-Forty-five entries are recorded below. Thirteen are confirmed defects, three were
+Forty-six entries are recorded below. Thirteen are confirmed defects, three were
 open questions that the first edition of Jerlov settled, and the rest are
 notes rather than defects. None of them is repaired silently: values that
 could be recovered carry `status = reconstructed` and say how, values that
@@ -52,6 +52,8 @@ could not are `missing`, and values that are used but doubtful are `suspect`.
 | `mobley1999_rho.csv` | The sea surface's reflectance factor rho for above-water radiometry, Mobley (1999), as the Ocean Optics Web Book distributes it: 550 nm, wind 0-14 m/s, sun 0-80 degrees, 118 viewing directions | 8496 |
 | `mobley2015_rho.csv` | The same, Mobley (2015), polarised, a Rayleigh sky; wind 0-15 m/s, sun 0-87.5 degrees; **calls itself preliminary** | 11800 |
 | `morel1988_kd.csv` | Kw, chi and e of K = Kw + chi C^e for case 1 water, Morel (1988) Table 2, C the Chl a + Pheo a concentration. 5 nm, 400-700 nm | 61 |
+| `morel2007_aw.csv` | Pure water absorption aw1 (300-500 nm) and aw2 (300-370 nm), and pure sea water scattering bsw, Morel et al. (2007) Table 2. 5 nm | 41 |
+| `morel2007_stations.csv` | The eight stations of the clearest waters, South Pacific gyre 2004: Chl, Zeu, Kd and ap at 420 and 310 nm, Rmax, atot and ay; Morel et al. (2007) Table 1 | 8 |
 
 The four tables drawn from the two Dstl datasets (`williamson2022_iop`,
 `williamson2022_measured`, `solonenko2015_iop` and `williamson2023_depth`)
@@ -2864,3 +2866,48 @@ Since 1.19.0, `morel1988_kd` gives K = Kw + chi C^e (Eqs. 8 and 9)
   whole change: the revised Kw alone lowers Kd by more than it falls, and
   the revised chi C^e raises it a little. The nearest Jerlov type (1976)
   differs only at 0.03 mg m^-3: IA from 1988, I from 2001.
+
+## 46. The clearest natural waters: Morel et al. (2007) (note)
+
+Morel, A., Gentili, B., Claustre, H., Babin, M., Bricaud, A., Ras, J. and
+Tièche, F. (2007), "Optical properties of the 'clearest' natural waters",
+*Limnol. Oceanogr.* 52(1), 217-229, doi:10.4319/lo.2007.52.1.0217,
+supplied by the user. Measurements of the BIOSOPE cruise, South Pacific
+gyre, November 2004. `tools/build_morel2007.py` carries both tables as
+literals, read from the page images and checked against the text layer;
+since 1.20.0 they are `morel2007_stations()` and
+`pure_water_absorption_table(..., source="morel2007")` and
+`"morel2007_aw2"` (DECISIONS.md section 102).
+
+- **Table 2, pure water.** aw1, 300-500 nm: Buiteveld et al. (1994) from
+  Boivin et al. (1986) below 366 nm, joined smoothly to Pope & Fry (1997)
+  at 420 nm; aw2, 300-370 nm, from Quickenden & Irvin (1980), joined to
+  aw1 at 366 nm (they are equal at 370). The authors give them as "a
+  tentative upper bound" for pure water from in situ data. bsw is
+  Buiteveld et al.'s scattering times 1.30 for salt; bbsw is half of it.
+- **Not Pope & Fry's at every wavelength.** The caption says "the values
+  beyond 420 nm are those of Pope and Fry (1997)". At 420, 430, ..., 500 nm
+  they are, to the digit of the shipped `pope1997_aw.csv`; at 425, 435, 445
+  and 455 nm they are the mean of Pope & Fry's values 5 nm either side,
+  not Pope & Fry's own (at 435 nm 0.00565 against 0.00530). The build
+  checks both.
+- **Table 1, a likely misprint.** a_tot and a_p are shared by the two
+  yellow substance estimates, so ay2 - ay1 at 310 nm must be aw1(310) -
+  aw2(310) = 0.0183. It is 0.0182 at six stations and 0.0082 at GYR-5 and
+  STB-14: one of the two values there is likely misprinted by 0.0100.
+  They are kept as printed, the rows are `suspect`, and
+  `morel2007_stations()` warns.
+- **Against the models and Jerlov.** `examples/ocean_colour_and_secchi.py`
+  part 11. The stations' Kd(420) is 0.0120 to 0.0230 per m; Jerlov's
+  (1976) type I at 420 nm is 0.0232 on the package's 1 nm grid, so they
+  are 0.52 to 0.99 of it; Austin & Petzold's (1986) type I, pure sea
+  water's Kw, is 0.0191, and seven of the eight stations are below it.
+  Their own pure sea water, aw1 + bsw / 2 at 420 nm, is 0.0073. Against
+  Morel & Maritorena's (2001) Kd at each station's chlorophyll at 5 m, the
+  measured Kd is 0.71 to 0.97 of it; the paper's Fig. 5 likewise shows the
+  lowest-chlorophyll stations below that relation. Morel's (1988) edition
+  gives more still, at chlorophyll below the range it was run over.
+- The Fig. 5 caption quotes Morel & Maritorena's Kbio(420) = 0.1227
+  [Chl]^0.659, their Table 2's chi and e at 420 nm (0.12269, 0.65917)
+  rounded.
+- The Kd and reflectance spectra are in figures only, and were not read.

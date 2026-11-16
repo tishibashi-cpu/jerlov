@@ -125,6 +125,7 @@ from .ocean_colour import (
 )
 from .absorption_meter import (rottgers2013_a715,
                                rottgers2013_scatter_correction)
+from .clearest import ClearWaterStation, morel2007_stations
 from .qaa import (QAAResult, RamanCorrection, lee2013_raman_correction,
                   qaa_ioccg2006, qaa_v6)
 from .sources import (
@@ -239,6 +240,8 @@ __all__ = [
     "visual_pigment_template",
     "receptor_noise_distance",
     "morel1988_kd",
+    "morel2007_stations",
+    "ClearWaterStation",
     "morel2001_kd",
     "morel2001_bbp",
     "bricaud1995_aph",
@@ -289,4 +292,4 @@ __all__ = [
     "OsoaaRadianceScan",
 ]
 
-__version__ = "1.19.0"
+__version__ = "1.20.0"

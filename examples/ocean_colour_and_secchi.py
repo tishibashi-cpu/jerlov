@@ -756,6 +756,56 @@ words. 1988's warning beyond 650 nm is its own. DATA.md section 45.""")
     return dict(ratios=ratios, nearest=nearest, kw_share=kw_share)
 
 
+def clearest_part():
+    rule("11. The clearest water measured, against the models and Jerlov I")
+    print("""Morel et al. (2007) measured Kd in the South Pacific gyre, the clearest
+ocean water known (`morel2007_stations`). Each station's Kd(420) beside
+Morel & Maritorena's (2001) and Morel's (1988) Kd at its chlorophyll at 5
+m, put into both, Jerlov's (1976) type I and Austin & Petzold's (1986)
+type I, which they meant as pure sea water, at the same wavelength:
+""")
+    with warnings.catch_warnings(record=True) as record:
+        warnings.simplefilter("always")
+        stations = jerlov.morel2007_stations()
+        jerlov_i = float(jerlov.water("I", source="jerlov1976").kd(420.0))
+        austin_i = float(jerlov.water("I", source="austin1986").kd(420.0))
+        rows = []
+        for s in stations:
+            c = s.chl_5m_mg_m3
+            rows.append((s.station, c, s.kd_420_per_m,
+                         jerlov.morel2001_kd(420.0, chlorophyll_mg_m3=c),
+                         jerlov.morel1988_kd(420.0, pigment_mg_m3=c)))
+    flagged = sorted({str(w.message)[:70] for w in record
+                      if issubclass(w.category, jerlov.ProvenanceWarning)})
+    for w in record:
+        if not issubclass(w.category, jerlov.ProvenanceWarning):
+            warnings.warn_explicit(w.message, w.category, w.filename,
+                                   w.lineno)
+    print(f"  {'station':>8} {'Chl':>6} {'Kd(420)':>8} {'2001':>7} {'1988':>7}")
+    for station, c, kd, k01, k88 in rows:
+        print(f"  {station:>8} {c:>6.4f} {kd:>8.4f} {k01:>7.4f} {k88:>7.4f}")
+    aw1 = jerlov.pure_water_absorption_table(420.0, source="morel2007")
+    kd_sw = aw1 + 0.0056 / 2      # Table 2: bsw(420) = 0.0056, bbsw half
+    kds = np.array([r[2] for r in rows])
+    to_2001 = np.array([r[2] / r[3] for r in rows])
+    print(f"""
+  Jerlov I {jerlov_i:.4f}, Austin & Petzold's type I {austin_i:.4f}, and their own
+  pure sea water, aw1 + bsw / 2 (Table 2), {kd_sw:.4f}.
+
+The stations' Kd(420) is {kds.min():.4f} to {kds.max():.4f}: {kds.min() / jerlov_i:.2f} to {kds.max() / jerlov_i:.2f} of Jerlov I,
+and at {int(np.sum(kds < austin_i))} of the 8 stations below Austin & Petzold's type I, which is
+pure sea water's Kw. The measured Kd is {to_2001.min():.2f} to {to_2001.max():.2f} of Morel & Maritorena's
+(2001) at the same chlorophyll, and lower still against 1988's, whose
+chlorophyll here is below the 0.03 mg/m3 it was run from. Morel et al.'s
+Kd spectra (their Fig. 4) are from the surface to 20-59 m; the models' Kd
+is of about one penetration depth. The warnings:""")
+    for message in flagged:
+        print(f"  - {message}...")
+    print("  DATA.md section 46.")
+    return dict(kd=kds, to_2001=to_2001, jerlov_i=jerlov_i,
+                austin_i=austin_i, kd_sw=kd_sw)
+
+
 def main():
     _banner()
     caught = set()
@@ -770,6 +820,7 @@ def main():
     pure_water = pure_water_part(caught)
     above_water = above_water_part(caught)
     editions = editions_part()
+    clearest = clearest_part()
     if caught:
         rule("Warnings")
         print("Raised along the way, each a ProvenanceWarning:")
@@ -802,7 +853,7 @@ def main():
                 depends=depends, by_pair=by_pair, by_ratio=by_ratio, products=products, nearest=nearest,
                 recovered=recovered, case1=case1, geometry=geometry,
                 pure_water=pure_water, above_water=above_water,
-                editions=editions, caught=caught)
+                editions=editions, clearest=clearest, caught=caught)
 
 
 if __name__ == "__main__":
