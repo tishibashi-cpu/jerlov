@@ -5860,3 +5860,142 @@ wording said the violet figures "rest on an extrapolation of either
 relation"; the package gives no fitted range for Gordon et al.'s, so it
 now says only that they rest on Lee et al.'s outside its data, where the
 two part.
+
+## 98. Kd of the visible and of the whole shortwave from a and bb, and the euphotic depth (1.16.0): the plan
+
+The user chose (2026-11-16) NEXT_STEPS's item 10 of section 0b, and then to
+put it in the package, infrared and shortwave included. The papers, which
+the user supplied, were read from their page images:
+
+- Lee, Du, Arnone, Liew and Penta (2005), "Penetration of solar radiation
+  in the upper ocean: A numerical model for oceanic and coastal waters",
+  J. Geophys. Res. 110, C09019, doi:10.1029/2004JC002780. Not the Lee, Du
+  & Arnone (2005) of `lee2005_kd` (C02016), which Lee et al. (2007) call
+  2005a; this one they call 2005b.
+- Lee, Weidemann, Kindle, Arnone, Carder and Davis (2007), "Euphotic zone
+  depth: Its derivation and implication to ocean-color remote sensing",
+  J. Geophys. Res. 112, C03009, doi:10.1029/2006JC003802.
+
+**What they give.** With z the depth in metres and theta the sun's zenith
+angle above the surface:
+
+- Visible, 350-700 nm, energy, downwelling planar irradiance (2005, Eq. 7
+  p. 5; Eq. 9 p. 6; Table 2 p. 7): K_VIS(z) = K1 + K2 / (1 + z)^0.5, the
+  mean attenuation from 0 to z, with K1 = [chi0 + chi1 a(490)^0.5 + chi2
+  bb(490)] (1 + alpha0 sin theta), K2 = [zeta0 + zeta1 a(490) + zeta2
+  bb(490)] (alpha1 + alpha2 cos theta); chi = -0.057, 0.482, 4.221; zeta
+  = 0.183, 0.702, -2.567; alpha = 0.090, 1.465, -0.667. Fitted to 300
+  HydroLight runs: Pope & Fry's pure water, Petzold's average phase
+  function, Gregg & Carder's sky, wind 5 m/s, the sun at 10, 30 and 60
+  degrees (pp. 4-5); K_VIS 0.04-1.6 per m (p. 5); T_VIS 0.001-0.8, average
+  error 9 percent above 0.003 (p. 7).
+- Infrared, 700-2500 nm (Eq. 4 p. 3): K_IR(z) = [0.560 + 2.304 / (0.001 +
+  z)^0.65] (1 + 0.002 theta), theta in degrees, fitted over 0.01-3 m and
+  the sun 0-60 degrees, independent of the water.
+- Shortwave (Eq. 11 p. 7): T(z) = F_VIS exp(-K_VIS z) + (1 - F_VIS)
+  exp(-K_IR z), F_VIS the visible share of the shortwave just below the
+  surface, which Lee et al. take as 0.424 from Mobley (1994).
+- The depth where E_VIS is a fraction f of its surface value (2007,
+  Eqs. 5-9 p. 3): with tau = -ln f, the smaller positive root of z^3 + y1
+  z^2 + y2 z + y3 = 0, y1 = (K1^2 - K2^2 - 2 tau K1) / K1^2, y2 = (tau^2 - 2
+  tau K1) / K1^2, y3 = tau^2 / K1^2. (Squaring K_VIS(z) z = tau gives
+  exactly this cubic; checked by hand before the plan.) The paper takes
+  E_VIS's depths for PAR's: different band, units and kind of irradiance,
+  "less than 10%" apart in z (p. 4).
+
+**The functions** (public; with no defaults; 1.16.0, a minor version):
+
+- `lee2005_kvis(a490, bb490, depth_m, /, *, sun_zenith_deg)` -> K_VIS;
+- `lee2005_kir(depth_m, /, *, sun_zenith_deg)` -> K_IR;
+- `lee2005_shortwave_transmittance(a490, bb490, depth_m, /, *,
+  sun_zenith_deg, visible_fraction)` -> T; `visible_fraction` has no
+  default (Lee et al.'s 0.424 is Mobley's, and the share changes with the
+  sky and the sun);
+- `lee2007_depth_of_fraction(a490, bb490, /, *, sun_zenith_deg, fraction)`
+  -> z; the euphotic depth is `fraction=0.01`.
+
+They refuse what is not a number, inf and negative input, a fraction not
+in (0, 1), and a sun not in [0, 90). Where K1 or K2 come out negative (K1
+does for very small a: chi0 is negative) K_VIS can fall to or below zero
+and the depth has no root; that is refused, not clipped. ProvenanceWarning
+(the paper's own ranges): the sun outside 10-60 degrees (VIS) or 0-60
+(IR); K_VIS outside 0.04-1.6 per m; T_VIS below 0.001; K_IR at depths
+outside 0.01-3 m.
+
+Tests: the coefficients against Table 2; the cubic's root put back into
+K_VIS(z) z = tau; K_VIS at the surface and at depth from K1 and K2 by hand;
+Eq. 4 at the surface; the refusals and warnings; scalars and arrays.
+
+**Against what is shipped.** Solonenko & Mobley's (2015) a and b for all
+ten types (inverted from Jerlov 1968, the edition of Table XXI), and
+Williamson & Hollins's for IB-5C; bb = bw / 2 + r (b - bw) from each of
+Petzold's eight B/S, since no source gives r for a type.
+
+1. Jerlov (1977) quanta, 350-700 nm, 7 types: the depths of 30, 10, 3 and
+   1 percent against `lee2007_depth_of_fraction`, the sun at 15 degrees
+   for the oceanic types and 45 for the coastal (Solonenko & Mobley's
+   Eq. 3 convention; Jerlov 1977's own sun is not recorded) and 0 to 60 as
+   a factor. Read off: the ratio of the computed to the measured depth,
+   and whether Jerlov's depth lies within what r and the sun make.
+2. Jerlov (1968) Table XXI, the shortwave fraction against depth
+   (`jerlov1968_solar_fraction`), the sun at the zenith for the oceanic
+   types and 45 degrees for the coastal, as its footnote says, against
+   `lee2005_shortwave_transmittance` with F_VIS = 0.424 (Lee et al.'s) and
+   0.40 and 0.45 as a factor; and Paulson & Simpson's fit
+   (`shortwave_parameters`) on the oceanic types. Read off: the ratio at
+   each tabulated depth; at each depth, whether Lee et al.'s model or
+   Paulson & Simpson's misses Table XXI by less, median over the oceanic
+   types.
+3. `par_profile`'s 1 percent depth (400-700 nm, Jerlov 1976 Kd, D65 as in
+   `euphotic_zone.py`) beside both.
+
+The 300-350 nm in Table XXI and not in Lee et al.'s 350-2500 nm is about 1
+percent of the shortwave (Lee et al., p. 7); it is noted, not corrected.
+
+**Where.** The VIS and euphotic functions in `jerlov/ocean_colour.py`
+beside `lee2005_kd`; the IR and shortwave in `jerlov/shortwave.py`; parts
+in `euphotic_zone.py` (1) and `solar_heating.py` (2); DATA.md section 42;
+README, `docs/api.rst`, the CHANGELOG.
+
+**Version.** 1.16.0: four public names.
+
+**Differences from the plan.**
+
+- 490 nm is not one of Solonenko & Mobley's or Williamson & Hollins's
+  wavelengths; a(490) and b(490) are read between the tabulated ones, as
+  `water(...).a(490)` does. The plan did not say how.
+- E_VIS is called Ed (downwelling irradiance) in the 2005 paper and the
+  "downwelling vector irradiance" in 2007; the docstrings give both, not
+  the "planar" the plan said.
+- Text that NumPy reads as a number ("0.1") is accepted for a490, bb490,
+  depth_m, the sun and the fraction, as `lee2005_kd` already accepts it;
+  only `visible_fraction` refuses it, with the check `_single` uses. The
+  plan said non-numbers are refused; the shared helpers were not changed
+  for this.
+- The shortwave function warns of K_IR's fitted depths only above 0.01 m
+  (not at 0, where T is 1 whatever K_IR is), and not below 3 m, where the
+  paper says E_IR "is negligible" (p. 3). `lee2005_kir` warns at both.
+- Comparison 2 reads off, besides the plan's ratios, how much F_VIS and r
+  each move T. The F_VIS factor and the eight r were run; the sun was held
+  at Table XXI's footnote, as planned.
+- Comparison 3 (PAR's 1 percent depth from Jerlov's 1976 Kd) is printed
+  in `euphotic_zone.py` part 7 for the 1 percent level only.
+
+**What was found** (DATA.md section 42).
+
+- Jerlov's (1977) quanta levels: Lee et al.'s depths are a median 1.13 of
+  his with Solonenko & Mobley's a and b, and 0.91 with Williamson &
+  Hollins's; r and the sun together move a depth by up to 2.4 times, and
+  his depth lies within that in 38 of 48 cells. Outside: with Solonenko &
+  Mobley's IOPs, the 1 percent level of IA and IB (too deep); with
+  Williamson & Hollins's, every level of IB and II (too shallow). For I
+  and IA the model from a and bb is nearer his 1 percent depth than PAR
+  from his own (1976) Kd and D65 (1.23 and 1.28 against 1.62 and 1.43).
+- Table XXI: at 1 m Lee et al.'s T is 0.91 to 1.08 of the table over the
+  ten types, against Paulson & Simpson's 0.98 to 1.46 over the oceanic
+  five; the model misses less than the fit in 3 or 4 of the five oceanic
+  types at 1 to 10 m, and in at most 1 below. F_VIS of 0.40 and 0.45 moves
+  T by 4.3 to 6.1 percent; r moves it more, for the turbid types from 2 m.
+- Solonenko & Mobley's b(490) of I and IA rests on values flagged suspect
+  and warns; with their I and IA, the model's K_VIS falls below 0.04 per m
+  at the deeper levels, outside its fit, and warns.

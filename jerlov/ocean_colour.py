@@ -94,7 +94,7 @@ _LEE2011_U = (0.0002, 0.37)
 #: Chlorophyll concentrations, mg m^-3, that Morel & Maritorena's pooled
 #: data spanned: 0.02 to more than 30 (p. 7164).
 _MOREL_CHL = (0.02, 30.0)
-#: Sun zenith angles, degrees, of the Hydrolight runs each Kd model was
+#: Sun zenith angles, degrees, of the HydroLight runs each Kd model was
 #: fitted to, and the range of Kd, 1/m, it is stated to be good for.
 _LEE2005_SUN, _LEE2005_KD = (10.0, 60.0), (0.05, 5.7)
 _LEE2013_SUN, _LEE2013_KD = (5.0, 60.0), (0.02, 5.0)
@@ -400,7 +400,7 @@ def lee2005_kd(a, bb, /, *, sun_zenith_deg):
 
     Notes
     -----
-    Fitted to Hydrolight runs with the sun 10 to 60 degrees from the zenith
+    Fitted to HydroLight runs with the sun 10 to 60 degrees from the zenith
     and stated good for Kd of about 0.05 to 5.7 1/m (pp. 6-7 of 10); outside
     either the result comes with a :class:`ProvenanceWarning`. Lee et al.
     (2013) found it overestimates Kd in clear water and the UV, and revised
@@ -411,6 +411,204 @@ def lee2005_kd(a, bb, /, *, sun_zenith_deg):
     kd = (1 + 0.005 * sun) * a + 4.18 * (1 - 0.52 * np.exp(-10.8 * a)) * bb
     _kd_range(np.asarray(kd), _LEE2005_KD, "Lee et al. (2005)")
     return _result(kd, a, bb, sun)
+
+
+#: Lee, Du, Arnone, Liew and Penta (2005), J. Geophys. Res. 110, C09019,
+#: Table 2 (p. 7): chi0 (1/m), chi1, chi2; zeta0 (1/m), zeta1, zeta2;
+#: alpha0, alpha1, alpha2.
+LEE2005_KVIS_CHI = (-0.057, 0.482, 4.221)
+LEE2005_KVIS_ZETA = (0.183, 0.702, -2.567)
+LEE2005_KVIS_ALPHA = (0.090, 1.465, -0.667)
+#: The sun of the HydroLight runs (10, 30 and 60 degrees, p. 4), the range
+#: of K_VIS they spanned (0.04-1.6 1/m, p. 5), and the smallest T_VIS the
+#: fit was judged on (0.001, p. 7).
+_KVIS_SUN, _KVIS_RANGE, _KVIS_T_MIN = (10.0, 60.0), (0.04, 1.6), 0.001
+_KVIS_PAPER = "Lee et al. (2005, C09019)"
+
+
+def _kvis_k1_k2(a490, bb490, sun):
+    """K1 and K2 of Lee et al.'s (2005, C09019) Eq. (9), refusing values
+    that would let K_VIS fall to zero or below."""
+    chi0, chi1, chi2 = LEE2005_KVIS_CHI
+    zeta0, zeta1, zeta2 = LEE2005_KVIS_ZETA
+    alpha0, alpha1, alpha2 = LEE2005_KVIS_ALPHA
+    theta = np.radians(sun)
+    k1 = (chi0 + chi1 * np.sqrt(a490) + chi2 * bb490) * (
+        1 + alpha0 * np.sin(theta))
+    k2 = (zeta0 + zeta1 * a490 + zeta2 * bb490) * (
+        alpha1 + alpha2 * np.cos(theta))
+    with np.errstate(invalid="ignore"):
+        if np.any(k1 <= 0) or np.any(k2 < 0):
+            raise ValueError(
+                "the model's K1 must be positive and K2 not negative; for "
+                "these a(490) and bb(490) they are not (K1's constant "
+                "term is negative, so very small a(490) gives K1 <= 0, and "
+                "bb(490) large against a(490) gives K2 < 0), and K_VIS "
+                "could then fall to zero or below; it is refused, not "
+                "clipped. DECISIONS.md section 98.")
+    return k1, k2
+
+
+def _kvis_check(kvis, depth):
+    lo, hi = _KVIS_RANGE
+    known = kvis[~np.isnan(kvis)]
+    if known.size and (np.min(known) < lo or np.max(known) > hi):
+        _warn(f"{_KVIS_PAPER}'s HydroLight runs spanned K_VIS of {lo:g} "
+              f"to {hi:g} 1/m; some of these values lie outside that.")
+    with np.errstate(invalid="ignore"):
+        t = np.exp(-kvis * depth)
+    if np.any(t[~np.isnan(t)] < _KVIS_T_MIN):
+        _warn(f"{_KVIS_PAPER} judged the fit for T_VIS of {_KVIS_T_MIN:g} "
+              "and above; at some of these depths less than that is left.")
+
+
+@_data.positional_only()
+def lee2005_kvis(a490, bb490, depth_m, /, *, sun_zenith_deg):
+    """The attenuation of visible solar energy, from the surface to a depth.
+
+    Lee, Z., Du, K., Arnone, R., Liew, S. and Penta, B. (2005),
+    "Penetration of solar radiation in the upper ocean: A numerical model
+    for oceanic and coastal waters", J. Geophys. Res. 110, C09019,
+    doi:10.1029/2004JC002780 (not the C02016 of :func:`lee2005_kd`). Eqs.
+    (7) and (9), Table 2::
+
+        K_VIS(z) = K1 + K2 / (1 + z)^0.5
+        K1 = [chi0 + chi1 a(490)^0.5 + chi2 bb(490)] (1 + alpha0 sin theta)
+        K2 = [zeta0 + zeta1 a(490) + zeta2 bb(490)] (alpha1 + alpha2 cos theta)
+
+    with the constants ``jerlov.ocean_colour.LEE2005_KVIS_CHI``,
+    ``LEE2005_KVIS_ZETA`` and ``LEE2005_KVIS_ALPHA``. E_VIS(z) = E_VIS(0)
+    exp(-K_VIS(z) z).
+
+    Parameters
+    ----------
+    a490, bb490:
+        The total absorption and backscattering coefficients at 490 nm,
+        1/m, positive; numbers or arrays that broadcast together and with
+        the rest. NaN marks a gap and gives NaN.
+    depth_m:
+        z, metres below the surface, not negative.
+    sun_zenith_deg:
+        theta, the sun's zenith angle above the surface, degrees, in
+        [0, 90). No default.
+
+    Returns
+    -------
+    K_VIS(z), 1/m: the mean attenuation from just below the surface to z
+    of the downwelling irradiance Ed, in energy, summed over 350-700 nm
+    (Lee et al. 2007 call it the "downwelling vector irradiance"). A
+    float if every input is a number, an array otherwise.
+
+    Raises
+    ------
+    ValueError
+        For input that is not a number, infinite or out of range, and where
+        K1 would not be positive or K2 would be negative.
+
+    Notes
+    -----
+    Fitted to 300 HydroLight runs (pp. 4-5): Pope & Fry's pure water,
+    Petzold's average-particle phase function, Gregg & Carder's clear sky,
+    wind 5 m/s, the sun at 10, 30 and 60 degrees, K_VIS 0.04 to 1.6 1/m;
+    the average error of T_VIS was 9 percent above 0.003 (p. 7). Outside
+    the sun, the K_VIS or a T_VIS of 0.001 the result comes with a
+    :class:`ProvenanceWarning`. This is energy over 350-700 nm; PAR is
+    quanta over 400-700 nm. Lee et al. (2007, p. 4) found "the difference
+    between zx% measured by either EVIS or PAR is small (less than 10%)".
+    DECISIONS.md section 98.
+    """
+    a, bb = _check_iops(a490, bb490)
+    depth = _finite(depth_m, "depth_m")
+    if np.any(depth < 0):
+        raise ValueError("depth_m must not be negative")
+    sun = _sun(sun_zenith_deg, _KVIS_SUN, _KVIS_PAPER)
+    k1, k2 = _kvis_k1_k2(a, bb, sun)
+    kvis = k1 + k2 / np.sqrt(1 + depth)
+    _kvis_check(np.asarray(kvis, dtype=float), depth)
+    return _result(kvis, a, bb, depth, sun)
+
+
+def _smaller_root(k1: float, k2: float, tau: float) -> float:
+    """The depth of Lee et al.'s (2007) Eq. (8), the cubic got by squaring
+    K1 z + K2 z / (1 + z)^0.5 = tau: its smaller positive root that is a
+    root of the unsquared equation too."""
+    if np.isnan(k1) or np.isnan(k2) or np.isnan(tau):
+        return float("nan")
+    y1 = (k1 * k1 - k2 * k2 - 2 * tau * k1) / (k1 * k1)
+    y2 = (tau * tau - 2 * tau * k1) / (k1 * k1)
+    y3 = tau * tau / (k1 * k1)
+    roots = np.roots([1.0, y1, y2, y3])
+    found = []
+    for root in roots:
+        if abs(root.imag) > 1e-9 * max(1.0, abs(root.real)):
+            continue
+        z = float(root.real)
+        if z <= 0:
+            continue
+        # Squaring admits roots of K1 z - K2 z / (1 + z)^0.5 = tau too.
+        if abs(k1 * z + k2 * z / np.sqrt(1 + z) - tau) <= 1e-8 * tau:
+            found.append(z)
+    if not found:                   # pragma: no cover - not seen
+        raise ValueError("no positive depth solves Lee et al.'s (2007) "
+                         f"Eq. (8) for K1={k1}, K2={k2}, tau={tau}")
+    return min(found)
+
+
+@_data.positional_only()
+def lee2007_depth_of_fraction(a490, bb490, /, *, sun_zenith_deg, fraction):
+    """The depth where visible solar energy falls to a fraction of its
+    surface value; at 0.01, the euphotic depth.
+
+    Lee, Z., Weidemann, A., Kindle, J., Arnone, R., Carder, K. L. and
+    Davis, C. (2007), "Euphotic zone depth: Its derivation and implication
+    to ocean-color remote sensing", J. Geophys. Res. 112, C03009,
+    doi:10.1029/2006JC003802. Eqs. (5)-(9): with tau = -ln(fraction), z
+    solves K_VIS(z) z = tau, K_VIS of :func:`lee2005_kvis`; squared, the
+    cubic z^3 + y1 z^2 + y2 z + y3 = 0 with::
+
+        y1 = (K1^2 - K2^2 - 2 tau K1) / K1^2
+        y2 = (tau^2 - 2 tau K1) / K1^2
+        y3 = tau^2 / K1^2
+
+    of whose roots the smaller positive one is the depth (p. 3). Here each
+    root is also put back into the unsquared equation, and only one that
+    satisfies it is returned.
+
+    Parameters
+    ----------
+    a490, bb490:
+        As for :func:`lee2005_kvis`.
+    sun_zenith_deg:
+        As for :func:`lee2005_kvis`. No default.
+    fraction:
+        E_VIS(z) / E_VIS(0), in (0, 1): 0.01 for the euphotic depth, 0.1
+        and 0.5 as the paper also uses. No default.
+
+    Returns
+    -------
+    z, metres. A float if every input is a number, an array otherwise.
+
+    Notes
+    -----
+    The paper takes this depth for that of PAR, 400-700 nm in quanta: "the
+    difference between zx% measured by either EVIS or PAR is small (less
+    than 10%)" (p. 4).
+    The warnings of :func:`lee2005_kvis` apply at the depth found.
+    DECISIONS.md section 98.
+    """
+    a, bb = _check_iops(a490, bb490)
+    f = _finite(fraction, "fraction")
+    if np.any(f <= 0) or np.any(f >= 1):
+        raise ValueError("fraction must lie in (0, 1)")
+    sun = _sun(sun_zenith_deg, _KVIS_SUN, _KVIS_PAPER)
+    k1, k2 = _kvis_k1_k2(a, bb, sun)
+    tau = -np.log(f)
+    k1b, k2b, taub = np.broadcast_arrays(np.asarray(k1, dtype=float),
+                                         np.asarray(k2, dtype=float), tau)
+    depth = np.vectorize(_smaller_root, otypes=[float])(k1b, k2b, taub)
+    _kvis_check(np.asarray(k1b + k2b / np.sqrt(1 + depth), dtype=float),
+                depth)
+    return _result(depth, a, bb, sun, f)
 
 
 @_data.positional_only()
@@ -450,7 +648,7 @@ def lee2013_kd(a, bb, /, *, bb_water, sun_zenith_deg):
     -----
     The term in bb_water lets molecular scattering, whose phase function
     differs from that of particles, count for less (p. 4242). Fitted to
-    Hydrolight runs with the sun at 5, 30 and 60 degrees, 360-560 nm, and
+    HydroLight runs with the sun at 5, 30 and 60 degrees, 360-560 nm, and
     stated good for Kd of about 0.02 to 5.0 1/m (p. 4243); outside the
     angles or the range the result comes with a :class:`ProvenanceWarning`.
     DECISIONS.md section 66.
@@ -547,7 +745,7 @@ def lee2011_rrs(a, bb, /, *, bb_water, coefficients):
 
     Notes
     -----
-    The coefficients were fitted to Hydrolight runs on the IOP sets of
+    The coefficients were fitted to HydroLight runs on the IOP sets of
     IOCCG Report 5, with bb/(a + bb) from 0.0002 to 0.37 (p. 3159);
     outside that range the result comes with a :class:`ProvenanceWarning`.
     The particle phase function was a blend of Petzold's average and a
@@ -708,7 +906,7 @@ def above_surface_rrs(rrs, /):
     -----
     0.52 stands for the transmission of the surface both ways over the
     square of the refractive index, and 1.7 for the reflection of upwelling
-    light back down; Lee et al. found these from Hydrolight for optically
+    light back down; Lee et al. found these from HydroLight for optically
     deep water and a sensor looking straight down (p. 5757).
     DECISIONS.md section 66.
     """

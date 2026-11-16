@@ -9,6 +9,8 @@ fitted to.
     python examples/solar_heating.py
 """
 
+import warnings
+
 import numpy as np
 
 import jerlov
@@ -142,6 +144,73 @@ try:
     jerlov.shortwave_parameters("3C")
 except KeyError as error:
     print(f"\n    {str(error)[:96]}...")
+
+# --------------------------------------------------------------------------
+rule("6. A model whose attenuation changes with depth")
+
+print("""Lee et al. (2005, C09019) split the shortwave at 700 nm and let each
+part's attenuation change with depth: K_VIS from a(490), bb(490) and the
+sun, K_IR from the depth and the sun alone. `lee2005_shortwave_transmittance`
+gives T(z) = F_VIS exp(-K_VIS z) + (1 - F_VIS) exp(-K_IR z), with their
+F_VIS of 0.424. Its a(490) and bb(490) here are Solonenko & Mobley's
+(2015) a and b, inverted from the same edition as Table XXI, with bb = bw
+/ 2 + 0.018 (b - bw), r of Petzold's NUC 2240; the sun as Table XXI's
+footnote has it, at the zenith for the oceanic types and 45 degrees for
+the coastal. Each column is the model over Table XXI. DECISIONS.md
+section 98.
+""")
+
+R_NUC = jerlov.petzold_scattering("NUC 2240").backscatter_ratio
+
+
+def lee_fraction(water_type, depths, source="solonenko2015",
+                 visible_fraction=0.424, ratio=R_NUC):
+    water = jerlov.water(water_type, source=source)
+    constants = water.source.scattering
+    bw = constants.bw_coeff * (400.0 / 490.0) ** constants.bw_exponent
+    a, b = float(water.a(490.0)), float(water.b(490.0))
+    sun = 0.0 if water_type in OCEANIC else 45.0
+    return jerlov.lee2005_shortwave_transmittance(
+        a, bw / 2 + ratio * (b - bw), depths, sun_zenith_deg=sun,
+        visible_fraction=visible_fraction)
+
+
+SHOWN = (1.0, 2.0, 5.0, 10.0, 25.0, 50.0)
+print(f"  {'type':>5} {'':>6}" + "".join(f"{d:>7g} m" for d in SHOWN))
+misses = {d: [] for d in SHOWN}
+with warnings.catch_warnings(record=True) as caught:
+    warnings.simplefilter("always", jerlov.ProvenanceWarning)
+    for water_type in ("I", "IA", "IB", "II", "III", "1C", "3C", "5C"):
+        depths, table = jerlov.jerlov1968_solar_fraction(water_type)
+        want = {d: t for d, t in zip(depths, table)}
+        here = [d for d in SHOWN if d in want and not np.isnan(want[d])]
+        lee = lee_fraction(water_type, np.array(here))
+        print(f"  {water_type:>5} {'Lee':>6}" + "".join(
+            f"{x / want[d]:>9.2f}" for d, x in zip(here, lee)))
+        if water_type in OCEANIC:
+            ps = jerlov.solar_fraction(water_type, np.array(here))
+            print(f"  {'':>5} {'P & S':>6}" + "".join(
+                f"{x / want[d]:>9.2f}" for d, x in zip(here, ps)))
+            for d, x, y in zip(here, lee, ps):
+                misses[d].append((abs(np.log(x / want[d])),
+                                  abs(np.log(y / want[d]))))
+kinds = sorted({str(w.message)[:70] for w in caught})
+print(f"\n  {len(caught)} warnings; they begin:")
+for kind in kinds:
+    print(f"    {kind}...")
+
+closer = {d: sum(x < y for x, y in m) for d, m in misses.items()}
+print("\n  Of the five oceanic types, Lee et al.'s model misses Table XXI by")
+print("  less than Paulson & Simpson's fit at")
+print("  " + ", ".join(f"{d:g} m in {n}" for d, n in closer.items()) + ".")
+print("""
+  Paulson & Simpson's numbers were fitted to this table; Lee et al.'s were
+  fitted to HydroLight and are fed here with a and b that are themselves
+  inverted from Jerlov's (1968) Kd, and with a guessed r. In the top 10 m
+  the model whose attenuation changes with depth misses less for most
+  types; at 25 and 50 m the fit to the table does, as a fit should.
+  DATA.md section 42 has every type, Williamson & Hollins's a and b, F_VIS
+  of 0.40 and 0.45 and the eight r.""")
 
 # --------------------------------------------------------------------------
 rule("Before you put these in a model")

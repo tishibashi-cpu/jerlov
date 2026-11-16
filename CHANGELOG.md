@@ -4,6 +4,44 @@ Every release is archived on Zenodo under the concept DOI
 [10.5281/zenodo.22321312](https://doi.org/10.5281/zenodo.22321312), which
 always resolves to the latest version.
 
+## 1.16.0 — 2026-11-16
+
+The attenuation of the visible and of the whole shortwave from a and bb,
+and the euphotic depth (DECISIONS.md section 98). No shipped value changed.
+
+**New.** From Lee, Du, Arnone, Liew and Penta (2005), J. Geophys. Res.
+110, C09019 (not the C02016 of `lee2005_kd`), and Lee, Weidemann, Kindle,
+Arnone, Carder and Davis (2007), J. Geophys. Res. 112, C03009:
+
+- `lee2005_kvis(a490, bb490, depth_m, /, *, sun_zenith_deg)`: the mean
+  attenuation of the 350-700 nm energy from the surface to a depth;
+- `lee2007_depth_of_fraction(a490, bb490, /, *, sun_zenith_deg,
+  fraction)`: the depth where that energy falls to a fraction of its
+  surface value, the euphotic depth at 0.01, from the paper's cubic, each
+  root checked against the unsquared equation;
+- `lee2005_kir(depth_m, /, *, sun_zenith_deg)`: the same for 700-2500 nm,
+  from the depth and the sun alone;
+- `lee2005_shortwave_transmittance(a490, bb490, depth_m, /, *,
+  sun_zenith_deg, visible_fraction)`: the two together; the visible share
+  of the surface shortwave has no default (the paper's 0.424 is
+  Mobley's).
+
+None has a default for the sun. Where K1 would not be positive or K2 would
+be negative, the model has no meaning and is refused, not clipped. Outside
+the sun, the K_VIS, the T_VIS or the depths the papers fitted, a
+`ProvenanceWarning` says so.
+
+**Examples.** `euphotic_zone.py` part 7 holds the depth of each of
+Jerlov's (1977) quanta levels against the model from Solonenko & Mobley's
+and Williamson & Hollins's a and b, with bb from each of Petzold's eight
+B/S: a median of 1.13 and 0.91 of his depths, his within the reach of r
+and the sun in 38 of 48 cells. `solar_heating.py` part 6 holds the
+shortwave model against Jerlov's (1968) Table XXI beside Paulson &
+Simpson's fit: in the top 10 m the model misses less for three or four of
+the five oceanic types, below it the fit does.
+
+**Documents.** DATA.md section 42, the README, the API reference.
+
 ## 1.15.9 — 2026-11-16
 
 What the choice of pure water absorption does to the colour of the

@@ -3,7 +3,7 @@
 What every shipped table is, where it came from, what was verified, and what
 is known to be wrong with it.
 
-Forty-one entries are recorded below. Thirteen are confirmed defects, three were
+Forty-two entries are recorded below. Thirteen are confirmed defects, three were
 open questions that the first edition of Jerlov settled, and the rest are
 notes rather than defects. None of them is repaired silently: values that
 could be recovered carry `status = reconstructed` and say how, values that
@@ -2599,3 +2599,101 @@ and b differently by different authors); and what Jerlov cites as Aas
 (1967), possibly Aas (1971), *Sarsia* 46, 59-78, "Irradiance in
 Hardangerfjorden 1967". None has a DOI that was found.
 
+
+## 42. Kd of the visible and the shortwave, and the euphotic depth, from a and bb (note)
+
+Lee, Du, Arnone, Liew and Penta (2005), J. Geophys. Res. 110, C09019,
+give the mean attenuation of the visible (350-700 nm) energy from the
+surface to a depth z, K_VIS(z) = K1 + K2 / (1 + z)^0.5, with K1 and K2
+from a(490), bb(490) and the sun, fitted to 300 HydroLight runs; that of
+the infrared (700-2500 nm), K_IR(z), from z and the sun alone; and the
+shortwave transmittance T(z) = F_VIS exp(-K_VIS z) + (1 - F_VIS) exp(-K_IR
+z). Lee, Weidemann, Kindle, Arnone, Carder and Davis (2007), J. Geophys.
+Res. 112, C03009, solve K_VIS(z) z = -ln f for the depth of a fraction f;
+at 0.01, the euphotic depth. Since 1.16.0 these are `lee2005_kvis`,
+`lee2005_kir`, `lee2005_shortwave_transmittance` and
+`lee2007_depth_of_fraction` (DECISIONS.md section 98). They are set here
+beside the two measured tables the package ships that they can be held to.
+
+No source gives bb for a Jerlov type. a(490) and b(490) are Solonenko &
+Mobley's (2015), for all ten types, and Williamson & Hollins's (2022), for
+IB to 5C, each read at 490 nm between its tabulated wavelengths; bb = bw
+/ 2 + r (b - bw), bw the source's own pure water term and r the B/S of
+each of Petzold's eight stations (0.013 to 0.044). The base is NUC 2240,
+r = 0.018. Solonenko & Mobley's b of I and IA rests on values flagged
+suspect, and it warns.
+
+**The depths of Jerlov's (1977) quanta levels.** Jerlov measured the
+depths where 30, 10, 3 and 1 percent of the quanta (350-700 nm) are left,
+for seven types (`jerlov1977_quanta`). Against them, Lee et al.'s depths,
+with the sun at 15 degrees for the oceanic types and 45 for the coastal
+(Jerlov's own is not recorded), are, as the ratio computed / measured
+(`examples/euphotic_zone.py`, section 7):
+
+| Type | Solonenko & Mobley, 30 / 10 / 3 / 1 % | Williamson & Hollins, 30 / 10 / 3 / 1 % |
+|---|---|---|
+| I | 1.13 / 1.06 / 1.14 / 1.23 | |
+| IA | 1.18 / 1.13 / 1.21 / 1.28 | |
+| IB | 1.25 / 1.24 / 1.29 / 1.38 | 0.89 / 0.84 / 0.86 / 0.91 |
+| II | 1.13 / 1.08 / 1.08 / 1.11 | 0.91 / 0.87 / 0.88 / 0.90 |
+| III | 1.06 / 1.01 / 0.97 / 0.97 | 1.01 / 1.01 / 0.99 / 1.00 |
+| 1C | 1.18 / 1.13 / 1.11 / 1.12 | 0.92 / 0.87 / 0.85 / 0.86 |
+| 3C | 1.15 / 1.03 / 1.00 / 0.99 | 1.04 / 0.96 / 0.94 / 0.94 |
+
+The median is 1.13 with Solonenko & Mobley's a and b and 0.91 with
+Williamson & Hollins's. Varying r over the eight stations and the sun
+over 0, the base and 60 degrees moves a depth by up to a factor of 2.4
+(III's 1 percent level with Solonenko & Mobley's IOPs, whose b(490), 1.20
+per m, is the largest of these), and Jerlov's depth lies within that
+reach in 38 of the 48 cells. The ten outside are, with Solonenko &
+Mobley's IOPs, the 1 percent levels of IA and IB, deeper than Jerlov's
+even at the largest r and the sun at 60 degrees (1.04 and 1.001); and,
+with Williamson & Hollins's, all four levels of IB and of II, shallower
+even at the smallest r and the sun at the zenith (0.90 to 0.97). For the
+1 percent level, PAR's depth (400-700 nm) from Jerlov's (1976) Kd and D65,
+as in section 2 of that example, is 1.62, 1.43, 1.35, 1.04, 1.04, 1.00 and
+0.93 of Jerlov's for I, IA, IB, II, III, 1C and 3C (section 22 of this
+file makes that comparison over his own band). For I and IA, Lee et al.'s
+model from Solonenko & Mobley's a and b comes nearer his measurement than
+that; for IB, it is Williamson & Hollins's a and b that do.
+
+Lee et al.'s depth is of energy, Jerlov's of quanta, over the same 350-700
+nm; Lee et al. (2007, p. 4) found depths in energy over 350-700 nm and in
+PAR "less than 10%" apart. With Solonenko & Mobley's I and IA, and the sun
+at 0 degrees, the model is used outside its fit: K_VIS below 0.04 per m at
+the deeper levels, and a sun outside the 10 to 60 degrees it was fitted to.
+Both warn.
+
+**Jerlov's (1968) Table XXI.** The shortwave (300-2500 nm) left at depth,
+for all ten types (`jerlov1968_solar_fraction`), with the sun at the zenith
+for the oceanic types and at 45 degrees for the coastal, as the table's
+footnote has it. Lee et al.'s T(z), F_VIS = 0.424, over the table
+(`examples/solar_heating.py`, section 6):
+
+| Depth | Solonenko & Mobley, ten types | Williamson & Hollins, six types | Paulson & Simpson, five oceanic |
+|---|---|---|---|
+| 1 m | 0.91 to 1.08, median 0.95 | 0.91 to 1.04, median 0.92 | 0.98 to 1.46 |
+| 2 m | 0.91 to 1.16, median 0.99 | 0.90 to 1.12, median 0.93 | 0.97 to 1.18 |
+| 5 m | 0.71 to 1.39, median 1.04 | 0.87 to 1.31, median 0.96 | 0.81 to 1.12 |
+| 10 m | 0.34 to 1.75, median 1.07 | 0.79 to 1.63, median 0.97 | 0.80 to 1.22 |
+
+Of the five oceanic types, with Solonenko & Mobley's a and b, Lee et al.'s
+model misses the table by less than Paulson & Simpson's fit in 3, 3, 4 and
+4 at 1, 2, 5 and 10 m, and in 1, 1 and 0 of five and 1 of four at 25, 50,
+75 and 100 m. Paulson & Simpson fitted their numbers to this table (leaving
+out its 10 m value, section 14); Lee et al.'s were fitted to HydroLight,
+with an attenuation that changes with depth. The extremes at 5 and 10 m
+are 9C (low) and 5C (high). F_VIS of 0.40 or 0.45 instead of 0.424 lowers
+T by 4.3 to 5.7 percent or raises it by 4.7 to 6.1 percent, at every depth
+of every type. The eight r move it by 3 percent or less at every depth for
+Solonenko & Mobley's I and IA, and for the turbid types by more than F_VIS
+does from 2 m down.
+
+The 300-350 nm of Table XXI is not in Lee et al.'s 350-2500 nm; they put
+it at about 1 percent of the shortwave (p. 7). It is not corrected for.
+
+**What this does not settle.** Solonenko & Mobley retrieved their a and b
+so that their model's Kd came within 15 percent of Jerlov's (1968)
+(sections 2 and 19), so agreement with his 1968
+shortwave table is not independent of him. The r of a Jerlov type is not
+known, and of the factors tried here it moves the results most.

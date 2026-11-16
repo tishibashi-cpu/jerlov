@@ -489,6 +489,12 @@ jerlov.morel2001_bbp([443, 490, 555], chlorophyll_mg_m3=0.3)
 bbw_490 = jerlov.pure_water_backscattering(490, salinity_psu=35.0)
 jerlov.lee2013_kd(0.03, 0.004, bb_water=bbw_490, sun_zenith_deg=30.0)
 
+# The visible (350-700 nm) energy's attenuation from the surface to a depth,
+# and the depth where 1 percent of it is left, from a(490) and bb(490)
+# (Lee et al. 2005, C09019; Lee et al. 2007).
+jerlov.lee2005_kvis(0.03, 0.004, 20.0, sun_zenith_deg=30.0)
+jerlov.lee2007_depth_of_fraction(0.03, 0.004, sun_zenith_deg=30.0, fraction=0.01)
+
 # A Kd under another sun and sky, by Gordon's (1989) D0. Both D0 are yours:
 # Jerlov's tables do not record the light they were measured under.
 d0 = jerlov.gordon1989_d0(30.0, direct_fraction=0.8)
@@ -649,6 +655,20 @@ the numbers; anyone heating a thin surface layer should read it.
 Only the five oceanic types were fitted. Asking for a coastal type raises
 rather than substituting a neighbour.
 
+Lee et al. (2005, C09019) let the attenuation change with depth, the
+visible part's from a(490), bb(490) and the sun, the infrared's from the
+depth and the sun; the visible share of the surface shortwave has no
+default:
+
+```python
+jerlov.lee2005_shortwave_transmittance(0.03, 0.004, [1.0, 10.0],
+                                       sun_zenith_deg=30.0, visible_fraction=0.424)
+jerlov.lee2005_kir(1.0, sun_zenith_deg=30.0)    # 700-2500 nm, 1/m
+```
+
+Against Table XXI it misses less than the two exponentials in the top 10 m
+for most oceanic types, and more below; `DATA.md` section 42.
+
 ## Examples
 
 ```
@@ -690,7 +710,7 @@ made.
 ## Provenance and design
 
 `DATA.md` records, for every shipped table, where it came from, what was
-verified, and what is known to be wrong with it. Forty-one entries are
+verified, and what is known to be wrong with it. Forty-two entries are
 documented there: thirteen confirmed defects in the source literature, three
 questions the first edition of Jerlov settled, and the rest notes.
 

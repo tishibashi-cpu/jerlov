@@ -21,6 +21,8 @@ from dataclasses import dataclass
 import numpy as np
 
 from . import _data
+from .ocean_colour import (_KVIS_PAPER, _KVIS_SUN, _check_iops, _finite,
+                           _kvis_check, _kvis_k1_k2, _result, _sun, _warn)
 from .water import ProvenanceWarning, _like_input, _require_number
 
 CITATION = (
@@ -177,3 +179,129 @@ def jerlov1968_solar_fraction(
     fraction = np.array([float(r["percent_of_surface"]) / 100
                          if r["percent_of_surface"] else np.nan for r in rows])
     return depths, fraction
+
+
+#: Lee, Du, Arnone, Liew and Penta (2005), J. Geophys. Res. 110, C09019,
+#: Eq. (4): K_IR = [c0 + c1 / (c2 + z)^c3] (1 + c4 theta), theta in degrees.
+LEE2005_KIR_COEFFICIENTS = (0.560, 2.304, 0.001, 0.65, 0.002)
+#: The depths and suns Eq. (4) was fitted over (p. 3).
+_KIR_DEPTH, _KIR_SUN = (0.01, 3.0), (0.0, 60.0)
+_KIR_PAPER = "Lee et al. (2005, C09019)"
+
+
+def _kir(depth, sun):
+    c0, c1, c2, c3, c4 = LEE2005_KIR_COEFFICIENTS
+    return (c0 + c1 / (c2 + depth) ** c3) * (1 + c4 * sun)
+
+
+def _depths(depth_m) -> np.ndarray:
+    depth = _finite(depth_m, "depth_m")
+    if np.any(depth < 0):
+        raise ValueError("depth_m must not be negative")
+    return depth
+
+
+@_data.positional_only()
+def lee2005_kir(depth_m, /, *, sun_zenith_deg):
+    """The attenuation of infrared solar energy, from the surface to a depth.
+
+    Lee, Z., Du, K., Arnone, R., Liew, S. and Penta, B. (2005),
+    "Penetration of solar radiation in the upper ocean: A numerical model
+    for oceanic and coastal waters", J. Geophys. Res. 110, C09019,
+    doi:10.1029/2004JC002780, Eq. (4)::
+
+        K_IR(z) = [0.560 + 2.304 / (0.001 + z)^0.65] (1 + 0.002 theta)
+
+    theta in degrees (``jerlov.shortwave.LEE2005_KIR_COEFFICIENTS``). E_IR(z) =
+    E_IR(0) exp(-K_IR(z) z), E_IR the energy of 700-2500 nm, whose
+    attenuation "is almost completely dominated by water absorption" (p.
+    1): nothing of what is in the water enters.
+
+    Parameters
+    ----------
+    depth_m:
+        z, metres below the surface, not negative; a number or an array.
+    sun_zenith_deg:
+        theta, degrees, in [0, 90). No default.
+
+    Returns
+    -------
+    K_IR(z), 1/m. A float if both inputs are numbers, an array otherwise.
+
+    Notes
+    -----
+    Fitted for z of 0.01 to 3 m and the sun 0 to 60 degrees from the
+    zenith (p. 3), with an average error of 3.0 percent; "for z deeper
+    than 3 m, E_IR is negligible". Outside these a
+    :class:`ProvenanceWarning` is given. DECISIONS.md section 98.
+    """
+    depth = _depths(depth_m)
+    sun = _sun(sun_zenith_deg, _KIR_SUN, _KIR_PAPER)
+    lo, hi = _KIR_DEPTH
+    if np.any(depth < lo) or np.any(depth > hi):
+        _warn(f"{_KIR_PAPER} fitted K_IR for depths of {lo:g} to {hi:g} m; "
+              "some of these depths lie outside that.")
+    return _result(_kir(depth, sun), depth, sun)
+
+
+@_data.positional_only()
+def lee2005_shortwave_transmittance(a490, bb490, depth_m, /, *,
+                                    sun_zenith_deg, visible_fraction):
+    """The share of the shortwave solar energy at the surface that is left
+    at a depth.
+
+    Lee et al. (2005, C09019; see :func:`lee2005_kir`), Eq. (11)::
+
+        T(z) = F_VIS exp(-K_VIS(z) z) + (1 - F_VIS) exp(-K_IR(z) z)
+
+    with K_VIS of :func:`lee2005_kvis` and K_IR of :func:`lee2005_kir`.
+
+    Parameters
+    ----------
+    a490, bb490:
+        As for :func:`lee2005_kvis`.
+    depth_m:
+        z, metres, not negative.
+    sun_zenith_deg:
+        degrees, in [0, 90). No default.
+    visible_fraction:
+        F_VIS = E_VIS(0) / E_SR(0), the share of 350-700 nm in the
+        350-2500 nm energy just below the surface, one number in (0, 1).
+        The paper gives "around 0.424 [Mobley, 1994]" (p. 7); it depends on
+        the sun and the sky, so it has no default here.
+
+    Returns
+    -------
+    T(z), 0 to 1. A float if every input is a number, an array otherwise.
+
+    Notes
+    -----
+    The warnings of :func:`lee2005_kvis` apply. Those of
+    :func:`lee2005_kir` apply above 0.01 m only (at z = 0, T is 1 by
+    construction): below 3 m the paper calls E_IR negligible. DECISIONS.md
+    section 98.
+    """
+    a, bb = _check_iops(a490, bb490)
+    depth = _depths(depth_m)
+    try:
+        # isfinite has no answer for text, so "0.4" is refused too.
+        ok = (np.ndim(visible_fraction) == 0
+              and bool(np.isfinite(visible_fraction))
+              and 0 < float(visible_fraction) < 1)
+    except TypeError:
+        ok = False
+    if not ok:
+        raise ValueError("visible_fraction must be one number in (0, 1), "
+                         f"not {visible_fraction!r}")
+    # K_VIS's sun (10-60 degrees) lies within K_IR's (0-60).
+    sun = _sun(sun_zenith_deg, _KVIS_SUN, _KVIS_PAPER)
+    k1, k2 = _kvis_k1_k2(a, bb, sun)
+    kvis = k1 + k2 / np.sqrt(1 + depth)
+    _kvis_check(np.asarray(kvis, dtype=float), depth)
+    lo = _KIR_DEPTH[0]
+    if np.any((depth > 0) & (depth < lo)):
+        _warn(f"{_KIR_PAPER} fitted K_IR for depths of {lo:g} m and more; "
+              "some of these depths lie above that.")
+    f = float(visible_fraction)
+    t = f * np.exp(-kvis * depth) + (1 - f) * np.exp(-_kir(depth, sun) * depth)
+    return _result(t, a, bb, depth, sun)

@@ -112,7 +112,11 @@ contrast, and coefficients in the Akkaynak-Treibitz form.
 **`solar_heating.py`** — the Paulson & Simpson (1977) two-exponential
 parameters that ROMS, MITgcm, NEMO and CESM all use, the per-layer heating
 they imply, and where they fail: **46 percent off their own source at 1 m**,
-because two exponentials cannot follow the near-surface decay.
+because two exponentials cannot follow the near-surface decay. Part 6
+sets Lee et al.'s (2005) model, whose attenuation changes with depth,
+beside them: at 1 m it is 0.91 to 1.08 of the table, and in the top 10 m
+it misses less for three or four of the five oceanic types; below, the
+fit to the table does.
 
 **`what_an_eye_sees.py`** — `integrate_response` against any spectral
 sensitivity. Six photoreceptors and a three-channel camera, at four depths,
@@ -157,7 +161,10 @@ measured in IA water (`jerlov1977_quanta`), and integrated over his
 350-700 nm with `band=`, the profile agrees within 1.8 percentage points
 down to 10 m and then keeps too much light: its 1 percent level is
 **100 m** against his **87 m**. Three editions of the classification
-are compared, and agree here; at Kd(490) = 0.045 they do not.
+are compared, and agree here; at Kd(490) = 0.045 they do not. Part 7
+takes the depths of Jerlov's quanta levels from a(490) and bb(490)
+instead (Lee et al. 2007), with Solonenko & Mobley's and Williamson &
+Hollins's IOPs: a median of 1.13 and 0.91 of his depths.
 
 **`optical_link.py`** — beam attenuation at common laser lines, and the
 range a loss budget buys: each attenuation length costs 4.34 dB, so 40 dB

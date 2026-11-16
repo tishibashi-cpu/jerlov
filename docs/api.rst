@@ -291,6 +291,10 @@ Kd without a water type, Rrs and the Secchi depth
 
 .. autofunction:: lee2013_kd
 
+.. autofunction:: lee2005_kvis
+
+.. autofunction:: lee2007_depth_of_fraction
+
 .. autofunction:: gordon1989_d0
 
 .. autofunction:: gordon1989_kd
@@ -337,6 +341,10 @@ Solar heating
 .. autofunction:: solar_fraction
 
 .. autofunction:: jerlov1968_solar_fraction
+
+.. autofunction:: lee2005_kir
+
+.. autofunction:: lee2005_shortwave_transmittance
 
 Sources
 -------

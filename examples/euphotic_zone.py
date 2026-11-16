@@ -240,6 +240,103 @@ print(f"""
   report a type; a Jerlov type without its edition is not one number.""")
 
 # --------------------------------------------------------------------------
+rule("7. From a and bb instead of Kd")
+
+print("""Lee et al. (2007) give the depth of any fraction of the visible light
+from a(490), bb(490) and the sun, through Lee et al.'s (2005, C09019) K_VIS
+(`lee2007_depth_of_fraction`). Solonenko & Mobley's (2015) a and b, and
+Williamson & Hollins's (2022), are shipped for the types; bb is not, so
+here bb = bw / 2 + r (b - bw), with r each of Petzold's eight stations'
+B/S. The sun is 15 degrees from the zenith for the oceanic types and 45 for
+the coastal; Jerlov's own is not recorded. Each depth is shown as a ratio
+to Jerlov's (1977) measured one, for NUC 2240 (r = 0.018), then the range
+over the eight r and the sun at 0 to 60 degrees. DECISIONS.md section 98.""")
+
+OCEANIC = ("I", "IA", "IB", "II", "III")
+RATIOS = {s: jerlov.petzold_scattering(s).backscatter_ratio
+          for s in jerlov.PETZOLD_STATIONS}
+
+
+def iops_490(water_type, source):
+    """a(490) and the eight bb(490), from the source's own pure water bw;
+    490 nm is read between the source's tabulated wavelengths."""
+    water = jerlov.water(water_type, source=source)
+    constants = water.source.scattering
+    bw = constants.bw_coeff * (400.0 / 490.0) ** constants.bw_exponent
+    a, b = float(water.a(490.0)), float(water.b(490.0))
+    return a, {s: bw / 2 + r * (b - bw) for s, r in RATIOS.items()}
+
+
+with warnings.catch_warnings():
+    # Section 4's warning about a coefficient of his Table 5; only the
+    # levels and their depths are used here.
+    warnings.simplefilter("ignore", jerlov.ProvenanceWarning)
+    QUANTA = {t: jerlov.jerlov1977_quanta(t)
+              for t in ("I", "IA", "IB", "II", "III", "1C", "3C")}
+
+
+def depth_ratios(water_type, source):
+    a, bbs = iops_490(water_type, source)
+    q = QUANTA[water_type]
+    sun = 15.0 if water_type in OCEANIC else 45.0
+    out = []
+    for level, z_m in zip(q.level_percent, q.level_depth_m):
+        base = jerlov.lee2007_depth_of_fraction(
+            a, bbs["NUC 2240"], sun_zenith_deg=sun, fraction=level / 100)
+        reach = [jerlov.lee2007_depth_of_fraction(
+            a, bb, sun_zenith_deg=s, fraction=level / 100) / z_m
+            for bb in bbs.values() for s in (sun, 0.0, 60.0)]
+        out.append((level, z_m, base / z_m, min(reach), max(reach)))
+    return out
+
+
+SETS = (("solonenko2015", ("I", "IA", "IB", "II", "III", "1C", "3C")),
+        ("williamson2022", ("IB", "II", "III", "1C", "3C")))
+results = {}
+with warnings.catch_warnings(record=True) as caught:
+    warnings.simplefilter("always", jerlov.ProvenanceWarning)
+    for source, types in SETS:
+        print(f"\n  {source}: depth here / Jerlov's at "
+              "30, 10, 3 and 1 percent")
+        for water_type in types:
+            results[source, water_type] = depth_ratios(water_type, source)
+            cells = "  ".join(f"{base:.2f} ({lo:.2f}-{hi:.2f})"
+                              for _, _, base, lo, hi
+                              in results[source, water_type])
+            print(f"  {water_type:>5}  {cells}")
+kinds = sorted({str(w.message)[:70] for w in caught})
+print(f"\n  {len(caught)} warnings; they begin:")
+for kind in kinds:
+    print(f"    {kind}...")
+
+with warnings.catch_warnings():
+    warnings.simplefilter("ignore", jerlov.ProvenanceWarning)
+    par_1976 = {t: jerlov.par_profile(
+        SURFACE, BAND, 0.0, unit="energy",
+        kd=jerlov.water(t, source="jerlov1976")).depth_of_fraction()
+        for t in QUANTA}
+print("\n  For comparison, PAR's 1 percent depth from Jerlov's (1976) Kd, as in")
+print("  section 2, over Jerlov's (1977) 1 percent depth:")
+print("  " + "  ".join(f"{t} {z / QUANTA[t].level_depth_m[-1]:.2f}"
+                       for t, z in par_1976.items()))
+
+cells = [c for rows in results.values() for c in rows]
+within = sum(lo <= 1 <= hi for _, _, _, lo, hi in cells)
+widest = max(hi / lo for _, _, _, lo, hi in cells)
+by_source = {source: [c[2] for (s, _), rows in results.items()
+                      if s == source for c in rows]
+             for source, _ in SETS}
+print(f"""
+  Jerlov's depth lies within what r and the sun make in {within} of the
+  {len(cells)} cells; r and the sun together move a depth by up to a factor
+  of {widest:.1f}. At the base, with Solonenko & Mobley's a and b, the
+  median ratio is {np.median(by_source["solonenko2015"]):.2f}; with Williamson & Hollins's,
+  {np.median(by_source["williamson2022"]):.2f}. Lee et al.'s depths are of the visible energy,
+  350-700 nm, Jerlov's of quanta over the same band. Lee et al. (2007)
+  found depths in energy over 350-700 nm and in PAR "less than 10%"
+  apart. DATA.md section 42.""")
+
+# --------------------------------------------------------------------------
 rule("Before you use any of this")
 
 print("""  - The Kd spectrum is reconstructed from one reading by a model good to
