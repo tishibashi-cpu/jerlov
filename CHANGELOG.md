@@ -4,6 +4,32 @@ Every release is archived on Zenodo under the concept DOI
 [10.5281/zenodo.22321312](https://doi.org/10.5281/zenodo.22321312), which
 always resolves to the latest version.
 
+## 1.15.8 — 2026-11-16
+
+What the literature says of Jerlov's coastal blue, and what rests on
+Petzold's extension below 0.1 degree. No shipped value changed, and no
+name changes (DECISIONS.md section 96).
+
+**Examples.** `phase_function_choice.py` gains part 3. Without the
+report's power-law extension below 0.1 degree, which nobody measured, the
+mean cosine at Petzold's eight stations falls by 0.004 to 0.015, B/S rises
+by 3.5 to 17.0 percent and the Henyey-Greenstein g of the backscatter fit
+falls by 0.004 to 0.016. Kd, by Monte Carlo, moves by -0.63 to +0.13
+percent when the light scattered by less than 0.1 degree is treated as not
+scattered: Kd does not rest on the extension. Part 3 reads Monte Carlo runs
+kept in `examples/data/below_0_1/`.
+
+**Documents.** Jerlov states no reason for raising the coastal blue Kd in
+1976 (Marine Optics, pp. 133 and 137); he describes the coastal types as a
+special classification of northern waters rich in yellow substance,
+fortified by new data. Aas et al. (2013) note that waters of coastal Kd in
+the open sea are often blooms, not yellow-substance-rich water. Both are
+recorded in DATA.md sections 21 and 41 and in `OPEN_QUESTIONS.md`'s second
+and third questions, with the reports not obtained.
+
+**Tools.** `tools/kd_monte_carlo.py`'s `petzold_sampler` can start at 0.1
+degree, off by default, when nothing changes; new `tools/below_0_1.py`.
+
 ## 1.15.7 — 2026-11-16
 
 Why IOPs and Jerlov's Kd disagree at the blue end, from the Kd measured in

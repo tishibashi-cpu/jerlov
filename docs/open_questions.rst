@@ -15,15 +15,17 @@ what is still not known, and where the details are. In a line each:
    settled.
 2. **What happens to light scattered at less than 0.1 degree?** Petzold's
    tables extend a power law there; scattering on turbulence, measured at
-   1 to 10 per m by Bogucki et al. (2004), is not in it.
+   1 to 10 per m by Bogucki et al. (2004), is not in it. The mean cosine
+   rests on that extension only slightly, and Kd hardly at all.
 3. **Do Williamson & Hollins's measured IOPs give back Jerlov's own Kd?**
    By Monte Carlo, within what the unrecorded sun, phase function and pure
    water can explain, except at the blue end: the clearest type's IOPs
    attenuate more than Jerlov's Kd there and the coastal types' less. The
    Kd the same waters measured settles most of it: the coastal waters'
    own blue Kd is as low as their IOPs give, about half Jerlov's 1976
-   values (less far from his 1968 ones), while the clearest type's water
-   agrees with Jerlov and its averaged absorption rests on six campaigns,
+   values (less far from his 1968 ones), and Jerlov drew his coastal
+   types from northern waters rich in yellow substance; the clearest
+   type's water agrees with Jerlov and its averaged absorption rests on six campaigns,
    two of which measured more absorption than attenuation. The
    code OSOAA, run as a second calculation, agrees with the Monte Carlo
    within 10 percent. A first answer, made with OSOAA alone, was wrong,

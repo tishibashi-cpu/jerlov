@@ -86,3 +86,9 @@ b of every campaign, with its type, and the matched set as it is), and
 runs the Monte Carlo on each matched entry's own a and b, 2365 runs, in
 about fifteen minutes on four cores; `--closing` writes the a that would
 close each blue cell. DATA.md section 41.
+
+`below_0_1.py` (1.15.8, DECISIONS.md section 96) runs the Monte Carlo at
+Petzold's eight stations with and without the report's extension below
+0.1 degree, 96 runs in a few minutes, and writes
+`examples/data/below_0_1/runs.csv`, which part 3 of
+`examples/phase_function_choice.py` reads.

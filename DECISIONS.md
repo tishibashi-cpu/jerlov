@@ -5717,3 +5717,31 @@ the reader who chooses a phase function); NEXT_STEPS's item 6 of section
 0d.
 
 **Version.** 1.15.8. Nothing shipped changes.
+
+**Differences from the plan.**
+
+- The plan quoted Aas & Højerslev (2001, p. 146) as saying that the
+  relations on which Jerlov's classification rests are "valid only for the
+  type of water from which they were obtained". On the page, that sentence
+  is about their own relations for the Norwegian Sea (their Eqs. 9 and 10);
+  of the relations behind the classification they say that the constants
+  "may change from one oceanic area to another". DATA.md section 41 quotes
+  each for what it is.
+- `phase_function_choice.py` did not read `examples/data/` before; part 3
+  does, and prints a note instead of the Kd when the runs are not there.
+  The READMEs say so.
+
+**What was found** (2026-11-16).
+
+- Without the extension, the mean cosine falls by 0.004 to 0.015, B/S
+  rises by 3.5 to 17.0 percent and the HG g of the backscatter fit falls by
+  0.004 to 0.016 at the eight stations.
+- Kd, by Monte Carlo over 32 cases: treating the light below 0.1 degree as
+  unscattered moves it by -0.63 to +0.13 percent, under the 1 percent of
+  the plan, so the documents say Kd does not rest on the extension;
+  spreading that light over 0.1 to 180 degrees, b kept, moves it by +0.11
+  to +4.40 percent.
+- The example's first wording said the mean cosine and g rest on the
+  extension "only in the third figure"; AUTEC 7's mean cosine goes from
+  0.914 to 0.900, a change in the second. It now gives the size of the
+  change.

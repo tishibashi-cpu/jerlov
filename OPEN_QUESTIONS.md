@@ -81,14 +81,23 @@ angle (release 1.15.2).
   tables, and everything resting on it, such as the mean cosine, describes
   the extension, not the water.
 
+- What rests on the extension (release 1.15.8): without it, the mean
+  cosine at Petzold's eight stations falls by 0.004 to 0.015 and B/S rises
+  by 3.5 to 17.0 percent, but Kd, by Monte Carlo, moves by -0.63 to +0.13
+  percent when the light scattered by less than 0.1 degree is treated as
+  not scattered at all. Light turned by so little goes on as if
+  unscattered: the extension decides how much of b is counted, not how
+  fast daylight fades.
+
 A search engine's summary said turbulence outweighs particles in
 scattering up to 0.1 degree; that is not in the abstract and was not used.
 
 **What is not known.** How much of the light near the beam turbulence
 takes, against particles, in a given sea.
 
-**Where.** DATA.md section 21; DECISIONS.md section 89;
-`ScatteringFunction.mean_cosine`.
+**Where.** DATA.md section 21; DECISIONS.md sections 89 and 96;
+`ScatteringFunction.mean_cosine`; `examples/phase_function_choice.py`,
+part 3; `tools/below_0_1.py` and `examples/data/below_0_1/`.
 
 ## 3. Do Williamson & Hollins's measured IOPs give back Jerlov's own Kd?
 
@@ -188,8 +197,14 @@ Reading it found the fault in the package, fixed in 1.15.5. The old runs
 are kept as the record.
 
 **What is not known.** Why Jerlov's 1976 coastal blue Kd are higher than
-both his 1968 values and the waters later typed by them: his 1976 text is
-the place that could say, and the package has not seen it. Which of IB's
+both his 1968 values and the waters later typed by them. His 1976 text,
+read in 1.15.8, states no reason: it calls the coastal types a special
+classification of northern waters rich in yellow substance, fortified by
+new data (Marine Optics, p. 137). Aas et al. (2013, p. 477) note that
+waters of coastal Kd in the open sea are often blooms, not water rich in
+yellow substance; that fits the gap but is not shown to cause it. Jerlov's
+1978 report, where he reduced the coastal types to three, has not been
+obtained. Which of IB's
 six campaigns are right. Why a is at or above the Kd measured in the same
 campaign in 30 of the 211 matched entries for Jerlov III, 9 of 88 for II,
 3 of 11 for IB, 3 of 79 for 3C, 3 of 12 for 5C and none of 68 for 1C. HydroLight was not run on these waters; the
