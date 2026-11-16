@@ -504,6 +504,12 @@ jerlov.gordon1989_kd(0.05, d0_from=d0, d0_to=jerlov.gordon1989_d0(60.0, direct_f
 rrs = jerlov.subsurface_rrs(a, bb, coefficients=jerlov.GORDON1988_RRS_COEFFICIENTS)
 Rrs = jerlov.above_surface_rrs(rrs)
 
+# From above-water radiances: Rrs = (Lt - rho Lsky) / Ed, with rho from one
+# of Mobley's tables (1999 or 2015; no default) or a value you choose.
+rho = jerlov.mobley_rho(source="mobley1999", wind_speed=5.0, sun_zenith_deg=30.0,
+                        view_nadir_deg=40.0, view_azimuth_deg=135.0)
+jerlov.rrs_from_above_water(lt, lsky, ed, rho=rho)
+
 # Or above the surface with water and particles apart, at one of the seven
 # viewing geometries Lee et al. (2011) print; (0, 0, 0) is straight down.
 jerlov.lee2011_rrs(a, bb, bb_water=bb_water,
@@ -710,7 +716,7 @@ made.
 ## Provenance and design
 
 `DATA.md` records, for every shipped table, where it came from, what was
-verified, and what is known to be wrong with it. Forty-two entries are
+verified, and what is known to be wrong with it. Forty-three entries are
 documented there: thirteen confirmed defects in the source literature, three
 questions the first edition of Jerlov settled, and the rest notes.
 
@@ -739,7 +745,8 @@ from 1.0 on, is under "Compatibility" in `CONTRIBUTING.md`.
 ## Licence
 
 Apache-2.0. The Williamson & Hollins data are Crown copyright, Dstl, under
-the Open Government Licence v3.0; see `NOTICE`.
+the Open Government Licence v3.0; Mobley's rho tables are from the Ocean
+Optics Web Book, under a Creative Commons Attribution licence; see `NOTICE`.
 
 ## Citation
 

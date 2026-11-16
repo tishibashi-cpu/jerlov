@@ -607,6 +607,103 @@ choice does.""")
                 same_verdict=same, stations=stations)
 
 
+#: Part 9: the atmosphere of examples/sunlight_and_d65.py, and the
+#: aerosol of tools/sm_closure.py.
+ATMOSPHERE = dict(day_of_year=172, pressure_hpa=1013.25, air_mass_type=1,
+                  relative_humidity=80.0, precipitable_water_cm=1.5,
+                  wind_speed_24h=3.0, wind_speed=5.0, ozone_du=300.0,
+                  aerosol_optical_thickness_550=0.2)
+WIND = 5.0
+VIEWS = ((40.0, 135.0), (30.0, 90.0))
+RHO_SOURCES = ("mobley1999", "mobley2015")
+SHOWN_NM = (443.0, 555.0, 670.0)
+
+
+def above_water_part(caught):
+    rule("9. Measured from above the water: the sky the sea reflects")
+    print(f"""A radiometer above the sea sees Lt = Lw + rho Lsky, and Rrs = (Lt - rho
+Lsky) / Ed (Mobley 1999). rho is not a property of the surface: it depends
+on the sun, the view, the wind and the sky. Mobley's two tables
+(`mobley_rho`) give it for a clear sky at 550 nm: 1999, unpolarised; 2015,
+polarised, for a Rayleigh sky. Here Jerlov IB's Rrs, as in part 5 with
+bbp/bp = {PETZOLD_RATIO}, is the truth; Lsky / Ed is that of a uniform sky carrying
+Gregg & Carder's diffuse irradiance (Lsky = Ed,diffuse / pi, a stand-in,
+not a sky model); the sun is at {SUN_ZENITH_DEG:g} degrees and the wind {WIND:g} m/s. Lt is
+made with one table's rho, and Rrs recovered with the other's, or with
+0.028. The error, in percent, of the recovered Rrs and of QAA_v6's a(443):
+""")
+    water = jerlov.water("IB", source="solonenko2015")
+    a = water.a(QAA_NM)
+    bbw = jerlov.pure_water_backscattering(QAA_NM, salinity_psu=SALINITY_PSU)
+    bp = water.b(QAA_NM) - jerlov.pure_water_scattering(
+        QAA_NM, salinity_psu=SALINITY_PSU)
+    rrs = jerlov.above_surface_rrs(jerlov.subsurface_rrs(
+        a, bbw + PETZOLD_RATIO * bp,
+        coefficients=jerlov.LEE2002_RRS_COEFFICIENTS))
+    sky = jerlov.gregg1990_irradiance(QAA_NM.astype(int),
+                                      sun_zenith_deg=SUN_ZENITH_DEG,
+                                      **ATMOSPHERE)
+    sky_over_ed = sky.diffuse_above / sky.above / np.pi
+    pw_nm = np.arange(400.0, 701.0, 1.0)
+    pure_water = (pw_nm, jerlov.pure_water_absorption(pw_nm),
+                  jerlov.pure_water_backscattering(
+                      pw_nm, salinity_psu=SALINITY_PSU))
+    a443 = jerlov.qaa_v6(QAA_NM, rrs, bands=V6_BANDS,
+                         pure_water=pure_water).a[1]
+    cols = [QAA_NM.tolist().index(w) for w in SHOWN_NM]
+    head = "".join(f" {f'Rrs {w:g}':>9}" for w in SHOWN_NM)
+    print(f"  {'view':>9} {'Lt made with':>13} {'recovered with':>15}{head}"
+          f" {'a(443)':>8}")
+    out, rho_by_view = {}, {}
+    with warnings.catch_warnings(record=True) as record:
+        warnings.simplefilter("always")
+        for nadir, azimuth in VIEWS:
+            rho = {s: jerlov.mobley_rho(
+                source=s, wind_speed=WIND, sun_zenith_deg=SUN_ZENITH_DEG,
+                view_nadir_deg=nadir, view_azimuth_deg=azimuth)
+                for s in RHO_SOURCES}
+            rho_by_view[(nadir, azimuth)] = rho
+            print(f"  ({nadir:g}, {azimuth:g}): rho "
+                  + ", ".join(f"{s} {v:.4f}" for s, v in rho.items()))
+            for true in RHO_SOURCES:
+                lt_over_ed = rrs + rho[true] * sky_over_ed
+                for guess in [s for s in RHO_SOURCES if s != true] + [None]:
+                    used = 0.028 if guess is None else rho[guess]
+                    got = jerlov.rrs_from_above_water(
+                        lt_over_ed, sky_over_ed, 1.0, rho=used)
+                    off = got / rrs - 1
+                    if np.any(got < 0):
+                        # QAA refuses a negative Rrs, as it should.
+                        off_a = float("nan")
+                    else:
+                        off_a = jerlov.qaa_v6(
+                            QAA_NM, got, bands=V6_BANDS,
+                            pure_water=pure_water).a[1] / a443 - 1
+                    out[(nadir, azimuth, true, guess)] = (off[cols], off_a)
+                    print(f"  {'':>9} {true:>13} "
+                          f"{guess or '0.028':>15}"
+                          + "".join(f" {100 * x:>8.0f}%" for x in off[cols])
+                          + (f" {'(Rrs<0)':>8}" if np.isnan(off_a)
+                             else f" {100 * off_a:>7.0f}%"))
+    expect_provenance(record, caught)
+    worst_red = max(abs(v[0][2]) for v in out.values())
+    gaps = [abs(rho_by_view[v]["mobley2015"] - rho_by_view[v]["mobley1999"])
+            for v in VIEWS]
+    print(f"""
+Lsky / Ed here is {sky_over_ed[cols[0]]:.3f}, {sky_over_ed[cols[1]]:.3f} and {sky_over_ed[cols[2]]:.3f} per sr at 443, 555 and 670 nm, and
+Rrs {rrs[cols[0]]:.4f}, {rrs[cols[1]]:.4f} and {rrs[cols[2]]:.5f}. The two tables' rho differ by {gaps[0]:.4f} at
+(40, 135) and {gaps[1]:.4f} at (30, 90), and times Lsky / Ed that is a large
+share of the Rrs of water this clear where it is dark, in the red: up to
+{100 * worst_red:.0f} percent here, and below zero, which QAA refuses. QAA_v6's
+reference a(555) comes from a band ratio with Rrs(670) inside it, so the
+error reaches a(443). rho is for 550 nm; the
+sky's colour and Sun glint make it vary with wavelength, which is not
+followed here (Mobley 1999, section 4; Lee et al. 2010). DATA.md section
+43.""")
+    return dict(rho_sky_over_ed=sky_over_ed, errors=out,
+                worst_red=worst_red)
+
+
 def main():
     _banner()
     caught = set()
@@ -619,6 +716,7 @@ def main():
     case1 = case1_part(caught)
     geometry = geometry_part(kd, caught)
     pure_water = pure_water_part(caught)
+    above_water = above_water_part(caught)
     if caught:
         rule("Warnings")
         print("Raised along the way, each a ProvenanceWarning:")
@@ -650,7 +748,8 @@ def main():
     return dict(worst=worst, depths=depths, findings=findings,
                 depends=depends, by_pair=by_pair, by_ratio=by_ratio, products=products, nearest=nearest,
                 recovered=recovered, case1=case1, geometry=geometry,
-                pure_water=pure_water, caught=caught)
+                pure_water=pure_water, above_water=above_water,
+                caught=caught)
 
 
 if __name__ == "__main__":

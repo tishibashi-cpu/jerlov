@@ -6095,3 +6095,33 @@ error in Rrs at 443, 555 and 670 nm and in QAA's a(443).
 **Documents.** DATA.md section 43; README; docs/api.rst; NOTICE;
 sources/README.md; .zenodo.json; CHANGELOG. Version 1.17.0: two public
 names.
+
+**Differences from the plan.**
+
+- A viewing azimuth outside 0-180 degrees is refused, not folded: the
+  tables give 0-180 only, and neither paper says the field is symmetric
+  about the sun's plane for every case (the 2015 one has the wind along
+  the sun's rays).
+- The wind, sun and viewing angles refuse NaN (they are conditions, not
+  spectra); `rrs_from_above_water` lets NaN through as a gap, as the
+  package does for spectra.
+- The 1999 file lists its azimuths from 180 down; the build checks that
+  every grid point is there once rather than their order.
+- The example's 5 m/s lies between the 1999 table's 4 and 6 m/s and is
+  interpolated. Recovering with the 2015 rho what the 1999 rho made gives
+  a negative Rrs(670), which QAA refuses; the example prints that rather
+  than an a(443). Its atmosphere repeats that of `sunlight_and_d65.py`,
+  with tools/sm_closure.py's aerosol, as an example may not import a tool.
+
+**What was found** (DATA.md section 43).
+
+- The 2015 table reproduces the paper's 0.0179-0.0411 at 5 m/s and its
+  0.045 of Fig. 19, but at 10 m/s gives 0.0199-0.0457 against the text's
+  0.0195-0.0458; its header calls it preliminary.
+- The 1999 table gives 0.0336 where the paper's Table 1 prints 0.0337, and
+  its winds (0-14 every 2) are not the paper's runs (0, 2, 5, 10, 15).
+- At (40, 135), sun 30, 5 m/s: 0.0283 and 0.0411. In Jerlov IB, with a
+  uniform sky's Lsky / Ed, the choice of table moves Rrs by 16, 71 and 619
+  percent at 443, 555 and 670 nm and QAA_v6's a(443) by 37 percent, or
+  makes Rrs(670) negative; at (30, 90) the tables differ by 0.0018, and
+  recovering with one what the other made is off by 2 to 88 percent.

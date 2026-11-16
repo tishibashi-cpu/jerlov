@@ -27,6 +27,7 @@ the reflectance to a and bb, is in :mod:`jerlov.qaa`.
 from __future__ import annotations
 
 import warnings
+from functools import lru_cache
 from types import MappingProxyType
 
 import numpy as np
@@ -989,3 +990,191 @@ def lee2015_secchi_depth(wavelengths, kd, rrs, /):
         _warn(f"Lee et al. (2015) checked the model against Secchi depths "
               f"of {lo:g} to {hi:g} m; {depth:.3g} m is outside them.")
     return depth
+
+
+# -- the sea surface's reflectance factor rho, and Rrs above the water ------
+
+#: The tables of Mobley's rho as shipped (DATA.md section 43).
+MOBLEY_RHO_SOURCES = ("mobley1999", "mobley2015")
+_RHO_FILES = {"mobley1999": "mobley1999_rho.csv",
+              "mobley2015": "mobley2015_rho.csv"}
+_RHO_NADIR = (0.0, 10.0, 20.0, 30.0, 40.0, 50.0, 60.0, 70.0, 80.0, 87.5)
+_RHO_AZIMUTH = tuple(15.0 * k for k in range(13))
+
+
+@lru_cache(maxsize=None)
+def _rho_table(source: str):
+    """(winds, suns, values[wind, sun, nadir, azimuth]) of one table; the
+    nadir cap's one value is repeated over the azimuths."""
+    rows = _data._rows(_RHO_FILES[source])
+    winds = sorted({float(r["wind_speed"]) for r in rows})
+    suns = sorted({float(r["sun_zenith_deg"]) for r in rows})
+    values = np.full((len(winds), len(suns), len(_RHO_NADIR),
+                      len(_RHO_AZIMUTH)), np.nan)
+    for r in rows:
+        i = winds.index(float(r["wind_speed"]))
+        j = suns.index(float(r["sun_zenith_deg"]))
+        k = _RHO_NADIR.index(float(r["view_nadir_deg"]))
+        rho = float(r["rho"])
+        if k == 0:
+            values[i, j, 0, :] = rho
+        else:
+            values[i, j, k, _RHO_AZIMUTH.index(
+                float(r["view_azimuth_deg"]))] = rho
+    if np.isnan(values).any():      # pragma: no cover - the build checks
+        raise RuntimeError(f"{source}_rho.csv does not fill its grid")
+    return np.array(winds), np.array(suns), values
+
+
+def _bracket(x: np.ndarray, grid: np.ndarray):
+    """Lower index and weight of linear interpolation; x within grid."""
+    i = np.clip(np.searchsorted(grid, x, side="right") - 1, 0,
+                len(grid) - 2)
+    w = (x - grid[i]) / (grid[i + 1] - grid[i])
+    return i, w
+
+
+def mobley_rho(*, source, wind_speed, sun_zenith_deg, view_nadir_deg,
+               view_azimuth_deg):
+    """The sea surface's reflectance factor rho for an above-water
+    radiometer, from Mobley's tables.
+
+    rho = Lr / Ls: the sky radiance the sea surface reflects into the
+    radiometer, over the sky radiance measured in the mirror direction
+    (Mobley 1999, Eq. 4). It is "not an IOP of the sea surface": it
+    depends on the sun, the viewing direction, the wind, the sky and the
+    wavelength. Rrs = (Lt - rho Ls) / Ed (:func:`rrs_from_above_water`).
+
+    Parameters
+    ----------
+    source:
+        No default. ``"mobley1999"``: Mobley, C. D. (1999), "Estimation of
+        the remote-sensing reflectance from above-surface measurements",
+        Appl. Opt. 38, 7442-7455, doi:10.1364/AO.38.007442; Cox-Munk
+        surfaces, unpolarised ray tracing, the clear sky of Harrison &
+        Coombes; wind 0-14 m/s, sun 0-80 degrees. ``"mobley2015"``:
+        Mobley, C. D. (2015), "Polarized reflectance and transmittance
+        properties of windblown sea surfaces", Appl. Opt. 54, 4828-4849,
+        doi:10.1364/AO.54.004828; surfaces from wave spectra, polarised
+        ray tracing, a single-scattering Rayleigh sky, a fully developed
+        sea with the sun's rays along the wind; wind 0-15 m/s, sun 0-87.5
+        degrees. Both are for 550 nm, as the Ocean Optics Web Book
+        distributes them; neither paper prints its table.
+    wind_speed:
+        m/s, within the table's range; linear between its points.
+    sun_zenith_deg:
+        Degrees, within the table's range; linear between its points.
+    view_nadir_deg:
+        The radiometer's angle from the nadir, one of 0, 10, ..., 80 and
+        87.5: each value is the mean over a 10-degree band of nadir angle
+        (a polar cap at 0), the field of view of a typical radiometer, so
+        no value between two is given.
+    view_azimuth_deg:
+        The radiometer's azimuth from the sun's, one of 0, 15, ..., 180
+        (a 15-degree band each); not used at nadir 0. Mobley (1999)
+        recommends 40 degrees from the nadir and 135 from the sun.
+
+    All four take numbers or arrays that broadcast together. Returns a
+    float if every input is a number, an array otherwise.
+
+    Raises
+    ------
+    ValueError
+        For an unknown or missing source, a wind or sun outside the table,
+        or a viewing direction that is not one of its own.
+
+    Notes
+    -----
+    The 2015 table's own header calls it "a preliminary table for use
+    during review"; the Web Book offers it as the paper's revised table.
+    It gives a :class:`ProvenanceWarning`. The two tables differ by up to
+    a factor of two at the same conditions; Mobley (2015) found the 1999
+    method "not adequate for accurate estimation of water-leaving
+    radiance". The value for a real sky, with clouds or aerosol, is
+    neither (Mobley 1999, section 5). DECISIONS.md section 99, DATA.md
+    section 43.
+    """
+    if source not in MOBLEY_RHO_SOURCES:
+        raise ValueError(f"source must be one of {MOBLEY_RHO_SOURCES}, "
+                         f"not {source!r}; there is no default")
+    winds, suns, values = _rho_table(source)
+    wind = _finite(wind_speed, "wind_speed")
+    sun = _finite(sun_zenith_deg, "sun_zenith_deg")
+    nadir = _finite(view_nadir_deg, "view_nadir_deg")
+    azimuth = _finite(view_azimuth_deg, "view_azimuth_deg")
+    for name, x, grid, unit in (("wind_speed", wind, winds, "m/s"),
+                                ("sun_zenith_deg", sun, suns, "degrees")):
+        if np.any(x < grid[0]) or np.any(x > grid[-1]):
+            raise ValueError(f"{name} must lie within {source}'s table, "
+                             f"{grid[0]:g} to {grid[-1]:g} {unit}")
+    on_nadir = np.isin(nadir, _RHO_NADIR)
+    if not np.all(on_nadir):
+        raise ValueError("view_nadir_deg must be one of the table's own, "
+                         f"{', '.join(f'{v:g}' for v in _RHO_NADIR)}: each "
+                         "value is a mean over its band of directions, and "
+                         "none is given between two")
+    at_nadir = nadir == 0
+    on_azimuth = np.isin(azimuth, _RHO_AZIMUTH) | at_nadir
+    if not np.all(on_azimuth):
+        raise ValueError("view_azimuth_deg must be one of 0, 15, ..., 180 "
+                         "degrees from the sun (not used at nadir 0)")
+    if source == "mobley2015":
+        _warn("Mobley's 2015 table calls itself 'a preliminary table for "
+              "use during review'; it is the one the Ocean Optics Web Book "
+              "distributes as the paper's revised table. DATA.md section "
+              "43.")
+    wind, sun, nadir, azimuth = np.broadcast_arrays(wind, sun, nadir,
+                                                    azimuth)
+    k = np.searchsorted(_RHO_NADIR, nadir)
+    m = np.where(nadir == 0, 0,
+                 np.searchsorted(_RHO_AZIMUTH, np.where(nadir == 0, 0.0,
+                                                        azimuth)))
+    i, wi = _bracket(wind, winds)
+    j, wj = _bracket(sun, suns)
+    rho = ((1 - wi) * (1 - wj) * values[i, j, k, m]
+           + wi * (1 - wj) * values[i + 1, j, k, m]
+           + (1 - wi) * wj * values[i, j + 1, k, m]
+           + wi * wj * values[i + 1, j + 1, k, m])
+    return _result(rho, wind_speed, sun_zenith_deg, view_nadir_deg,
+                   view_azimuth_deg)
+
+
+@_data.positional_only()
+def rrs_from_above_water(lt, lsky, ed, /, *, rho):
+    """The remote sensing reflectance from above-water radiances.
+
+    Mobley, C. D. (1999), Appl. Opt. 38, 7442-7455, Eqs. (1), (2) and
+    (4)::
+
+        Rrs = (Lt - rho Lsky) / Ed
+
+    Lt is the radiance seen looking at the sea, Lsky the sky radiance in
+    the mirror direction, Ed the downwelling irradiance above the surface.
+    With a grey plaque of reflectance Rg read as Lg, Ed = pi Lg / Rg (Eq.
+    6). Mobley's Eq. (7), taking off Rrs(750 nm), is not applied.
+
+    Parameters
+    ----------
+    lt, lsky, ed:
+        In consistent units (or raw counts of one instrument, which divide
+        out); numbers or arrays that broadcast. Ed must be positive. NaN
+        marks a gap and gives NaN.
+    rho:
+        The reflectance factor, no default: :func:`mobley_rho`, or a value
+        you choose. Not negative.
+
+    Returns
+    -------
+    Rrs, 1/sr. A float if every input is a number, an array otherwise.
+    A negative value is kept: it says rho Lsky was more than Lt, so rho
+    was too large or Lsky not from the mirror direction.
+    """
+    lt = _spectral(lt, "lt")
+    lsky = _spectral(lsky, "lsky")
+    ed = _spectral(ed, "ed")
+    r = _spectral(rho, "rho")
+    if np.any(ed <= 0):
+        raise ValueError("ed must be positive; NaN marks a gap")
+    if np.any(r < 0):
+        raise ValueError("rho must not be negative")
+    return _result((lt - r * lsky) / ed, lt, lsky, ed, r)

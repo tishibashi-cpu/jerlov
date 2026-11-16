@@ -116,8 +116,10 @@ from .ocean_colour import (
     lee2011_rrs,
     lee2013_kd,
     lee2015_secchi_depth,
+    mobley_rho,
     morel2001_bbp,
     morel2001_kd,
+    rrs_from_above_water,
     subsurface_rrs,
 )
 from .qaa import (QAAResult, RamanCorrection, lee2013_raman_correction,
@@ -244,6 +246,8 @@ __all__ = [
     "lee2013_kd",
     "subsurface_rrs",
     "above_surface_rrs",
+    "mobley_rho",
+    "rrs_from_above_water",
     "GORDON1988_RRS_COEFFICIENTS",
     "LEE2002_RRS_COEFFICIENTS",
     "LEE2011_RRS_COEFFICIENTS",
@@ -279,4 +283,4 @@ __all__ = [
     "OsoaaRadianceScan",
 ]
 
-__version__ = "1.16.0"
+__version__ = "1.17.0"

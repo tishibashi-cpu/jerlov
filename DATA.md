@@ -3,7 +3,7 @@
 What every shipped table is, where it came from, what was verified, and what
 is known to be wrong with it.
 
-Forty-two entries are recorded below. Thirteen are confirmed defects, three were
+Forty-three entries are recorded below. Thirteen are confirmed defects, three were
 open questions that the first edition of Jerlov settled, and the rest are
 notes rather than defects. None of them is repaired silently: values that
 could be recovered carry `status = reconstructed` and say how, values that
@@ -49,6 +49,8 @@ could not are `missing`, and values that are used but doubtful are `suspect`.
 | `lee2015_aw.csv` | "Pure" seawater absorption inverted from Rrs, Lee et al. (2015) Table 1, with the smoothed column and Delta aw. 5 nm, 350-550 nm | 41 |
 | `gregg1990_table1.csv` | Extraterrestrial solar irradiance and the absorption coefficients of ozone, water vapour and oxygen, Gregg & Carder (1990) Table 1. 1 nm, 350-700 nm | 351 |
 | `usgs2017_reflectance.csv` | Absolute reflectance of ten materials, the USGS Spectral Library Version 7's ASD records, as measured. 1 nm, 350-830 nm | 4810 |
+| `mobley1999_rho.csv` | The sea surface's reflectance factor rho for above-water radiometry, Mobley (1999), as the Ocean Optics Web Book distributes it: 550 nm, wind 0-14 m/s, sun 0-80 degrees, 118 viewing directions | 8496 |
+| `mobley2015_rho.csv` | The same, Mobley (2015), polarised, a Rayleigh sky; wind 0-15 m/s, sun 0-87.5 degrees; **calls itself preliminary** | 11800 |
 
 The four tables drawn from the two Dstl datasets (`williamson2022_iop`,
 `williamson2022_measured`, `solonenko2015_iop` and `williamson2023_depth`)
@@ -2697,3 +2699,71 @@ so that their model's Kd came within 15 percent of Jerlov's (1968)
 (sections 2 and 19), so agreement with his 1968
 shortwave table is not independent of him. The r of a Jerlov type is not
 known, and of the factors tried here it moves the results most.
+
+## 43. The sea surface's reflectance factor rho: Mobley's two tables (note)
+
+Above the water, a radiometer pointed at the sea sees the water-leaving
+radiance and the sky reflected by the surface, Lt = Lw + rho Lsky, and
+Rrs = (Lt - rho Lsky) / Ed (Mobley 1999, Appl. Opt. 38, 7442, Eqs. 1, 2
+and 4). Since 1.17.0 `mobley_rho` gives rho from Mobley's tables and
+`rrs_from_above_water` the arithmetic (DECISIONS.md section 99).
+
+**Where the tables come from.** Neither paper prints its table. The Ocean
+Optics Web Book (Mobley's, "Surface Reflectance Factors", page updated
+2021-02-11, under a Creative Commons Attribution licence) offers both;
+`tools/build_mobley_rho.py` reads them from `sources/mobley_rho/`, checks
+their MD5 and that every point of the grid is there once, and writes the
+values as printed:
+
+| File | Surfaces and sky | Grid |
+|---|---|---|
+| `rhoTable_AO1999.txt`, MD5 aefcb0da753be57f5e84cdd6951ba76a | Cox-Munk, unpolarised ray tracing, Harrison & Coombes's clear sky | wind 0-14 m/s every 2; sun 0-80 every 10 |
+| `rhoTable_AO2015.txt`, MD5 b24599f57b205435eaf95c161d624cf9 | from wave spectra by FFT, polarised ray tracing, a single-scattering Rayleigh sky, the sun's rays along the wind | wind 0, 2, 4, 5, 6, 8, 10, 12, 14, 15 m/s; sun 0-80 every 10, and 87.5 |
+
+Both are for 550 nm, and for 118 viewing directions: the nadir, and nadir
+angles of 10 to 80 every 10 and 87.5 at azimuths of 0 to 180 from the sun
+every 15, each the mean over a 10 by 15 degree quad (Mobley 1999, p.
+7447). The 1999 file gives the direction of the reflected photons (Theta
+from the zenith, which is the radiometer's angle from the nadir) and the
+viewing azimuth from the sun (Phi-view); the shipped files use the
+radiometer's angles for both.
+
+**The 2015 table calls itself preliminary.** Its header: "NOTE: This is a
+preliminary table for use during review of the above paper ... The final
+table will be placed online once the above paper has been accepted for
+publication." The Web Book offers it as "the revised rho table of the
+2015 paper", and no other was found. It is shipped as distributed, and
+`mobley_rho` gives a ProvenanceWarning for it.
+
+**Against the papers.** The 2015 table gives 0.0179 to 0.0411 at 5 m/s,
+nadir 40, the sun at 30 and 60 and the azimuth at 90 and 135, as the
+paper's text says (p. 4846), and 0.0449 at 10 m/s, sun 40, (40, 135),
+where Fig. 19 says 0.045. At 10 m/s the same four give 0.0199 to 0.0457,
+where the text says 0.0195 to 0.0458: a small difference, perhaps of the
+preliminary table. The 1999 table gives 0.0336 at 10 m/s, sun 30, (40,
+135), where the paper's Table 1 prints 0.0337 for its clear sky; and its
+winds are 0 to 14 every 2, where the paper's runs were at 0, 2, 5, 10 and
+15 m/s. At (40, 135) and the sun at 30 it gives 0.0256, 0.0264 and 0.0276
+at 0, 2 and 4 m/s, the 0.028 the paper's abstract calls acceptable below 5
+m/s.
+
+**The two disagree.** At the recommended (40, 135), sun 30 and 5 m/s, the
+1999 table gives 0.0283 (between 4 and 6 m/s) and the 2015 table 0.0411;
+Mobley (2015) found the 1999 values "not adequate for accurate estimation
+of water-leaving radiance". In `examples/ocean_colour_and_secchi.py` part
+9, Jerlov IB's Rrs is made into Lt with one table's rho and recovered with
+the other's, Lsky / Ed being that of a uniform sky carrying Gregg &
+Carder's diffuse irradiance (a stand-in). At (40, 135), recovering with
+the 1999 rho what the 2015 rho made gives Rrs 16, 71 and 619 percent high
+at 443, 555 and 670 nm, and QAA_v6's a(443) 37 percent high; the other way
+round, Rrs(670) falls below zero, which QAA refuses. With 0.028 instead of
+the 1999 table's own value the errors are 0, 2 and 15 percent. At (30, 90)
+the two tables are closer (0.0287 and 0.0306) and the errors smaller.
+
+**What it does not settle.** Both tables are for clear skies at 550 nm.
+Clouds raise rho more than fivefold in Mobley's (1999) Table 1 (0.0337
+to 0.1835 for a cloud bank on the horizon at 700-800 nm),
+and Sun glint and the sky's colour make it depend on wavelength (Mobley
+1999, section 4; Lee et al. 2010, Opt. Express 18, 26313). Which table is
+nearer a real sky is not known here; the 2015 one is for a Rayleigh sky,
+"at best an approximation to an extremely clear sky" (the Web Book).
