@@ -303,7 +303,11 @@ depth by at most 2.4 percent. An eighth asks what the choice among the five
 pure water absorption spectra does to the reflectance of the clearest
 water: in pure sea water it moves Rrs by up to **6.85** times at 380 nm and
 2.62 at 443, and in Jerlov IB by 1.12 to 1.34 times, less than the
-particles' backscatter ratio does at every wavelength.
+particles' backscatter ratio does at every wavelength. A ninth recovers
+Rrs from above-water radiances with the sea surface's reflectance factor
+from Mobley's 1999 and 2015 tables: at the recommended view they give
+0.0283 and 0.0411, and recovering IB's Rrs with the wrong one is off by 16
+percent at 443 nm and **619 percent** at 670 nm, or below zero.
 
 **`sunlight_and_d65.py`** — the clear sky at the sea surface by the model
 of Gregg & Carder (1990), for one stated maritime atmosphere and the sun

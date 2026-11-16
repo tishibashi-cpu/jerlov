@@ -9,5 +9,14 @@ This product includes data derived from:
   (c) Crown copyright (2022), Dstl. Licensed under the Open Government
   Licence v3.0: http://www.nationalarchives.gov.uk/doc/open-government-licence/version/3
 
+This product includes the sea surface reflectance factor tables of:
+
+  Mobley, C. D. (1999), Appl. Opt. 38, 7442-7455, and Mobley, C. D. (2015),
+  Appl. Opt. 54, 4828-4849, as distributed by the Ocean Optics Web Book
+  (rhoTable_AO1999.txt and rhoTable_AO2015.txt),
+  https://www.oceanopticsbook.info/view/remote-sensing/level-3/surface-reflectance-factors
+  Ocean Optics Web Book contents are under a Creative Commons Attribution
+  licence.
+
 Coefficient tables are additionally derived from the publications listed in
 DATA.md, which records the provenance of every value.

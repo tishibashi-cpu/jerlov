@@ -1562,10 +1562,12 @@ def test_the_secchi_example_warns_only_as_it_reports(secchi_example):
     """Every warning it caught is printed; each is about the depths of the
     Secchi check (lee2015_secchi_depth), from part 6 about Kd below the
     range of lee2013_kd, which part 6 reports, or from part 7 about the
-    range lee2011_rrs was fitted to, which part 7 reports."""
+    range lee2011_rrs was fitted to, which part 7 reports, or from part 9
+    about Mobley's 2015 table calling itself preliminary, which part 9
+    reports."""
     for message in secchi_example["caught"]:
         assert ("0.1 to 30 m" in message or "0.02 to 5 1/m" in message
-                or "0.0002-0.37" in message)
+                or "0.0002-0.37" in message or "preliminary" in message)
     # Part 7: Lee et al.'s (2011) fit range, only where it reports it.
     assert any("0.0002-0.37" in m for m in secchi_example["caught"]) \
         == bool(secchi_example["geometry"]["outside"])
@@ -2384,3 +2386,33 @@ def test_pure_water_and_the_reflectance(secchi_example):
     readme = _flat("examples/README.md")
     assert "up to **6.85** times at 380 nm and 2.62 at 443" in readme
     assert "by 1.12 to 1.34 times" in readme
+
+
+# -- rho and Rrs above the water (ocean_colour_and_secchi.py, part 9,
+#    DECISIONS.md section 99) -----------------------------------------------
+
+
+@source_tree
+def test_rho_and_the_reflectance_above_the_water(secchi_example):
+    e = secchi_example["above_water"]["errors"]
+
+    def pct(key):
+        rrs, a443 = e[key]
+        return [round(100 * float(x)) for x in rrs], a443
+
+    rrs, a443 = pct((40.0, 135.0, "mobley2015", "mobley1999"))
+    assert rrs == [16, 71, 619] and round(100 * a443) == 37
+    rrs, a443 = pct((40.0, 135.0, "mobley1999", "mobley2015"))
+    assert rrs[2] < -100 and np.isnan(a443)
+    assert pct((40.0, 135.0, "mobley1999", None))[0] == [0, 2, 15]
+    at_90 = [abs(x) for t, g in (("mobley1999", "mobley2015"),
+                                 ("mobley2015", "mobley1999"))
+             for x in pct((30.0, 90.0, t, g))[0]]
+    assert (min(at_90), max(at_90)) == (2, 88)
+    data = _flat("DATA.md")
+    for quoted in ("gives Rrs 16, 71 and 619 percent high",
+                   "QAA_v6's a(443) 37 percent high",
+                   "the errors are 0, 2 and 15 percent",
+                   "1999 table gives 0.0283 (between 4 and 6 m/s) and the "
+                   "2015 table 0.0411", "(0.0287 and 0.0306)"):
+        assert quoted in data, quoted

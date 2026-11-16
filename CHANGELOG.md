@@ -4,6 +4,34 @@ Every release is archived on Zenodo under the concept DOI
 [10.5281/zenodo.22321312](https://doi.org/10.5281/zenodo.22321312), which
 always resolves to the latest version.
 
+## 1.17.0 — 2026-11-16
+
+The sea surface's reflectance factor rho, and Rrs from radiances measured
+above the water (DECISIONS.md section 99). No earlier value changed.
+
+**New.**
+
+- `mobley_rho(*, source, wind_speed, sun_zenith_deg, view_nadir_deg,
+  view_azimuth_deg)`: rho from Mobley's (1999) table or his (2015) one,
+  `source` with no default. Linear in the wind and the sun between the
+  table's points; the viewing direction must be one of the table's, since
+  each value is a mean over its band of directions; outside the table,
+  refused. The 2015 table calls itself preliminary and warns.
+- `rrs_from_above_water(lt, lsky, ed, /, *, rho)`: (Lt - rho Lsky) / Ed;
+  rho has no default; a negative result is kept.
+
+**Data.** `mobley1999_rho.csv` (8496 values) and `mobley2015_rho.csv`
+(11800), from the Ocean Optics Web Book's files as printed, by
+`tools/build_mobley_rho.py`; Creative Commons Attribution, in `NOTICE`.
+
+**Examples.** `ocean_colour_and_secchi.py` part 9: at the recommended
+view (40, 135), sun 30 and 5 m/s, the two tables give 0.0283 and 0.0411;
+in Jerlov IB, Rrs made with one and recovered with the other is off by
+16 percent at 443 nm and 619 percent at 670 nm, or below zero.
+
+**Documents.** DATA.md section 43, the README, the API reference, NOTICE,
+sources/README.md.
+
 ## 1.16.0 — 2026-11-16
 
 The attenuation of the visible and of the whole shortwave from a and bb,

@@ -5999,3 +5999,129 @@ README, `docs/api.rst`, the CHANGELOG.
 - Solonenko & Mobley's b(490) of I and IA rests on values flagged suspect
   and warns; with their I and IA, the model's K_VIS falls below 0.04 per m
   at the deeper levels, outside its fit, and warns.
+
+## 99. The sea surface's reflectance factor rho, and Rrs from above-water radiances (1.17.0): the plan
+
+The user chose (2026-11-16) NEXT_STEPS's item 8 of section 0b, supplied
+both papers, and chose to ship both tables and how to read between their
+points:
+
+- Mobley (1999), "Estimation of the remote-sensing reflectance from
+  above-surface measurements", Appl. Opt. 38, 7442-7455,
+  doi:10.1364/AO.38.007442.
+- Mobley (2015), "Polarized reflectance and transmittance properties of
+  windblown sea surfaces", Appl. Opt. 54, 4828-4849,
+  doi:10.1364/AO.54.004828.
+
+**What they give.** Rrs = Lw / Ed (Eq. 1), and Lw is estimated as Lt -
+rho Ls, Lt the radiance the radiometer sees looking at the sea and Ls the
+sky radiance in the mirror direction (Eq. 4); with Ed from a grey plaque,
+Rrs = (Lt - rho Ls) / (pi Lg / Rg) (Eq. 6). rho is "not an IOP of the sea
+surface": it depends on the sun, the viewing direction, the wind, the sky
+and the wavelength. The 1999 paper recommends viewing 40 degrees from the
+nadir and 135 from the sun, and says rho = 0.028 there is acceptable only
+below 5 m/s. The 2015 paper redoes rho with surfaces from wave spectra and
+polarised ray tracing, for a single-scattering Rayleigh sky, and finds a
+factor of two spread where the 1999 method gave less than 20 percent.
+
+**The tables.** Neither paper prints its table. Both are on the Ocean
+Optics Web Book ("Surface Reflectance Factors", page updated 2021-02-11;
+the site is under a Creative Commons Attribution licence), downloaded
+2026-11-16:
+
+- `rhoTable_AO1999.txt` (MD5 aefcb0da753be57f5e84cdd6951ba76a): 550 nm,
+  Cox-Munk surfaces, unpolarised, the Harrison & Coombes clear sky; wind
+  0-14 m/s every 2, sun 0-80 degrees every 10; 118 viewing directions
+  (nadir angle 0, 10, ..., 80 and 87.5; azimuth from the sun 0-180 every
+  15), each the mean over a 10 by 15 degree quad. Its Theta is the
+  direction of travel of the reflected photons from the zenith, which is
+  the radiometer's angle from the nadir, and its Phi-view the azimuth from
+  the sun. 8496 values.
+- `rhoTable_AO2015.txt` (MD5 b24599f57b205435eaf95c161d624cf9): FFT
+  surfaces, polarised ray tracing, Rayleigh single-scattering sky at 550
+  nm, fully developed sea, the sun's rays along the wind; wind 0, 2, 4, 5,
+  6, 8, 10, 12, 14 and 15 m/s, sun 0-80 every 10 and 87.5; the same 118
+  directions. 11800 values. Its header calls it "a preliminary table for
+  use during review" whose "final table will be placed online once the
+  above paper has been accepted"; the page offers it as the 2015 paper's
+  revised table. That is recorded, not resolved.
+
+Checks made before the plan: the 2015 table gives 0.0179-0.0411 at 5 m/s
+for the conditions of the paper's Fig. 18 (sun 30 and 60, azimuth 90 and
+135, nadir 40), as the paper's text says, and 0.0449 at 10 m/s, sun 40,
+(40, 135), the paper's 0.045; at 10 m/s it gives 0.0199-0.0457 where the
+text says 0.0195-0.0458. The 1999 table gives 0.0336 at 10 m/s, sun 30,
+(40, 135), where the paper's Table 1 prints 0.0337 for its clear sky; the
+paper's runs were at 0, 2, 5, 10 and 15 m/s, the table's at 0 to 14 every
+2.
+
+**Shipped** as `jerlov/data/mobley1999_rho.csv` and
+`mobley2015_rho.csv` (wind_speed, sun_zenith_deg, view_nadir_deg,
+view_azimuth_deg, rho, every value as printed), written by
+`tools/build_mobley_rho.py` from `sources/mobley_rho/`, which checks the
+MD5s and the counts above. NOTICE and DATA.md give the source and the
+licence; the files themselves are not in version control (sources/).
+
+**The functions** (public, 1.17.0):
+
+- `mobley_rho(*, source, wind_speed, sun_zenith_deg, view_nadir_deg,
+  view_azimuth_deg)`: rho from one table, `source` "mobley1999" or
+  "mobley2015" with no default. Wind and sun are interpolated linearly
+  between the table's points; the viewing direction must be one of the
+  table's (each value is a mean over its quad, so a value between quads
+  would mix two fields of view); at nadir 0 the azimuth is not used.
+  Outside the table's wind and sun, refused. Numbers or arrays that
+  broadcast. The 550 nm and the sky each table assumes are in the
+  docstring. The 2015 table gives a ProvenanceWarning, as its own header
+  calls it preliminary; the 1999 table does not.
+- `rrs_from_above_water(lt, lsky, ed, /, *, rho)`: (Lt - rho Lsky) / Ed,
+  Eq. (1) with Eq. (4); rho has no default; negative results are kept
+  (they say the rho was too large) and NaN passes. Mobley's Eq. 7 (taking
+  off Rrs at 750 nm) is not applied; the docstring says so.
+
+**Tests.** The counts, grids and MD5-checked values above; the checks
+above against the papers; interpolation equal to the table at its points
+and between two points linear; refusals (direction not on the grid, wind
+or sun outside, no source, unknown source); the Rrs arithmetic.
+
+**Example.** A part of `ocean_colour_and_secchi.py`: for Jerlov IB with
+section 97's IOPs, Lt / Ed made from its Rrs plus rho Lsky / Ed, with
+Lsky / Ed that of a uniform sky carrying Gregg & Carder's diffuse
+irradiance (Lsky = Ed,diffuse / pi; a stand-in, said as such), then Rrs
+recovered with rho from the 1999 table, the 2015 table and 0.028, at
+(40, 135) and at (30, 90), and what QAA makes of each. Read off: the
+error in Rrs at 443, 555 and 670 nm and in QAA's a(443).
+
+**Documents.** DATA.md section 43; README; docs/api.rst; NOTICE;
+sources/README.md; .zenodo.json; CHANGELOG. Version 1.17.0: two public
+names.
+
+**Differences from the plan.**
+
+- A viewing azimuth outside 0-180 degrees is refused, not folded: the
+  tables give 0-180 only, and neither paper says the field is symmetric
+  about the sun's plane for every case (the 2015 one has the wind along
+  the sun's rays).
+- The wind, sun and viewing angles refuse NaN (they are conditions, not
+  spectra); `rrs_from_above_water` lets NaN through as a gap, as the
+  package does for spectra.
+- The 1999 file lists its azimuths from 180 down; the build checks that
+  every grid point is there once rather than their order.
+- The example's 5 m/s lies between the 1999 table's 4 and 6 m/s and is
+  interpolated. Recovering with the 2015 rho what the 1999 rho made gives
+  a negative Rrs(670), which QAA refuses; the example prints that rather
+  than an a(443). Its atmosphere repeats that of `sunlight_and_d65.py`,
+  with tools/sm_closure.py's aerosol, as an example may not import a tool.
+
+**What was found** (DATA.md section 43).
+
+- The 2015 table reproduces the paper's 0.0179-0.0411 at 5 m/s and its
+  0.045 of Fig. 19, but at 10 m/s gives 0.0199-0.0457 against the text's
+  0.0195-0.0458; its header calls it preliminary.
+- The 1999 table gives 0.0336 where the paper's Table 1 prints 0.0337, and
+  its winds (0-14 every 2) are not the paper's runs (0, 2, 5, 10, 15).
+- At (40, 135), sun 30, 5 m/s: 0.0283 and 0.0411. In Jerlov IB, with a
+  uniform sky's Lsky / Ed, the choice of table moves Rrs by 16, 71 and 619
+  percent at 443, 555 and 670 nm and QAA_v6's a(443) by 37 percent, or
+  makes Rrs(670) negative; at (30, 90) the tables differ by 0.0018, and
+  recovering with one what the other made is off by 2 to 88 percent.

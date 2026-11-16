@@ -295,6 +295,10 @@ Kd without a water type, Rrs and the Secchi depth
 
 .. autofunction:: lee2007_depth_of_fraction
 
+.. autofunction:: mobley_rho
+
+.. autofunction:: rrs_from_above_water
+
 .. autofunction:: gordon1989_d0
 
 .. autofunction:: gordon1989_kd
