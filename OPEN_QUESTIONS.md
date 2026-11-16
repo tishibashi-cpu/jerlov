@@ -156,6 +156,22 @@ below.
   they lie beyond that at the same blue cells as before, 5C at 425 nm
   included, and also IB at 500 nm, just beyond. The conclusion does not
   change.
+- Why the blue end disagrees (release 1.15.7), from the Kd that
+  Williamson & Hollins's own campaigns measured, which their dataset
+  keeps. The coastal types: the campaigns typed 1C, 3C and 5C measured Kd
+  at 412 nm of a median 0.59, 0.53 and 0.56 of Jerlov's (1976), what their
+  averaged IOPs give; and where a, b and Kd were measured in the same
+  campaign, the Monte Carlo from its own a and b gives a median 0.90, 0.93
+  and 1.06 of its own Kd. The IOPs and the calculation agree with the
+  water; the water's blue Kd and Jerlov's 1976 values do not. Against his
+  1968 edition, whose coastal blue is lower, the measured Kd are 0.85, 0.66
+  and 0.62 of his. IB: the campaigns typed IB measured Kd of 1.02 to 1.12
+  of Jerlov's (1976) in the blue; it is IB's averaged a that is high. It
+  rests on six campaigns, in two of which the measured a is at or above
+  the Kd measured in the same campaign, which no calculation can give
+  back, and in two of which a at 412 nm is a third of their own Kd.
+  Closing IB's blue cells needs a 1.0 to 1.8 standard deviations lower,
+  within that spread.
 
 **The first answer was wrong, and so was the first account of why.**
 Release 1.15.3 made this comparison with OSOAA alone and concluded that
@@ -171,10 +187,14 @@ when Williamson & Hollins's paper, read in full, reported agreement where
 Reading it found the fault in the package, fixed in 1.15.5. The old runs
 are kept as the record.
 
-**What is not known.** Why the blue end disagrees: the clearest type's
-measured IOPs attenuate more than Jerlov's Kd there, the coastal types'
-less. HydroLight was not run on these waters; the fourth question checks
-the Monte Carlo against it on Solonenko & Mobley's.
+**What is not known.** Why Jerlov's 1976 coastal blue Kd are higher than
+both his 1968 values and the waters later typed by them: his 1976 text is
+the place that could say, and the package has not seen it. Which of IB's
+six campaigns are right. Why a is at or above the Kd measured in the same
+campaign in 30 of the 211 matched entries for Jerlov III, 9 of 88 for II,
+3 of 11 for IB, 3 of 79 for 3C, 3 of 12 for 5C and none of 68 for 1C. HydroLight was not run on these waters; the
+fourth question checks the Monte Carlo against it on Solonenko &
+Mobley's.
 
 **Where.** DATA.md sections 38 and 39; DECISIONS.md sections 90 to 93;
 `examples/closure_with_jerlov_kd.py`; `tools/kd_monte_carlo.py`,
@@ -182,7 +202,9 @@ the Monte Carlo against it on Solonenko & Mobley's.
 `tools/osoaa_closure.py` and `examples/data/osoaa_closure/`, and the old
 ones in `examples/data/osoaa_closure_f11_too_small/`; the runs with pure
 water's scattering and the sky in `tools/sm_closure.py` and
-`examples/data/sm_closure/` (DATA.md section 40, DECISIONS.md section 94).
+`examples/data/sm_closure/` (DATA.md section 40, DECISIONS.md section 94);
+the campaigns' own Kd, a and b in `tools/blue_end.py` and
+`examples/data/blue_end/` (DATA.md section 41, DECISIONS.md section 95).
 
 ## 4. Does the Monte Carlo give back HydroLight's Kd from the same IOPs?
 

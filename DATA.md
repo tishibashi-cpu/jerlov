@@ -3,7 +3,7 @@
 What every shipped table is, where it came from, what was verified, and what
 is known to be wrong with it.
 
-Forty entries are recorded below. Thirteen are confirmed defects, three were
+Forty-one entries are recorded below. Thirteen are confirmed defects, three were
 open questions that the first edition of Jerlov settled, and the rest are
 notes rather than defects. None of them is repaired silently: values that
 could be recovered carry `status = reconstructed` and say how, values that
@@ -2434,4 +2434,77 @@ times; against Jerlov (1976) the Kd lie beyond that at the same blue
 cells as before (IB at 425 to 475 nm, now 1.41 to 1.55 times Jerlov's; 1C
 and 5C at 425 nm; 3C at 425 and 450 nm), and also IB at 500 nm (1.27),
 just beyond.
+
+## 41. The blue end: the Kd measured in the same waters (note)
+
+Section 40 left the blue end unexplained: Williamson & Hollins's averaged
+a and b give Kd 1.41 to 1.55 times Jerlov's (1976) for IB at 425 to 475
+nm, and 0.53 to 0.66 for the coastal types at 425 nm (1C, 3C, 5C), beyond
+what the sun, the phase function and the pure water can make. Their
+figshare dataset keeps every step of their processing, and three of its
+files answer most of it (DECISIONS.md section 95). Each was checked
+against figshare's MD5 by `tools/blue_end.py`, which reduces them into
+`examples/data/blue_end/`:
+
+| File there | From | What |
+|---|---|---|
+| `kd_campaigns.csv` | `op_STEP_5_k.csv` | 15308 Kd values of the 2710 campaigns kept, upper 10 m, with the type each was given |
+| `iop_campaigns.csv` | `op_STEP_5_a.csv`, `op_STEP_5_b.csv` | a and b of every campaign behind the averages, with its type |
+| `matched.csv` | `op_STEP_7_kab.csv`, unchanged | 473 entries of a, b and Kd measured in the same campaign at 412, 510, 532 or 555 nm |
+| `runs.csv` | the Monte Carlo | Kd from each matched entry's own a and b, 2365 runs |
+| `closing_a.csv` | the Monte Carlo | the a that would close each blue cell |
+
+Crown copyright (2022), Dstl; Open Government Licence v3.0. Not in the
+wheel. Each campaign's type is Williamson & Hollins's: the Jerlov type
+whose Kd (1976) is nearest the campaign's own over its wavelengths, by
+mean absolute percentage error, kept within 25 percent (their section
+2.E).
+
+**The coastal types: the waters, not the IOPs.** The campaigns typed 1C,
+3C and 5C measured Kd at 412 nm of a median 0.59, 0.53 and 0.56 of Jerlov's
+(1976), and at 443 nm 0.78, 0.72 and 0.72; by 490 nm they are 0.91 to 1.03.
+That is what their averaged IOPs gave (0.59, 0.53, 0.66 at 425 nm). And
+where a, b and Kd were measured in the same campaign, the Monte Carlo from
+the campaign's own a and b gives a median 0.90, 0.93 and 1.06 of its own
+Kd at 412 nm (0.85 to 1.19 with the sun or the station varied). So the
+IOPs and the radiative transfer agree with the Kd measured in the same
+water; what disagrees is that water's blue Kd and the one Jerlov printed
+in 1976. Against Jerlov's 1968 edition, whose coastal Kd at 425 nm are
+0.65 (1C), 0.77 (3C) and 0.89 (5C) of the 1976 values, the measured Kd at
+412 nm are a median 0.85, 0.66 and 0.62: for 1C most of the gap is the
+revision Jerlov made between the editions, for 3C and 5C less of it. Why he raised the coastal blue
+in 1976 is a question for his 1976 text, which this package has not seen.
+To close the gap from the IOPs side, the coastal a would have to rise by
+3.4 to 5.2 standard deviations of their measured points (1.7 for 5C).
+
+**IB: the IOPs, not Jerlov.** The campaigns typed IB measured Kd of a
+median 1.02, 1.12 and 1.03 of Jerlov's (1976) at 412, 443 and 490 nm: the
+water agrees with Jerlov. It is IB's averaged a that does not. It rests on
+six campaigns, and they disagree with themselves:
+
+- in two (292 and 293, Sea of Japan, 1999) the measured a is at or above
+  the Kd measured in the same campaign, at 440 and 510 nm (293 at 555 nm
+  too), which no
+  radiative transfer calculation can give back: by Gershun's law a = mu
+  K_E with mu at most 1, and every Monte Carlo run of sections 39 and 40
+  has Kd at least 1.012 times a;
+- in two (1841 and 1845, near Japan, 2001) a at 412 nm is a third of their
+  own Kd, and the Monte Carlo from their a and b gives a median 0.57 of
+  the measured Kd at 412 nm;
+- two (1642 and 1648) measured Kd, in the blue, only at 490 nm.
+
+To close IB's blue cells, a would have to fall by 1.0 to 1.8 standard
+deviations of IB's measured points (2.4 to 4.3 standard errors): within
+the spread of six inconsistent campaigns. Which of them are right the
+package cannot say.
+
+**a at or above Kd is not rare.** In the matched set it holds in 3 of 11
+entries for IB, 9 of 88 for II, 30 of 211 for III, 3 of 79 for 3C, 3 of 12
+for 5C and none of 68 for 1C. Such entries cannot be closed by any phase
+function, sun or sky, and they enter the averages as they are.
+
+**The spread between types.** From one type to the next, IB to 5C, the
+measured a at 412, 440 and 488 nm rises by 1.2 to 2.1 pooled standard
+deviations and b by 0.9 to 1.4: the types overlap, and a single campaign
+can sit nearer its neighbour's average than its own.
 

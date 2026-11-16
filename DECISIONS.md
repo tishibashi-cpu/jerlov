@@ -5490,3 +5490,142 @@ phase function; only OSOAA and the Monte Carlo were); both were
 corrected. A test first required the sky to raise Kd by more than 3
 percent, a figure not taken from any calculation; it failed at 2.1
 percent, and now requires only a rise.
+
+## 95. Why the blue end disagrees: the Kd measured in the same waters (1.15.7): the plan
+
+`OPEN_QUESTIONS.md`'s third question leaves one thing unexplained: at the
+blue end, Williamson & Hollins's averaged IOPs give Kd 1.41 to 1.55 times
+Jerlov's (1976) for IB and 0.53 to 0.66 for the coastal types, beyond
+what the unrecorded conditions can make (section 94). The user chose this
+on 2026-11-16, together with two smaller items it needs: how far Jerlov's
+two editions differ (1968 against 1976, every type and wavelength), and
+how the spread of the measured points compares with the gap.
+
+**What is already in hand.** Williamson & Hollins's figshare dataset
+(DOI 10.6084/m9.figshare.20290782, Version 3, Open Government Licence
+v3.0) keeps every step of their processing. Three of its files, not read
+until now, hold what the averaged IOPs hide (each downloaded and checked
+against figshare's MD5 on 2026-11-16):
+
+- `op_STEP_5_k.csv`: the Kd of each of the 2,710 measurement campaigns
+  they kept, over the upper 10 m, each with the Jerlov type it was given
+  (nearest Jerlov 1976 Kd by mean absolute percentage error over the
+  campaign's own wavelengths, within 25 percent; their section 2.E);
+- `op_STEP_5_a.csv` and `op_STEP_5_b.csv`: a and b of each campaign that
+  went into the averages, with its type;
+- `op_STEP_7_kab.csv`: a, b and Kd measured in the same campaign at the
+  same wavelength, 412, 510, 532 and 555 nm (their section 2.H).
+
+A look at them before this plan was written (and so, in the spirit of
+section 92, recorded here rather than hidden): the campaigns typed 1C and
+3C have measured Kd at 410 to 430 nm of about 0.53 to 0.59 times Jerlov's
+(1976), the same as the IOPs give, while the campaigns typed IB have
+measured Kd close to Jerlov's in the blue; and of the six campaigns behind
+IB's averaged a, in two the a at 412 or 440 nm is about equal to or above
+the Kd measured in the same campaign. The tests below were chosen after
+that look; what they will count as an answer is fixed here, before they
+are run.
+
+**The parts** (`tools/blue_end.py`, which reads the three files from
+`sources/20290782/` and writes `examples/data/blue_end/`; a new part of
+`closure_with_jerlov_kd.py` prints every figure):
+
+1. *The two editions.* Jerlov (1968) over Jerlov (1976), at the
+   wavelengths both printed, for the ten types. Recorded.
+2. *The Kd each type's waters measured.* For every campaign kept by
+   Williamson & Hollins, its measured Kd over Jerlov's at the same
+   wavelength (the 1 nm tables, which interpolate linearly between the
+   printed values), grouped by type and by the nearest of Jerlov's printed
+   wavelengths within 12.5 nm: median, quartiles and count, against both
+   editions.
+3. *The IOPs against the Kd of the same campaign.* For each entry of the
+   matched set, the Monte Carlo's Kd from the campaign's own a and b
+   (section 94's options: pure water's share by Williamson & Hollins's
+   own Eq. 8a, the sky of Gregg & Carder at an aerosol of 0.2; the sun at
+   30 degrees, which the data do not record, 0 and 60 as a factor;
+   NUC 2240's phase function, HAOCE 11's and AUTEC 8's, the lowest and
+   highest bb/b of the stations, as a factor), over the Kd measured in it.
+   Kd over the first penetration depth. Where the campaign's a is not
+   positive, or b is below Eq. 8a's bw, the entry is recorded and not run.
+4. *A against Kd within a campaign.* For every campaign with a and Kd at
+   the same wavelength (the matched set, and the IOP campaigns of each
+   type whose Kd campaign has the wavelength within 3 nm), whether the
+   measured a is at or above the measured Kd. No radiative transfer
+   calculation returns Kd below a (Gershun's law, a = mu K_E with mu at
+   most 1; every Monte Carlo run of sections 92 and 94 has Kd/a of at
+   least 1.012), so such an entry cannot be closed by any phase function,
+   sun or sky.
+5. *The spread.* For each blue cell of section 94 beyond the reach, the
+   change in a that would close it (by the Monte Carlo, b held), in units
+   of the standard deviation of the type's measured points and of the
+   standard error (SD over the square root of the campaign count); and the
+   difference between neighbouring types' measured a and b in units of
+   their pooled SD.
+
+**What will be read off, decided now.**
+
+- Coastal types: if, at 425 nm, the median measured Kd of the campaigns
+  typed 1C, 3C and 5C over Jerlov (1976) lies within 0.10 of what their
+  averaged IOPs give (section 94: 0.59, 0.53, 0.66), and part 3's median
+  for those types at 412 nm lies within 0.85 to 1.15, the documents say
+  that the coastal blue gap is between the waters typed and Jerlov's 1976
+  values, not in the IOPs or the calculation; and say against the 1968
+  edition how much of it remains.
+- IB: if the campaigns typed IB measured Kd within 0.90 to 1.15 of Jerlov
+  (1976) at 425 to 475 nm, the IB gap is in the averaged IOPs, not in
+  Jerlov's Kd; parts 4 and 5 then say whether it is within their spread
+  and whether some campaigns' a cannot be closed at all. Which campaigns
+  are right is not something this package can settle.
+- Otherwise the documents say what was found, as it is.
+
+None of this decides why Jerlov's 1976 coastal blue values are what they
+are: Jerlov (1976) is not in hand, and its text is the only place that
+could say.
+
+**The data shipped.** `examples/data/blue_end/` holds what the parts read,
+reduced from the three files (the campaign, its type, the wavelength and
+the value; for `op_STEP_7_kab.csv`, the file as it is), with the
+licence's attribution; not in the wheel. `sources/README.md` lists the
+three files.
+
+**Documents.** `OPEN_QUESTIONS.md`'s third question; DATA.md section 41;
+the example's new part; NEXT_STEPS's items 5, 7 and 9 of section 0d.
+
+**Version.** 1.15.7.
+
+**Differences from the plan.**
+
+- Part 2 grouped the campaigns by the nearest of Jerlov's printed
+  wavelengths within 12.5 nm. Run, that put the many measurements at
+  412 nm with 400 nm (12 nm away) and left 425 nm all but empty. Before
+  any figure was read off, the grouping was changed to the bands the
+  measurement wavelengths cluster in (410-414, 440-445, 486-491, 508-512
+  and 550-560 nm, named 412, 443, 490, 510 and 555), each campaign against
+  Jerlov's 1 nm table at its own wavelength, and only 310 to 700 nm, which
+  both editions cover. The coastal criterion's "at 425 nm" is therefore
+  read at 412 nm, and IB's "425 to 475 nm" at 412, 443 and 490 nm.
+- No matched entry had a not positive or b below pure water's: none was
+  left unrun.
+- The closing a converged to a residual below 1e-4 in the logarithm of
+  Kd but for IB at 475 nm, 4e-4, after eight secant steps; recorded in
+  `closing_a.csv`.
+- Part 3's "factor" is reported as how far the sun and the stations move
+  the median of each type, not the range over single entries, which spans
+  the entries' own spread (0.51 to 3.01 at 412 nm for the coastal types)
+  and says nothing about the conditions.
+
+**What was found** (2026-11-16).
+
+- Coastal types: the campaigns typed 1C, 3C and 5C measured Kd at 412 nm
+  of a median 0.59, 0.53 and 0.56 of Jerlov (1976), within 0.10 of their
+  averaged IOPs' 0.59, 0.53 and 0.66; part 3's median at 412 nm is 0.90,
+  0.93 and 1.06. The criterion is met: the coastal blue gap is between the
+  waters typed and Jerlov's 1976 values. Against 1968 the measured Kd are
+  0.85, 0.66 and 0.62.
+- IB: the campaigns typed IB measured Kd of 1.02, 1.12 and 1.03 of Jerlov
+  (1976) at 412, 443 and 490 nm. The criterion is met: the IB gap is in
+  the averaged IOPs. Of its six IOP campaigns, two have a at or above
+  their own Kd and two have a at 412 nm a third of it; closing the blue
+  cells needs a 1.0 to 1.8 SD lower.
+- a at or above Kd in the matched set: IB 3 of 11, II 9 of 88, III 30 of
+  211, 1C 0 of 68, 3C 3 of 79, 5C 3 of 12.

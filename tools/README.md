@@ -78,3 +78,11 @@ again, in about half an hour on four cores. Each cell's runs share a seed.
 same cells of Solonenko & Mobley's and writes
 `examples/data/osoaa_sm_closure/`, 286 runs, by hand outside CI. Both are
 for DATA.md section 40; `examples/closure_with_jerlov_kd.py` reads them.
+
+`blue_end.py` (1.15.7, DECISIONS.md section 95) reads four files of the
+Williamson & Hollins dataset from `sources/20290782/`, checks each against
+figshare's MD5, reduces them into `examples/data/blue_end/` (the Kd, a and
+b of every campaign, with its type, and the matched set as it is), and
+runs the Monte Carlo on each matched entry's own a and b, 2365 runs, in
+about fifteen minutes on four cores; `--closing` writes the a that would
+close each blue cell. DATA.md section 41.

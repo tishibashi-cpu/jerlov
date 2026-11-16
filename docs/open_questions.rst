@@ -20,6 +20,11 @@ what is still not known, and where the details are. In a line each:
    By Monte Carlo, within what the unrecorded sun, phase function and pure
    water can explain, except at the blue end: the clearest type's IOPs
    attenuate more than Jerlov's Kd there and the coastal types' less. The
+   Kd the same waters measured settles most of it: the coastal waters'
+   own blue Kd is as low as their IOPs give, about half Jerlov's 1976
+   values (less far from his 1968 ones), while the clearest type's water
+   agrees with Jerlov and its averaged absorption rests on six campaigns,
+   two of which measured more absorption than attenuation. The
    code OSOAA, run as a second calculation, agrees with the Monte Carlo
    within 10 percent. A first answer, made with OSOAA alone, was wrong,
    because this package wrote OSOAA's phase function 4 pi too small. The
