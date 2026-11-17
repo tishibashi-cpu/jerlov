@@ -162,6 +162,13 @@ def _kd_range(kd: np.ndarray, stated: tuple[float, float], paper: str
               f"{hi:g} 1/m; some of these values lie outside that.")
 
 
+def _no_nan_wavelength(query: np.ndarray) -> None:
+    # NaN < lo is False; without this a NaN was refused with a message
+    # about the range (DECISIONS.md section 105).
+    if np.any(np.isnan(query)):
+        raise ValueError("wavelengths must be numbers, not NaN")
+
+
 def _result(value: np.ndarray, *inputs):
     if all(np.ndim(x) == 0 for x in inputs):
         return float(value)
@@ -212,6 +219,7 @@ def morel2001_kd(wavelengths, /, *, chlorophyll_mg_m3: float):
     """
     chl = _single(chlorophyll_mg_m3, "chlorophyll_mg_m3", "mg m^-3")
     query = np.atleast_1d(np.asarray(wavelengths, dtype=float))
+    _no_nan_wavelength(query)
     grid, kw, e, chi, statuses = _data.morel2001()
     if (not np.all(np.isfinite(query)) or np.any(query < grid[0])
             or np.any(query > grid[-1])):
@@ -282,6 +290,7 @@ def morel1988_kd(wavelengths, /, *, pigment_mg_m3: float):
     """
     c = _single(pigment_mg_m3, "pigment_mg_m3", "mg m^-3")
     query = np.atleast_1d(np.asarray(wavelengths, dtype=float))
+    _no_nan_wavelength(query)
     grid, kw, chi, e = _data.morel1988()
     if (not np.all(np.isfinite(query)) or np.any(query < grid[0])
             or np.any(query > grid[-1])):
@@ -348,6 +357,7 @@ def bricaud1995_aph(wavelengths, /, *, chlorophyll_mg_m3: float):
     """
     chl = _single(chlorophyll_mg_m3, "chlorophyll_mg_m3", "mg m^-3")
     query = np.atleast_1d(np.asarray(wavelengths, dtype=float))
+    _no_nan_wavelength(query)
     grid, a, b = _data.bricaud1995()
     if (not np.all(np.isfinite(query)) or np.any(query < grid[0])
             or np.any(query > grid[-1])):
@@ -408,6 +418,7 @@ def morel2001_bbp(wavelengths, /, *, chlorophyll_mg_m3: float):
     """
     chl = _single(chlorophyll_mg_m3, "chlorophyll_mg_m3", "mg m^-3")
     query = np.atleast_1d(np.asarray(wavelengths, dtype=float))
+    _no_nan_wavelength(query)
     lo_nm, hi_nm = 350.0, 700.0
     if (not np.all(np.isfinite(query)) or np.any(query < lo_nm)
             or np.any(query > hi_nm)):
@@ -1287,6 +1298,7 @@ class NadirFQ:
     correction: float
 
 
+@_data.positional_only()
 def morel2002_nadir_fq(wavelength_nm, /, *, chlorophyll_mg_m3,
                        sun_zenith_deg):
     """f, Q and their ratio for an upward radiance from the nadir.
@@ -1302,8 +1314,8 @@ def morel2002_nadir_fq(wavelength_nm, /, *, chlorophyll_mg_m3,
         f/Qn         = f0/Q0 + Sf/Q (1 - cos theta_s)       (B4)
 
     Only the nadir view is tabulated in the paper; the full tables, for
-    other views, are on a server this package could not reach (DATA.md
-    section 47).
+    other views, are read from your own copy of the authors' archive by
+    :func:`morel2002_fq_tables` (DATA.md sections 47 and 48).
 
     Parameters
     ----------
@@ -1326,20 +1338,22 @@ def morel2002_nadir_fq(wavelength_nm, /, *, chlorophyll_mg_m3,
     Raises
     ------
     ValueError
-        For a wavelength or chlorophyll that is not one of the table's, or
-        a sun outside 0 to 75 degrees.
+        For an argument that is not one finite number, a wavelength or
+        chlorophyll that is not one of the table's, or a sun outside 0 to
+        75 degrees.
 
     Notes
     -----
-    DECISIONS.md section 103, DATA.md section 47.
+    The accuracies above are the paper's, against the values the fits
+    were fitted to. Against the f of the authors' distributed archive
+    (f.dat), Eq. (B1) departs by up to 0.47 percent with the sun at 15
+    degrees, 1.10 at 30, 2.70 at 45 and 1.29 at 60 (DATA.md section 48);
+    why is not known. DECISIONS.md sections 103 and 105, DATA.md section
+    47.
     """
-    try:
-        wl = float(wavelength_nm)
-        chl = float(chlorophyll_mg_m3)
-        sun = float(sun_zenith_deg)
-    except (TypeError, ValueError):
-        raise ValueError("wavelength_nm, chlorophyll_mg_m3 and "
-                         "sun_zenith_deg must each be one number") from None
+    wl = _data.finite_number(wavelength_nm, "wavelength_nm")
+    chl = _data.finite_number(chlorophyll_mg_m3, "chlorophyll_mg_m3")
+    sun = _data.finite_number(sun_zenith_deg, "sun_zenith_deg")
     if wl not in _FQ_WAVELENGTHS:
         raise ValueError(
             f"wavelength_nm must be one of {_FQ_WAVELENGTHS}, the "

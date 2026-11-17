@@ -7,6 +7,7 @@ import importlib.resources
 import io
 import pathlib
 import tarfile
+import warnings
 
 import numpy as np
 import pytest
@@ -128,3 +129,47 @@ def test_the_real_archive_against_appendix_b():
               for c in t.chlorophyll_mg_m3 for n in t.nadir_deg[::8]
               for a in t.azimuth_deg[::6]]
     assert np.all(np.isfinite(values))
+
+
+@needs_archive
+def test_eq_b1_and_b4_against_the_archive_away_from_the_zenith():
+    # DATA.md section 48, DECISIONS.md section 105.
+    t = jerlov.morel2002_fq_tables(REAL)
+    cases = [(w, c) for w in t.wavelengths_nm for c in t.chlorophyll_mg_m3]
+
+    def fit(w, c, s):
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", jerlov.ProvenanceWarning)
+            return jerlov.morel2002_nadir_fq(w, chlorophyll_mg_m3=c,
+                                             sun_zenith_deg=s)
+
+    for sun, worst, above in ((15.0, 0.47, 0), (30.0, 1.10, 13),
+                              (45.0, 2.70, 26), (60.0, 1.29, 5)):
+        d = [abs(fit(w, c, sun).f
+                 / t.f(w, sun_zenith_deg=sun, chlorophyll_mg_m3=c) - 1)
+             for w, c in cases]
+        assert round(100 * max(d), 2) == worst
+        assert sum(x > 0.005 for x in d) == above
+        if sun == 45.0:
+            assert sum(x > 0.02 for x in d) == 2
+            assert cases[int(np.argmax(d))] == (660.0, 0.03)
+    for sun, worst in ((0.0, 1.20), (15.0, 0.74), (30.0, 0.43),
+                       (45.0, 3.34), (60.0, 1.61), (75.0, 1.66)):
+        d = [abs(fit(w, c, sun).f_over_q
+                 / t.f_over_q(w, sun_zenith_deg=sun, chlorophyll_mg_m3=c,
+                              nadir_deg=0.0, azimuth_deg=az) - 1)
+             for w, c in cases for az in t.azimuth_deg]
+        assert round(100 * max(d), 2) == worst
+    # f.dat at 45 degrees against the line in 1 - cos between 30 and 60.
+    x = {s: 1 - np.cos(np.radians(s)) for s in (30.0, 45.0, 60.0)}
+    dip = {}
+    for w, c in cases:
+        f30, f45, f60 = (t.f(w, sun_zenith_deg=s, chlorophyll_mg_m3=c)
+                         for s in (30.0, 45.0, 60.0))
+        line = f30 + (f60 - f30) * (x[45.0] - x[30.0]) / (x[60.0] - x[30.0])
+        dip[(w, c)] = 100 * (f45 / line - 1)
+    assert [round(dip[(w, 0.03)], 2) for w in (660.0, 620.0, 560.0)] \
+        == [-3.44, -3.00, -2.25]
+    assert sum(v < -1 for v in dip.values()) == 7
+    assert round(max(dip.values()), 2) == 1.22
+    assert max(dip, key=dip.get) == (412.5, 10.0)
