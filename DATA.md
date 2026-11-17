@@ -3,7 +3,7 @@
 What every shipped table is, where it came from, what was verified, and what
 is known to be wrong with it.
 
-Forty-seven entries are recorded below. Thirteen are confirmed defects, three were
+Forty-eight entries are recorded below. Thirteen are confirmed defects, three were
 open questions that the first edition of Jerlov settled, and the rest are
 notes rather than defects. None of them is repaired silently: values that
 could be recovered carry `status = reconstructed` and say how, values that
@@ -2952,3 +2952,42 @@ correction of Eq. (B3) (DECISIONS.md section 103).
   angle at 412.5 and 560 nm (0.52 percent at the worst of the seven
   wavelengths); at 10 mg m^-3 and the sun at 75 degrees 0.903 at 412.5 nm and
   0.825 at 560 nm; at 0.03 mg m^-3 above 1, to 1.034 at 560 nm.
+
+## 48. Morel et al.'s (2002) full f/Q tables: read from the user's copy, not shipped (note)
+
+Section 47 shipped the nadir view only, from the paper's Appendix B. The
+full tables are on the authors' anonymous ftp server, which did not answer
+from where the package is built; the user fetched them from their own
+machine on 2026-11-16:
+
+| File at ftp://oceane.obs-vlfr.fr/pub/gentili/AppliedOptics2002/ | Bytes | MD5 |
+|---|---|---|
+| `DISTRIB_fQ_with_Raman.tar.gz` (18 June 2003) | 173,005 | 21c7afc6c6d3c1963311d6880456f7bc |
+| `lin-approx.tar` (19 August 2002), also inside the first, byte for byte | 10,240 | f003e7f20a5d464ebbda2dcf21690c68 |
+
+**Not shipped.** No file in the archive states a licence; README_FIRST
+gives only a contact address. Since 1.22.0, `morel2002_fq_tables(path)`
+reads the user's own copy, checks its MD5 and refuses another
+(DECISIONS.md section 104). Put it at
+`sources/morel2002/DISTRIB_fQ_with_Raman.tar.gz` to run the tests that
+need it; they are skipped without it, in CI too.
+
+**What is in it.** f.dat: f for 7 wavelengths, 6 sun angles (0-75) and 6
+Chl (252 values). D_foQ_pa/: f/Q, one file per case, 17 nadir angles in
+water (1.078 to 48.83 degrees) by 13 azimuths (0-180), four decimals; the
+paper says the first nadir angle's values are "to be used for theta' =
+0". The README's convention for the azimuth: 0 with the sensor and the sun
+on opposite sides of the vertical, 180 on the same side. rgoth_Ebuchi.dat:
+the surface factor R-gothic for nadir angles in water 0-90 every degree.
+Only the tables with Raman emission are distributed, though the paper
+describes two sets.
+
+**Checked against the paper.**
+
+- lin-approx.tar's six tables equal the paper's printed Appendix B, the
+  shipped `morel2002_nadir_fq.csv`, in all 252 values.
+- f.dat at the sun at the zenith is within 0.62 percent of Table 1's f0,
+  and the first nadir row of f/Q there within 1.19 percent of Table 3's
+  f0/Q0: the fits against the values they were fitted to.
+- The paper gives R-gothic "for wind speeds W = 0, 4, 10, and 16 m s^-1";
+  the file has 0, 4, 6, 8 and 16 m/s and a flat surface ("xx"), and no 10.

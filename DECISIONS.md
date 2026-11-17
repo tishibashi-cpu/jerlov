@@ -6429,3 +6429,78 @@ Eq. (17) against Table 2 at 490 nm; Table 3 against Tables 1 and 2.
   at 412.5 and 560 nm (0.52 percent at the worst wavelength),
   falls to 0.825 at 560 nm, 10 mg m^-3 and the sun at 75 degrees, and
   rises to 1.034 at 0.03 mg m^-3 there.
+
+## 104. Morel et al.'s (2002) full f/Q tables, read from the user's own copy (1.22.0): the plan
+
+Section 103 left the views other than the nadir out: their tables are on
+the authors' anonymous ftp server, which did not answer from the
+container. The user fetched them from their own machine (2026-11-16):
+`ftp://oceane.obs-vlfr.fr/pub/gentili/AppliedOptics2002/`, two files,
+`DISTRIB_fQ_with_Raman.tar.gz` (173,005 bytes, MD5
+21c7afc6c6d3c1963311d6880456f7bc, dated 18 June 2003) and
+`lin-approx.tar` (10,240 bytes, MD5 f003e7f20a5d464ebbda2dcf21690c68). The
+second is also inside the first, byte for byte.
+
+**What is in it.** README_FIRST, foQ.info, f.dat, D_foQ_pa/ (252 files,
+foQ_<wavelength>_<sun>_<Chl>, each 17 nadir angles by 13 azimuths, values
+to four decimals), rgoth_Ebuchi.dat (the surface factor, 91 nadir angles
+0-90 for winds 00, 04, 06, 08, 16 and "xx", a flat ocean), lin-approx.tar,
+a Fortran reader and its reference output. Only the tables with Raman
+emission are distributed, though the paper describes two sets. Nadir
+angles in water 1.078, 3.411, ..., 48.83 degrees; "the value for the
+first nadir angle (1.078 deg) is to be used for theta' = 0" (paper,
+Appendix A); azimuths 0-180 every 15, with the README's convention:
+0 when the sensor and the sun are on opposite sides of the vertical, 180
+on the same side.
+
+**Licence.** No file states one; the README gives only a contact
+address. The user chose (2026-11-16) not to ship the tables: the package
+reads the user's own copy of the archive, checks its MD5, and refuses
+another. `sources/README.md` and DATA.md say how to get it.
+
+**Checks made before the plan.** The six tables of lin-approx.tar equal
+the shipped `morel2002_nadir_fq.csv` (the paper's printed Appendix B) in
+all 252 values. f.dat at theta_s = 0 is within 0.62 percent of Table 1's
+f0, and the f/Q of the first nadir row at theta_s = 0 within 1.19 percent
+of Table 3's f0/Q0: fits against the values they were fitted to. The
+paper says the surface factor was given "for wind speeds W = 0, 4, 10,
+and 16 m s^-1"; the file has 0, 4, 6, 8 and 16 and a flat surface, and
+no 10.
+
+**Public.** `morel2002_fq_tables(path, /)` -> `Morel2002FQTables`, which
+reads the archive (no extraction) and offers:
+
+- `f(wavelength_nm, *, sun_zenith_deg, chlorophyll_mg_m3)`;
+- `f_over_q(wavelength_nm, *, sun_zenith_deg, chlorophyll_mg_m3,
+  nadir_deg, azimuth_deg)`; nadir_deg one of the table's or 0, which
+  takes the 1.078 row as the paper says;
+- `surface_factor(*, wind, nadir_deg)`, the R-gothic of rgoth_Ebuchi.dat,
+  wind one of "flat", 0, 4, 6, 8, 16.
+
+Every argument must be one of the table's own values (the paper gives no
+rule between them), no defaults. A wrong MD5 is refused with how to get
+the right file.
+
+**Tests.** The reading and the checks above, on a small archive of the
+same layout built in the test with its MD5 patched in; and, where
+`sources/morel2002/DISTRIB_fQ_with_Raman.tar.gz` exists (never in CI),
+the real archive against the figures quoted.
+
+**Documents.** DATA.md section 48; sources/README.md; README;
+docs/api.rst; CHANGELOG; .zenodo.json. 1.22.0: two public names.
+
+**Differences from the plan.**
+
+- No example: the archive is not in CI, and an example that needs a file
+  the reader must fetch would not run there. The README shows the call.
+- The test of the real archive reads lin-approx.tar from inside the
+  archive and compares it with the shipped Appendix B, value by value.
+
+**What was found** (DATA.md section 48).
+
+- The paper's printed Appendix B equals the distributed lin-approx.tar in
+  all 252 values.
+- f.dat at a zenith sun is within 0.62 percent of Table 1's f0, and the
+  nadir row of f/Q within 1.19 percent of Table 3's f0/Q0.
+- R-gothic is for winds 0, 4, 6, 8 and 16 m/s and a flat sea; the paper
+  says 0, 4, 10 and 16.
