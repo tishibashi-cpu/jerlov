@@ -6504,3 +6504,73 @@ docs/api.rst; CHANGELOG; .zenodo.json. 1.22.0: two public names.
   nadir row of f/Q within 1.19 percent of Table 3's f0/Q0.
 - R-gothic is for winds 0, 4, 6, 8 and 16 m/s and a flat sea; the paper
   says 0, 4, 10 and 16.
+
+## 105. A review after 1.22.0: small inconsistencies, and Eq. (B1) against the archive's own f (1.22.1): the plan
+
+A review of the functions added in 1.16.0-1.22.0 (the review of section
+80 went up to 1.10.1, that of section 88 to 1.15.0) found no wrong value.
+It found the inconsistencies below, and one thing about the data. No
+shipped value changes; 1.22.1 is a patch release.
+
+**1. `morel2002_nadir_fq` is the one positional-only public function
+without `_data.positional_only()`.** All the others (50, of which those
+added since 1.0 by the practice of section 86's "Differences from the
+plan") take a keyword for the positional argument with a FutureWarning;
+this one raises TypeError. It gets the decorator. Only calls that failed
+now work, with the warning.
+
+**2. Its docstring still says the full tables are "on a server this
+package could not reach".** Since 1.22.0 they are read by
+`morel2002_fq_tables`; the docstring says so.
+
+**3. Its arguments are checked with `float()`**, which takes text
+("412.5") and gives a NaN a message about the table's wavelengths. It
+takes the check every other function of one number uses: one finite
+number, else ValueError. Text, which the docstring never offered, is
+refused from 1.22.1. A refusal of an input that was never offered is
+what section 81 did with infinity in a patch release.
+
+**4. One check, three copies.** `sky._number`, `absorption_meter._number`
+and `fq_tables._one` are the same function. They become one,
+`_data.finite_number`, with the same message; `morel2002_nadir_fq` uses
+it too. As before it accepts what NumPy counts as a number, a bool among
+them; refusing bools everywhere is not this release's change.
+
+**5. The flat methods of `rottgers2013_scatter_correction` keep a gap in
+cm.** `cm` is not used by Eqs. (1) and (3), but the result is NaN where
+cm is NaN. The behaviour stays (a patch changes no value): a gap at one
+wavelength of the measurement is a gap in what the measurement gives
+there, whatever the method. The docstring says it, and a test pins it.
+
+**6. A NaN wavelength is refused with a message about the range.**
+`morel2001_kd`, `morel1988_kd`, `bricaud1995_aph` and `morel2001_bbp`
+say "wavelengths must lie within 350-700 nm" for a NaN. They say
+"wavelengths must be numbers, not NaN" first, the words of
+`water._require_number`. Still ValueError.
+
+**7. Eq. (B1) against the archive's own f.dat, with the sun away from
+the zenith.** Found during the review, before this plan: the paper says
+Eq. (B1) departs from the values it was fitted to by "less than 0.5%
+when theta_s < 45 deg" and up to 2 percent at 60; section 104 compared
+f.dat with it at a zenith sun only (0.62 percent). Over the 42 cases of
+each sun angle, Eq. (B1), whose coefficients equal the archive's
+lin-approx.tar, departs from f.dat by up to 0.47 percent at 15 degrees,
+1.10 at 30 (13 of 42 above 0.5), 2.70 at 45 (26 of 42 above 0.5, 2 above
+2; 660 nm, 0.03 mg m^-3) and 1.29 at 60. The largest is at 45, not at
+60: not the shape of a linear fit's error growing with 1 - cos theta_s.
+The same comparison for Eq. (B4) against the first nadir row of the f/Q
+tables is made after this plan and recorded as it comes out. Recorded in
+DATA.md section 48 (a new bullet, no new section) and in the docstring
+of `morel2002_nadir_fq`; why they differ is not known (the archive is
+dated June 2003, the paper October 2002), and is not guessed at.
+
+**Tests.** Every public function with a positional-only parameter is
+wrapped by `positional_only` (a test over `jerlov.__all__`, so that the
+next one cannot be missed); `morel2002_nadir_fq` by keyword gives the
+same value with a FutureWarning, and refuses text and NaN; the flat
+methods keep a gap in cm; a NaN wavelength in the four functions; the
+figures of item 7 where the real archive exists (never in CI, as in
+section 104).
+
+**Documents.** CHANGELOG; DATA.md section 48. No new public name; the
+README and the Zenodo description are unchanged.
