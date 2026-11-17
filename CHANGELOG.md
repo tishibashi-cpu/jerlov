@@ -4,6 +4,42 @@ Every release is archived on Zenodo under the concept DOI
 [10.5281/zenodo.22321312](https://doi.org/10.5281/zenodo.22321312), which
 always resolves to the latest version.
 
+## 1.22.1 — 2026-11-17
+
+A review of what 1.16.0-1.22.0 added (DECISIONS.md section 105). No
+shipped value changed and no public name was added.
+
+**Fixed.** `morel2002_nadir_fq` was the one positional-only public
+function that refused its wavelength by keyword; it now takes it with a
+`FutureWarning`, as all the others do until 2.0. It checks each argument
+as one finite number, as the other functions of one number do: text,
+never offered, is refused, and a NaN is named as such. Its docstring
+said the full tables were on a server the package could not reach; it
+points to `morel2002_fq_tables`. A NaN wavelength given to
+`morel2001_kd`, `morel1988_kd`, `bricaud1995_aph` or `morel2001_bbp` is
+refused as "not NaN" rather than as outside the range (still
+`ValueError`).
+
+**Found.** Away from a zenith sun, Morel et al.'s (2002) Eq. (B1) departs
+from the f of the authors' own archive by up to 1.10 percent at 30
+degrees, where the paper says "less than 0.5%" below 45, and by up to 2.70
+at 45; Eq. (B4) departs from the archive's f/Q by up to 3.34 percent, also
+at 45 (within the paper's "+-3.4%"). What stands out is the archive's f at
+45 degrees: in the red at 0.03 mg m^-3 it lies up to 3.44 percent below
+the straight line between its own values at 30 and 60, which the linear
+fits do not follow. Why is not known. DATA.md section 48; the docstring of
+`morel2002_nadir_fq` says it.
+
+**Documented.** The flat methods of `rottgers2013_scatter_correction`
+give a gap where cm has one, though they do not use cm: a gap in the
+measurement at a wavelength is a gap in what it gives there. Unchanged,
+now said and tested.
+
+**Internal.** The three copies of the one-number check (`sky`,
+`absorption_meter`, `fq_tables`) are one, `_data.finite_number`. A test
+checks that every positional-only public function carries the keyword
+shim, so that the next one cannot be missed.
+
 ## 1.22.0 — 2026-11-16
 
 Morel et al.'s (2002) full f/Q tables, read from the user's own copy of

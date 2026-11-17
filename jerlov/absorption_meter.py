@@ -13,6 +13,7 @@ from __future__ import annotations
 import numpy as np
 
 from . import _data
+from ._data import finite_number as _number
 from .ocean_colour import _result, _spectral, _warn
 
 #: The methods of Röttgers et al.'s (2013) Table 1, by their names.
@@ -20,16 +21,6 @@ ROTTGERS2013_METHODS = ("flat", "proportional", "flat+", "proportional+")
 #: The span of am715 their Eq. (5) was fitted over, read from their Fig. 4
 #: (natural samples; the cultures were left out): about 0.02 to 8 1/m.
 _A715_FIT = (0.02, 8.0)
-
-
-def _number(value, name: str) -> float:
-    try:
-        ok = np.ndim(value) == 0 and bool(np.isfinite(value))
-    except TypeError:
-        ok = False
-    if not ok:
-        raise ValueError(f"{name} must be one finite number, not {value!r}")
-    return float(value)
 
 
 @_data.positional_only()
@@ -62,7 +53,10 @@ def rottgers2013_scatter_correction(am, cm, am_ref, cm_ref, /, *, method,
     ----------
     am, cm:
         The measured absorption and attenuation, 1/m, at the wavelengths
-        to correct; numbers or arrays that broadcast. NaN marks a gap.
+        to correct; numbers or arrays that broadcast. NaN marks a gap,
+        and a gap in either is a gap in the result, by the flat methods
+        too, which do not use cm: a wavelength the measurement has a gap
+        at gives nothing there (DECISIONS.md section 105).
     am_ref, cm_ref:
         The same at the reference wavelength, 1/m; ``cm_ref`` is not used
         by the flat methods but must still be a number.

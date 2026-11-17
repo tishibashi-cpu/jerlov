@@ -19,6 +19,7 @@ from dataclasses import dataclass
 import numpy as np
 
 from . import _data
+from ._data import finite_number as _number
 from .water import MissingQuantityError
 
 GREGG1990 = (
@@ -82,16 +83,6 @@ class SurfaceIrradiance:
         lo, hi = self.wavelengths.min(), self.wavelengths.max()
         return (f"<SurfaceIrradiance {lo:g}-{hi:g} nm, "
                 f"alpha {self.angstrom_exponent:.2f}>")
-
-
-def _number(value, name: str) -> float:
-    try:
-        ok = np.ndim(value) == 0 and bool(np.isfinite(value))
-    except TypeError:               # text, say: isfinite has no answer
-        ok = False
-    if not ok:
-        raise ValueError(f"{name} must be one finite number, not {value!r}")
-    return float(value)
 
 
 def _at_least(value, name: str, low: float) -> float:

@@ -2991,3 +2991,20 @@ describes two sets.
   f0/Q0: the fits against the values they were fitted to.
 - The paper gives R-gothic "for wind speeds W = 0, 4, 10, and 16 m s^-1";
   the file has 0, 4, 6, 8 and 16 m/s and a flat surface ("xx"), and no 10.
+- **With the sun away from the zenith (1.22.1, DECISIONS.md section
+  105).** The paper says Eq. (B1) departs from the f it was fitted to by
+  "less than 0.5% when theta_s < 45 deg" and up to 2 percent at 60.
+  Against f.dat, over the 42 cases of each sun angle, it departs by up to
+  0.47 percent at 15 degrees, 1.10 at 30 (13 cases above 0.5), 2.70 at 45
+  (26 above 0.5, 2 above 2; 660 nm, 0.03 mg m^-3) and 1.29 at 60. Eq.
+  (B4) against the first nadir row of the f/Q tables, over the 42 cases
+  by 13 azimuths: up to 1.20 percent at 0 degrees, 0.74 at 15, 0.43 at
+  30, 3.34 at 45, 1.61 at 60 and 1.66 at 75, within the paper's "+-3.4%"
+  but again largest at 45.
+- **Where that comes from: f.dat itself at 45 degrees.** Against the
+  straight line in 1 - cos theta_s between its own values at 30 and 60
+  degrees, f.dat at 45 lies 3.44 percent below at 660 nm, 3.00 at 620 and
+  2.25 at 560 (0.03 mg m^-3), below by more than 1 percent in 7 of the 42
+  cases, and up to 1.22 percent above (412.5 nm, 10 mg m^-3). The linear
+  fits have no such dip. Why the archive (June 2003) and the paper's fits
+  (lin-approx.tar, August 2002) differ there is not known.

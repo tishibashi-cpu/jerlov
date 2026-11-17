@@ -18,6 +18,7 @@ import tarfile
 import numpy as np
 
 from . import _data
+from ._data import finite_number as _one
 
 #: The MD5 of the archive this package was checked against (DATA.md
 #: section 48): DISTRIB_fQ_with_Raman.tar.gz, 173,005 bytes, 18 June 2003.
@@ -25,16 +26,6 @@ MOREL2002_FQ_MD5 = "21c7afc6c6d3c1963311d6880456f7bc"
 _WHERE = ("ftp://oceane.obs-vlfr.fr/pub/gentili/AppliedOptics2002/"
           "DISTRIB_fQ_with_Raman.tar.gz")
 _PREFIX = "DISTRIB_fQ_with_Raman/"
-
-
-def _one(value, name: str) -> float:
-    try:
-        ok = np.ndim(value) == 0 and bool(np.isfinite(value))
-    except TypeError:
-        ok = False
-    if not ok:
-        raise ValueError(f"{name} must be one finite number, not {value!r}")
-    return float(value)
 
 
 def _pick(value: float, grid: tuple[float, ...], name: str) -> float:

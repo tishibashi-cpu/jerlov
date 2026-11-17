@@ -6574,3 +6574,27 @@ section 104).
 
 **Documents.** CHANGELOG; DATA.md section 48. No new public name; the
 README and the Zenodo description are unchanged.
+
+**Differences from the plan, noted after the code was written.**
+
+- Eq. (B4) against the first nadir row of the f/Q tables, over the 42
+  cases by 13 azimuths, came out as: up to 1.20 percent at 0 degrees,
+  0.74 at 15, 0.43 at 30, 3.34 at 45, 1.61 at 60, 1.66 at 75; within
+  the paper's "+-3.4%", but largest at 45, as for Eq. (B1).
+- Not in the plan: since both fits depart most at 45, f.dat at 45 was
+  compared with the straight line in 1 - cos theta_s between its own 30
+  and 60 degree values. It lies 3.44 percent below at 660 nm, 3.00 at
+  620 and 2.25 at 560 (0.03 mg m^-3), more than 1 percent below in 7 of
+  42 cases, and up to 1.22 percent above (412.5 nm, 10 mg m^-3). The
+  fits are linear in 1 - cos theta_s and cannot follow that. Recorded in
+  DATA.md section 48 and tested with the rest.
+- The plan's item 7 cited the 45-degree figure against the paper's
+  "less than 0.5% when theta_s < 45 deg"; the case that bound covers is
+  30 degrees, where Eq. (B1) departs by up to 1.10 percent. CHANGELOG
+  and DATA.md say it that way.
+- The tests of items 1, 3, 4, 5 and 6 are in a file of their own,
+  tests/test_third_review.py (as test_review_fixes.py and
+  test_second_review.py for the earlier reviews); those of item 7 in
+  tests/test_fq_tables.py beside section 104's.
+- The three modules keep their local names for the check (`_number`,
+  `_one`), imported from `_data`, so that their calls are unchanged.

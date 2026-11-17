@@ -54,6 +54,21 @@ def caller_stacklevel() -> int:
 _F = TypeVar("_F", bound=Callable[..., Any])
 
 
+def finite_number(value: Any, name: str) -> float:
+    """One finite number, else ValueError (DECISIONS.md section 105).
+
+    Text and arrays are refused (``np.isfinite`` has no answer for text);
+    what NumPy counts as a number is accepted.
+    """
+    try:
+        ok = np.ndim(value) == 0 and bool(np.isfinite(value))
+    except TypeError:               # text, say: isfinite has no answer
+        ok = False
+    if not ok:
+        raise ValueError(f"{name} must be one finite number, not {value!r}")
+    return float(value)
+
+
 def positional_only(*, also_by_position: tuple[str, ...] = ()
                     ) -> Callable[[_F], _F]:
     """Keep the calls that 0.24.0 changed working, with a FutureWarning,
