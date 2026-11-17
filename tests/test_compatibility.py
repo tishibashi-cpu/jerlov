@@ -339,7 +339,12 @@ def test_examples_import_only_from_the_package_itself():
 
 @source_tree
 def test_the_readme_shows_no_old_way_of_calling():
-    readme = (ROOT / "README.md").read_text()
-    for old in ("gernez2009_cv_by_sun_zenith", "wavelength_nm=", "at=[",
-                "angle_deg="):
-        assert old not in readme, old
+    # And the topic pages its text moved to in 1.22.2 (DECISIONS.md
+    # section 106). The map names the old function to say what replaced it.
+    pages = [ROOT / "README.md", *sorted((ROOT / "docs" / "topics")
+                                         .glob("*.rst"))]
+    for page in pages:
+        text = page.read_text()
+        for old in ("gernez2009_cv_by_sun_zenith", "wavelength_nm=", "at=[",
+                    "angle_deg="):
+            assert old not in text, (page.name, old)

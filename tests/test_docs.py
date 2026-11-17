@@ -4,6 +4,7 @@ print are computed by the package, and its reference covers the API."""
 from __future__ import annotations
 
 import doctest
+import inspect
 import pathlib
 import re
 import warnings
@@ -69,3 +70,50 @@ def test_the_site_is_built_with_warnings_as_errors():
     workflow = (ROOT / ".github" / "workflows" / "docs.yml").read_text()
     assert "sphinx-build -W --keep-going" in workflow
     assert re.search(r"sphinx==\d+\.\d+\.\d+", workflow)
+
+
+# -- the topics and the map (DECISIONS.md section 106) ------------------------
+
+TOPICS = sorted(p.relative_to(DOCS).as_posix()
+                for p in DOCS.glob("topics/*.rst"))
+
+
+@source_tree
+def test_the_topics_are_all_listed():
+    index = (DOCS / "index.rst").read_text()
+    assert len(TOPICS) == 6
+    for page in TOPICS + ["choosing.rst"]:
+        assert page.removesuffix(".rst") in index, page
+
+
+def _linked(text):
+    """Names a page links to the API by: :func:`~jerlov.x`, :meth:`...`."""
+    return set(re.findall(r":(?:func|meth|class|data):`~?jerlov\.([\w.]+)`",
+                          text))
+
+
+@source_tree
+def test_the_map_has_every_public_function():
+    text = (DOCS / "choosing.rst").read_text()
+    linked = _linked(text)
+    mentioned = linked | set(re.findall(r"``jerlov\.(\w+)``", text))
+    functions = {n for n in jerlov.__all__
+                 if inspect.isfunction(getattr(jerlov, n))}
+    covered = {m.split(".")[0] for m in mentioned}
+    missing = sorted((functions | {"Water", "Scene"}) - covered)
+    assert not missing, f"the map does not say when to use {missing}"
+
+
+@source_tree
+@pytest.mark.parametrize("page", ["choosing.rst"] + TOPICS)
+def test_every_name_a_page_gives_exists_and_is_public(page):
+    text = (DOCS / page).read_text()
+    names = _linked(text) | set(re.findall(r"\bjerlov\.(\w+(?:\.\w+)?)",
+                                           text))
+    assert names
+    for name in names:
+        head, _, attribute = name.partition(".")
+        assert head in jerlov.__all__, f"{page}: jerlov.{name}"
+        if attribute:
+            assert hasattr(getattr(jerlov, head), attribute), \
+                f"{page}: jerlov.{name}"

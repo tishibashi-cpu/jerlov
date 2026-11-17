@@ -120,19 +120,19 @@ def test_DATA_md_explains_every_status_a_shipped_table_uses():
 def test_the_README_names_only_what_exists():
     """It does not run the README's code, whose inputs are the reader's;
     it checks that every jerlov.<name> written there is one."""
+    # Since 1.22.2 the README is an introduction and the topics are on the
+    # site (DECISIONS.md section 106); that every public function is
+    # mentioned somewhere is checked on the site's map, in test_docs.py.
     text = (ROOT / "README.md").read_text()
     names = set(re.findall(r"\bjerlov\.([A-Za-z_][A-Za-z0-9_]*)", text))
-    assert len(names) > 40, "the pattern no longer finds the README's names"
+    names |= set(re.findall(r"`([A-Za-z_][A-Za-z0-9_]*)`", text)) \
+        & set(dir(jerlov))
+    assert len(names) > 5, "the pattern no longer finds the README's names"
     unknown = sorted(n for n in names if not hasattr(jerlov, n))
     assert not unknown, f"the README names jerlov.{unknown}, which do not exist"
     private = sorted(n for n in names
                      if n not in jerlov.__all__ and n != "__version__")
     assert not private, f"the README names {private}, not in jerlov.__all__"
-    # The functions of 1.4.0 to 1.8.0 that it never mentioned.
-    for name in ("pure_water_absorption_table", "lee2013_raman_correction",
-                 "bricaud1995_aph", "morel2001_bbp", "lee2011_rrs",
-                 "gordon1989_d0", "gordon1989_kd"):
-        assert name in names, f"the README no longer mentions {name}"
 
 
 @source_tree

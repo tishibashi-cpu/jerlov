@@ -6598,3 +6598,89 @@ README and the Zenodo description are unchanged.
   tests/test_fq_tables.py beside section 104's.
 - The three modules keep their local names for the check (`_number`,
   `_one`), imported from `_data`, so that their calls are unchanged.
+
+## 106. The README as an introduction, its topics on the site, and a map of which function to use (1.22.2): the plan
+
+Since 1.0.1 (section 63) the README has grown with every release to 782
+lines. Most of it is a tour of the package by topic, which the site
+already renders better and which PyPI shows as one long page. There is
+also no place that says, for a quantity a reader wants, which of the
+functions gives it: Kd alone comes from `Water.kd`, `kd_spectrum`,
+`morel2001_kd`, `morel1988_kd`, `lee2005_kd`, `lee2013_kd` and
+`gordon1989_kd`, each for a different starting point. The user chose
+(2026-11-17) to settle the documents before adding functions, leaving
+the JOSS paper for later. 1.22.2 changes documents and tests only; no
+code, value or public name changes.
+
+**1. The README becomes an introduction.** It keeps what a reader needs
+before installing: what the package is, what it claims and what not,
+installing and a first call, why the source is an argument, what it will
+not do, provenance warnings, the table of sources, a list by topic of
+what it covers with a link to each topic's page on the site, the
+examples, where provenance and design are recorded, contributing,
+licence and citation. Every other section moves, with its text as it
+stands, to the site.
+
+**2. The topics go to `docs/topics/`, six pages** in reStructuredText,
+converted from the README's Markdown without rewriting the text:
+
+- `seeing_through_water`: looking at something through water, looking
+  up or down, the Akkaynak-Treibitz coefficients, what colour is that,
+  how far apart two colours are to an eye;
+- `measurements`: measured backscattering, Petzold's scattering
+  functions, the USGS reflectances, which type a water is nearest, other
+  entry points;
+- `depth_and_light`: the type changing with depth, light for
+  photosynthesis, Jerlov's quanta, Tyler's radiance, the fluctuations;
+- `ocean_colour`: without a water type (chlorophyll, a and bb, f/Q, Rrs,
+  the Secchi depth, QAA), and the light at the surface under a clear sky;
+- `other_software`: water for a renderer, water for a radiative transfer
+  code;
+- `solar_heating`: the upper ocean's heating.
+
+They differ from the guides (section 63): a guide is a worked
+calculation whose every printed number is a doctest; a topic page shows
+the calls with the reader's own inputs, as the README did, and is not
+run. The index lists them under their own heading.
+
+**3. A map of which function to use, `docs/choosing.rst`.** Tables by
+what the reader wants (the IOPs of a type, Kd, the light at depth, PAR
+and the euphotic zone, reflectance and ocean colour, from a measurement,
+colour and vision, for other software, the surface, heating, data to
+check against), each row: what you have, the function, the paper. It
+says how the functions for one quantity differ, from their docstrings,
+and gives no number of its own other than years, so that it states
+nothing a test does not check. Each name links to the API reference.
+
+**4. Tests follow the text.** A test that reads a figure from the README
+reads it from the page the text moved to; the figure and the regular
+expression stay the same, except where Markdown's `code` becomes
+reStructuredText's ``code``. `test_the_README_names_only_what_exists`
+keeps its check that every `jerlov.<name>` in the README exists and is
+public; its requirement of more than 40 names and of seven named
+functions moves to the map, where it becomes stronger: every public
+function, and `Water` and `Scene`, is on the map, and every name the map
+or a topic page links to exists and is public. The topic pages are all
+in the index, and the site builds with `-W` as before.
+
+**Not done here.** The README is not otherwise rewritten; the topics'
+text is not revised; no example changes. The JOSS paper waits (NEXT_STEPS
+section 1).
+
+**Differences from the plan, noted after the pages were written.**
+
+- One sentence of the topics' text was changed: the solar heating page
+  said "nothing to do with the spectral quantities above", which on a
+  page of its own pointed at nothing; it says "on the other pages".
+  The rest is as the README had it, including sketches that use names
+  the README had set earlier (`w`, `wl`, `surface`).
+- The README's check of names also takes the names it writes in
+  backticks without `jerlov.`, since the list of topics names functions
+  that way; it needs more than 5, not 40.
+- The map's rows were checked against each function's docstring before
+  they were written. Two were narrowed: `Water.bb` is from the source's
+  b and, with bbp/bp, Haltrin's term for pure water (not "Haltrin as
+  each source uses it"); and a sentence saying the Kd of a type and of
+  Morel's models are "spectral values of the water itself" was dropped,
+  since no docstring says it.
+- The README is 213 lines.
