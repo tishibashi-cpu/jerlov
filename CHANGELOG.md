@@ -4,6 +4,29 @@ Every release is archived on Zenodo under the concept DOI
 [10.5281/zenodo.22321312](https://doi.org/10.5281/zenodo.22321312), which
 always resolves to the latest version.
 
+## 1.22.2 — 2026-11-17
+
+The README becomes an introduction, its topics move to the site, and the
+site gains a map of which function to use (DECISIONS.md section 106). No
+shipped value changed, no code changed and no public name was added.
+
+**Docs.** The README, which PyPI shows as the project's page, had grown to
+782 lines; it is now 213. It keeps what to read before installing: what is
+claimed and what not, a first call, why the source is an argument, what
+the package will not do, provenance warnings, the sources, the examples,
+contributing, licence and citation, and lists the topics with a link to
+each. The topics are six pages on the site, their text as the README had
+it: seeing through water, light with depth, from a measurement, ocean
+colour without a water type, water for other software, and solar heating.
+A new page, "Which function to use", lists every public function by what
+you want and what you have: Kd alone comes from seven functions, each for
+a different starting point.
+
+**Tests.** The figures the README quoted are read from the pages they
+moved to. Every public function, and `Water` and `Scene`, must be on the
+map, and every name the map and the topic pages give must exist and be
+public.
+
 ## 1.22.1 — 2026-11-17
 
 A review of what 1.16.0-1.22.0 added (DECISIONS.md section 105). No

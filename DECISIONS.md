@@ -6666,3 +6666,21 @@ in the index, and the site builds with `-W` as before.
 **Not done here.** The README is not otherwise rewritten; the topics'
 text is not revised; no example changes. The JOSS paper waits (NEXT_STEPS
 section 1).
+
+**Differences from the plan, noted after the pages were written.**
+
+- One sentence of the topics' text was changed: the solar heating page
+  said "nothing to do with the spectral quantities above", which on a
+  page of its own pointed at nothing; it says "on the other pages".
+  The rest is as the README had it, including sketches that use names
+  the README had set earlier (`w`, `wl`, `surface`).
+- The README's check of names also takes the names it writes in
+  backticks without `jerlov.`, since the list of topics names functions
+  that way; it needs more than 5, not 40.
+- The map's rows were checked against each function's docstring before
+  they were written. Two were narrowed: `Water.bb` is from the source's
+  b and, with bbp/bp, Haltrin's term for pure water (not "Haltrin as
+  each source uses it"); and a sentence saying the Kd of a type and of
+  Morel's models are "spectral values of the water itself" was dropped,
+  since no docstring says it.
+- The README is 213 lines.

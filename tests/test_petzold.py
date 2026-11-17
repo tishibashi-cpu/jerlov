@@ -137,11 +137,13 @@ def test_a_measured_ratio_goes_straight_into_water_bb():
 @pytest.mark.skipif(not (ROOT / "README.md").exists(),
                     reason="needs the source tree")
 def test_the_readme_quotes_a_station_the_package_returns():
-    readme = (ROOT / "README.md").read_text()
-    match = re.search(r'petzold_scattering\("HAOCE 11"\)\n'
+    # The text moved from the README to the site in 1.22.2 (DECISIONS.md
+    # section 106).
+    readme = (ROOT / "docs" / "topics" / "measurements.rst").read_text()
+    match = re.search(r'petzold_scattering\("HAOCE 11"\)\n\s*'
                       r'f\.c, f\.b, f\.backscatter_ratio\s*#\s*([\d.]+), '
                       r'([\d.]+), ([\d.]+)', readme)
-    assert match, "the README no longer shows that station with its values"
+    assert match, "the page no longer shows that station with its values"
     f = jerlov.petzold_scattering("HAOCE 11")
     assert (f.c, f.b, f.backscatter_ratio) == tuple(
         float(g) for g in match.groups())

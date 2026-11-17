@@ -108,7 +108,8 @@ def test_the_small_particle_coefficients_differ_by_the_stated_amount():
 
 
 def test_the_shortwave_fit_misses_its_source_by_the_stated_amount():
-    """README, DATA.md section 14 and solar_heating.py all say 46 percent."""
+    """The solar heating page, DATA.md section 14 and solar_heating.py all
+    say 46 percent."""
     worst = 0.0
     for water_type in ("I", "IA", "IB", "II", "III"):
         depths, measured = jerlov.jerlov1968_solar_fraction(water_type)
@@ -130,7 +131,8 @@ def test_the_published_R_values_are_what_the_docs_print():
 
 
 def test_the_worst_chi_p_spread_is_the_stated_figure():
-    """README and DATA.md section 18 both say 34.8 percent at 170 degrees."""
+    """The measurements page and DATA.md section 18 both say 34.8 percent
+    at 170 degrees."""
     with pytest.warns(jerlov.AngleWarning, match="34.8"):
         result = jerlov.bb_from_vsf(0.002, 170.0, 532.0, salinity_psu=37.0)
     assert result.quoted_error_percent == pytest.approx(34.8)
@@ -196,8 +198,10 @@ def test_the_guess_overstates_contrast_by_the_stated_amount():
 
 @source_tree
 def test_the_readme_quotes_a_transmittance_the_package_produces():
-    """`solar_fraction("IB", 10.0)` appears in the README with its answer."""
-    readme = (ROOT / "README.md").read_text()
+    """`solar_fraction("IB", 10.0)` appears on the site's solar heating
+    page with its answer (in the README before 1.22.2, DECISIONS.md
+    section 106)."""
+    readme = (ROOT / "docs" / "topics" / "solar_heating.rst").read_text()
     match = re.search(
         r'solar_fraction\("IB", 10\.0\).*?#\s*([\d.]+)', readme)
     assert match, "the README no longer shows that call with its result"
@@ -207,7 +211,7 @@ def test_the_readme_quotes_a_transmittance_the_package_produces():
 
 @source_tree
 def test_the_readme_quotes_a_chi_p_the_package_produces():
-    readme = (ROOT / "README.md").read_text()
+    readme = (ROOT / "docs" / "topics" / "measurements.rst").read_text()
     match = re.search(r"r\.chi_p, r\.quoted_error_percent\s*#\s*([\d.]+),\s*([\d.]+)",
                       readme)
     assert match, "the README no longer shows chi_p with its value"
@@ -262,7 +266,7 @@ def test_kd_hydrolight_agrees_with_jerlov_as_data_md_says():
 
 @source_tree
 def test_the_readme_quotes_a_pure_water_absorption_the_package_produces():
-    readme = (ROOT / "README.md").read_text()
+    readme = (ROOT / "docs" / "topics" / "measurements.rst").read_text()
     match = re.search(r"pure_water_absorption\(440\)\s*#\s*([\d.]+)", readme)
     assert match, "the README no longer shows that call with its result"
     assert jerlov.pure_water_absorption(440) == pytest.approx(
@@ -271,7 +275,7 @@ def test_the_readme_quotes_a_pure_water_absorption_the_package_produces():
 
 @source_tree
 def test_the_readme_shows_the_layers_descend_crosses():
-    readme = (ROOT / "README.md").read_text()
+    readme = (ROOT / "docs" / "topics" / "depth_and_light.rst").read_text()
     match = re.search(r"d\.layers\s*#\s*\((.*)\)\n", readme)
     assert match, "the README no longer shows the layers of a descent"
     shown = re.findall(r"\((\d+), (\d+), '(\w+)'\)", match.group(1))
@@ -403,9 +407,10 @@ def test_figures_for_the_PAR_depth_against_490nm():
 
 @source_tree
 def test_README_figures_for_classify_kd():
-    """README.md prints the repr of a classification; this is the
-    reconstructed spectrum of from_one_measurement.py, Kd(490) = 0.060."""
-    readme = (ROOT / "README.md").read_text()
+    """The site's measurements page (the README before 1.22.2) prints the
+    repr of a classification; this is the reconstructed spectrum of
+    from_one_measurement.py, Kd(490) = 0.060."""
+    readme = (ROOT / "docs" / "topics" / "measurements.rst").read_text()
     quoted = re.search(r"# (<KdClassification [^>]+>)", readme).group(1)
     band = np.arange(400.0, 651.0, 10.0)
     with quiet():

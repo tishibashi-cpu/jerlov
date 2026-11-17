@@ -64,6 +64,18 @@ Where to go next
 
 .. toctree::
    :maxdepth: 1
+   :caption: Topics
+
+   choosing
+   topics/seeing_through_water
+   topics/depth_and_light
+   topics/measurements
+   topics/ocean_colour
+   topics/other_software
+   topics/solar_heating
+
+.. toctree::
+   :maxdepth: 1
    :caption: Reference
 
    api
