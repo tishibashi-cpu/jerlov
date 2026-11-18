@@ -105,8 +105,8 @@ Runtime dependencies are **NumPy only**. `openpyxl`, `colour-science` and
 package. A related project has been broken since 2019 because a dependency
 moved a module, and nobody noticed for seven years.
 
-The declared lower bound is tested. `pyproject.toml` says `numpy>=1.22`, and
-CI runs a job pinned to it. Use `jerlov._data.trapezoid` rather than
+The declared lower bound is tested. `pyproject.toml` says `numpy>=1.23.2`,
+and CI runs a job pinned to it. Use `jerlov._data.trapezoid` rather than
 `np.trapezoid` or `np.trapz`: one arrived in NumPy 2.0 and the other left in
 it. A test refuses either name anywhere in the repository.
 
@@ -208,7 +208,7 @@ an argument that names a quantity or an option outside its fixed set raises
 Small and focused is easier to review than complete. Say in the description
 what the change is for; if it adds data, say which paper and which edition.
 
-CI runs the tests on Python 3.10 to 3.14, a job pinned to the oldest declared
+CI runs the tests on Python 3.11 to 3.14, a job pinned to the oldest declared
 NumPy, and every example. All of it should be green before review.
 
 ## Scope

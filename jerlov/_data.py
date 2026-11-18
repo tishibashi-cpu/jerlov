@@ -22,7 +22,7 @@ from typing import Any, Callable, TypeVar
 import numpy as np
 
 #: numpy.trapezoid is the name from NumPy 2.0; before that it was numpy.trapz,
-#: which 2.0 removed. The package claims to work from NumPy 1.22, so neither
+#: which 2.0 removed. The package claims to work from NumPy 1.23.2, so neither
 #: can be assumed. This lives here rather than in a module about colour so
 #: that anything integrating over a grid finds it: putting it in colour.py
 #: meant two later modules reached for np.trapezoid and broke the oldest

@@ -6807,3 +6807,7 @@ on trapezoid. Nothing in the code relies on 3.10 or on NumPy before
 **Checks.** The existing test that CI's matrix, the classifiers and
 requires-python agree; the full suite under Python 3.11 with NumPy 1.23.2,
 locally before the push.
+
+**Result.** As planned; no code needed changing. The full suite, 1401
+tests, passed under Python 3.11.18 with NumPy 1.23.2 before the push, as it
+does under NumPy 2.4. The CHANGELOG of 1.24.0 says so under "Changed".
