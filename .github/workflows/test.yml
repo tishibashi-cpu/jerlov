@@ -33,6 +33,14 @@ jobs:
         if: matrix.numpy == 'oldest'
         run: pip install "numpy==1.23.2"
       - run: python -c "import numpy; print('numpy', numpy.__version__)"
+      - name: The machine and NumPy's BLAS, for results that depend on them
+        # Under NumPy 1.23.2 the painted_sphere figures passed on one runner
+        # and failed on another with the same code (DECISIONS.md section
+        # 108); which CPU and which BLAS ran is the first thing to know.
+        run: |
+          lscpu | grep -E "^(Model name|Vendor ID|CPU\(s\)):"
+          grep -o -w -E "avx2|avx512f|avx512_bf16|amx_tile" /proc/cpuinfo | sort | uniq -c
+          python -c "import numpy; numpy.show_config()"
       - run: python -m pytest tests/ -v
       - name: The tests must also pass away from the source tree
         # The release workflow runs them from a copy next to nothing else,
