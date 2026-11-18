@@ -309,4 +309,4 @@ __all__ = [
     "OsoaaRadianceScan",
 ]
 
-__version__ = "1.23.0"
+__version__ = "1.24.0"

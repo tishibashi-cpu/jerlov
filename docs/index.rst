@@ -33,7 +33,7 @@ Installing
 
    pip install jerlov
 
-It needs Python 3.10 or later and NumPy, nothing else.
+It needs Python 3.11 or later and NumPy, nothing else.
 
 A first calculation
 -------------------

@@ -6780,3 +6780,46 @@ station (NEXT_STEPS section 5, options 2 and 3).
   light by less than a few degrees"; at AUTEC 8 the share within 5
   degrees is 45.8 percent, so it says "46 to 64 percent", and a test
   reads it.
+
+## 108. Python 3.11 and NumPy 1.23.2 as the lowest supported (1.24.0): the plan
+
+Python 3.10 reached its end of support in October 2026 (NEXT_STEPS
+section 1). The user chose (2026-11-18) to raise the floor to 3.11. Under
+section 61, raising a lower bound of Python or NumPy is a minor change.
+This plan first put it into 1.23.0 with section 107, in the same pull
+request; that pull request had been merged before these commits were
+pushed, so it is 1.24.0, a release of its own.
+
+**NumPy follows.** NumPy 1.22 has no wheels for Python 3.11; 1.23.2
+(14 August 2022) is the first release that has them (checked on PyPI:
+1.23.0 and 1.23.1 have none). A claim of numpy>=1.22 on a package that
+needs Python 3.11 could not be tested, so the floor becomes
+`numpy>=1.23.2`, and the CI job pinned to the oldest NumPy runs Python
+3.11 with numpy==1.23.2 exactly, so that the floor claimed is the one
+tested.
+
+**Changes.** pyproject.toml (requires-python, the dependency, the
+classifiers); the test and examples matrices in test.yml; CONTRIBUTING.md;
+docs/index.rst; the bug report template; the comment in `jerlov._data`
+on trapezoid. Nothing in the code relies on 3.10 or on NumPy before
+1.23.2, so no code changes; nothing is removed that worked on 3.11.
+
+**Checks.** The existing test that CI's matrix, the classifiers and
+requires-python agree; the full suite under Python 3.11 with NumPy 1.23.2,
+locally before the push.
+
+**Result.** As planned; no code needed changing. The full suite, 1401
+tests, passed under Python 3.11.18 with NumPy 1.23.2 before the push, as it
+does under NumPy 2.4. The CHANGELOG of 1.24.0 says so under "Changed".
+
+**After the first CI run.** The job for the oldest NumPy failed on two
+figures of `examples/painted_sphere.py` (the grey sphere 11.4 times the
+water from above where 14.5 is printed) on one runner, and passed with the
+same code on the run before. The Monte Carlo's light field matched the
+local run to every printed digit; the difference arises in the picture,
+whose large matrix products NumPy hands to its bundled OpenBLAS. Locally,
+with NumPy 1.23.2, it did not reproduce with AVX-512 disabled, under four
+OpenBLAS core types, or with 1, 2 and 8 threads. Every test job now prints
+the runner's CPU and NumPy's BLAS configuration before the tests, so that
+the next failure names the machine. Neither a test nor a figure is changed
+to make the job pass.

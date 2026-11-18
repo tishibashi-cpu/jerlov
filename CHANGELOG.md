@@ -4,6 +4,16 @@ Every release is archived on Zenodo under the concept DOI
 [10.5281/zenodo.22321312](https://doi.org/10.5281/zenodo.22321312), which
 always resolves to the latest version.
 
+## 1.24.0 — 2026-11-18
+
+Python 3.11 as the lowest supported version (DECISIONS.md section 108). No
+value, code or public name changed.
+
+**Changed.** Python 3.11 or later is needed, and NumPy 1.23.2 or later:
+Python 3.10 reached its end of support in October 2026, and 1.23.2 is the
+first NumPy with wheels for Python 3.11. CI's job for the oldest NumPy runs
+Python 3.11 with NumPy 1.23.2 exactly.
+
 ## 1.23.0 — 2026-11-18
 
 The attenuation of light that forward scattering turns rather than loses,
