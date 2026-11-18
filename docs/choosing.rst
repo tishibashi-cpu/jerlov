@@ -116,6 +116,13 @@ Light below the surface
    * - The veiling radiance, if you have nothing better
      - :func:`~jerlov.veiling_radiance_estimate`
      - single scattering
+   * - The attenuation of the light that stays within an angle of its
+       direction: what a transmissometer of that acceptance reads, or
+       light from a target blurred rather than lost
+     - :func:`~jerlov.forward_scatter` for a measured water,
+       :func:`~jerlov.attenuation_within` for a type, with a station you
+       name
+     - Petzold (1972)
    * - The irradiance at the surface under a clear sky
      - :func:`~jerlov.gregg1990_irradiance`
      - Gregg & Carder (1990)

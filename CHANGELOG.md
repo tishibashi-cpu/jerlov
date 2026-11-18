@@ -4,6 +4,31 @@ Every release is archived on Zenodo under the concept DOI
 [10.5281/zenodo.22321312](https://doi.org/10.5281/zenodo.22321312), which
 always resolves to the latest version.
 
+## 1.23.0 — 2026-11-18
+
+The attenuation of light that forward scattering turns rather than loses,
+from Petzold's measured scattering (DECISIONS.md section 107). No earlier
+value changed.
+
+**New.** `forward_scatter(scattering, half_angle_deg)` and `ForwardScatter`:
+for one of Petzold's stations, the share of the scattering within a
+half-angle from 0.1 to 180 degrees, and c - b(< theta0), what a receiver
+accepting light within that angle reads. At the report's printed angles the
+share is the report's own cumulative integral. `attenuation_within(water,
+wavelengths, /, *, forward)` applies that share to a water's own b, which
+assumes the station's phase function holds for the water at every
+wavelength; the station has no default. Within 5 degrees lies 46 to 64
+percent of b at Petzold's eight stations.
+
+**Found.** A Monte Carlo of a collimated beam (`tools/forward_scatter_mc.py`)
+agrees with single scattering within 0.36 percent wherever b r <= 0.5. At
+b r = 3 it is up to 8.5 percent below in a 20-degree cone and up to 3.1
+percent above in the narrower ones. The share below 0.1 degree, the report's
+extension, enters every result and always warns. DATA.md section 49.
+
+**Docs.** The map and the page on seeing through water; DATA.md section 49;
+the README; the Zenodo description.
+
 ## 1.22.2 — 2026-11-17
 
 The README becomes an introduction, its topics move to the site, and the

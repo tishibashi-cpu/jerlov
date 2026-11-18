@@ -3,7 +3,7 @@
 What every shipped table is, where it came from, what was verified, and what
 is known to be wrong with it.
 
-Forty-eight entries are recorded below. Thirteen are confirmed defects, three were
+Forty-nine entries are recorded below. Thirteen are confirmed defects, three were
 open questions that the first edition of Jerlov settled, and the rest are
 notes rather than defects. None of them is repaired silently: values that
 could be recovered carry `status = reconstructed` and say how, values that
@@ -3008,3 +3008,39 @@ describes two sets.
   cases, and up to 1.22 percent above (412.5 nm, 10 mg m^-3). The linear
   fits have no such dip. Why the archive (June 2003) and the paper's fits
   (lin-approx.tar, August 2002) differ there is not known.
+
+## 49. The light kept within an angle: Petzold's forward scattering (note)
+
+Since 1.23.0, `forward_scatter(scattering, half_angle_deg)` gives the share
+f of one of Petzold's stations' scattering within a half-angle theta0, and
+c - f b, the attenuation of the light that stays within theta0 of its
+direction; `attenuation_within(water, wavelengths, forward=...)` applies
+that f to a water's own b (DECISIONS.md section 107).
+
+- **From the report's own integral.** Petzold prints the cumulative
+  integral of the vsf at every tabulated angle. At those angles f is the
+  printed value; between them it follows the vsf as a power law, scaled to
+  meet the printed values at both ends. Integrating the printed vsf
+  directly reproduces the printed integral within 0.33 percent at every
+  angle and station. At 180 degrees f is 1 and c - f b is a.
+- **What it says.** Within 1 degree lies 20.0 (AUTEC 8) to 37.5 percent
+  (HAOCE 5) of b; within 5 degrees 45.8 to 64.1 percent; within 20
+  degrees 75.3 to 87.1 percent. Every share includes the report's
+  extension below 0.1 degree, 3.4 to 14.5 percent of b, and at AUTEC 7-9
+  and HAOCE 5 and 11 its extrapolated angles to 0.159 degree.
+- **Against a Monte Carlo** (`tools/forward_scatter_mc.py`, results in
+  `examples/data/forward_scatter/monte_carlo.csv`): a collimated beam in
+  AUTEC 8, HAOCE 11 and NUC 2200, the light crossing a plane at distance
+  r within 0.5, 1, 5 or 20 degrees of the beam's direction, against
+  single scattering, exp(-(c - b F) r). Where b r <= 0.5 they agree within
+  0.36 percent (the criterion set beforehand was 3). At b r = 3 the Monte
+  Carlo is 8.5 percent below at 20 degrees (AUTEC 8) and up to 3.1 percent
+  above at the smaller angles: repeated small-angle scattering spreads
+  light out of a wide cone and keeps a little more in a narrow one.
+- **The extension below 0.1 degree is a choice.** The Monte Carlo's
+  sampler continues the vsf below 0.1 degree with the slope of the first
+  two printed angles; its share within theta0 differs from the report's
+  by up to 1.1 percentage points (HAOCE 11 at 0.5 degree).
+- **Not shown here:** that the light within theta0 forms an image blurred
+  by theta0. That is the reading DECISIONS.md section 107 gives it, not a
+  measurement, and the phase function of a Jerlov type is not known.

@@ -141,6 +141,13 @@ Scattering and backscattering
 
 .. autodata:: PETZOLD_STATIONS
 
+.. autofunction:: forward_scatter
+
+.. autoclass:: ForwardScatter
+   :members:
+
+.. autofunction:: attenuation_within
+
 Measured reflectances
 ---------------------
 

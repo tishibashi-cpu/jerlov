@@ -98,6 +98,30 @@ and says how far it can be trusted.
 range it describes is not a well-defined quantity, so the API does not let you
 omit it.
 
+Light that is turned, not lost
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The direct term above attenuates with c, which counts every scattered
+photon as gone. At Petzold's eight stations 46 to 64 percent of the
+scattering turns light by less than 5 degrees, and that light still
+arrives near where it came from: blurred rather than lost. With one of
+his measured waters, the share of the scattering within a half-angle,
+and the attenuation of the light kept within it:
+
+.. code-block:: python
+
+   f = jerlov.forward_scatter(jerlov.petzold_scattering("HAOCE 11"), 5.0)
+   f.fraction       # the share of b within 5 degrees
+   f.c_within       # c - b(< 5 deg) of that water, 1/m, at 530 nm
+   jerlov.attenuation_within(jerlov.water("III"), wl, forward=f)
+
+``attenuation_within`` applies that share to a type's own b,
+which assumes the station's phase function holds for the type at every
+wavelength: neither is known, so the station has no default. This is
+single scattering, checked against a Monte Carlo; reading it as the
+light that forms an image is an assumption, and a blurred image itself
+is not computed (DATA.md section 49).
+
 What colour is that
 -------------------
 

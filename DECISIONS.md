@@ -6684,3 +6684,99 @@ section 1).
   Morel's models are "spectral values of the water itself" was dropped,
   since no docstring says it.
 - The README is 213 lines.
+
+## 107. The attenuation of light kept within an angle: forward scattering from Petzold's measurements (1.23.0): the plan
+
+Section 13 left forward scattering out: c counts every scattered photon
+as lost to the beam, and a blurred image needs the whole phase function,
+which no Jerlov type determines. Since then the package ships Petzold's
+measured volume scattering functions (section 27), and section 96 looked
+at their extension below 0.1 degree. An experiment outside the package
+(the user's, 2026-11-17, NEXT_STEPS section 5) put Jerlov types into a
+real-time renderer's single-scattering fog, which attenuates with c, and
+the water lost the look of clarity; part of that is that light scattered
+by a small angle still reaches the eye near where it came from. The user
+chose (2026-11-18) to add the lightest of the three options recorded
+then: the attenuation of light kept within a half-angle.
+
+**The quantity.** For a beam and a receiver that accepts light within a
+half-angle theta0 of the beam's direction, single scattering gives
+
+    c_within(theta0) = c - b(< theta0),
+    b(< theta0) = 2 pi integral from 0 to theta0 of vsf(theta) sin(theta)
+
+It is what a transmissometer with that acceptance angle reads, and it
+lies between c (theta0 = 0) and a (theta0 = 180 degrees). For an image it
+is the light from a target that arrives within theta0 of the target's
+direction after one scattering: blurred by up to theta0, not lost. That
+reading is an assumption the documentation states; nothing here tests
+it on images.
+
+**From Petzold, not from a type.** The vsf is a station's, at 530 nm,
+water and particles together. b(< theta0) = (the report's share below
+0.1 degree) b + 2 pi times the integral of the printed vsf from 0.1
+degree to theta0, a power law between samples as `ScatteringFunction`
+already integrates it. theta0 below 0.1 degree is refused: nothing was
+measured there. Every result rests on the report's extension below 0.1
+degree (3.4 to 14.5 percent of b) and, at AUTEC 7-9 and HAOCE 5 and 11,
+on its three extrapolated angles to 0.159 degree, so it always warns, as
+`ScatteringFunction.mean_cosine` does.
+
+**To a water's spectrum, by a choice the caller states.** The share
+f(theta0) = b(< theta0) / b of one station, applied to a water's own b at
+every wavelength: c(lambda) - f b(lambda). This assumes the station's
+phase function holds for that water and does not change with wavelength.
+Neither is known; the caller names the station, and there is no default.
+
+**Public.** `forward_scatter(scattering, half_angle_deg)` ->
+`ForwardScatter` (the station, the half-angle, the share f, the share of
+b from the extension below 0.1 degree, and c_within at 530 nm for the
+station itself); `attenuation_within(water, wavelengths, /, *, forward)`
+-> c - f b on the wavelengths. The half-angle is one number from 0.1 to
+180 degrees. Three public names (137 to 140).
+
+**Checks, with their criteria set now.**
+
+1. At 180 degrees, f = 1 to within 0.3 percent at every station (the
+   report's integral against its printed b; 0.9976 to 0.9986, computed
+   before this plan), and c_within = a to the same.
+2. f rises with theta0, and c_within falls, at every station.
+3. An independent Monte Carlo (tools/forward_scatter_mc.py, using
+   tools/kd_monte_carlo.py's Petzold sampler): a collimated beam in an
+   unbounded water, the weight crossing the plane at distance r moving
+   within theta0 of the beam's direction. Stations AUTEC 8, HAOCE 11 and
+   NUC 2200; theta0 0.5, 1, 5 and 20 degrees; b r 0.1, 0.5, 1 and 3.
+   Against exp(-(c - b F) r) with F the sampler's own share within
+   theta0, the criterion is agreement within 3 percent wherever b r <=
+   0.5. Beyond that multiple small-angle scattering matters; how much is
+   recorded as found, not judged. The sampler continues the vsf below 0.1
+   degree with its own power law, which differs from the report's share;
+   the difference between F and f is recorded too.
+
+**Documents.** DATA.md section 49 (the figures quoted, the Monte Carlo);
+the map; the topic page on seeing through water; docs/api.rst;
+CHANGELOG; the Zenodo description. The Monte Carlo's results go to
+examples/data/forward_scatter/ (not in the wheel), and the tests read
+them. Not done: a point spread function, a blurred image, or a default
+station (NEXT_STEPS section 5, options 2 and 3).
+
+**Differences from the plan, noted after the code was written.**
+
+- The share is not integrated from 0 degrees by the package alone: the
+  report prints its own cumulative integral at every tabulated angle, so
+  at those angles the share is the printed value, and between two of them
+  it follows the power-law vsf, scaled to meet both printed values, which
+  keeps it rising. Criterion 1 therefore holds exactly: the printed
+  integral is 1.0000 at 180 degrees at every station. Integrating the
+  printed vsf directly reproduces the printed integral within 0.33
+  percent (0.325 at the worst, AUTEC 8; an earlier note said 0.32,
+  rounded down, and was corrected before the commit).
+- `ForwardScatter` holds numbers only, so it is a plain frozen dataclass.
+- Criterion 3 was met: within 0.36 percent wherever b r <= 0.5. At b r =
+  3, from 8.5 percent below (AUTEC 8, 20 degrees) to 3.1 percent above.
+  The sampler's share within theta0 differs from the report's by up to
+  1.1 percentage points (HAOCE 11, 0.5 degree).
+- The first draft of the topic page said "most of the scattering turns
+  light by less than a few degrees"; at AUTEC 8 the share within 5
+  degrees is 45.8 percent, so it says "46 to 64 percent", and a test
+  reads it.

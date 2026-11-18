@@ -100,9 +100,10 @@ want and what you have.
 
 - [Seeing through water](https://tishibashi-cpu.github.io/jerlov/topics/seeing_through_water.html): a target
   seen at a distance, looking up or down, the Akkaynak-Treibitz
-  coefficients, colour against a white you name, and colour differences
-  to an eye (`Scene`, `spectrum_to_srgb`, `visual_pigment_template`,
-  `receptor_noise_distance`).
+  coefficients, light that forward scattering turns rather than loses,
+  colour against a white you name, and colour differences to an eye
+  (`Scene`, `forward_scatter`, `spectrum_to_srgb`,
+  `visual_pigment_template`, `receptor_noise_distance`).
 - [Light with depth](https://tishibashi-cpu.github.io/jerlov/topics/depth_and_light.html): the type changing
   with depth, irradiance through that profile, PAR and the depth of a
   fraction of it, with Jerlov's and Tyler's measurements and the flicker
@@ -168,7 +169,7 @@ made.
 ## Provenance and design
 
 `DATA.md` records, for every shipped table, where it came from, what was
-verified, and what is known to be wrong with it. Forty-eight entries are
+verified, and what is known to be wrong with it. Forty-nine entries are
 documented there: thirteen confirmed defects in the source literature, three
 questions the first edition of Jerlov settled, and the rest notes.
 

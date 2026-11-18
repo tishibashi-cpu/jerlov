@@ -58,7 +58,14 @@ from .par import (
     jerlov1977_quanta,
     par_profile,
 )
-from .petzold import PETZOLD_STATIONS, ScatteringFunction, petzold_scattering
+from .petzold import (
+    PETZOLD_STATIONS,
+    ForwardScatter,
+    ScatteringFunction,
+    attenuation_within,
+    forward_scatter,
+    petzold_scattering,
+)
 from .scene import (
     AttenuationCoefficients,
     Observation,
@@ -217,6 +224,9 @@ __all__ = [
     "pure_water_absorption",
     "pure_water_absorption_table",
     "petzold_scattering",
+    "forward_scatter",
+    "ForwardScatter",
+    "attenuation_within",
     "PETZOLD_STATIONS",
     "ScatteringFunction",
     "shortwave_parameters",
@@ -299,4 +309,4 @@ __all__ = [
     "OsoaaRadianceScan",
 ]
 
-__version__ = "1.22.2"
+__version__ = "1.23.0"
