@@ -94,3 +94,11 @@ Petzold's eight stations with and without the report's extension below
 0.1 degree, 96 runs in a few minutes, and writes
 `examples/data/below_0_1/runs.csv`, which part 3 of
 `examples/phase_function_choice.py` reads.
+
+`forward_scatter_mc.py` (1.23.0, DECISIONS.md section 107) follows a
+collimated beam through three of Petzold's waters with the same sampler and
+counts the light crossing a plane within 0.5 to 20 degrees of the beam's
+direction, against single scattering, `jerlov.forward_scatter`'s quantity:
+48 cases in a few seconds, written to
+`examples/data/forward_scatter/monte_carlo.csv`, which
+`tests/test_forward_scatter.py` reads. DATA.md section 49.

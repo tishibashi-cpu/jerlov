@@ -6759,3 +6759,24 @@ CHANGELOG; the Zenodo description. The Monte Carlo's results go to
 examples/data/forward_scatter/ (not in the wheel), and the tests read
 them. Not done: a point spread function, a blurred image, or a default
 station (NEXT_STEPS section 5, options 2 and 3).
+
+**Differences from the plan, noted after the code was written.**
+
+- The share is not integrated from 0 degrees by the package alone: the
+  report prints its own cumulative integral at every tabulated angle, so
+  at those angles the share is the printed value, and between two of them
+  it follows the power-law vsf, scaled to meet both printed values, which
+  keeps it rising. Criterion 1 therefore holds exactly: the printed
+  integral is 1.0000 at 180 degrees at every station. Integrating the
+  printed vsf directly reproduces the printed integral within 0.33
+  percent (0.325 at the worst, AUTEC 8; an earlier note said 0.32,
+  rounded down, and was corrected before the commit).
+- `ForwardScatter` holds numbers only, so it is a plain frozen dataclass.
+- Criterion 3 was met: within 0.36 percent wherever b r <= 0.5. At b r =
+  3, from 8.5 percent below (AUTEC 8, 20 degrees) to 3.1 percent above.
+  The sampler's share within theta0 differs from the report's by up to
+  1.1 percentage points (HAOCE 11, 0.5 degree).
+- The first draft of the topic page said "most of the scattering turns
+  light by less than a few degrees"; at AUTEC 8 the share within 5
+  degrees is 45.8 percent, so it says "46 to 64 percent", and a test
+  reads it.
