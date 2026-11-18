@@ -6780,3 +6780,30 @@ station (NEXT_STEPS section 5, options 2 and 3).
   light by less than a few degrees"; at AUTEC 8 the share within 5
   degrees is 45.8 percent, so it says "46 to 64 percent", and a test
   reads it.
+
+## 108. Python 3.11 and NumPy 1.23.2 as the lowest supported (1.24.0): the plan
+
+Python 3.10 reached its end of support in October 2026 (NEXT_STEPS
+section 1). The user chose (2026-11-18) to raise the floor to 3.11. Under
+section 61, raising a lower bound of Python or NumPy is a minor change.
+This plan first put it into 1.23.0 with section 107, in the same pull
+request; that pull request had been merged before these commits were
+pushed, so it is 1.24.0, a release of its own.
+
+**NumPy follows.** NumPy 1.22 has no wheels for Python 3.11; 1.23.2
+(14 August 2022) is the first release that has them (checked on PyPI:
+1.23.0 and 1.23.1 have none). A claim of numpy>=1.22 on a package that
+needs Python 3.11 could not be tested, so the floor becomes
+`numpy>=1.23.2`, and the CI job pinned to the oldest NumPy runs Python
+3.11 with numpy==1.23.2 exactly, so that the floor claimed is the one
+tested.
+
+**Changes.** pyproject.toml (requires-python, the dependency, the
+classifiers); the test and examples matrices in test.yml; CONTRIBUTING.md;
+docs/index.rst; the bug report template; the comment in `jerlov._data`
+on trapezoid. Nothing in the code relies on 3.10 or on NumPy before
+1.23.2, so no code changes; nothing is removed that worked on 3.11.
+
+**Checks.** The existing test that CI's matrix, the classifiers and
+requires-python agree; the full suite under Python 3.11 with NumPy 1.23.2,
+locally before the push.
