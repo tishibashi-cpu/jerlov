@@ -184,6 +184,20 @@ def test_the_first_page_quotes_the_one_percent_depths_it_computes():
     assert (round(one), round(two)) == (162, 105)
 
 
+def test_the_first_pages_spectrum_says_it_shows_shape_only():
+    """DECISIONS.md section 111: the curves are each scaled to their own peak."""
+    page = _flat(_page("dive.html"))
+    assert "Each is scaled to its own peak, so their heights cannot be compared" in page
+    assert "solid line drawn \\u00d7 ${times(k)}" in _page("dive.html")
+
+
+@pytest.mark.parametrize("name", ["dive.html", "disagree.html"])
+def test_the_hidden_attribute_hides(name):
+    """The drafts ran where the viewer added this rule; the site does not. Without it the
+    first page showed its "outside sRGB" chip at every depth (DECISIONS.md section 111)."""
+    assert "[hidden] { display: none !important; }" in _page(name)
+
+
 def test_the_first_page_says_what_data_md_says_of_jerlovs_table():
     data_md = (ROOT / "DATA.md").read_text()
     assert "Jerlov printed 16 wavelengths, 310-700" in data_md
@@ -202,21 +216,32 @@ const Core = require({json.dumps(str(core))});
 const D = require("./data.json");
 const c = Core.make(D);
 const out = {json.dumps(CHECKS)}.map(([t, z]) => [c.linear(c.edAt(t, z)), c.parFraction(t, z),
-  c.depthOfParFraction(t, 0.01)]);
+  c.depthOfParFraction(t, 0.01), c.enlargement(t, z), c.outside(c.linear(c.edAt(t, z)))]);
 console.log(JSON.stringify(out));
 """)
     result = subprocess.run(["node", str(tmp_path / "run.js")], capture_output=True,
                             text=True, check=True, cwd=tmp_path)
     wl = tool.DIVE_WL
     sky = _sky(tool, wl)
-    for (water_type, z), (linear, par, d1) in zip(CHECKS, json.loads(result.stdout)):
+    es = np.asarray(data["es"], float)
+    seen_outside = set()
+    for (water_type, z), (linear, par, d1, k, outside) in zip(CHECKS, json.loads(result.stdout)):
+        seen_outside.add(outside)
+        # The factor the chart prints (DECISIONS.md section 111): the surface's peak over
+        # this depth's, on the page's own values.
+        ed = es * np.exp(-np.asarray(data["kd"][water_type], float) * z)
+        assert math.isclose(k, es.max() / ed.max(), rel_tol=1e-12), (water_type, z)
         water = jerlov.water(water_type, source="jerlov1976")
         rgb, expected_par = _jerlov_at(sky, water, wl, z)
+        # The chip (DECISIONS.md section 111): outside sRGB where jerlov's colour has a negative
+        # channel, however dim the light; the sign survives sRGB's transfer function.
+        assert outside == bool(rgb.min() < -1e-6 * rgb.max()), (water_type, z, rgb)
         assert np.max(np.abs(_signed_gamma(np.asarray(linear)) - rgb)) < 1e-5
         assert abs(par / expected_par - 1) < 1e-5
         depth = jerlov.par_profile(sky, wl, 0.0, kd=water,
                                    unit="energy").depth_of_fraction()
         assert abs(d1 - depth) < 1e-3, (water_type, d1, depth)
+    assert seen_outside == {True, False}, "the cases should include colours in and out of sRGB"
 
 
 # -- the second page: what it draws and what it quotes -------------------------

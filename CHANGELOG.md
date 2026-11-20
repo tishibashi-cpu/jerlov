@@ -4,6 +4,29 @@ Every release is archived on Zenodo under the concept DOI
 [10.5281/zenodo.22321312](https://doi.org/10.5281/zenodo.22321312), which
 always resolves to the latest version.
 
+## 1.25.1 — 2026-11-20
+
+The spectrum on the site's "Daylight on the way down" says how much it is
+enlarged, and its colour chip works on the site (DECISIONS.md section 111).
+No shipped value, code or public name changed.
+
+**Docs.** Each curve of that page's spectrum is scaled to its own peak, so
+at depth the solid line can stand above the surface's dashed one although
+the light there is far weaker. The chart now gives the factor by which the
+solid line is enlarged, which in turbid water at depth runs to many orders
+of magnitude, and the caption says that the curves compare shape only and
+that the numbers above give how much light is left.
+
+**Fixed.** On the site, that page's "outside sRGB, shown clipped" chip showed
+at every depth since 1.24.1: the standalone page lacked the rule that makes
+the `hidden` attribute win over the chip's display. Its test for a colour
+outside sRGB is now relative to the brightest channel, so deep, dim colours
+outside sRGB are flagged too. Both pages carry the rule.
+
+**Tests.** The factor the page's script computes is the surface's peak over
+the depth's, and the chip agrees with jerlov's own `spectrum_to_srgb`, both
+checked with node where it is installed; both pages carry the `hidden` rule.
+
 ## 1.25.0 — 2026-11-20
 
 NumPy 1.24.0 as the lowest supported version (DECISIONS.md section 110). No
