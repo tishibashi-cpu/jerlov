@@ -6979,3 +6979,32 @@ machine, and the four tests of the sphere example passed with CooperLake
 forced; under the current NumPy the full suite passed too. The failing
 runner itself was not available to run again before the push; CI's job for
 the oldest NumPy will show it when it lands on such a processor.
+
+## 111. The spectrum on the first site page says how much it is enlarged (1.25.1): the plan
+
+The user, reading `dive.html` on 2026-11-20, found that at depth the
+spectrum's solid line can stand higher than the surface's dashed line, and
+asked whether light at depth can be stronger. It cannot: Ed(z) = Ed(0)
+exp(-Kd z) and every Kd of Jerlov (1976) is positive. Each curve is scaled
+to its own peak, which the caption said, but the person who knows the page
+best read it the other way, and the page is meant for readers who do not.
+
+**Changes.** On the chart, under the peak's wavelength, the factor by
+which the solid line is enlarged against the surface's scale, the
+surface's peak over this depth's peak (shown once it exceeds 1.05, as
+"drawn x 2.9 x 10^14" with superscript digits). The caption: both curves
+show shape only, each scaled to its own peak, so their heights cannot be
+compared; how much light is left is in the numbers above. No number the
+page computes changes; the pages are regenerated and the version is
+1.25.1.
+
+**Checks.** `tests/test_site_pages.py` as it stands (the page is what the
+tool writes), and a test that the factor the page's script computes is the
+surface's peak over the depth's, run with node where it is present. A look
+at the page at 0 m, where no factor is shown, and at 9C, 58.5 m.
+
+**Also recorded here: section 110 confirmed on the runner.** After 1.25.0
+was pushed, CI's job for the oldest NumPy (now 1.24.0) ran once on an
+Intel Xeon 6975P-C, the processor of the failure in section 110, and the
+four tests of the sphere example passed there; the other run of that job
+was on an AMD EPYC 9V74.
