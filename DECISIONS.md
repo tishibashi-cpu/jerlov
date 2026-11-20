@@ -7008,3 +7008,23 @@ was pushed, CI's job for the oldest NumPy (now 1.24.0) ran once on an
 Intel Xeon 6975P-C, the processor of the failure in section 110, and the
 four tests of the sphere example passed there; the other run of that job
 was on an AMD EPYC 9V74.
+
+**Found while doing it.** The look at 0 m showed the "outside sRGB, shown
+clipped" chip under a white swatch. Two faults, both in 1.24.1, both in
+the page rather than in its numbers:
+
+- The drafts ran inside a viewer that adds `[hidden] { display: none
+  !important; }`; the site's standalone pages lacked it, and the chip's own
+  `display: inline-block` won over the `hidden` attribute, so the chip
+  showed at every depth on the site. Both pages now carry the rule, and a
+  test checks it.
+- The chip's test was absolute (a channel below -1e-9), while deep down
+  every linear channel is tiny (the largest about 7e-16 for 9C at 58.5 m,
+  where blue is -0.077 of it). It is now relative to the largest channel
+  and lives in the page's script core, and the node test checks it against
+  jerlov's own `spectrum_to_srgb` at the sixteen cases, which include
+  colours both in and out of sRGB.
+
+**Changed after the first look.** Both labels moved into a margin above the
+plotted area, with a halo in the panel's colour: under the peak's
+wavelength the factor overlapped the curve when the peak was mid-chart.

@@ -33,6 +33,12 @@ const Core = (() => {
       for (let k = 0; k < 60; k++) { const m = 0.5 * (lo + hi); (parFraction(type, m) > f ? (lo = m) : (hi = m)); }
       return 0.5 * (lo + hi);
     }
+    // Outside sRGB: a channel below zero, relative to the largest one, since deep down every
+    // channel is tiny (DECISIONS.md section 111).
+    const outside = (lin) => lin.some((c) => c < -1e-9 * Math.max(...lin));
+    // How many times the spectrum at depth is drawn larger than on the surface's scale,
+    // when each curve is scaled to its own peak.
+    const enlargement = (type, z) => Math.max(...D.es) / Math.max(...edAt(type, z));
     // The colour of the light itself: hue at full brightness (largest channel = 1, negatives cut).
     function hue(lin) {
       const c = lin.map((v) => Math.max(0, v));
@@ -45,7 +51,7 @@ const Core = (() => {
       const exposure = Y(D.refl.white_pvc) / Y(D.refl.white_pvc.map((r, i) => r * ed[i]));
       return linear(D.refl[material].map((r, i) => r * ed[i])).map((c) => c * exposure);
     }
-    return { wl, edAt, linear, encode, gamma, Y, parFraction, depthOfParFraction, hue, objectLinear };
+    return { wl, edAt, linear, encode, gamma, Y, parFraction, depthOfParFraction, hue, objectLinear, enlargement, outside };
   }
   return { make, trap };
 })();

@@ -33,6 +33,8 @@
 * { box-sizing: border-box; }
 html, body { margin: 0; }
 img { max-width: 100%; }
+/* The hidden attribute must win over a class's display (DECISIONS.md section 111). */
+[hidden] { display: none !important; }
 body { background: var(--bg); color: var(--fg); font-family: var(--body); font-size: 15px; line-height: 1.55; }
 .wrap { max-width: 1120px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 28px 56px; }
 h1, h2 { font-family: var(--display); text-wrap: balance; margin: 0; }
@@ -63,7 +65,7 @@ dl.stats { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 6px 1
 dl.stats dt { color: var(--muted); }
 dl.stats dd { margin: 0; font-family: var(--mono); font-variant-numeric: tabular-nums; text-align: right; }
 #spectrum text.ax { font-family: var(--mono); fill: var(--muted); }
-#spectrum text.pk { font-family: var(--mono); fill: var(--fg); }
+#spectrum text.pk { font-family: var(--mono); fill: var(--fg); paint-order: stroke; stroke: var(--surface); stroke-width: 3px; }
 #spectrum { width: 100%; height: 190px; display: block; margin-top: 8px; }
 .objects { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 10px; }
 @media (max-width: 560px) { .objects { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
@@ -127,7 +129,7 @@ a { color: var(--accent); }
       </dl>
       <h2 class="section" style="margin-top:20px">Spectrum</h2>
       <svg id="spectrum" role="img" aria-label="Downwelling spectrum at the chosen depth"></svg>
-      <p class="small">Solid: the light at this depth, scaled to its own peak. Dashed: the surface, scaled the same way.</p>
+      <p class="small">Shape only. Solid: the light at this depth; dashed: the surface. Each is scaled to its own peak, so their heights cannot be compared: the solid line is drawn as many times larger as the chart says. How much light is left is in the numbers above.</p>
     </div>
   </div>
 
@@ -237,11 +239,19 @@ function drawColumns() {
   ctx.beginPath(); ctx.moveTo(PAD.l - 2, yz); ctx.lineTo(w - PAD.r, yz); ctx.stroke(); ctx.setLineDash([]);
 }
 
+// 2.9 x 10^14 as "2.9 × 10¹⁴"; below 1000 as a plain number.
+function times(k) {
+  if (k < 1000) return k < 10 ? k.toFixed(2) : k < 100 ? k.toFixed(1) : k.toFixed(0);
+  const e = Math.floor(Math.log10(k)), m = k / Math.pow(10, e);
+  const sup = String(e).replace(/[0-9]/g, (d) => "\u2070\u00b9\u00b2\u00b3\u2074\u2075\u2076\u2077\u2078\u2079"[d]);
+  return `${m.toFixed(1)} \u00d7 10${sup}`;
+}
+
 function drawSpectrum() {
   const svg = document.getElementById("spectrum");
   const W = svg.clientWidth || 400, H = svg.clientHeight || 190;
   svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
-  const p = { l: 8, r: 8, t: 8, b: 22 };
+  const p = { l: 8, r: 8, t: 38, b: 22 };
   const wl = C.wl, x = (l) => p.l + ((l - 380) / 320) * (W - p.l - p.r), yv = (v) => H - p.b - v * (H - p.t - p.b);
   const ed = C.edAt(state.type, state.z), mx = Math.max(...ed), m0 = Math.max(...DATA.es);
   const path = (arr, m) => arr.map((v, i) => `${i ? "L" : "M"}${x(wl[i]).toFixed(1)},${yv(v / m).toFixed(1)}`).join("");
@@ -256,7 +266,11 @@ function drawSpectrum() {
   g += `<path d="${path(DATA.es, m0)}" fill="none" style="stroke:var(--muted)" stroke-width="1.2" stroke-dasharray="4 3"/>`;
   g += `<path d="${path(ed, mx)}" fill="none" style="stroke:var(--fg)" stroke-width="1.6"/>`;
   let pk = 0; ed.forEach((v, i) => { if (v > ed[pk]) pk = i; });
-  g += `<text x="${W - p.r}" y="${p.t + 12}" font-size="11" text-anchor="end" class="pk">peak ${wl[pk]} nm</text>`;
+  g += `<text x="${W - p.r}" y="12" font-size="11" text-anchor="end" class="pk">peak ${wl[pk]} nm</text>`;
+  const k = C.enlargement(state.type, state.z);
+  if (k > 1.05) {
+    g += `<text x="${W - p.r}" y="27" font-size="11" text-anchor="end" class="pk">solid line drawn \u00d7 ${times(k)}</text>`;
+  }
   svg.innerHTML = g;
 }
 
@@ -278,7 +292,7 @@ function update() {
   document.getElementById("swatch").style.background = css(C.encode(C.hue(lin)));
   document.getElementById("r-title").textContent = `${t} at ${z % 1 ? z.toFixed(1) : z} m`;
   document.getElementById("r-kind").textContent = KIND[t];
-  document.getElementById("r-chip").hidden = !lin.some((c) => c < -1e-9);
+  document.getElementById("r-chip").hidden = !C.outside(lin);
   document.getElementById("s-lum").textContent = fmtPct(C.Y(C.edAt(t, z)));
   document.getElementById("s-par").textContent = fmtPct(C.parFraction(t, z));
   const [d10, d1, d01] = DEPTHS[t];
