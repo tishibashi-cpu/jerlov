@@ -17,10 +17,12 @@ jobs:
         python-version: ["3.11", "3.12", "3.13", "3.14"]
         numpy: ["latest"]
         include:
-          # pyproject.toml claims numpy>=1.23.2, so that claim must be tested.
+          # pyproject.toml claims numpy>=1.24.0, so that claim must be tested.
           # Assuming a recent numpy is how numpy.trapezoid, added in 2.0, got
-          # into a package that said it ran on 1.22. 1.23.2 is the first
-          # NumPy with wheels for Python 3.11 (DECISIONS.md section 108).
+          # into a package that said it ran on 1.22. 1.24.0 is the first
+          # NumPy whose OpenBLAS (0.3.21) gives the right matrix products on
+          # processors where 0.3.20 chooses its CooperLake kernels
+          # (DECISIONS.md section 110).
           - python-version: "3.11"
             numpy: "oldest"
     steps:
@@ -31,12 +33,13 @@ jobs:
       - run: pip install -e ".[test]"
       - name: Pin the oldest supported numpy
         if: matrix.numpy == 'oldest'
-        run: pip install "numpy==1.23.2"
+        run: pip install "numpy==1.24.0"
       - run: python -c "import numpy; print('numpy', numpy.__version__)"
       - name: The machine and NumPy's BLAS, for results that depend on them
         # Under NumPy 1.23.2 the painted_sphere figures passed on one runner
-        # and failed on another with the same code (DECISIONS.md section
-        # 108); which CPU and which BLAS ran is the first thing to know.
+        # and failed on another with the same code; the CPU this printed
+        # found the cause (DECISIONS.md sections 108 and 110). Which CPU and
+        # which BLAS ran is the first thing to know.
         run: |
           lscpu | grep -E "^(Model name|Vendor ID|CPU\(s\)):"
           grep -o -w -E "avx2|avx512f|avx512_bf16|amx_tile" /proc/cpuinfo | sort | uniq -c
@@ -75,7 +78,7 @@ jobs:
       - run: pip install -e ".[test]"
       - name: Pin the oldest supported numpy
         if: matrix.numpy == 'oldest'
-        run: pip install "numpy==1.23.2"
+        run: pip install "numpy==1.24.0"
       - run: python -c "import numpy; print('numpy', numpy.__version__)"
       - name: The examples must still run, without resting on flagged values
         # An example that has stopped working should be a failed build, not

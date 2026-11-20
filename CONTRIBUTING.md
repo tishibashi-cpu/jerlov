@@ -105,7 +105,7 @@ Runtime dependencies are **NumPy only**. `openpyxl`, `colour-science` and
 package. A related project has been broken since 2019 because a dependency
 moved a module, and nobody noticed for seven years.
 
-The declared lower bound is tested. `pyproject.toml` says `numpy>=1.23.2`,
+The declared lower bound is tested. `pyproject.toml` says `numpy>=1.24.0`,
 and CI runs a job pinned to it. Use `jerlov._data.trapezoid` rather than
 `np.trapezoid` or `np.trapz`: one arrived in NumPy 2.0 and the other left in
 it. A test refuses either name anywhere in the repository.
