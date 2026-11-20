@@ -19,5 +19,5 @@ print(jerlov.__version__, jerlov.__file__)
 preference to a working tree, which produces confusing failures. -->
 
 **Versions.**
-<!-- Python and NumPy. The package claims numpy>=1.23.2 and that claim is
+<!-- Python and NumPy. The package claims numpy>=1.24.0 and that claim is
 tested, so a failure on an old NumPy is a real bug here. -->

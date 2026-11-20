@@ -4,6 +4,22 @@ Every release is archived on Zenodo under the concept DOI
 [10.5281/zenodo.22321312](https://doi.org/10.5281/zenodo.22321312), which
 always resolves to the latest version.
 
+## 1.25.0 — 2026-11-20
+
+NumPy 1.24.0 as the lowest supported version (DECISIONS.md section 110). No
+value, code or public name changed.
+
+**Changed.** NumPy 1.24.0 or later is needed. NumPy 1.23, through its last
+release 1.23.5, carries OpenBLAS 0.3.20, whose CooperLake kernels gave
+wrong matrix products in `examples/painted_sphere.py` on an Intel Xeon
+6975P-C (the grey sphere 11.4 times the water from above where 14.5 is
+right). Forcing those kernels reproduces it on another processor under
+NumPy 1.23.2 and 1.23.5; NumPy 1.24.0, with OpenBLAS 0.3.21, gives the
+right figures. CI's job for the oldest NumPy now runs 1.24.0.
+
+**Tests.** A test checks that the NumPy CI pins for that job is the floor
+pyproject.toml declares.
+
 ## 1.24.1 — 2026-11-20
 
 Two pages on the site made from the package's own values (DECISIONS.md

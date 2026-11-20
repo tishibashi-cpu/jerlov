@@ -459,6 +459,20 @@ def test_CI_runs_the_examples_on_the_versions_it_tests():
 
 
 @source_tree
+def test_ci_pins_the_numpy_pyproject_declares_as_the_floor():
+    """The job for the oldest NumPy must run the floor that is claimed, in
+    the tests and in the examples: a floor raised in one place and not the
+    other is again a claim nobody tests (DECISIONS.md sections 108 and 110)."""
+    toml = (ROOT / "pyproject.toml").read_text()
+    floor = re.search(r'"numpy>=([0-9.]+)"', toml).group(1)
+    ci = (ROOT / ".github" / "workflows" / "test.yml").read_text()
+    pins = re.findall(r'pip install "numpy==([0-9.]+)"', ci)
+    assert pins == [floor, floor], (
+        f"pyproject.toml declares numpy>={floor}; test.yml pins {pins}"
+    )
+
+
+@source_tree
 def test_the_python_classifiers_are_the_versions_CI_runs():
     """PyPI shows these. A version listed but never tested is a claim, as
     section 15 of DECISIONS.md found for numpy; one tested but not listed
