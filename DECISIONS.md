@@ -6900,3 +6900,18 @@ or dark setting. Neither page is in the wheel.
 
 A release of documents and a tool, 1.24.1: no shipped value, code or
 public name changes.
+
+**Result.** As planned. The arithmetic of the first page, redone in NumPy
+and run as the page's own script with node, agrees with `spectrum_to_srgb`
+and `par_profile` within the 1e-5 set above; the 1 percent PAR depth of
+type I is 162 m with one Kd and 105 m through `descend`. The second page
+outlines the eight cells OPEN_QUESTIONS.md names, and its reach, 0.79 to
+1.44 times, is that document's. The comparison of the embedded numbers
+allows one unit in their last printed digit, in case a value rounds the
+other way on another machine; the rest of each page must match byte for
+byte. The full suite, 1421 tests, passed before the push.
+
+**Differences from the plan.** None in what the pages show. Drafting
+found that a CSS variable in an SVG presentation attribute
+(`fill="var(--muted)"`) is not read by every browser, so the pages set
+those colours through `style` instead.
