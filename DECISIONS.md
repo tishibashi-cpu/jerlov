@@ -6915,3 +6915,60 @@ byte. The full suite, 1421 tests, passed before the push.
 found that a CSS variable in an SVG presentation attribute
 (`fill="var(--muted)"`) is not read by every browser, so the pages set
 those colours through `style` instead.
+
+## 110. NumPy 1.24.0 as the lowest supported (1.25.0): the plan
+
+Section 108 recorded that CI's job for the oldest NumPy (1.23.2) failed on
+two figures of `examples/painted_sphere.py` on one runner and passed on
+others, and set every job to print the machine and NumPy's BLAS so that the
+next failure would name it. It came on 2026-11-20, in the run of 1.24.1 on
+`dev` (tests #502), with the same figures as before: the grey sphere 11.4
+times the water from above where 14.5 is printed, 0.59 from below where 0.42
+is, and 2.83 and 3.15 under the overcast where 2.17 and 2.19 are. The same
+commit passed on `main` (tests #501). The runner was an Intel Xeon 6975P-C
+(Granite Rapids, with AVX-512 and AVX512_BF16); NumPy 1.23.2 carries OpenBLAS
+0.3.20.
+
+**Reproduced.** On the local Sapphire Rapids machine OpenBLAS 0.3.20 does
+not recognise the processor and runs its generic Prescott kernels, which is
+why section 108 could not reproduce the failure. Forced with
+`OPENBLAS_CORETYPE` to each of its kernels in turn, `painted_sphere.main()`
+under NumPy 1.23.2 gives 14.48, 0.416 and 2.173 (from above, from below,
+overcast towards the sun) with Prescott, Core2, Penryn, Dunnington,
+Nehalem, Sandybridge, Haswell, SkylakeX, Zen, Atom and Barcelona, and
+11.37, 0.586 and 2.826, the failing runner's figures, with CooperLake
+alone. (Bulldozer and Excavator printed nothing; neither is chosen on an
+Intel processor.) With CooperLake forced:
+
+| NumPy | OpenBLAS | From above | From below | Overcast |
+|---|---|---|---|---|
+| 1.23.2 | 0.3.20 | 11.37 | 0.586 | 2.826 |
+| 1.23.5 | 0.3.20 | 11.37 | 0.586 | 2.826 |
+| 1.24.0 | 0.3.21 | 14.48 | 0.416 | 2.173 |
+| 1.24.4 | 0.3.21 | 14.48 | 0.416 | 2.173 |
+| 1.25.2 | 0.3.23.dev | 14.48 | 0.416 | 2.173 |
+| 1.26.4 | 0.3.23.dev | 14.48 | 0.416 | 2.173 |
+
+So OpenBLAS 0.3.20's CooperLake kernels give a wrong product here, the
+processors on which 0.3.20 chooses them are where the job failed, and
+OpenBLAS 0.3.21, first carried by NumPy 1.24.0, gives the right one. Which
+routine in OpenBLAS is at fault was not traced. The figure and the test
+were right; the test found it.
+
+**The decision.** The floor becomes `numpy>=1.24.0`. A package that claims
+a NumPy under which its own example gives a wrong answer on current
+processors should stop claiming it; that a user's own matrix products are
+equally affected is not the package's to fix, but it should not invite
+them. NumPy 1.24.0 has wheels for Python 3.11, so the Python floor stays.
+Under section 61 raising a lower bound is a minor change: 1.25.0.
+
+**Changes.** pyproject.toml; the job pinned to the oldest NumPy in
+test.yml (tests and examples) and its comments; CONTRIBUTING.md; the
+comment in `jerlov._data`; the bug report template. A new test checks that
+the NumPy CI pins for the oldest job is the floor pyproject.toml declares,
+as the existing one does for Python. NEXT_STEPS's item on the failure is
+closed.
+
+**Checks.** The full suite under Python 3.11 with NumPy 1.24.0 before the
+push, with the generic kernels and with CooperLake forced on the sphere
+example; the full suite under the current NumPy.
