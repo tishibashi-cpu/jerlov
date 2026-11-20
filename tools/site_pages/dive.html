@@ -1,0 +1,330 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Daylight on the way down · jerlov</title>
+<meta name="description" content="The colour and amount of sunlight left at each depth in the ten Jerlov water types.">
+<!-- Written by tools/site_pages.py from tools/site_pages/; do not edit the copy in docs/pages/ (DECISIONS.md section 109). -->
+<style>
+/* Layout: one instrument panel. The ten water columns are the thesis; readouts sit beside them, sources at the foot. */
+:root {
+  --bg: #f3f6f7;
+  --surface: #ffffff;
+  --fg: #12232b;
+  --muted: #56707b;
+  --line: #d3dee2;
+  --accent: #0b6e8a;
+  --warn: #9a5b00;
+  --display: "Avenir Next", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+  --body: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --mono: ui-monospace, "SFMono-Regular", Menlo, Consolas, "Liberation Mono", monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #071318; --surface: #0d1e25; --fg: #e3eef1; --muted: #8aa5af; --line: #1f3740;
+    --accent: #5cc6e2; --warn: #f0b35a; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #071318; --surface: #0d1e25; --fg: #e3eef1; --muted: #8aa5af; --line: #1f3740;
+  --accent: #5cc6e2; --warn: #f0b35a; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+img { max-width: 100%; }
+body { background: var(--bg); color: var(--fg); font-family: var(--body); font-size: 15px; line-height: 1.55; }
+.wrap { max-width: 1120px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 28px 56px; }
+h1, h2 { font-family: var(--display); text-wrap: balance; margin: 0; }
+h1 { font-size: clamp(30px, 5vw, 46px); font-weight: 800; letter-spacing: -0.01em; }
+h2 { font-size: 20px; font-weight: 700; margin-bottom: 10px; }
+.lede { max-width: 66ch; color: var(--muted); margin: 10px 0 0; }
+.eyebrow { font-family: var(--mono); font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent); margin-bottom: 8px; }
+.grid { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 28px; margin-top: 28px; align-items: start; }
+@media (max-width: 860px) { .grid { grid-template-columns: minmax(0, 1fr); } }
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 18px; min-width: 0; }
+.columns-head { display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+.seg button { font: 500 13px var(--body); border: 0; background: transparent; color: var(--muted); padding: 6px 10px; cursor: pointer; }
+.seg button[aria-pressed="true"] { background: var(--accent); color: var(--surface); }
+button:focus-visible, input:focus-visible, canvas:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.chart-box { position: relative; width: 100%; }
+#columns { width: 100%; height: 460px; display: block; cursor: crosshair; touch-action: none; }
+.hint { font-size: 13px; color: var(--muted); margin-top: 8px; }
+.depth-row { display: flex; align-items: center; gap: 12px; margin-top: 14px; }
+.depth-row label { font-family: var(--mono); font-size: 13px; color: var(--muted); white-space: nowrap; }
+.depth-row input { flex: 1; min-width: 0; accent-color: var(--accent); }
+.readout-top { display: flex; gap: 16px; align-items: stretch; }
+.swatch { width: 120px; min-height: 120px; border-radius: 8px; border: 1px solid var(--line); flex: none; }
+.readout-title { font-family: var(--display); font-size: 28px; font-weight: 800; line-height: 1.1; }
+.readout-sub { font-family: var(--mono); font-size: 13px; color: var(--muted); }
+.chip { display: inline-block; font-family: var(--mono); font-size: 11px; letter-spacing: 0.04em; text-transform: uppercase; color: var(--warn); border: 1px solid var(--warn); border-radius: 999px; padding: 1px 8px; margin-top: 8px; }
+dl.stats { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 6px 12px; margin: 16px 0 0; font-size: 14px; }
+dl.stats dt { color: var(--muted); }
+dl.stats dd { margin: 0; font-family: var(--mono); font-variant-numeric: tabular-nums; text-align: right; }
+#spectrum text.ax { font-family: var(--mono); fill: var(--muted); }
+#spectrum text.pk { font-family: var(--mono); fill: var(--fg); }
+#spectrum { width: 100%; height: 190px; display: block; margin-top: 8px; }
+.objects { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 10px; }
+@media (max-width: 560px) { .objects { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.obj { font-size: 12px; color: var(--muted); }
+.obj .pair { display: flex; height: 54px; border-radius: 6px; overflow: hidden; border: 1px solid var(--line); margin-bottom: 4px; }
+.obj .pair span { flex: 1; }
+.section { margin-top: 28px; }
+.notes { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 28px; }
+@media (max-width: 860px) { .notes { grid-template-columns: minmax(0, 1fr); } }
+.notes ul { margin: 0; padding-left: 18px; }
+.notes li { margin-bottom: 8px; max-width: 66ch; }
+.small { font-size: 13px; color: var(--muted); }
+code { font-family: var(--mono); font-size: 0.92em; }
+a { color: var(--accent); }
+.nav { font-size: 13px; margin-bottom: 22px; color: var(--muted); }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <nav class="nav"><a href="index.html">jerlov documentation</a> · <a href="disagree.html">Where the sources disagree</a></nav>
+  <div class="eyebrow">Jerlov water types · 0–100 m</div>
+  <h1>The colour of daylight on the way down</h1>
+  <p class="lede">Ten columns of sea water, from the clearest open ocean (I) to the most turbid coastal water (9C). Each band shows the colour of the sunlight that is left at that depth, with the sunlight at the surface taken as white. Pick a column and a depth to read the numbers.</p>
+
+  <div class="grid">
+    <div class="panel">
+      <div class="columns-head">
+        <h2 style="margin:0">Ten waters</h2>
+        <div class="seg" role="group" aria-label="What the columns show">
+          <button id="mode-hue" type="button" aria-pressed="true">Colour only</button>
+          <button id="mode-abs" type="button" aria-pressed="false">Colour and brightness</button>
+        </div>
+      </div>
+      <div class="chart-box"><canvas id="columns" tabindex="0" aria-label="Colour of daylight against depth in ten Jerlov water types"></canvas></div>
+      <div class="depth-row">
+        <label for="depth">Depth</label>
+        <input id="depth" type="range" min="0" max="100" step="0.5" value="20">
+        <label id="depth-val" for="depth">20 m</label>
+      </div>
+      <p class="hint" id="mode-hint">Each band is shown at full brightness, so only the colour changes. Switch to “Colour and brightness” to see how dark it gets.</p>
+    </div>
+
+    <div class="panel" aria-live="polite">
+      <div class="readout-top">
+        <div class="swatch" id="swatch"></div>
+        <div>
+          <div class="readout-sub">Jerlov type</div>
+          <div class="readout-title" id="r-title">II at 20 m</div>
+          <div class="readout-sub" id="r-kind">open ocean</div>
+          <div id="r-chip" class="chip" hidden>outside sRGB, shown clipped</div>
+        </div>
+      </div>
+      <dl class="stats">
+        <dt>Brightness to the eye (luminance), share of the surface</dt><dd id="s-lum"></dd>
+        <dt>PAR photons (400–700 nm), share of the surface</dt><dd id="s-par"></dd>
+        <dt>PAR falls to 10 %</dt><dd id="s-d10"></dd>
+        <dt>PAR falls to 1 % (usual bottom of the euphotic zone)</dt><dd id="s-d1"></dd>
+        <dt>PAR falls to 0.1 %</dt><dd id="s-d01"></dd>
+      </dl>
+      <h2 class="section" style="margin-top:20px">Spectrum</h2>
+      <svg id="spectrum" role="img" aria-label="Downwelling spectrum at the chosen depth"></svg>
+      <p class="small">Solid: the light at this depth, scaled to its own peak. Dashed: the surface, scaled the same way.</p>
+    </div>
+  </div>
+
+  <div class="panel section">
+    <h2>Ten materials, lit from above at this depth</h2>
+    <p class="small" style="margin-top:0">Left half: under the surface sunlight. Right half: at the chosen depth, with the exposure raised until the white PVC is as bright as at the surface and the white balance left at the surface. The object is right in front of the viewer, so no water lies between them. Measured reflectances from the USGS Spectral Library 7.</p>
+    <div class="objects" id="objects"></div>
+  </div>
+
+  <div class="notes section">
+    <div>
+      <h2>What this page assumes</h2>
+      <ul>
+        <li>Kd is the surface type's all the way down. Real water changes with depth; jerlov's <code>descend</code> follows the typical profile of Williamson &amp; Hollins (2023), which moves the PAR 1 % depth of type I from {{I_ONE_KD}} m to {{I_LAYERED}} m. It is not used here.</li>
+        <li>Jerlov's Kd belongs to one sun. His tables do not say which; the surface spectrum here is for a sun {{SUN}}° from the zenith, and Kd is not changed for it.</li>
+        <li>Only 380–700 nm count, the range where both the sky model and Kd are given here. The surface spectrum over the same range is the white.</li>
+        <li>Colours are what a camera white-balanced at the surface would record, not a prediction of what an eye adapted to the water sees. Many of them lie outside sRGB and are clipped.</li>
+        <li>No light scattered towards the viewer from the water in between (no haze), no reflection from the sea floor, no shade. The materials are lit only by downwelling light.</li>
+        <li>This shows light, not visibility. How far an object can be seen is a different question that this page does not answer.</li>
+      </ul>
+    </div>
+    <div>
+      <h2>Where the numbers come from</h2>
+      <ul>
+        <li><b>Kd:</b> N. G. Jerlov, <i>Marine Optics</i> (Elsevier, 1976), Table XXVII, printed at 16 wavelengths from 310 to 700 nm and read at 1 nm from the dataset that interpolates it.</li>
+        <li><b>Sunlight just below the surface:</b> Gregg &amp; Carder (1990), Limnol. Oceanogr. 35, 1657–1675, doi:10.4319/lo.1990.35.8.1657, clear sky, sun {{SUN}}° from the zenith, 21 June, visibility {{VISIBILITY}} km, and the standard atmosphere of their Table 5.</li>
+        <li><b>Colour:</b> CIE 1931 2° observer, sRGB (IEC 61966-2-1).</li>
+        <li><b>Materials:</b> USGS Spectral Library Version 7 (Kokaly et al. 2017), CC0.</li>
+        <li>All inputs were taken from <a href="https://tishibashi-cpu.github.io/jerlov/" target="_blank" rel="noopener">jerlov</a> <span id="ver"></span>, the Python package that collects these sources. The page only multiplies and integrates; its colours and PAR values match jerlov's own <code>spectrum_to_srgb</code> and <code>par_profile</code> to within 0.00001, which a test in its repository checks.</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<script>
+/*CORE*/
+</script>
+<script>
+const DATA = /*DATA*/;
+const TYPES = ["I", "IA", "IB", "II", "III", "1C", "3C", "5C", "7C", "9C"];
+const KIND = { I: "open ocean, clearest", IA: "open ocean", IB: "open ocean", II: "open ocean", III: "open ocean, least clear",
+  "1C": "coastal, clearest", "3C": "coastal", "5C": "coastal", "7C": "coastal", "9C": "coastal, most turbid" };
+const MAT = { white_pvc: "White PVC", black_abs: "Black ABS", grey_concrete: "Grey concrete", red_nylon: "Red nylon",
+  orange_cadmium: "Cadmium orange", yellow_cadmium: "Cadmium yellow", green_tarp: "Green tarp",
+  blue_green_hdpe: "Blue-green HDPE", blue_nylon: "Blue nylon", violet_cobalt: "Cobalt violet" };
+const C = Core.make(DATA);
+const ZMAX = 100;
+const state = { type: "II", z: 20, mode: "hue" };
+try { const s = JSON.parse(localStorage.getItem("jerlov-dive") || "null"); if (s && TYPES.includes(s.type)) Object.assign(state, s); } catch (e) {}
+const save = () => { try { localStorage.setItem("jerlov-dive", JSON.stringify(state)); } catch (e) {} };
+document.getElementById("ver").textContent = DATA.jerlov_version;
+
+const css = (rgb) => `rgb(${rgb.map((v) => Math.round(255 * Math.min(1, Math.max(0, v)))).join(",")})`;
+const fmtPct = (f) => (f >= 0.1 ? (100 * f).toFixed(1) : f >= 0.001 ? (100 * f).toPrecision(2) : (100 * f).toExponential(1)) + " %";
+const fmtM = (d) => (isFinite(d) ? d.toFixed(1) + " m" : "—");
+const varc = (name) => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+
+// Precompute the columns at 0.5 m.
+const ZS = Array.from({ length: 2 * ZMAX + 1 }, (_, i) => i / 2);
+const COLS = {};
+for (const t of TYPES) {
+  COLS[t] = ZS.map((z) => {
+    const lin = C.linear(C.edAt(t, z));
+    return { hue: C.encode(C.hue(lin)), abs: C.encode(lin) };
+  });
+}
+const DEPTHS = {};
+for (const t of TYPES) DEPTHS[t] = [0.1, 0.01, 0.001].map((f) => C.depthOfParFraction(t, f));
+
+const canvas = document.getElementById("columns");
+const ctx = canvas.getContext("2d");
+const PAD = { l: 44, r: 8, t: 26, b: 10 };
+function geom() {
+  const w = canvas.clientWidth, h = canvas.clientHeight;
+  const cw = (w - PAD.l - PAD.r) / TYPES.length;
+  const y = (z) => PAD.t + (z / ZMAX) * (h - PAD.t - PAD.b);
+  return { w, h, cw, y };
+}
+function drawColumns() {
+  const dpr = window.devicePixelRatio || 1;
+  const { w, h, cw, y } = geom();
+  if (canvas.width !== Math.round(w * dpr)) { canvas.width = Math.round(w * dpr); canvas.height = Math.round(h * dpr); }
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.clearRect(0, 0, w, h);
+  const fg = varc("--fg"), muted = varc("--muted"), accent = varc("--accent");
+  TYPES.forEach((t, j) => {
+    const x0 = PAD.l + j * cw + 1.5, x1 = PAD.l + (j + 1) * cw - 1.5;
+    for (let i = 0; i < ZS.length - 1; i++) {
+      ctx.fillStyle = css(COLS[t][i][state.mode]);
+      const ya = y(ZS[i]), yb = y(ZS[i + 1]);
+      ctx.fillRect(x0, ya, x1 - x0, yb - ya + 0.6);
+    }
+    ctx.font = `600 12px ${varc("--mono")}`;
+    ctx.textAlign = "center";
+    ctx.fillStyle = t === state.type ? accent : muted;
+    ctx.fillText(t, (x0 + x1) / 2, 16);
+    if (t === state.type) {
+      ctx.strokeStyle = accent; ctx.lineWidth = 2;
+      ctx.strokeRect(x0 - 1, y(0) - 1, x1 - x0 + 2, y(ZMAX) - y(0) + 2);
+    }
+  });
+  ctx.fillStyle = muted; ctx.textAlign = "right"; ctx.font = `11px ${varc("--mono")}`;
+  for (let z = 0; z <= ZMAX; z += 20) ctx.fillText(z + " m", PAD.l - 6, y(z) + 4);
+  // Depth line.
+  const yz = y(state.z);
+  ctx.strokeStyle = fg; ctx.lineWidth = 1.5; ctx.setLineDash([4, 3]);
+  ctx.beginPath(); ctx.moveTo(PAD.l - 2, yz); ctx.lineTo(w - PAD.r, yz); ctx.stroke(); ctx.setLineDash([]);
+}
+
+function drawSpectrum() {
+  const svg = document.getElementById("spectrum");
+  const W = svg.clientWidth || 400, H = svg.clientHeight || 190;
+  svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
+  const p = { l: 8, r: 8, t: 8, b: 22 };
+  const wl = C.wl, x = (l) => p.l + ((l - 380) / 320) * (W - p.l - p.r), yv = (v) => H - p.b - v * (H - p.t - p.b);
+  const ed = C.edAt(state.type, state.z), mx = Math.max(...ed), m0 = Math.max(...DATA.es);
+  const path = (arr, m) => arr.map((v, i) => `${i ? "L" : "M"}${x(wl[i]).toFixed(1)},${yv(v / m).toFixed(1)}`).join("");
+  const sw = css(COLS[state.type][Math.round(state.z * 2)].hue);
+  let g = "";
+  for (const l of [400, 450, 500, 550, 600, 650, 700]) {
+    g += `<line x1="${x(l)}" x2="${x(l)}" y1="${p.t}" y2="${H - p.b}" style="stroke:var(--line)" stroke-width="1"/>`;
+    g += `<text x="${x(l)}" y="${H - 6}" font-size="10" text-anchor="middle" class="ax">${l}</text>`;
+  }
+  const area = path(ed, mx) + `L${x(700)},${yv(0)}L${x(380)},${yv(0)}Z`;
+  g += `<path d="${area}" fill="${sw}" fill-opacity="0.35" stroke="none"/>`;
+  g += `<path d="${path(DATA.es, m0)}" fill="none" style="stroke:var(--muted)" stroke-width="1.2" stroke-dasharray="4 3"/>`;
+  g += `<path d="${path(ed, mx)}" fill="none" style="stroke:var(--fg)" stroke-width="1.6"/>`;
+  let pk = 0; ed.forEach((v, i) => { if (v > ed[pk]) pk = i; });
+  g += `<text x="${W - p.r}" y="${p.t + 12}" font-size="11" text-anchor="end" class="pk">peak ${wl[pk]} nm</text>`;
+  svg.innerHTML = g;
+}
+
+function drawObjects() {
+  const box = document.getElementById("objects");
+  box.innerHTML = "";
+  for (const m of Object.keys(MAT)) {
+    const s = C.objectLinear(m, state.type, 0), d = C.objectLinear(m, state.type, state.z);
+    const el = document.createElement("div");
+    el.className = "obj";
+    el.innerHTML = `<div class="pair"><span style="background:${css(C.encode(s))}"></span><span style="background:${css(C.encode(d))}"></span></div>${MAT[m]}`;
+    box.appendChild(el);
+  }
+}
+
+function update() {
+  const t = state.type, z = state.z;
+  const lin = C.linear(C.edAt(t, z));
+  document.getElementById("swatch").style.background = css(C.encode(C.hue(lin)));
+  document.getElementById("r-title").textContent = `${t} at ${z % 1 ? z.toFixed(1) : z} m`;
+  document.getElementById("r-kind").textContent = KIND[t];
+  document.getElementById("r-chip").hidden = !lin.some((c) => c < -1e-9);
+  document.getElementById("s-lum").textContent = fmtPct(C.Y(C.edAt(t, z)));
+  document.getElementById("s-par").textContent = fmtPct(C.parFraction(t, z));
+  const [d10, d1, d01] = DEPTHS[t];
+  document.getElementById("s-d10").textContent = fmtM(d10);
+  document.getElementById("s-d1").textContent = fmtM(d1);
+  document.getElementById("s-d01").textContent = fmtM(d01);
+  document.getElementById("depth").value = z;
+  document.getElementById("depth-val").textContent = `${z % 1 ? z.toFixed(1) : z} m`;
+  for (const k of ["hue", "abs"]) document.getElementById("mode-" + k).setAttribute("aria-pressed", String(state.mode === k));
+  document.getElementById("mode-hint").textContent = state.mode === "hue"
+    ? "Each band is shown at full brightness, so only the colour changes. Switch to “Colour and brightness” to see how dark it gets."
+    : "Brightness relative to the surface, as one fixed camera exposure would record it. Below a few tens of metres almost everything is black.";
+  drawColumns(); drawSpectrum(); drawObjects(); save();
+}
+
+function pick(ev) {
+  const r = canvas.getBoundingClientRect();
+  const { cw, y } = geom();
+  const px = ev.clientX - r.left, py = ev.clientY - r.top;
+  const j = Math.floor((px - PAD.l) / cw);
+  if (j >= 0 && j < TYPES.length) state.type = TYPES[j];
+  const z = ((py - PAD.t) / (y(ZMAX) - PAD.t)) * ZMAX;
+  state.z = Math.min(ZMAX, Math.max(0, Math.round(z * 2) / 2));
+  update();
+}
+let dragging = false;
+canvas.addEventListener("pointerdown", (e) => { dragging = true; canvas.setPointerCapture(e.pointerId); pick(e); });
+canvas.addEventListener("pointermove", (e) => { if (dragging) pick(e); });
+canvas.addEventListener("pointerup", () => { dragging = false; });
+canvas.addEventListener("keydown", (e) => {
+  const i = TYPES.indexOf(state.type);
+  if (e.key === "ArrowLeft" && i > 0) state.type = TYPES[i - 1];
+  else if (e.key === "ArrowRight" && i < TYPES.length - 1) state.type = TYPES[i + 1];
+  else if (e.key === "ArrowUp") state.z = Math.max(0, state.z - 1);
+  else if (e.key === "ArrowDown") state.z = Math.min(ZMAX, state.z + 1);
+  else return;
+  e.preventDefault(); update();
+});
+document.getElementById("depth").addEventListener("input", (e) => { state.z = parseFloat(e.target.value); update(); });
+document.getElementById("mode-hue").addEventListener("click", () => { state.mode = "hue"; update(); });
+document.getElementById("mode-abs").addEventListener("click", () => { state.mode = "abs"; update(); });
+window.addEventListener("resize", () => { drawColumns(); drawSpectrum(); });
+window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => { drawColumns(); });
+new MutationObserver(() => drawColumns()).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => drawColumns());
+update();
+</script>
+</body>
+</html>

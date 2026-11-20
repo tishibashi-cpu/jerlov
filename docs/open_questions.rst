@@ -6,7 +6,9 @@ package does not settle them; that takes new measurements. It puts
 numbers on how far apart the published values are, and on how much of
 the gap the conditions a source leaves unrecorded could explain.
 OPEN_QUESTIONS.md_ sets out each question, what was done, what was found,
-what is still not known, and where the details are. In a line each:
+what is still not known, and where the details are. The page
+`Where the sources disagree <disagree.html>`_ draws a figure for each. In a
+line each:
 
 1. **How much do the published absorption spectra of pure water
    disagree?** By a factor of 7.95 at 380 nm between two laboratory

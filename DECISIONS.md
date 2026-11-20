@@ -6823,3 +6823,95 @@ OpenBLAS core types, or with 1, 2 and 8 threads. Every test job now prints
 the runner's CPU and NumPy's BLAS configuration before the tests, so that
 the next failure names the machine. Neither a test nor a figure is changed
 to make the job pass.
+
+## 109. Two pages to look at: daylight on the way down, and where the sources disagree (1.24.1): the plan
+
+The user asked (2026-11-20) for something enjoyable to do with the package
+that would also bring outside readers to it, the direction of 2026-11-18
+(more readers before more functions). Two pages were first made as private
+drafts outside the repository, from the package's own values; the user
+asked for both on the site, in one release. Nothing in the package changes.
+
+**The first page: the colour of daylight on the way down.** The ten Jerlov
+types side by side from 0 to 100 m, each coloured by the sunlight left at
+that depth, with the surface sunlight as white. Picking a type and a depth
+gives the luminance and the PAR photons left, as a share of the surface,
+the depths where PAR falls to 10, 1 and 0.1 percent, the spectrum, and ten
+of the USGS materials lit at that depth. Its inputs are taken from the
+package and embedded in the page: Kd of Jerlov (1976) at 1 nm from 380 to
+700 nm; the irradiance just below the surface of `gregg1990_irradiance`,
+with the sun 30 degrees from the zenith and the sky of
+`examples/sunlight_and_d65.py` (Table 5 of Gregg & Carder, 21 June, a
+visibility of 10 km); the CIE 1931 observer; `usgs2017_reflectance`
+interpolated onto the same grid. The page's script only multiplies and
+integrates, by the trapezoid rule, as `spectrum_to_srgb` and `par_profile`
+do.
+
+Every choice the page makes is printed on it: Kd constant with depth (and
+what `descend` would do to the 1 percent depth of type I, computed when the
+page is made), Kd not changed for the sun, 380 to 700 nm only, colours as
+a camera white-balanced at the surface would record them and clipped to
+sRGB, no light scattered towards the viewer and nothing about how far
+anything can be seen (section 17). The materials are shown with the
+exposure raised until the white PVC is as bright as at the surface, and
+the white balance left at the surface; the page says so.
+
+**The second page: where the sources disagree.** The four questions of
+OPEN_QUESTIONS.md, one figure each: the published absorption spectra of
+pure water; Petzold's phase functions with the region below 0.1 degree
+that nobody measured, and the share of b his extension puts there; the
+Monte Carlo Kd from Williamson & Hollins's a and b over Jerlov's (1976), by
+type and wavelength, with the cells outside what the unrecorded conditions
+can reach outlined; Jerlov's 1976 Kd over his 1968; and c = a + b of the
+same type from Williamson & Hollins and from Solonenko & Mobley. The
+closure figure uses the runs with pure water's own scattering and a sky
+(`examples/data/sm_closure/runs.csv`, section 94), the latest, and the reach
+is computed from them as `examples/closure_with_jerlov_kd.py` computes it.
+The few figures the page quotes rather than draws (the reflectances of
+question 1, Kd without the extension in question 2, the comparison with
+HydroLight in question 4) are copied from OPEN_QUESTIONS.md, where tests
+already recompute them.
+
+**How they are made.** `tools/site_pages.py` writes both pages into
+`docs/pages/` from templates in `tools/site_pages/`, embedding the values
+as JSON; every number in the prose that is not quoted from
+OPEN_QUESTIONS.md is computed by the script or by the page from those
+values. `docs/conf.py` copies `docs/pages/` to the site's root with
+`html_extra_path`; the index and the open questions page link to them. The
+pages load nothing from elsewhere: system fonts, no library, so a reader of
+the site makes no request to another host. They follow the reader's light
+or dark setting. Neither page is in the wheel.
+
+**Checks, written before the code.**
+
+- The pages in `docs/pages/` are byte for byte what `tools/site_pages.py`
+  writes now (a source-tree test), so the values embedded are the
+  package's current ones.
+- The arithmetic the first page's script does, done again in NumPy on the
+  embedded values, gives jerlov's own `spectrum_to_srgb` and `par_profile`
+  within 1e-5 in each sRGB component and in the relative PAR, and the
+  depths of 1 percent PAR within 1 mm, for four types at four depths. In
+  the drafts, the script itself, run with node, agreed within 2e-6. Where
+  node is present, the test runs the page's own script too.
+- Each figure the second page quotes appears in OPEN_QUESTIONS.md.
+- The cells the second page outlines are those OPEN_QUESTIONS.md names for
+  the runs with water and sky: IB at 425 to 500 nm, 1C and 5C at 425 nm,
+  3C at 425 and 450 nm.
+
+A release of documents and a tool, 1.24.1: no shipped value, code or
+public name changes.
+
+**Result.** As planned. The arithmetic of the first page, redone in NumPy
+and run as the page's own script with node, agrees with `spectrum_to_srgb`
+and `par_profile` within the 1e-5 set above; the 1 percent PAR depth of
+type I is 162 m with one Kd and 105 m through `descend`. The second page
+outlines the eight cells OPEN_QUESTIONS.md names, and its reach, 0.79 to
+1.44 times, is that document's. The comparison of the embedded numbers
+allows one unit in their last printed digit, in case a value rounds the
+other way on another machine; the rest of each page must match byte for
+byte. The full suite, 1421 tests, passed before the push.
+
+**Differences from the plan.** None in what the pages show. Drafting
+found that a CSS variable in an SVG presentation attribute
+(`fill="var(--muted)"`) is not read by every browser, so the pages set
+those colours through `style` instead.
