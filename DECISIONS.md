@@ -6972,3 +6972,10 @@ closed.
 **Checks.** The full suite under Python 3.11 with NumPy 1.24.0 before the
 push, with the generic kernels and with CooperLake forced on the sphere
 example; the full suite under the current NumPy.
+
+**Result.** As planned. Under Python 3.11 with NumPy 1.24.0 the full
+suite, 1422 tests, passed with the kernels OpenBLAS chooses on the local
+machine, and the four tests of the sphere example passed with CooperLake
+forced; under the current NumPy the full suite passed too. The failing
+runner itself was not available to run again before the push; CI's job for
+the oldest NumPy will show it when it lands on such a processor.
