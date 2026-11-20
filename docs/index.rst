@@ -51,6 +51,17 @@ in different papers, so :func:`jerlov.water` takes ``source=``, and the
 :class:`jerlov.Water` it returns says where its numbers came from and what
 is doubtful about them.
 
+Two pages to look at
+--------------------
+
+- `Daylight on the way down <dive.html>`_: the colour and amount of
+  sunlight left at each depth in the ten types, from 0 to 100 m.
+- `Where the sources disagree <disagree.html>`_: the open questions,
+  one figure each.
+
+Both are made from the package's own values by ``tools/site_pages.py``
+and say on the page what they assume.
+
 Where to go next
 ----------------
 

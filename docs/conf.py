@@ -22,7 +22,10 @@ autodoc_member_order = "bysource"
 autodoc_typehints = "signature"
 # Types by their own names, not the module paths 1.0 does not promise.
 python_use_unqualified_type_names = True
-exclude_patterns = ["_build"]
+exclude_patterns = ["_build", "pages"]
+# Two pages made from the package's values by tools/site_pages.py, copied to
+# the site's root as they are (DECISIONS.md section 109).
+html_extra_path = ["pages"]
 
 html_theme = "alabaster"
 html_title = f"jerlov {release}"

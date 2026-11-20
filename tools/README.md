@@ -36,6 +36,10 @@ against the paper's own equations before writing anything.
 
 Some files here build no table. `release_notes.py` prints a version's
 GitHub Release text from CHANGELOG.md (DECISIONS.md section 51).
+`site_pages.py` writes the two pages of the site made from the package's
+values, `docs/pages/dive.html` and `docs/pages/disagree.html`, from the
+templates in `site_pages/` (DECISIONS.md section 109); run it again after a
+change to any value they use, and at every release.
 `nygard1973_levels.py` and its transcription `nygard1973_quanta.csv` are
 the analysis of DECISIONS.md section 55, Nygård's measured profiles of
 quanta checked against Jerlov's IB, and `smith1973_blue.py` with

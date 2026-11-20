@@ -4,6 +4,34 @@ Every release is archived on Zenodo under the concept DOI
 [10.5281/zenodo.22321312](https://doi.org/10.5281/zenodo.22321312), which
 always resolves to the latest version.
 
+## 1.24.1 — 2026-11-20
+
+Two pages on the site made from the package's own values (DECISIONS.md
+section 109). No shipped value, code or public name changed.
+
+**Docs.** "Daylight on the way down" (`dive.html`) sets the ten Jerlov types
+side by side from 0 to 100 m, each coloured by the sunlight left at that
+depth, and gives, for a type and depth a reader picks, the luminance and
+PAR left, the depths where PAR falls to 10, 1 and 0.1 percent, the spectrum,
+and ten measured materials lit at that depth. "Where the sources disagree"
+(`disagree.html`) gives the four questions of OPEN_QUESTIONS.md a figure
+each: the published absorption spectra of pure water, Petzold's scattering
+below 0.1 degree, the Monte Carlo Kd from Williamson & Hollins's a and b
+over Jerlov's with the cells no unrecorded condition can reach outlined,
+Jerlov's 1976 Kd over his 1968, and the beam attenuation of one type from
+two sources. Both pages print what they assume, load nothing from another
+host, and are linked from the index and the open questions page.
+
+**Internal.** `tools/site_pages.py` writes both pages into `docs/pages/`
+from templates in `tools/site_pages/`, embedding the values it takes from
+the package; the docs build copies them to the site's root.
+
+**Tests.** `tests/test_site_pages.py` checks that the pages are what the
+tool writes now; that the first page's arithmetic, done again in NumPy and,
+where node is installed, by the page's own script, gives `spectrum_to_srgb`
+and `par_profile` within 1e-5 and the 1 percent depths within 1 mm; and
+that every figure the second page quotes is in OPEN_QUESTIONS.md or DATA.md.
+
 ## 1.24.0 — 2026-11-18
 
 Python 3.11 as the lowest supported version (DECISIONS.md section 108). No

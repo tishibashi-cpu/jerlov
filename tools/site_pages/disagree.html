@@ -1,0 +1,345 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Where the sources disagree · jerlov</title>
+<meta name="description" content="Four unsettled questions in ocean optics, each with one figure from the jerlov package.">
+<!-- Written by tools/site_pages.py from tools/site_pages/; do not edit the copy in docs/pages/ (DECISIONS.md section 109). -->
+<style>
+/* Layout: a lab notebook of four questions. Each question: text column + one figure, the figure carries the weight. */
+:root {
+  --bg: #f3f6f7; --surface: #ffffff; --fg: #12232b; --muted: #56707b; --line: #d3dee2; --accent: #0b6e8a;
+  --lo: #2f6fb0; --hi: #c4621a; --mid: #eef2f3; --beyond: #12232b;
+  --s1: #0b7f99; --s2: #c8641a; --s3: #7a52b3; --s4: #3a8a3a; --s5: #c23a6b;
+  --autec: #2f6fb0; --haoce: #3a8a3a; --nuc: #a5682a;
+  --display: "Avenir Next", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+  --body: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --mono: ui-monospace, "SFMono-Regular", Menlo, Consolas, "Liberation Mono", monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #071318; --surface: #0d1e25; --fg: #e3eef1; --muted: #8aa5af; --line: #1f3740; --accent: #5cc6e2;
+    --lo: #6aa8e8; --hi: #f0a060; --mid: #16282f; --beyond: #f3f6f7;
+    --s1: #5cc6e2; --s2: #f0a060; --s3: #b796f0; --s4: #7cc87c; --s5: #f07aa6;
+    --autec: #6aa8e8; --haoce: #7cc87c; --nuc: #d9a066; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #071318; --surface: #0d1e25; --fg: #e3eef1; --muted: #8aa5af; --line: #1f3740; --accent: #5cc6e2;
+  --lo: #6aa8e8; --hi: #f0a060; --mid: #16282f; --beyond: #f3f6f7;
+  --s1: #5cc6e2; --s2: #f0a060; --s3: #b796f0; --s4: #7cc87c; --s5: #f07aa6;
+  --autec: #6aa8e8; --haoce: #7cc87c; --nuc: #d9a066; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+img { max-width: 100%; }
+body { background: var(--bg); color: var(--fg); font-family: var(--body); font-size: 15px; line-height: 1.6; }
+.wrap { max-width: 1120px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 28px 56px; }
+h1, h2, h3 { font-family: var(--display); text-wrap: balance; margin: 0; }
+h1 { font-size: clamp(30px, 5vw, 46px); font-weight: 800; letter-spacing: -0.01em; }
+h2 { font-size: 24px; font-weight: 800; }
+h3 { font-size: 16px; font-weight: 700; margin: 18px 0 6px; }
+.eyebrow { font-family: var(--mono); font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent); margin-bottom: 8px; }
+.lede { max-width: 68ch; color: var(--muted); margin: 10px 0 0; }
+.q { display: grid; grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.3fr); gap: 28px; padding-block: 34px; border-top: 1px solid var(--line); margin-top: 30px; }
+@media (max-width: 880px) { .q { grid-template-columns: minmax(0, 1fr); } }
+.q p, .q li { max-width: 64ch; }
+.q ul { padding-left: 18px; margin: 6px 0; }
+.qn { font-family: var(--mono); font-size: 13px; color: var(--accent); }
+.label { font-family: var(--mono); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); margin-top: 14px; }
+.fig { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 16px; min-width: 0; }
+.fig svg { width: 100%; display: block; overflow: visible; }
+.cap { font-size: 13px; color: var(--muted); margin: 8px 0 0; }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 12px; color: var(--muted); margin-top: 8px; }
+.legend i { display: inline-block; width: 14px; height: 3px; vertical-align: middle; margin-right: 6px; border-radius: 2px; }
+.scroll { overflow-x: auto; }
+.seg { display: inline-flex; flex-wrap: wrap; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; margin-bottom: 8px; }
+.seg button { font: 500 13px var(--body); border: 0; background: transparent; color: var(--muted); padding: 5px 10px; cursor: pointer; }
+.seg button[aria-pressed="true"] { background: var(--accent); color: var(--surface); }
+button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.num { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+blockquote { margin: 8px 0; padding-left: 12px; border-left: 2px solid var(--line); color: var(--muted); font-style: italic; }
+.foot { border-top: 1px solid var(--line); margin-top: 30px; padding-top: 24px; font-size: 13px; color: var(--muted); }
+.foot p { max-width: 80ch; }
+a { color: var(--accent); }
+.nav { font-size: 13px; margin-bottom: 22px; color: var(--muted); }
+code { font-family: var(--mono); font-size: 0.92em; }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <nav class="nav"><a href="index.html">jerlov documentation</a> · <a href="dive.html">Daylight on the way down</a></nav>
+  <div class="eyebrow">Ocean optics · open questions</div>
+  <h1>Where the sources disagree</h1>
+  <p class="lede">Some things in ocean optics have stayed unsettled for decades: measurements that disagree with each other, or with what other measurements say they should be. The package jerlov does not settle them. That takes new measurements. What it can do is put numbers on how far apart the published values are, and on how much of the gap the conditions a source leaves unrecorded could explain. Four questions, one figure each.</p>
+
+  <!-- 1 -->
+  <section class="q" id="pure-water">
+    <div>
+      <div class="qn">Question 1</div>
+      <h2>How much do the published absorption spectra of pure water disagree?</h2>
+      <p>Pure water is one substance, so its absorption should be the same in every careful laboratory. Below about 450 nm it absorbs so little that the measurements are hard.</p>
+      <div class="label">Found</div>
+      <ul>
+        <li>Pope &amp; Fry (1997) over Mason, Cone &amp; Fry (2016), both measured in an integrating cavity: <span id="pf-ratio" class="num"></span>.</li>
+        <li>In pure sea water the spectra give remote-sensing reflectances up to 6.85 times apart at 380 nm and 2.62 at 443 nm. In Jerlov IB, whose own contents absorb more, only 1.12 to 1.34 times.</li>
+      </ul>
+      <div class="label">Not known</div>
+      <p>Which laboratory value is right below 450 nm. No newer laboratory measurement than Mason et al. (2016) was found. jerlov does not choose: every function that needs a pure water absorption takes it from the caller.</p>
+    </div>
+    <div class="fig">
+      <svg id="f1" role="img" aria-label="Absorption of pure water from five published sources, 350 to 600 nm, log scale"></svg>
+      <div class="legend" id="l1"></div>
+      <p class="cap">Absorption of pure water, 1/m, log scale. Each source as jerlov ships it; gaps are where a source gives no value.</p>
+    </div>
+  </section>
+
+  <!-- 2 -->
+  <section class="q" id="small-angles">
+    <div>
+      <div class="qn">Question 2</div>
+      <h2>What happens to light scattered at less than 0.1°?</h2>
+      <p>Most light scattered in the sea turns by only a small angle. Petzold's measurements of 1971, still widely used, start at 0.1°. Below it his report extends the curve by a power law.</p>
+      <div class="label">Found</div>
+      <ul>
+        <li>The extension holds <span id="pz-range" class="num"></span> of all the scattering at the eight stations (right).</li>
+        <li>Bogucki et al. (2004) measured below 0.1° and found scattering on turbulence, which depends on how the water is being mixed that day, of 1 to 10 per metre. Petzold's extension cannot contain it.</li>
+        <li>It hardly matters for daylight. Dropping the extension moves Kd by −0.63 to +0.13 %: light turned by so little goes on as if unscattered.</li>
+      </ul>
+      <div class="label">Not known</div>
+      <p>How much of the light near the beam turbulence takes, against particles, in a given sea.</p>
+    </div>
+    <div class="fig">
+      <svg id="f2" role="img" aria-label="Phase functions of Petzold's eight stations against angle, log-log"></svg>
+      <div class="legend" id="l2"></div>
+      <svg id="f2b" role="img" aria-label="Share of scattering below 0.1 degree at each station" style="margin-top:14px"></svg>
+      <p class="cap">Top: phase function (β/b, per steradian) of Petzold's eight stations at 530 nm, from 0.1° to 180°, log-log. Nothing to the left of 0.1° was measured. Bottom: the share of b that the report puts below 0.1°.</p>
+    </div>
+  </section>
+
+  <!-- 3 -->
+  <section class="q" id="closure">
+    <div>
+      <div class="qn">Question 3</div>
+      <h2>Do measured IOPs give back Jerlov's own Kd?</h2>
+      <p>Williamson &amp; Hollins (2022) measured absorption a and scattering b in waters they grouped by Jerlov type. Jerlov printed how fast daylight fades in the same types, Kd. If the two describe the same water, a radiative transfer calculation given the first should give back the second.</p>
+      <p>A Monte Carlo ran their a and b for six types at twelve wavelengths. The sun, the shape of the scattering and the pure water, which neither source records, together move Kd by <span id="reach" class="num"></span> times.</p>
+      <div class="label">Found</div>
+      <p>Everywhere but the blue end, the two sources agree within what those conditions can make. The outlined cells lie outside: IB is too high at 425 to 500 nm, and the coastal types too low at 425 to 450 nm.</p>
+      <div class="label">Not known</div>
+      <p>Why Jerlov's 1976 coastal blue Kd are higher than both his own 1968 values and the waters later typed by them. Which of IB's six campaigns are right.</p>
+    </div>
+    <div class="fig">
+      <div class="scroll"><svg id="f3" role="img" aria-label="Monte Carlo Kd over Jerlov 1976 Kd, by type and wavelength"></svg></div>
+      <p class="cap">Kd computed from Williamson &amp; Hollins's a and b, over Jerlov's (1976). Blue: the IOPs give less attenuation than Jerlov printed; orange: more. Outlined: outside what the unrecorded conditions can reach.</p>
+    </div>
+  </section>
+
+  <section class="q" id="editions" style="margin-top:0">
+    <div>
+      <div class="qn">Question 3, continued</div>
+      <h2>Jerlov against Jerlov</h2>
+      <p>Between the 1968 and 1976 editions of his tables, Jerlov raised the coastal blue Kd, by up to <span id="ed-max" class="num"></span> times. His 1976 text names the change at 600 nm in the clear types, and says:</p>
+      <blockquote>it seems that the last word is not said about the behaviour of the irradiance attenuation in the "slope" region of 600 nm</blockquote>
+      <p>For the coastal blue, no reason has been found in any text read so far. Williamson &amp; Hollins's coastal campaigns measured blue Kd nearer the 1968 values.</p>
+    </div>
+    <div class="fig">
+      <div class="scroll"><svg id="f4" role="img" aria-label="Jerlov 1976 Kd over Jerlov 1968 Kd, by type and wavelength"></svg></div>
+      <p class="cap">Kd in Jerlov's 1976 table over his 1968 table, at the wavelengths both print.</p>
+    </div>
+  </section>
+
+  <section class="q" id="two-sources" style="margin-top:0">
+    <div>
+      <div class="qn">Question 3, continued</div>
+      <h2>Two waters with the same name</h2>
+      <p>Solonenko &amp; Mobley (2015) also give a and b for each Jerlov type, inverted from Kd rather than measured. Their beam attenuation c = a + b for a type is not Williamson &amp; Hollins's, and the gap is not even on one side.</p>
+      <p id="ts-text"></p>
+    </div>
+    <div class="fig">
+      <div class="seg" role="group" aria-label="Jerlov type" id="ts-seg"></div>
+      <svg id="f5" role="img" aria-label="Beam attenuation of one Jerlov type from two sources"></svg>
+      <div class="legend"><span><i style="background:var(--s1)"></i>Williamson &amp; Hollins (2022), measured</span><span><i style="background:var(--s2)"></i>Solonenko &amp; Mobley (2015), inverted</span></div>
+      <p class="cap">Beam attenuation c = a + b, 1/m, 400–700 nm.</p>
+    </div>
+  </section>
+
+  <!-- 4 -->
+  <section class="q" id="hydrolight">
+    <div>
+      <div class="qn">Question 4</div>
+      <h2>Does the Monte Carlo give back HydroLight's Kd?</h2>
+      <p>Question 3 rests on a Monte Carlo written for it. Solonenko &amp; Mobley printed, beside their a and b, the Kd that HydroLight, the code most of the field uses, made of them. Given the same a and b, does the Monte Carlo give back that Kd?</p>
+    </div>
+    <div>
+      <div class="label" style="margin-top:0">Found</div>
+      <ul>
+        <li>At 143 cells from 350 to 700 nm, the Monte Carlo's Kd is a median 0.970 of HydroLight's, with 94.4 % of the cells within 10 %. The criterion written down before any run, a median within 0.95 to 1.05 and 90 % of the cells within 10 %, is met.</li>
+        <li>HydroLight's Kd lies at every cell within what the paper's unprinted conditions (the phase function, the sun, the depth) make of the Monte Carlo's.</li>
+      </ul>
+      <div class="label">Not known</div>
+      <p>Which of the remaining differences are HydroLight's average-particle phase function, its sun and its depth, and which the codes. The paper prints none of the three.</p>
+    </div>
+  </section>
+
+  <div class="foot">
+    <p>Every figure on this page comes from <a href="https://tishibashi-cpu.github.io/jerlov/" target="_blank" rel="noopener">jerlov</a> <span id="ver"></span>: the tables it ships with their sources, and the Monte Carlo runs kept in its repository (<code>examples/data/sm_closure/</code>). The full account of each question, with every figure recomputed by a test, is in its <a href="https://tishibashi-cpu.github.io/jerlov/open_questions.html" target="_blank" rel="noopener">open questions</a>, with the data's history in DATA.md and the design in DECISIONS.md.</p>
+    <p>Sources: Pope &amp; Fry (1997), Appl. Opt. 36, 8710; Mason, Cone &amp; Fry (2016), Appl. Opt. 55, 7163; Lee et al. (2015), Appl. Opt. 54, 546; Smith &amp; Baker (1981), Appl. Opt. 20, 177; Morel et al. (2007), Limnol. Oceanogr. 52, 217; Petzold (1972), SIO Ref. 72-78; Bogucki et al. (2004), Appl. Opt. 43, 5662; Jerlov, <i>Optical Oceanography</i> (1968) and <i>Marine Optics</i> (1976); Williamson &amp; Hollins (2022), Appl. Opt. 61, 9951; Solonenko &amp; Mobley (2015), Appl. Opt. 54, 5392.</p>
+  </div>
+</div>
+
+<script>
+const DATA = /*DATA*/;
+const NS = "http://www.w3.org/2000/svg";
+const v = (n) => `var(${n})`;
+const $ = (id) => document.getElementById(id);
+$("ver").textContent = DATA.jerlov_version;
+const f2 = (x) => x.toFixed(2);
+
+function svgEl(svg, w, h) { svg.setAttribute("viewBox", `0 0 ${w} ${h}`); svg.innerHTML = ""; return svg; }
+function add(svg, tag, attrs, text) {
+  const e = document.createElementNS(NS, tag);
+  let style = "";
+  for (const k in attrs) {
+    // A CSS variable is not read in a presentation attribute by every browser; a style is.
+    if (String(attrs[k]).includes("var(")) style += `${k}:${attrs[k]};`;
+    else e.setAttribute(k, attrs[k]);
+  }
+  if (style) e.setAttribute("style", style);
+  if (text !== undefined) e.textContent = text;
+  svg.appendChild(e); return e;
+}
+const lin = (d0, d1, r0, r1) => (x) => r0 + ((x - d0) / (d1 - d0)) * (r1 - r0);
+const logs = (d0, d1, r0, r1) => (x) => r0 + ((Math.log10(x) - Math.log10(d0)) / (Math.log10(d1) - Math.log10(d0))) * (r1 - r0);
+const T = { "font-family": "var(--mono)", "font-size": 10, fill: v("--muted") };
+function line(svg, pts, stroke, extra = {}) {
+  let d = "", pen = false;
+  for (const p of pts) { if (!p) { pen = false; continue; } d += (pen ? "L" : "M") + p[0].toFixed(1) + "," + p[1].toFixed(1); pen = true; }
+  add(svg, "path", Object.assign({ d, fill: "none", stroke, "stroke-width": 1.8, "stroke-linejoin": "round" }, extra));
+}
+function legend(box, items) { box.innerHTML = items.map(([c, t]) => `<span><i style="background:${c}"></i>${t}</span>`).join(""); }
+
+// 1. Pure water.
+(() => {
+  const P = DATA.pure_water, W = 640, H = 330, m = { l: 48, r: 12, t: 12, b: 30 };
+  const svg = svgEl($("f1"), W, H);
+  const x = lin(350, 600, m.l, W - m.r), y = logs(0.001, 0.1, H - m.b, m.t);
+  for (const g of [0.001, 0.002, 0.005, 0.01, 0.02, 0.05, 0.1]) {
+    add(svg, "line", { x1: m.l, x2: W - m.r, y1: y(g), y2: y(g), stroke: v("--line") });
+    add(svg, "text", Object.assign({ x: m.l - 6, y: y(g) + 3, "text-anchor": "end" }, T), g);
+  }
+  for (let l = 350; l <= 600; l += 50) add(svg, "text", Object.assign({ x: x(l), y: H - 10, "text-anchor": "middle" }, T), l + " nm");
+  const names = { pope1997: "Pope & Fry 1997", mason2016: "Mason et al. 2016", lee2015: "Lee et al. 2015", smith1981: "Smith & Baker 1981", morel2007: "Morel et al. 2007" };
+  const cols = ["--s1", "--s2", "--s3", "--s4", "--s5"];
+  Object.keys(names).forEach((s, i) => {
+    line(svg, P.wl.map((l, j) => { const a = P.aw[s][j]; return a && a >= 0.001 && a <= 0.1 ? [x(l), y(a)] : null; }), v(cols[i]));
+  });
+  legend($("l1"), Object.keys(names).map((s, i) => [v(cols[i]), names[s]]));
+  const r = P.pope_over_mason;
+  $("pf-ratio").textContent = `${f2(r["380.0"])} at 380 nm, ${f2(r["400.0"])} at 400, ${f2(r["420.0"])} at 420 and ${f2(r["440.0"])} at 440`;
+})();
+
+// 2. Petzold.
+(() => {
+  const Z = DATA.petzold, W = 640, H = 300, m = { l: 48, r: 12, t: 12, b: 30 };
+  const svg = svgEl($("f2"), W, H);
+  const x = logs(0.01, 180, m.l, W - m.r), y = logs(1e-3, 1e4, H - m.b, m.t);
+  add(svg, "rect", { x: x(0.01), y: m.t, width: x(0.1) - x(0.01), height: H - m.b - m.t, fill: v("--mid") });
+  add(svg, "text", Object.assign({ x: (x(0.01) + x(0.1)) / 2, y: m.t + 14, "text-anchor": "middle" }, T), "not measured");
+  for (const g of [1e-3, 1e-1, 1e1, 1e3]) {
+    add(svg, "line", { x1: x(0.1), x2: W - m.r, y1: y(g), y2: y(g), stroke: v("--line") });
+    add(svg, "text", Object.assign({ x: m.l - 6, y: y(g) + 3, "text-anchor": "end" }, T), g >= 1 ? String(g) : g.toString());
+  }
+  for (const a of [0.01, 0.1, 1, 10, 180]) add(svg, "text", Object.assign({ x: x(a), y: H - 10, "text-anchor": "middle" }, T), a + "°");
+  const col = (st) => v(st.startsWith("AUTEC") ? "--autec" : st.startsWith("HAOCE") ? "--haoce" : "--nuc");
+  for (const s of Z) line(svg, s.angles.map((a, i) => [x(a), y(s.phase[i])]), col(s.station), { "stroke-width": 1.3, "stroke-opacity": 0.9 });
+  legend($("l2"), [[v("--autec"), "AUTEC, Tongue of the Ocean (clear)"], [v("--haoce"), "HAOCE, off California"], [v("--nuc"), "NUC, San Diego Harbor (turbid)"]]);
+  // Bars.
+  const sorted = [...Z].sort((a, b) => a.below - b.below), BH = 22 * sorted.length + 24;
+  const svg2 = svgEl($("f2b"), W, BH), bx = lin(0, 0.16, 110, W - 50);
+  sorted.forEach((s, i) => {
+    const yy = 4 + i * 22;
+    add(svg2, "text", Object.assign({ x: 104, y: yy + 13, "text-anchor": "end" }, T), s.station);
+    add(svg2, "rect", { x: bx(0), y: yy + 3, width: bx(s.below) - bx(0), height: 13, fill: col(s.station), rx: 2 });
+    add(svg2, "text", Object.assign({ x: bx(s.below) + 6, y: yy + 13 }, T, { fill: v("--fg") }), (100 * s.below).toFixed(1) + " %");
+  });
+  const lo = Math.min(...Z.map((s) => s.below)), hi = Math.max(...Z.map((s) => s.below));
+  $("pz-range").textContent = `${(100 * lo).toFixed(1)} to ${(100 * hi).toFixed(1)} %`;
+})();
+
+// Heatmap helper: ratio cells, diverging around 1 on a log scale.
+function mix(a, b, t) { return a.map((x, i) => Math.round(x + (b[i] - x) * t)); }
+function hexrgb(h) { h = h.trim().replace("#", ""); return [0, 2, 4].map((i) => parseInt(h.slice(i, i + 2), 16)); }
+function heat(svg, types, wls, cell, opts) {
+  const cs = getComputedStyle(document.documentElement);
+  const lo = hexrgb(cs.getPropertyValue("--lo")), hi = hexrgb(cs.getPropertyValue("--hi")), mid = hexrgb(cs.getPropertyValue("--mid"));
+  const cw = 46, ch = 30, L = 40, Tp = 22, W = L + cw * wls.length + 4, H = Tp + ch * types.length + 4;
+  svgEl(svg, W, H); svg.style.minWidth = W * 0.85 + "px";
+  wls.forEach((l, j) => add(svg, "text", Object.assign({ x: L + cw * j + cw / 2, y: 14, "text-anchor": "middle" }, T), l));
+  types.forEach((t, i) => {
+    add(svg, "text", Object.assign({ x: L - 8, y: Tp + ch * i + ch / 2 + 4, "text-anchor": "end" }, T, { fill: v("--fg"), "font-size": 12 }), t);
+    wls.forEach((l, j) => {
+      const c = cell(t, l); if (!c || c.ratio == null) return;
+      const s = Math.max(-1, Math.min(1, Math.log(c.ratio) / Math.log(opts.span)));
+      const rgb = s < 0 ? mix(mid, lo, -s) : mix(mid, hi, s);
+      const lum = (0.299 * rgb[0] + 0.587 * rgb[1] + 0.114 * rgb[2]) / 255;
+      const x0 = L + cw * j, y0 = Tp + ch * i;
+      add(svg, "rect", { x: x0 + 1, y: y0 + 1, width: cw - 2, height: ch - 2, fill: `rgb(${rgb})`, rx: 3 });
+      if (c.beyond) add(svg, "rect", { x: x0 + 2, y: y0 + 2, width: cw - 4, height: ch - 4, fill: "none", stroke: v("--beyond"), "stroke-width": 2, rx: 3 });
+      add(svg, "text", { x: x0 + cw / 2, y: y0 + ch / 2 + 4, "text-anchor": "middle", "font-family": "var(--mono)", "font-size": 11,
+        "font-weight": c.beyond ? 700 : 400, fill: lum > 0.55 ? "#12232b" : "#f3f6f7" }, c.ratio.toFixed(2));
+    });
+  });
+}
+
+function drawHeat() {
+  const C = DATA.closure;
+  const byC = Object.fromEntries(C.cells.map((c) => [c.type + "|" + c.wl, c]));
+  heat($("f3"), C.types, C.wl, (t, l) => byC[t + "|" + l], { span: 2 });
+  $("reach").textContent = `${f2(C.down)} to ${f2(C.up)}`;
+  const E = DATA.editions;
+  const byE = Object.fromEntries(E.cells.map((c) => [c.type + "|" + c.wl, c]));
+  heat($("f4"), E.types, E.wl.map((l) => Math.round(l)), (t, l) => byE[t + "|" + l.toFixed(1)] || byE[t + "|" + l], { span: 1.6 });
+  const coastal = E.cells.filter((c) => /C$/.test(c.type) && c.wl <= 475);
+  $("ed-max").textContent = f2(Math.max(...coastal.map((c) => c.ratio)));
+}
+drawHeat();
+
+// 3c. Two sources.
+(() => {
+  const S = DATA.two_sources, types = Object.keys(S.williamson2022);
+  let cur = "IB";
+  const seg = $("ts-seg");
+  seg.innerHTML = types.map((t) => `<button type="button" data-t="${t}">${t}</button>`).join("");
+  function draw() {
+    seg.querySelectorAll("button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.t === cur)));
+    const a = S.williamson2022[cur], b = S.solonenko2015[cur], W = 640, H = 280, m = { l: 44, r: 12, t: 12, b: 30 };
+    const all = [...a.c, ...b.c].filter((x) => x != null), top = Math.max(...all) * 1.08;
+    const svg = svgEl($("f5"), W, H), x = lin(400, 700, m.l, W - m.r), y = lin(0, top, H - m.b, m.t);
+    const step = top > 2 ? 0.5 : top > 1 ? 0.25 : 0.1;
+    for (let g = 0; g <= top; g += step) {
+      add(svg, "line", { x1: m.l, x2: W - m.r, y1: y(g), y2: y(g), stroke: v("--line") });
+      add(svg, "text", Object.assign({ x: m.l - 6, y: y(g) + 3, "text-anchor": "end" }, T), +g.toFixed(2));
+    }
+    for (let l = 400; l <= 700; l += 50) add(svg, "text", Object.assign({ x: x(l), y: H - 10, "text-anchor": "middle" }, T), l + " nm");
+    line(svg, a.wl.map((l, i) => (a.c[i] == null ? null : [x(l), y(a.c[i])])), v("--s1"), { "stroke-width": 2.2 });
+    line(svg, b.wl.map((l, i) => (b.c[i] == null ? null : [x(l), y(b.c[i])])), v("--s2"), { "stroke-width": 2.2 });
+    b.wl.forEach((l, i) => b.c[i] != null && add(svg, "circle", { cx: x(l), cy: y(b.c[i]), r: 3, fill: v("--s2") }));
+    // Ratio at the wavelengths both give.
+    const wa = Object.fromEntries(a.wl.map((l, i) => [l, a.c[i]]));
+    const rs = b.wl.map((l, i) => (b.c[i] != null && wa[l] ? b.c[i] / wa[l] : null)).filter((r) => r != null);
+    const mn = Math.min(...rs), mx = Math.max(...rs);
+    $("ts-text").textContent = `For ${cur}, Solonenko & Mobley's c is ${f2(mn)} to ${f2(mx)} times Williamson & Hollins's, at the ${rs.length} wavelengths between 400 and 700 nm that both give.`;
+  }
+  seg.addEventListener("click", (e) => { const t = e.target.closest("button"); if (t) { cur = t.dataset.t; draw(); } });
+  draw();
+})();
+
+const redraw = () => drawHeat();
+window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", redraw);
+new MutationObserver(redraw).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+</script>
+</body>
+</html>
