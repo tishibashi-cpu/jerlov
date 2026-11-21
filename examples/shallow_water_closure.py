@@ -296,6 +296,125 @@ A0 of 1.03, bring {counts['1998 constants'][0]} of the {len(in_group)}.""")
     return out
 
 
+#: Section 115: the stations' backscatter shares as the Monte Carlo's
+#: sampler has them (tools/shallow_rrs_mc.py, petzold_phase), read from the
+#: runs themselves where they are stored.
+STATIONS = ("NUC 2240", "AUTEC 8", "HAOCE 11")
+
+
+def separated_part():
+    rule("4. Water and particles apart, and what orders the black-bottom miss")
+    runs = read("water_share_nadir.csv")
+    coefficients = jerlov.LEE2011_RRS_COEFFICIENTS[(0.0, 0.0, 0.0)]
+    rrs_2011 = []
+    for a, bb, bw in zip(runs["a"], runs["bb"], runs["bw"]):
+        above = jerlov.lee2011_rrs(a, bb, bb_water=bw / 2,
+                                   coefficients=coefficients)
+        rrs_2011.append(above / (0.52 + 1.7 * above))
+    q1999 = runs["model"] / runs["monte_carlo"]
+    q2011 = np.array(rrs_2011) / runs["monte_carlo"]
+    print("""Deep water, the sun at the zenith, viewed straight down; u held and pure
+water's share of bb varied (18 runs). Lee et al. (2011) keep water and
+particles apart; their Rrs is taken below the surface by Lee et al.'s
+(2002) Eq. (8), an assumption. Model over Monte Carlo, and its spread
+(largest over smallest) across the shares:
+""")
+    shares = sorted(set(runs["water_share"]))
+    print(f"  {'u':>6} {'model':<11}" + "".join(f" {x:>6g}" for x in shares)
+          + "  spread")
+    spreads = {}
+    for u in sorted(set(runs["u"])):
+        pick = runs["u"] == u
+        order = np.argsort(runs["water_share"][pick])
+        for name, q in (("1999", q1999), ("2011", q2011)):
+            row = q[pick][order]
+            spreads[(u, name)] = row.max() / row.min()
+            print(f"  {u:>6g} {'Lee ' + name:<11}"
+                  + "".join(f" {x:>6.3f}" for x in row)
+                  + f"  {spreads[(u, name)]:.3f}")
+    us = sorted(set(runs["u"]))
+    fraction = [(spreads[(u, '2011')] - 1) / (spreads[(u, '1999')] - 1)
+                for u in us]
+    out = dict(q2011=(q2011.min(), q2011.max()),
+               spread_2011=(min(spreads[(u, '2011')] for u in us),
+                            max(spreads[(u, '2011')] for u in us)),
+               spread_1999=(min(spreads[(u, '1999')] for u in us),
+                            max(spreads[(u, '1999')] for u in us)),
+               fraction=(min(fraction), max(fraction)))
+    print(f"""
+Across pure water's share, Lee et al.'s (2011) separated form moves by
+{out['spread_2011'][0]:.3f} to {out['spread_2011'][1]:.3f} times against the Monte Carlo, the 1999 model by {out['spread_1999'][0]:.3f} to {out['spread_1999'][1]:.3f}:
+the separated form's excess over 1 is {out['fraction'][0]:.2f} to {out['fraction'][1]:.2f} of the 1999 model's. With
+the surface taken as assumed, it lies at {out['q2011'][0]:.3f} to {out['q2011'][1]:.3f} of the Monte Carlo.
+It is a deep-water form; this package has no shallow-water model that
+keeps water and particles apart.""")
+
+    grid = read("monte_carlo.csv")
+    changed = read("black_bottom.csv")
+    cut = read("cut_check.csv")
+    back = {}
+    for station in STATIONS:
+        pick = (cut["station"] == station) & (cut["cut_deg"] == 1.0)
+        back[station] = float(cut["backscatter_share"][pick][0])
+    by_back = sorted(STATIONS, key=back.get)
+    ratio = grid["bp"] / grid["a"]
+    cells = {}
+    for i in np.flatnonzero((grid["albedo"] == 0.0)
+                            & np.isin(grid["depth_m"], (1.0, 4.0))
+                            & np.isin(np.round(ratio), (3.0, 30.0))
+                            & np.isin(grid["a"], (0.05, 0.2))):
+        key = (grid["a"][i], round(ratio[i]), grid["depth_m"][i],
+               grid["sun_deg"][i])
+        cells[key] = {"NUC 2240": grid["model"][i] / grid["monte_carlo"][i]}
+    for j in range(len(changed["a"])):
+        if changed["change"][j] in back:
+            key = (changed["a"][j], round(changed["bp_over_a"][j]),
+                   changed["depth_m"][j], changed["sun_deg"][j])
+            cells[key][changed["change"][j]] = (changed["model"][j]
+                                                / changed["monte_carlo"][j])
+    rising = falling = middle_highest = 0
+    for values in cells.values():
+        steps = np.diff([values[s] for s in by_back])
+        rising += int(np.all(steps > 0))
+        falling += int(np.all(steps < 0))
+        middle_highest += int(values[by_back[1]] == max(values.values()))
+    spread_by_cut = {
+        station: (cut["model"][cut["station"] == station]
+                  / cut["monte_carlo"][cut["station"] == station])
+        for station in STATIONS}
+    worst = max(v.max() / v.min() for v in spread_by_cut.values())
+    cut_cell = (cut["a"][0], round(cut["bp_over_a"][0]), cut["depth_m"][0],
+                cut["sun_deg"][0])
+    at_cut_cell = max(cells[cut_cell].values()) / min(cells[cut_cell].values())
+    largest = max(max(v.values()) / min(v.values()) for v in cells.values())
+    with warnings.catch_warnings():
+        # The mean cosine rests on the report's extension below 0.1 degree,
+        # which always warns (DATA.md section 21).
+        warnings.simplefilter("ignore", jerlov.ProvenanceWarning)
+        cosine = {st: float(jerlov.petzold_scattering(st).mean_cosine())
+                  for st in STATIONS}
+    cosine_falls = all(cosine[a] > cosine[b]
+                       for a, b in zip(by_back, by_back[1:]))
+    noise = max((cut["standard_error"] / cut["monte_carlo"]))
+    out.update(cells=len(cells), rising=rising, falling=falling,
+               middle=middle_highest, back=back, by_back=by_back,
+               cut_spread=worst, cut_noise=noise, at_cut_cell=at_cut_cell,
+               largest=largest, cosine=cosine, cosine_falls=cosine_falls)
+    print(f"""
+Over a black bottom, the {len(cells)} cells of part 3 with the particles' bb/b
+{', '.join(f'{back[s]:.4f} ({s})' for s in by_back)}: model over Monte
+Carlo rises with bb/b in {rising} cells and falls in {falling}; in {middle_highest} the middle
+station, {by_back[1]}, gives the highest. The miss is not ordered by bb/b,
+nor by the mean cosine ({', '.join(f'{cosine[s]:.4f}' for s in by_back)}{', which falls as bb/b rises' if cosine_falls else ''}).
+The Monte Carlo counts scattering by less than 1 degree as none. In the
+cell with a {cut_cell[0]:g} 1/m, bp/a {cut_cell[1]:g}, H {cut_cell[2]:g} m and the sun at {cut_cell[3]:g} degrees,
+where the stations differ by a factor of {at_cut_cell:.2f} ({largest:.2f} in the cell where
+they differ most), a cut of 0.5, 1 or 2 degrees moves the ratio at any
+one station by a factor of {worst:.3f} at most, with standard errors up to
+{100 * noise:.1f} percent: the cut is not what sets the stations apart.""")
+    return out
+
+
 def main():
     _banner()
     with warnings.catch_warnings():
@@ -303,6 +422,7 @@ def main():
         paper = paper_part()
         share = share_part(paper["missed"], paper["water_shares"])
         dark = dark_part()
+        separated = separated_part()
     rule("Before you use any of this")
     print("""  - The Monte Carlo is not HydroLight: a flat surface, no Raman scattering,
     Petzold's NUC 2240 for the particles where the paper used his average
@@ -312,8 +432,11 @@ def main():
     are not described and are not rebuilt.
   - A change that moves the ratio is not shown to be what HydroLight's runs
     differ by; the comparison says which differences matter, and how much.
+  - Part 4 takes Lee et al.'s (2011) Rrs below the surface by Lee et al.'s
+    (2002) Eq. (8), fitted for deep water seen from above; no coefficient
+    is fitted here to the Monte Carlo.
 """)
-    return dict(paper=paper, share=share, dark=dark)
+    return dict(paper=paper, share=share, dark=dark, separated=separated)
 
 
 if __name__ == "__main__":
