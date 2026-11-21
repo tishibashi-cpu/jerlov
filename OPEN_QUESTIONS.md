@@ -337,16 +337,31 @@ an explanation was written down before the runs (DECISIONS.md section
   the 1998 constants 6. For the same cell, changing the particles' phase
   function alone changed the ratio by a factor of 1.21 in the median cell
   and 1.92 at the most; adding the sky, by 1.04 and 1.16.
+- Lee et al.'s (2011) deep-water form, which keeps water and particles
+  apart, used with its published coefficients (sun at the zenith, nadir
+  view) and nothing fitted, follows pure water's share where the 1999
+  model does not: across the shares it moves by 1.054 to 1.079 times
+  against the Monte Carlo, the 1999 model by 1.232 to 1.333 (DECISIONS.md
+  section 115; its Rrs taken below the surface by Lee et al.'s 2002 Eq.
+  8, an assumption). It lies at 0.943 to 1.042 of the Monte Carlo.
+- Over a black bottom the miss is not ordered by the particles' bb/b: it
+  rises with bb/b in 5 of the 24 cells and falls in none, and in 16 the
+  middle station, NUC 2240, gives the highest ratio. Nor by the mean
+  cosine. The Monte Carlo's cut at 1 degree does not set the stations
+  apart: 0.5 or 2 degrees moves the ratio at any one station by a factor
+  of 1.027 at most.
 
 **What is not known.** Which phase function HydroLight's runs are nearest
 to (Petzold's average particle, whose table this package has not
 obtained), and how much of the second group the paper's own runs would
 show: its fits were judged on all runs together, and the 1999 refit's
-runs are not described. Whether a form with the phase function in it, or
-with water and particles apart as Lee et al. (2011) did for deep water,
-would close both groups is not tested here.
+runs are not described. For the first group, a separated form is
+known for deep water only; no shallow-water form with water and particles
+apart is in this package. For the second, neither bb/b nor the mean
+cosine orders the miss, so a form taking one of them would not by itself
+close it; what does order it is not found.
 
-**Where.** DATA.md section 50; DECISIONS.md sections 113 and 114;
+**Where.** DATA.md section 50; DECISIONS.md sections 113 to 115;
 `examples/shallow_water_closure.py`; `tools/shallow_rrs_mc.py` and
 `tools/lee1998_runs.py`, with their results in
 `examples/data/shallow_rrs_mc/`.

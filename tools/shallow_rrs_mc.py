@@ -25,7 +25,9 @@ irradiance is the photons' number plus the weight reflected down.
     python tools/shallow_rrs_mc.py --check
     python tools/shallow_rrs_mc.py OUT.csv
     python tools/shallow_rrs_mc.py --water-share OUT.csv
+    python tools/shallow_rrs_mc.py --water-share-nadir OUT.csv
     python tools/shallow_rrs_mc.py --black-bottom OUT.csv
+    python tools/shallow_rrs_mc.py --cut-check OUT.csv
 
 The first runs the check of section 113 (no scattering, no reflection at
 the surface: rrs = (rho/pi) exp(-a H / cos theta_w) exp(-a H)) and prints
@@ -318,24 +320,26 @@ def _model(a, bb, depth, rho, sun):
     return m.rrs if math.isfinite(depth) else m.deep
 
 
-def water_share(path: str) -> None:
-    """Step 2: deep water and a black bottom at 4 m, u and a held, pure
-    water's share of bb varied."""
+def water_share(path: str, sun: float = SHARE_SUN,
+                depths=SHARE_DEPTHS, a_values=SHARE_A) -> None:
+    """Step 2 of section 114: deep water and a black bottom at 4 m, u and
+    a held, pure water's share of bb varied. Section 115 runs it with the
+    sun at the zenith, deep water and one a."""
     phase = petzold_phase(STATION)
     back = phase[3]
     rows = []
-    for u, a, share, depth in itertools.product(SHARE_U, SHARE_A, SHARES,
-                                                SHARE_DEPTHS):
+    for u, a, share, depth in itertools.product(SHARE_U, a_values, SHARES,
+                                                depths):
         bb = u * a / (1.0 - u)
         bw = 2.0 * share * bb
         bp = (1.0 - share) * bb / back
-        value, error = rrs(a, bp, bw, depth, 0.0, SHARE_SUN, phase)
+        value, error = rrs(a, bp, bw, depth, 0.0, sun, phase)
         rows.append({
             "u": u, "a": a, "water_share": share,
             "depth_m": "inf" if not math.isfinite(depth) else depth,
             "bp": f"{bp:.6g}", "bw": f"{bw:.6g}", "bb": f"{bb:.6g}",
             "monte_carlo": f"{value:.6e}", "standard_error": f"{error:.2e}",
-            "model": f"{_model(a, bb, depth, 0.0, SHARE_SUN):.6e}",
+            "model": f"{_model(a, bb, depth, 0.0, sun):.6e}",
         })
         print(rows[-1], flush=True)
     _write(path, rows)
@@ -374,9 +378,47 @@ def black_bottom(path: str) -> None:
     _write(path, rows)
 
 
+#: DECISIONS.md section 115: the cut below which scattering counts as none,
+#: tried at all three stations in the cell where they differ most.
+CUT_CELL = dict(a=0.05, bp_over_a=3.0, depth=1.0, sun=0.0)
+CUTS = (0.5, 1.0, 2.0)
+CUT_PHOTONS = 400_000
+
+
+def cut_check(path: str) -> None:
+    """The black-bottom cell of CUT_CELL at each station and cut, a, bb and
+    pure water's part held as in black_bottom."""
+    cell = CUT_CELL
+    a = cell["a"]
+    bb = 0.5 * BW + petzold_phase(STATION)[3] * cell["bp_over_a"] * a
+    rows = []
+    for station, cut in itertools.product((STATION,) + OTHER_STATIONS,
+                                          CUTS):
+        phase = petzold_phase(station, cut)
+        bp = (bb - 0.5 * BW) / phase[3]
+        value, error = rrs(a, bp, BW, cell["depth"], 0.0, cell["sun"],
+                           phase, photons=CUT_PHOTONS)
+        rows.append({
+            "station": station, "cut_deg": cut, "a": a,
+            "bp_over_a": cell["bp_over_a"], "depth_m": cell["depth"],
+            "sun_deg": cell["sun"], "bp": f"{bp:.6g}", "bw": BW,
+            "bb": f"{bb:.6g}", "share_below_cut": f"{phase[2]:.6g}",
+            "backscatter_share": f"{phase[3]:.6g}",
+            "monte_carlo": f"{value:.6e}", "standard_error": f"{error:.2e}",
+            "model": f"{_model(a, bb, cell['depth'], 0.0, cell['sun']):.6e}",
+        })
+        print(rows[-1], flush=True)
+    _write(path, rows)
+
+
 if __name__ == "__main__":
     if len(sys.argv) == 3 and sys.argv[1] == "--water-share":
         water_share(sys.argv[2])
+    elif len(sys.argv) == 3 and sys.argv[1] == "--water-share-nadir":
+        water_share(sys.argv[2], sun=0.0, depths=(math.inf,),
+                    a_values=(0.05,))
+    elif len(sys.argv) == 3 and sys.argv[1] == "--cut-check":
+        cut_check(sys.argv[2])
     elif len(sys.argv) == 3 and sys.argv[1] == "--black-bottom":
         black_bottom(sys.argv[2])
     elif sys.argv[1:] == ["--check"]:

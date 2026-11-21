@@ -7349,3 +7349,23 @@ was found, what is not known); DATA.md section 50; a fourth part of
 `examples/shallow_water_closure.py`; the runs to
 `examples/data/shallow_rrs_mc/water_share_nadir.csv`; tests that recompute
 every figure. No value or code of the package changes. Version 1.26.2.
+
+**Differences from the plan, noted after the runs.**
+
+- Step 1's test, "a spread at most a third of the 1999 model's", is read
+  as the spread's excess over 1 (largest over smallest, less 1): the
+  separated form's is 0.20 to 0.24 of the 1999 model's, so the test is
+  met. Read literally, a third of 1.232 to 1.333 is below 1 and no spread
+  could meet it; that reading was not meant.
+- Step 2's test was missed: model over Monte Carlo rises with bb/b in 5
+  of the 24 cells and falls in none. In 16 the middle station, NUC 2240,
+  gives the highest.
+- Added after step 2, before writing it up: the Monte Carlo's cut at 1
+  degree had been checked at NUC 2240 only (section 113). Since the three
+  stations lose different shares to it (0.343, 0.229 and 0.199 below 1
+  degree at HAOCE 11, NUC 2240 and AUTEC 8), the cell a 0.05 1/m, bp/a 3,
+  H 1 m, sun overhead was run at each station with cuts of 0.5, 1 and 2
+  degrees (`--cut-check`, 9 runs): the ratio at any station moves by a
+  factor of 1.027 at most. The first draft of the example called that cell
+  the one where the stations differ most; it is not (1.72 there, 1.92 at
+  a 0.2 1/m), and the text now gives both.
