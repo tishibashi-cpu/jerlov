@@ -22,10 +22,16 @@ autodoc_member_order = "bysource"
 autodoc_typehints = "signature"
 # Types by their own names, not the module paths 1.0 does not promise.
 python_use_unqualified_type_names = True
-exclude_patterns = ["_build", "pages"]
+exclude_patterns = ["_build", "pages", "extra"]
 # Two pages made from the package's values by tools/site_pages.py, copied to
-# the site's root as they are (DECISIONS.md section 109).
-html_extra_path = ["pages"]
+# the site's root as they are (DECISIONS.md section 109), and files a search
+# engine asks for there (section 112).
+html_extra_path = ["pages", "extra"]
+# Gives every page a canonical link, and the sitemap its addresses
+# (section 112).
+html_baseurl = "https://tishibashi-cpu.github.io/jerlov/"
+#: The pages html_extra_path copies that a reader should find.
+_EXTRA_PAGES = ("dive.html", "disagree.html")
 
 html_theme = "alabaster"
 html_title = f"jerlov {release}"
@@ -74,5 +80,26 @@ def _constant_docstring(app, what, name, obj, options, lines):
         lines[:] = _CONSTANT_DOCS.get(name.split(".", 1)[1], [])
 
 
+def _sitemap(app, exception):
+    """Write sitemap.xml: every page built from a source file, and the pages
+    of section 109. Search Console reads it (DECISIONS.md section 112)."""
+    if exception is not None or app.builder.format != "html":
+        return
+    import os
+    from xml.sax.saxutils import escape
+
+    pages = [app.builder.get_target_uri(name)
+             for name in sorted(app.env.found_docs)]
+    pages += list(_EXTRA_PAGES)
+    urls = "".join(f"  <url><loc>{escape(html_baseurl + p)}</loc></url>\n"
+                   for p in pages)
+    path = os.path.join(app.outdir, "sitemap.xml")
+    with open(path, "w", encoding="utf-8") as f:
+        f.write('<?xml version="1.0" encoding="UTF-8"?>\n'
+                '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
+                + urls + "</urlset>\n")
+
+
 def setup(app):
     app.connect("autodoc-process-docstring", _constant_docstring)
+    app.connect("build-finished", _sitemap)

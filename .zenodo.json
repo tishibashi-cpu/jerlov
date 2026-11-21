@@ -23,6 +23,7 @@
     "colorimetry"
   ],
   "related_identifiers": [
+    {"identifier": "https://tishibashi-cpu.github.io/jerlov/", "relation": "isDocumentedBy", "scheme": "url"},
     {"identifier": "10.1364/AO.470464", "relation": "isDerivedFrom", "resource_type": "publication-article", "scheme": "doi"},
     {"identifier": "10.1364/AO.54.005392", "relation": "isDerivedFrom", "resource_type": "publication-article", "scheme": "doi"},
     {"identifier": "10.1117/12.7973845", "relation": "isDerivedFrom", "resource_type": "publication-article", "scheme": "doi"},

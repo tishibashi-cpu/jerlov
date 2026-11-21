@@ -4,6 +4,20 @@ Every release is archived on Zenodo under the concept DOI
 [10.5281/zenodo.22321312](https://doi.org/10.5281/zenodo.22321312), which
 always resolves to the latest version.
 
+## 1.25.2 — 2026-11-21
+
+Letting search engines find the documentation site (DECISIONS.md section
+112). No shipped value, code or public name changed.
+
+**Docs.** The site now has a `sitemap.xml`, written at each build, with
+every page including "Daylight on the way down" and "Where the sources
+disagree"; a canonical address on every page; a description for the index
+page; and the file Google Search Console asks for to confirm who maintains
+the site. The Zenodo record links to the site.
+
+**Tests.** The verification file, the sitemap hook and the Zenodo link are
+checked, and the docs workflow reads the built sitemap back.
+
 ## 1.25.1 — 2026-11-20
 
 The spectrum on the site's "Daylight on the way down" says how much it is

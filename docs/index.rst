@@ -1,3 +1,8 @@
+.. meta::
+   :description: jerlov is a Python package of the Jerlov optical water types:
+      absorption, scattering and diffuse attenuation from the papers that
+      published them, with provenance, and what follows from them.
+
 jerlov
 ======
 
