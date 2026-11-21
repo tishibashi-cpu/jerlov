@@ -78,6 +78,10 @@ def test_another_archive_is_refused(tmp_path):
         jerlov.morel2002_fq_tables(path)
 
 
+#: Since 1.26.3 one run of the archive warns as suspect (DATA.md section 48,
+#: tests/test_fq_dip.py); the tests here read every run.
+pytestmark = pytest.mark.filterwarnings(
+    "ignore:f and f/Q at a sun of 45 degrees:jerlov.ProvenanceWarning")
 needs_archive = pytest.mark.skipif(
     not REAL.exists(), reason="the authors' archive is not shipped; "
     "sources/morel2002/ (DATA.md section 48)")

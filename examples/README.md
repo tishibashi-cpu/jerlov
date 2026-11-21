@@ -1,7 +1,9 @@
 # Examples
 
-Twenty-nine scripts. Each runs against the installed package and needs nothing beyond
-NumPy; `closure_with_jerlov_kd.py` and `shallow_water_closure.py` also read results kept beside them in
+Thirty scripts. Each runs against the installed package and needs nothing beyond
+NumPy, except `fq_at_45_degrees.py`, which reads your own copy of Morel et
+al.'s f/Q archive given as `--archive PATH` and without it only says so;
+`closure_with_jerlov_kd.py` and `shallow_water_closure.py` also read results kept beside them in
 `examples/data/`, so it needs the repository, and so does part 3 of
 `phase_function_choice.py`, which says so when they are not there.
 
@@ -34,6 +36,7 @@ python examples/phase_function_choice.py
 python examples/reference_images.py
 python examples/closure_with_jerlov_kd.py
 python examples/shallow_water_closure.py
+python examples/fq_at_45_degrees.py --archive PATH
 ```
 
 CI runs all of them on every push, so an example that has stopped working is a
@@ -437,6 +440,16 @@ from **1.023-1.157** with particles alone to 0.783-0.902 with pure water
 nearly alone. Over a black bottom no single change closes the gap; the
 particles' phase function alone moves the ratio by a factor of up to
 **1.92**.
+
+**`fq_at_45_degrees.py`** — a sixth open question (`OPEN_QUESTIONS.md`,
+question 6), for those who correct water-leaving radiance with Morel et
+al.'s (2002) f/Q tables: where does their archive's dip at a sun of 45
+degrees lie? Given your own copy of the archive (`--archive PATH`; the
+package does not ship it), it finds that one run, the sun at 45 degrees
+and 0.03 mg/m3, lies below the line between 30 and 60 degrees at every
+wavelength, by **1.01 to 3.44** percent, where every other chlorophyll
+lies above it, and that the run is out of order against its neighbour in
+chlorophyll at all 7 wavelengths.
 
 ## What they do not show
 

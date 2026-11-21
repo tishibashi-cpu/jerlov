@@ -1,7 +1,7 @@
 Examples
 ========
 
-Twenty-nine scripts, each for one kind of reader. Each runs against the
+Thirty scripts, each for one kind of reader. Each runs against the
 installed package, needs nothing beyond NumPy, and prints what it
 computes; ``closure_with_jerlov_kd.py`` and ``shallow_water_closure.py``
 also read results kept beside them, and so does part 3 of ``phase_function_choice.py``. CI runs every one of them, so an example that has stopped working is
@@ -78,3 +78,5 @@ repository, not in the installed package; from a clone:
      - `closure_with_jerlov_kd.py <https://github.com/tishibashi-cpu/jerlov/blob/main/examples/closure_with_jerlov_kd.py>`_
    * - see why a shallow-water reflectance model misses where it does
      - `shallow_water_closure.py <https://github.com/tishibashi-cpu/jerlov/blob/main/examples/shallow_water_closure.py>`_
+   * - see where Morel et al.'s f/Q archive dips at a 45-degree sun (needs your copy)
+     - `fq_at_45_degrees.py <https://github.com/tishibashi-cpu/jerlov/blob/main/examples/fq_at_45_degrees.py>`_

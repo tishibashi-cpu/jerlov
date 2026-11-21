@@ -7411,3 +7411,23 @@ that reads the archive from a path given as `--archive PATH` and, without
 one, says so and does nothing else, so that CI, which has no archive,
 runs it; tests that recompute every figure where the archive is present
 and are skipped elsewhere, as section 104's are. Version 1.26.3.
+
+**Differences from the plan, noted after the analysis.**
+
+- Step 1's measure for f/Q was first the range over all 221 directions.
+  It is wide at every sun angle (at 15 degrees already -4.53 to +4.26
+  percent), so it could not show where the dip lies; the example takes,
+  for each case, the median over the directions, which does (-3.52 to
+  -1.35 at the suspect run, -0.16 to +0.85 elsewhere).
+- At 30 degrees Chl 0.03 alone lies above its chord; that chord has the
+  low value at 45 as an end, so this follows from the run at 45 and is
+  not a second finding.
+- The example first took its archive with argparse; run as CI runs the
+  examples (runpy from "python -c"), sys.argv carries the script's own
+  path and argparse refused it. It now reads only an explicit
+  `--archive PATH`, as `radiative_transfer_inputs.py` reads `--read`.
+- The first draft of OPEN_QUESTIONS.md question 6 said the dip grows with
+  the wavelength "as Raman emission's share does at low Chl"; that share
+  was not computed. It now quotes what the paper says (p. 6298).
+- The existing tests in tests/test_fq_tables.py read every run and so
+  now meet the new warning; they ignore that one message.

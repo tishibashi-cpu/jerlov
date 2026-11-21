@@ -14,11 +14,13 @@ import hashlib
 import io
 import pathlib
 import tarfile
+import warnings
 
 import numpy as np
 
 from . import _data
 from ._data import finite_number as _one
+from .water import ProvenanceWarning
 
 #: The MD5 of the archive this package was checked against (DATA.md
 #: section 48): DISTRIB_fQ_with_Raman.tar.gz, 173,005 bytes, 18 June 2003.
@@ -26,6 +28,20 @@ MOREL2002_FQ_MD5 = "21c7afc6c6d3c1963311d6880456f7bc"
 _WHERE = ("ftp://oceane.obs-vlfr.fr/pub/gentili/AppliedOptics2002/"
           "DISTRIB_fQ_with_Raman.tar.gz")
 _PREFIX = "DISTRIB_fQ_with_Raman/"
+#: The run out of line with the rest of the table (DATA.md section 48,
+#: DECISIONS.md section 116): (sun zenith angle, Chl).
+_SUSPECT = (45.0, 0.03)
+
+
+def _warn_suspect(case: tuple[float, float, float]) -> None:
+    if (case[1], case[2]) == _SUSPECT:
+        warnings.warn(
+            "f and f/Q at a sun of 45 degrees and 0.03 mg/m3 are suspect: "
+            "at every wavelength they lie below the line between 30 and 60 "
+            "degrees where every other Chl lies above it (by 1.0 to 3.4 "
+            "percent in f), out of line with the rest of the table; they "
+            "are returned as the archive has them. DATA.md section 48",
+            ProvenanceWarning, stacklevel=_data.caller_stacklevel())
 
 
 def _pick(value: float, grid: tuple[float, ...], name: str) -> float:
@@ -69,15 +85,21 @@ class Morel2002FQTables:
                       self.chlorophyll_mg_m3, "chlorophyll_mg_m3"))
 
     def f(self, wavelength_nm, /, *, sun_zenith_deg, chlorophyll_mg_m3):
-        """f of R = Eu/Ed = f bb/a (their Eq. 11), from f.dat."""
-        return self._f[self._case(wavelength_nm, sun_zenith_deg,
-                                  chlorophyll_mg_m3)]
+        """f of R = Eu/Ed = f bb/a (their Eq. 11), from f.dat.
+
+        At a sun of 45 degrees and 0.03 mg/m3 the value is suspect and
+        comes with a :class:`ProvenanceWarning` (DATA.md section 48)."""
+        case = self._case(wavelength_nm, sun_zenith_deg, chlorophyll_mg_m3)
+        _warn_suspect(case)
+        return self._f[case]
 
     def f_over_q(self, wavelength_nm, /, *, sun_zenith_deg,
                  chlorophyll_mg_m3, nadir_deg, azimuth_deg):
         """f/Q for the upward radiance in water at ``nadir_deg`` (one of
         the 17, or 0, which takes the 1.078 degree row as the paper says)
-        and ``azimuth_deg`` (0 to 180 every 15)."""
+        and ``azimuth_deg`` (0 to 180 every 15). At a sun of 45 degrees
+        and 0.03 mg/m3 the value is suspect and comes with a
+        :class:`ProvenanceWarning` (DATA.md section 48)."""
         case = self._case(wavelength_nm, sun_zenith_deg, chlorophyll_mg_m3)
         nadir = _one(nadir_deg, "nadir_deg")
         row = 0 if nadir == 0 else self.nadir_deg.index(
@@ -85,7 +107,9 @@ class Morel2002FQTables:
         col = self.azimuth_deg.index(
             _pick(_one(azimuth_deg, "azimuth_deg"), self.azimuth_deg,
                   "azimuth_deg"))
-        return float(self._foq[case][row, col])
+        value = float(self._foq[case][row, col])
+        _warn_suspect(case)
+        return value
 
     def surface_factor(self, *, wind, nadir_deg):
         """The R-gothic of rgoth_Ebuchi.dat for ``wind`` ("flat", or 0, 4,

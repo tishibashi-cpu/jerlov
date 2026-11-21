@@ -2337,7 +2337,7 @@ def test_every_open_question_is_on_the_site():
                  for line in (ROOT / "OPEN_QUESTIONS.md").read_text()
                  .splitlines() if line.startswith("## ")]
     page = _flat("docs/open_questions.rst")
-    assert len(questions) == 5
+    assert len(questions) == 6
     for number, question in enumerate(questions, 1):
         assert f"{number}. **{question}**" in page, question
     assert "OPEN_QUESTIONS.md_" in page

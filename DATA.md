@@ -3008,6 +3008,19 @@ describes two sets.
   cases, and up to 1.22 percent above (412.5 nm, 10 mg m^-3). The linear
   fits have no such dip. Why the archive (June 2003) and the paper's fits
   (lin-approx.tar, August 2002) differ there is not known.
+- **Located: one run, suspect (1.26.3, DECISIONS.md section 116,
+  OPEN_QUESTIONS.md question 6).** The dip belongs to the sun at 45
+  degrees and 0.03 mg m^-3 alone. There f lies below the chord between 30
+  and 60 degrees at all seven wavelengths, by 1.01 to 3.44 percent,
+  growing with the wavelength, while every other Chl lies 0.51 to 1.22
+  percent above it. f/Q there follows f (the median over the 221
+  directions, -3.52 to -1.35 percent from its chord, the other Chl -0.16
+  to +0.85); Q at the nadir has no dip. Divided by the same at 0.1 mg
+  m^-3, f(theta_s)/f(0) at 0.03 falls out of order at 45 degrees at all 7
+  wavelengths, and no other pair of Chl at any sun angle does. These
+  values are kept as the archive has them and are **suspect**:
+  `Morel2002FQTables.f` and `.f_over_q` give a ProvenanceWarning at that
+  sun angle and Chl. What made them so is not known.
 
 ## 49. The light kept within an angle: Petzold's forward scattering (note)
 
