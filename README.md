@@ -115,7 +115,8 @@ want and what you have.
   `classify_kd`, `Water.from_measurements`).
 - [Ocean colour, without a water type](https://tishibashi-cpu.github.io/jerlov/topics/ocean_colour.html): Kd,
   aph and bbp from chlorophyll, Kd from a and bb, f and Q, Rrs below and
-  above the surface and from above-water radiances, the Secchi depth, QAA,
+  above the surface and from above-water radiances, Rrs of shallow water
+  with the bottom in view, the Secchi depth, QAA,
   and the irradiance at the surface under a clear sky.
 - [Water for other software](https://tishibashi-cpu.github.io/jerlov/topics/other_software.html): RGB
   coefficients and spectra for renderers, input files for OSOAA and
@@ -169,7 +170,7 @@ made.
 ## Provenance and design
 
 `DATA.md` records, for every shipped table, where it came from, what was
-verified, and what is known to be wrong with it. Forty-nine entries are
+verified, and what is known to be wrong with it. Fifty entries are
 documented there: thirteen confirmed defects in the source literature, three
 questions the first edition of Jerlov settled, and the rest notes.
 

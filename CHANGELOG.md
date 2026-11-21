@@ -4,6 +4,37 @@ Every release is archived on Zenodo under the concept DOI
 [10.5281/zenodo.22321312](https://doi.org/10.5281/zenodo.22321312), which
 always resolves to the latest version.
 
+## 1.26.0 — 2026-11-21
+
+The remote sensing reflectance of shallow water, with the bottom in view
+(DECISIONS.md section 113). No earlier value changed.
+
+**New.** `lee1999_shallow_rrs(a, bb, /, *, depth_m, bottom_albedo,
+sun_zenith_deg)` and `ShallowRrs`: the semianalytical model of Lee et al.
+(1998), with the constants their 1999 paper updated, for a homogeneous
+water over a Lambertian bottom seen straight down. It gives rrs just below
+the surface, its water-column and bottom parts, the same water with no
+bottom, and Rrs above the surface. The bottom's depth and albedo and the
+sun have no default; outside the sun, depths and waters of the paper's
+HydroLight runs the result comes with a `ProvenanceWarning`. The package's
+range widens to optically shallow water for this forward relation only;
+deriving depth and bottom albedo from a measured spectrum stays out.
+
+**Found.** The 1999 paper replaced the 1998 constants after "correcting a
+calculation error in the earlier study"; only the 1999 set is used. Against
+a Monte Carlo with a flat surface, a Lambertian bottom and another of
+Petzold's phase functions (`tools/shallow_rrs_mc.py`, 270 runs), the model
+has a median ratio of 0.999, and 87.4 percent of the runs are within 10
+percent, short of the 90 percent set beforehand. The model runs low, by up
+to 18 percent, where pure water carries most of the backscattering, and
+high, by up to 72 percent, over a black bottom a few metres down in turbid
+water. The 1998 constants do worse against the same runs. DATA.md section
+50.
+
+**Docs.** The map, the page on ocean colour, the README, a part 13 of
+`examples/ocean_colour_and_secchi.py` (how deep the bottom stays in view
+for four Jerlov types), DATA.md section 50 and the Zenodo description.
+
 ## 1.25.2 — 2026-11-21
 
 Letting search engines find the documentation site (DECISIONS.md section

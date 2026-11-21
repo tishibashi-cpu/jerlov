@@ -2,8 +2,8 @@
 Secchi depth.
 
 Published relations, each from its primary paper, with the quantities the
-papers do not fix left to the caller (DECISIONS.md sections 66 and 72 to
-74):
+papers do not fix left to the caller (DECISIONS.md sections 66, 72 to
+74 and 113):
 
 - Kd from the chlorophyll concentration of case 1 water, Morel &
   Maritorena (2001);
@@ -15,6 +15,8 @@ papers do not fix left to the caller (DECISIONS.md sections 66 and 72 to
 - the remote sensing reflectance from a and bb, Gordon et al. (1988) and
   Lee, Carder & Arnone (2002), and with water and particles apart at seven
   viewing geometries, Lee et al. (2011);
+- the same for shallow water with the bottom in view, Lee et al. (1998,
+  1999);
 - the downwelling distribution function D0 and a Kd under another light
   field, Gordon (1989);
 - the Secchi depth from Kd and the remote sensing reflectance, Lee et al.
@@ -854,6 +856,171 @@ def lee2011_rrs(a, bb, /, *, bb_water, coefficients):
     xp = (bb - bbw) / k
     rrs = (g[0] + g[1] * xw) * xw + (g[2] + g[3] * xp) * xp
     return _result(rrs, a, bb, bbw)
+
+
+#: Lee et al. (1999), Appendix A (p. 3842): the constants of Eqs. (A6),
+#: (A7) and (A9), which replaced the 1998 paper's after "correcting a
+#: calculation error in the earlier study". rrs_dp = (G0 + G1 u) u; the column's
+#: D_u^C = D0 (1 + D1 u)^0.5 and the bottom's D_u^B = D0' (1 + D1' u)^0.5;
+#: Rrs = ZETA rrs / (1 - GAMMA rrs). A0 = 1 and A1 = 1/pi are written out.
+_LEE1999_G = (0.084, 0.170)
+_LEE1999_D_COLUMN = (1.03, 2.4)
+_LEE1999_D_BOTTOM = (1.04, 5.4)
+_LEE1999_ZETA, _LEE1999_GAMMA = 0.5, 1.5
+#: The refractive index of the water in the HydroLight runs (1998, p.
+#: 6331), used to refract the sun.
+_LEE1998_N = 1.34
+#: What the runs covered (1998, Table 1, p. 6331, and the abstract): the
+#: sun up to 60 degrees, H from 0.5 to 32 m, u up to 0.6 (bb/a up to 1.5).
+_LEE1998_SUN, _LEE1998_DEPTH, _LEE1998_U = 60.0, (0.5, 32.0), 0.6
+LEE1998 = (
+    "Lee, Z., Carder, K. L., Mobley, C. D., Steward, R. G. and Patch, J. S. "
+    "(1998), 'Hyperspectral remote sensing for shallow waters. I. A "
+    "semianalytical model', Appl. Opt. 37(27), 6329-6338, "
+    "doi:10.1364/AO.37.006329"
+)
+LEE1999 = (
+    "Lee, Z., Carder, K. L., Mobley, C. D., Steward, R. G. and Patch, J. S. "
+    "(1999), 'Hyperspectral remote sensing for shallow waters: 2. Deriving "
+    "bottom depths and water properties by optimization', Appl. Opt. "
+    "38(18), 3831-3843, doi:10.1364/AO.38.003831"
+)
+
+
+@_data.compared_by_value
+@dataclass(frozen=True, eq=False)
+class ShallowRrs:
+    """The remote sensing reflectance of shallow water, straight down, from
+    :func:`lee1999_shallow_rrs`.
+
+    Each field is a float when every input was a number, otherwise an
+    array of the inputs' broadcast shape. All are sr^-1.
+    """
+
+    #: rrs just below the surface, ``column + bottom`` (Eq. A6).
+    rrs: np.ndarray
+    #: The water column's part rrs_C, rrs_dp (1 - exp(-(1/cos theta_w +
+    #: D_u^C) kappa H)).
+    column: np.ndarray
+    #: The bottom's part rrs_B, (rho / pi) exp(-(1/cos theta_w + D_u^B)
+    #: kappa H).
+    bottom: np.ndarray
+    #: rrs_dp, the same water with no bottom in view (Eq. A7).
+    deep: np.ndarray
+    #: Rrs just above the surface, 0.5 rrs / (1 - 1.5 rrs) (Eq. A9).
+    above_surface: np.ndarray
+
+
+@_data.positional_only()
+def lee1999_shallow_rrs(a, bb, /, *, depth_m, bottom_albedo, sun_zenith_deg):
+    """The remote sensing reflectance of shallow water, with the bottom in
+    view, straight down.
+
+    Lee, Z., Carder, K. L., Mobley, C. D., Steward, R. G. and Patch, J. S.
+    (1999), "Hyperspectral remote sensing for shallow waters: 2. Deriving
+    bottom depths and water properties by optimization", Appl. Opt.
+    38(18), 3831-3843, doi:10.1364/AO.38.003831, Eqs. (A6), (A7) and (A9),
+    which update the model of their 1998 paper (Appl. Opt. 37(27),
+    6329-6338, doi:10.1364/AO.37.006329)::
+
+        rrs = rrs_dp (1 - exp(-(1/cos theta_w + 1.03 (1 + 2.4 u)^0.5) kappa H))
+              + (rho/pi) exp(-(1/cos theta_w + 1.04 (1 + 5.4 u)^0.5) kappa H)
+        rrs_dp = (0.084 + 0.170 u) u,  u = bb / (a + bb),  kappa = a + bb
+        Rrs = 0.5 rrs / (1 - 1.5 rrs)
+
+    Parameters
+    ----------
+    a, bb:
+        Absorption and backscattering coefficients of the water column,
+        1/m, positive. NaN marks a gap and gives NaN.
+    depth_m:
+        H, the depth of the bottom, m: positive and finite. With no bottom
+        in view, use the result's ``deep``.
+    bottom_albedo:
+        rho, the bottom's irradiance reflectance, 0 to 1, taken as
+        Lambertian. No default: the package ships no albedos of sea beds.
+    sun_zenith_deg:
+        The sun's zenith angle in air, degrees, in [0, 90). It is refracted
+        into the water with n = 1.34, the refractive index of the paper's
+        runs (1998, p. 6331), to give theta_w.
+
+    All five broadcast together, so a spectrum, a map of depths, or both
+    may be given.
+
+    Returns
+    -------
+    :class:`ShallowRrs`: ``rrs`` and its two terms ``column`` and
+    ``bottom``, ``deep`` for the same water without a bottom, and
+    ``above_surface``.
+
+    Notes
+    -----
+    The 1998 paper fitted the model to HydroLight 3.0 runs: a homogeneous
+    water with Petzold's average particle phase function, a bottom of
+    albedo 0, 0.1, 0.3 or 1 flat in wavelength, H from 0.5 to 32 m and
+    infinite, the sun at 0, 30 and 60 degrees under clear and cloudy skies,
+    wind 5 m/s, 400-700 nm, bb/a up to 1.5 (Table 1, p. 6331). The 1999
+    paper refitted it with more runs, correcting a calculation error it
+    does not describe; only those constants are used (DECISIONS.md section
+    113, DATA.md section 50). The sun beyond 60 degrees, H outside 0.5-32
+    m, or u above 0.6 gives a :class:`ProvenanceWarning`.
+
+    The downwelling light is treated as the sun's beam (D_d =
+    1/cos theta_w), the view is straight down (the 1999 paper's change for
+    other views is left out), and Raman scattering and fluorescence are not
+    in the model.
+
+    Against a Monte Carlo with a flat surface and another of Petzold's
+    phase functions (DATA.md section 50) the model agrees well over a
+    bright bottom. It runs low where pure water carries most of the
+    backscattering, and high over a dark bottom a few metres down in
+    turbid water.
+    """
+    a, bb = _check_iops(a, bb)
+    depth = _finite(depth_m, "depth_m")
+    rho = _finite(bottom_albedo, "bottom_albedo")
+    sun = _finite(sun_zenith_deg, "sun_zenith_deg")
+    if np.any(depth <= 0):
+        raise ValueError("depth_m must be positive, in m")
+    if np.any(rho < 0) or np.any(rho > 1):
+        raise ValueError("bottom_albedo must lie within 0-1")
+    if np.any(sun < 0) or np.any(sun >= 90):
+        raise ValueError("sun_zenith_deg must lie in [0, 90) degrees")
+    if np.any(sun > _LEE1998_SUN):
+        _warn(f"Lee et al.'s runs had the sun up to {_LEE1998_SUN:g} degrees "
+              "from the zenith (1998, Table 1); beyond that the result is the "
+              "model's, not its fit.")
+    lo, hi = _LEE1998_DEPTH
+    if np.any(depth < lo) or np.any(depth > hi):
+        _warn(f"Lee et al.'s 1998 runs put the bottom at {lo:g} to {hi:g} m "
+              "(Table 1); the 1999 paper does not give the depths of its "
+              "further runs.")
+    kappa = a + bb
+    u = bb / kappa
+    known = u[~np.isnan(u)] if np.ndim(u) else u
+    if np.any(known > _LEE1998_U):
+        _warn(f"bb/(a + bb) above {_LEE1998_U:g} (bb/a above 1.5), beyond "
+              "the waters of Lee et al.'s runs (1998, p. 6329)")
+    sin_w = np.sin(np.radians(sun)) / _LEE1998_N
+    down = 1.0 / np.sqrt(1.0 - sin_w * sin_w)
+    g0, g1 = _LEE1999_G
+    deep = (g0 + g1 * u) * u
+    d0, d1 = _LEE1999_D_COLUMN
+    column = deep * (1.0 - np.exp(-(down + d0 * np.sqrt(1.0 + d1 * u))
+                                  * kappa * depth))
+    d0b, d1b = _LEE1999_D_BOTTOM
+    bottom = (rho / np.pi) * np.exp(-(down + d0b * np.sqrt(1.0 + d1b * u))
+                                    * kappa * depth)
+    rrs = column + bottom
+    above = _LEE1999_ZETA * rrs / (1.0 - _LEE1999_GAMMA * rrs)
+    inputs = (a, bb, depth, rho, sun)
+    shape = np.broadcast_shapes(*(np.shape(x) for x in inputs))
+
+    def out(x):
+        return _result(np.broadcast_to(x, shape).copy(), *inputs)
+
+    return ShallowRrs(rrs=out(rrs), column=out(column), bottom=out(bottom),
+                      deep=out(deep), above_surface=out(above))
 
 
 #: The refractive index of sea water used for Gordon's (1989) D0: it

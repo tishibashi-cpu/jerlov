@@ -7187,3 +7187,27 @@ the Monte Carlo's results); the map; the topic page on ocean colour;
 docs/api.rst; a part of `examples/ocean_colour_and_secchi.py` (the depth
 at which the bottom stops showing, for a few Jerlov types over a bottom
 whose albedo the example states); CHANGELOG; the Zenodo description.
+
+**Differences from the plan, noted after the code was written.**
+
+- The Monte Carlo's collision estimator first scored every scattering
+  with Petzold's phase function as sampled, down to 0.001 degree. Its
+  variance has no bound there (the phase function grows faster than
+  1/Theta), and a trial deep-water run with the sun overhead gave 0.10 +-
+  0.054. Scattering by less than 1 degree is now counted as none (b
+  reduced by that share, 22.9 percent at NUC 2240, the rest
+  renormalised); changing the cut to 0.5 or 2 degrees moved four trial
+  runs by amounts comparable to their noise. This was changed before the
+  grid was run, after the trial runs.
+- Criterion 2 was missed: model over Monte Carlo has a median of 0.999
+  (met), but 87.4 percent of the runs are within 10 percent, not 90. The
+  34 runs outside fall into three groups (DATA.md section 50): pure water
+  carrying most of the backscattering (model low, to 0.818), a black
+  bottom at 1 or 4 m in turbid water (model high, to 1.723), and a white
+  bottom at 1 or 4 m with bp/a = 30. The function is shipped as planned,
+  with the misses stated in its docstring and in DATA.md; the constants
+  are the paper's and are not adjusted.
+- The 1998 constants against the same runs: median 0.953, 70.7 percent
+  within 10 percent.
+- Text given as a depth (`depth_m="5"`) is read as the number, as in
+  the package's other functions that take arrays; no refusal was added.

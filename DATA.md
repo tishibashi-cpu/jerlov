@@ -3,7 +3,7 @@
 What every shipped table is, where it came from, what was verified, and what
 is known to be wrong with it.
 
-Forty-nine entries are recorded below. Thirteen are confirmed defects, three were
+Fifty entries are recorded below. Thirteen are confirmed defects, three were
 open questions that the first edition of Jerlov settled, and the rest are
 notes rather than defects. None of them is repaired silently: values that
 could be recovered carry `status = reconstructed` and say how, values that
@@ -3044,3 +3044,64 @@ that f to a water's own b (DECISIONS.md section 107).
 - **Not shown here:** that the light within theta0 forms an image blurred
   by theta0. That is the reading DECISIONS.md section 107 gives it, not a
   measurement, and the phase function of a Jerlov type is not known.
+
+## 50. The reflectance of shallow water: Lee et al. (1998, 1999), and a Monte Carlo (note)
+
+Since 1.26.0, `lee1999_shallow_rrs(a, bb, depth_m=, bottom_albedo=,
+sun_zenith_deg=)` gives rrs just below the surface over a Lambertian
+bottom, straight down, its water-column and bottom parts, the same water
+with no bottom, and Rrs above the surface (DECISIONS.md section 113). No
+table is shipped; the constants are in `jerlov/ocean_colour.py`.
+
+- **Two sets of constants.** Lee et al. (1998), Appl. Opt. 37, 6329-6338,
+  fitted g0 0.070, g1 0.155, g2 0.752, A0 1.03, A1 0.31, D0 1.2, D1 2.0,
+  D0' 1.1, D1' 4.9 (Eqs. 16 and 19-21, pp. 6333-6334), and zeta 0.518,
+  Gamma 1.562 for Rrs (Eq. 25, p. 6336). Lee et al. (1999), Appl. Opt. 38,
+  3831-3843, Appendix A (p. 3842), replaced them "with more
+  Hydrolight-simulated data, and correcting a calculation error in the
+  earlier study": g0 0.084, g1 0.170, g2 = 1, A0 = 1, A1 = 1/pi, D0 1.03,
+  D1 2.4, D0' 1.04, D1' 5.4, zeta 0.5, Gamma 1.5. The error is not
+  described. Only the 1999 set is used. Read from page images of the
+  copies in the University of Maine's course readings.
+- **What the runs covered.** HydroLight 3.0, Petzold's average particle
+  phase function, the sun at 0, 30 and 60 degrees, bottom albedos 0, 0.1,
+  0.3 and 1 flat in wavelength, H 0.5 to 32 m and infinite, bb/a up to
+  1.5, wind 5 m/s (1998, Table 1 and abstract). The 1999 paper does not
+  give the ranges of its further runs; the warnings use the 1998 ones.
+- **Against a Monte Carlo** (`tools/shallow_rrs_mc.py`, results in
+  `examples/data/shallow_rrs_mc/monte_carlo.csv`): a flat surface that
+  reflects light from below by Fresnel's law, a Lambertian bottom, the
+  sun's beam only, NUC 2240's phase function for the particles and pure
+  water's own for pure water; rrs straight up by a collision estimator.
+  270 runs: a 0.05, 0.2 and 1.0 1/m, bp/a 0.3, 3 and 30 (u 0.006 to
+  0.358), H 1, 4 and 16 m and no bottom, albedo 0, 0.3 and 1, the sun at
+  0, 30 and 60 degrees. The standard error from ten batches is 1.4
+  percent in the median run and 9.8 percent at the worst. Model over
+  Monte Carlo: median 0.999, within 10 percent in 87.4 percent of the
+  runs and within 5 percent in 67.4. The criterion set beforehand, 90
+  percent within 10, was missed. Within 10 percent were 80 of the 81
+  runs with a bottom of albedo 0.3, 75 of 81 with albedo 1, 58 of 81 with
+  a black bottom and 23 of the 27 with no bottom.
+- **Where it misses, and how.** The 34 runs outside 10 percent fall into
+  three groups, each far outside the Monte Carlo's noise. 16 have bp/a =
+  0.3, where pure water carries most of the backscattering: the model is
+  low, 0.818 to 0.893 of the Monte Carlo. Lee et al. (2011) give water
+  and particles separate coefficients because their reflectances per unit
+  backscattering differ; whether that is the cause here is not tested.
+  13 have a black bottom at 1 or 4 m and bp/a of 3 or 30: the model is
+  high, 1.103 to 1.723. The 1998 paper did not fit black-bottom runs on
+  their own, and wrote that fixing A0 = 1 and A1 = 1/pi, as the 1999
+  update does, would need a negative D1 to fit all its runs, or a more
+  complicated form (pp. 6334-6335); whether that is the cause is not
+  tested.
+  5 have a white bottom at 1 or 4 m and bp/a = 30: 0.879 to 1.113.
+- **The 1998 constants against the same runs:** median 0.953, within 10
+  percent in 70.7 percent. The update brings the model closer to this
+  Monte Carlo.
+- **Not the paper's runs.** The Monte Carlo has no sky, no waves and a
+  different particle phase function (NUC 2240's bb/b 0.018 against the
+  average particle's 0.019), and it counts scattering by less than 1
+  degree as none, which bounds the estimator's variance (`petzold_phase`
+  in the tool says why). Changing that cut to 0.5 or 2 degrees moved four
+  trial runs by amounts comparable to their noise; those trials are not
+  recorded.
