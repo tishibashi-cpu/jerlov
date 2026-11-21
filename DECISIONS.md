@@ -7431,3 +7431,78 @@ and are skipped elsewhere, as section 104's are. Version 1.26.3.
   was not computed. It now quotes what the paper says (p. 6298).
 - The existing tests in tests/test_fq_tables.py read every run and so
   now meet the new warning; they ignore that one message.
+
+## 117. The dip at 45 degrees against the authors' own later tables, distributed by NASA (1.26.4): a record
+
+Section 116 located the dip in one run of Morel et al.'s archive (the sun
+at 45 degrees, 0.03 mg m^-3) and left its cause open. The user asked on
+2026-11-21 whether it could be looked into, and chose the first of the
+ways offered: find another distribution of the same tables. **This
+section is a record, not a plan written beforehand:** the comparison
+below was made first, as a look at whether the files could be reached and
+read, and turned out to answer the question; it is written down here
+with the method as it was run, before anything goes into the repository.
+
+**The files.** NASA's Ocean Biology Processing Group distributes, in the
+`common` bundle of OCSSW (the processing code behind SeaDAS), four
+Morel f/Q files, listed in
+https://oceandata.sci.gsfc.nasa.gov/manifest/tags/V2026.6/common/manifest.json
+and fetched from https://oceandata.sci.gsfc.nasa.gov/manifest/tags/<tag>/common/
+on 2026-11-21:
+
+| File | Tag | Bytes | SHA-256 as fetched | Manifest's SHA-256 |
+|---|---|---|---|---|
+| morel_fq.dat | initial | 389,844 | 5d6e942f... | the same |
+| morel_fq.nc | initial | 235,227 | 865c7b29... | the same |
+| morel_fq_hyperspectral.nc | T2024.24 | 1,142,785 | 109aca43... | eb4a4bba..., not the same |
+| morel_fq_hyperspectral_2026.nc | T2026.2 | 4,249,565 | 4342cddd... | 35c776f7..., not the same |
+
+The two hyperspectral files have the sizes the manifest gives but not its
+checksums; why is not known. Both are HDF5 and read without error, and
+their nadir f/Q agree with each other to the last digit.
+
+- `morel_fq.nc` (created 2015, by a script named cre_morel_ncfile.py):
+  f/Q at the archive's 7 wavelengths, 6 sun angles, 6 Chl, 17 nadir
+  angles and 13 azimuths, the archive's tables in another format.
+- `morel_fq_hyperspectral_2026.nc` (created 2026-02-09): "f and Q tables
+  derived hyperspectrally by Bernard Gentili", one of the paper's authors,
+  at 70 wavelengths from 352.5 to 697.5 nm every 5 nm, the same 6 sun
+  angles and 6 Chl, and 5 aerosol optical thicknesses (its `foq` is the
+  slice at 0.2, the paper's value). `morel_fq_hyperspectral.nc` (2024)
+  holds the same nadir values.
+
+**What was compared.** f/Q at the nadir (the first nadir row; it does not
+depend on the azimuth in any of the files). The departure at 45 degrees
+from the chord between 30 and 60 degrees, in 1 - cos theta_s, as in
+section 116; and, to set the recomputation against the archive without
+its overall differences, the ratio hyperspectral/archive at each
+wavelength, sun angle and Chl (the hyperspectral values interpolated to
+the archive's wavelengths, linearly between the 5 nm neighbours), taken
+at 45 degrees against the chord of the same ratio at 30 and 60.
+
+**What was found.**
+
+- `morel_fq.nc` has the archive's dip unchanged: nadir f/Q at 45 degrees
+  and 0.03 mg m^-3 is 1.35 to 3.54 percent below its chord.
+- The hyperspectral tables have no dip: at 0.03 mg m^-3, -0.25 to -0.13
+  percent from the chord, in line with 0.1 mg m^-3 (-0.34 to -0.14).
+- They differ from the archive by up to about 5 percent in every run (the
+  recomputation is not a copy), but along the sun angle they follow it
+  except at the one run: the ratio at 45 degrees against its own chord is
+  +1.23 to +3.47 percent at 0.03 mg m^-3, growing with the wavelength like
+  the dip, and -1.44 to +0.01 at every other Chl.
+
+So the authors' own later computation does not have the dip: it is not a
+feature of the physics their model computes, and the archive's run is out
+of line. What went wrong in it is still not known.
+
+**What goes into the repository.** No NASA file is shipped: the
+hyperspectral tables are described as Gentili's, and section 104 did not
+ship the archive for want of a stated licence; the same caution is kept.
+The user's copies go to `sources/ocssw/` (ignored by git), and the tests
+that read them are skipped without them, and without h5py, which the
+package does not depend on. `examples/fq_at_45_degrees.py` gains
+`--ocssw DIR`, which reads them with h5py if it is installed and only
+then. OPEN_QUESTIONS.md question 6 and DATA.md section 48 record the
+finding; the run stays suspect, and its warning now says that the
+authors' recomputation does not have the dip. Version 1.26.4.
