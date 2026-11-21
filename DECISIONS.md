@@ -7028,3 +7028,38 @@ the page rather than in its numbers:
 **Changed after the first look.** Both labels moved into a margin above the
 plotted area, with a halo in the panel's colour: under the peak's
 wavelength the factor overlapped the curve when the peak was mid-chart.
+
+## 112. Letting search engines find the site (1.25.2): the plan
+
+On 2026-11-21 Google returned nothing for `site:tishibashi-cpu.github.io/jerlov`,
+while the Zenodo record came fourth for "jerlov". The user filled in the
+repository's About (description, website, topics) and began to register the
+site with Google Search Console, by the HTML file method. Nothing in the
+package changes.
+
+**Changes.**
+
+- `docs/extra/google8846fd1b128ec3b7.html`, the file Search Console asked
+  for, one line, copied to the site's root by `html_extra_path`. A folder of
+  its own, because `docs/pages/` holds what `tools/site_pages.py` writes.
+- `html_baseurl = "https://tishibashi-cpu.github.io/jerlov/"`, which gives
+  every page a canonical link, and a `sitemap.xml` written at the end of
+  each HTML build by a hook in `docs/conf.py`: every page of the site that
+  Sphinx builds from a source file, and the two pages of section 109. No
+  new dependency (a sitemap extension exists but would be one).
+- A description for the index page (`.. meta::`), which search engines may
+  show under the title; the two pages of section 109 have one already.
+- `.zenodo.json`: the site as a related identifier, relation
+  `isDocumentedBy`, scheme `url`, without a resource type, so that the
+  record that ranks well links to the documentation. Added by a string
+  replacement, as the file's other edits are.
+
+`robots.txt` is not added: a crawler reads it only at the host's root, which
+is the account's site, not this project's; and none is needed, since nothing
+is excluded.
+
+**Checks.** Tests that the verification file holds exactly Google's line
+and is copied to the root; that the sitemap hook lists the built pages
+under the base URL, run on a small Sphinx build of the real configuration
+or checked on the site build; that the Zenodo record links the site. A
+local build with `-W`, and the sitemap read back.
