@@ -151,6 +151,10 @@ Reflectance and ocean colour
        ``jerlov.LEE2011_RRS_COEFFICIENTS``; not followed by
        :func:`~jerlov.above_surface_rrs`
      - Lee et al. (2011)
+   * - a, bb, the depth of the bottom and its albedo; rrs and Rrs of
+       shallow water, straight down, with the bottom's part apart
+     - :func:`~jerlov.lee1999_shallow_rrs`
+     - Lee et al. (1998, 1999)
    * - f and Q for the radiance from the nadir
      - :func:`~jerlov.morel2002_nadir_fq`
      - Morel et al. (2002), Appendix B

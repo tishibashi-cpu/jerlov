@@ -66,6 +66,12 @@ Without a water type: chlorophyll, a and bb, the Secchi depth
    jerlov.lee2011_rrs(a, bb, bb_water=bb_water,
                       coefficients=jerlov.LEE2011_RRS_COEFFICIENTS[(0.0, 0.0, 0.0)])
 
+   # Shallow water, the bottom in view, straight down (Lee et al. 1998, 1999).
+   # The bottom's albedo (0-1, Lambertian) and its depth are yours.
+   s = jerlov.lee1999_shallow_rrs(a, bb, depth_m=5.0, bottom_albedo=0.3,
+                                  sun_zenith_deg=30.0)
+   s.rrs, s.column, s.bottom, s.deep, s.above_surface
+
    # Take Raman scattering out of a measured Rrs first (Lee et al. 2013), 412-667 nm.
    jerlov.lee2013_raman_correction(bands_nm, measured_Rrs,
                                    bands={"440": 443, "550": 555}).rrs
@@ -84,7 +90,8 @@ Without a water type: chlorophyll, a and bb, the Secchi depth
 
 These are forward relations, each from its paper and each with the
 conditions it was fitted for: Morel & Maritorena's for case 1 water only,
-the reflectance for deep water seen from straight above. A result outside
+the reflectance for deep water seen from straight above, or for shallow
+water over a Lambertian bottom, also from straight above. A result outside
 what the paper fitted or checked comes with a ``ProvenanceWarning``. The
 inverse comes in two versions: QAA_v6 reproduces the results its author's
 spreadsheet stored, and the IOCCG Report 5 version reproduces that report's

@@ -7063,3 +7063,151 @@ and is copied to the root; that the sitemap hook lists the built pages
 under the base URL, run on a small Sphinx build of the real configuration
 or checked on the site build; that the Zenodo record links the site. A
 local build with `-W`, and the sitemap read back.
+
+## 113. The remote sensing reflectance of shallow water, with the bottom in view: Lee et al. (1998, 1999) (1.26.0): the plan
+
+Every reflectance in the package so far is for optically deep water
+(section 66 and section 73: no bottom). NEXT_STEPS listed shallow water as
+outside the range until the range was widened on purpose; the user chose
+on 2026-11-21 to widen it, for people who work over reefs and seagrass,
+where the bottom is in view. As in sections 19 and 66, the line moves on
+whether a relation's provenance can be stated and checked, and here it
+can: the model is printed with its constants and the conditions it was
+fitted for.
+
+**What moves into the range.** The forward relation only: from a, bb, the
+depth of the bottom, its albedo and the sun to the reflectance just below
+and just above the surface, straight down. Still out: the inverse (Lee et
+al. 1999's optimization, deriving depth, bottom albedo, a and bb from a
+measured spectrum). It needs the spectral shapes of phytoplankton and
+gelbstoff absorption, of particle backscattering and of the bottom's
+albedo (their Eqs. 16-22, a sand albedo shape among them) to be assumed;
+those would be defaults the package does not set (section 4). Still out
+too: bottoms that are not Lambertian, layered water, and views off nadir
+(below).
+
+**The source.** Lee, Z., Carder, K. L., Mobley, C. D., Steward, R. G. and
+Patch, J. S. (1998), "Hyperspectral remote sensing for shallow waters. I.
+A semianalytical model", Appl. Opt. 37(27), 6329-6338,
+doi:10.1364/AO.37.006329; and (1999), "Hyperspectral remote sensing for
+shallow waters: 2. Deriving bottom depths and water properties by
+optimization", Appl. Opt. 38(18), 3831-3843, doi:10.1364/AO.38.003831.
+Both read from the copies in the University of Maine's course readings
+(misclab.umeoce.maine.edu, OO2015/Readings), complete (10 and 13 pages);
+PDF page + 6328 and + 3830 are the journal pages. The equations and
+constants below were read from page images.
+
+The 1998 paper fitted, to HydroLight 3.0 runs (Table 1, p. 6331: sun 0,
+30 and 60 degrees; Petzold's average particle phase function, bbp/bp 1.9
+percent, with pure sea water as its own component; bottom albedo 0, 0.1,
+0.3 and 1.0, flat in wavelength; H 0.5, 1, 3, 8, 16, 32 m and infinite;
+400-700 nm; wind 5 m/s, n = 1.34):
+
+    rrs = (g0 + g1 u^g2) u {1 - A0 exp[-(1/cos(theta_w) + D0 (1 + D1 u)^0.5) kappa H]}
+          + A1 rho exp[-(1/cos(theta_w) + D0' (1 + D1' u)^0.5) kappa H]       (11)
+    u = bb / (a + bb),  kappa = a + bb,  theta_w the sun's zenith below the surface
+    Rrs = zeta rrs / (1 - Gamma rrs)                                             (24)
+
+with g0 0.070, g1 0.155, g2 0.752 (Eq. 16, p. 6333), A0 1.03, A1 0.31, D0
+1.2, D1 2.0, D0' 1.1, D1' 4.9 (Eqs. 19-21, p. 6334), zeta 0.518 and
+Gamma 1.562 (Eq. 25, p. 6336). The 1999 paper, Appendix A (pp. 3841-3842),
+repeats these and says that "with more Hydrolight-simulated data, and
+correcting a calculation error in the earlier study", they were updated
+to g0 0.084, g1 0.170, g2 = 1; A0 = 1, A1 = 1/pi; D0 1.03, D1 2.4; D0'
+1.04, D1' 5.4 (Eqs. A6, A7), with zeta 0.5 and Gamma 1.5 (Eq. A9). It
+does not say which calculation was wrong.
+
+**Only the 1999 constants are used.** The authors themselves replaced the
+1998 set as containing an error; shipping it beside the correction would
+offer a value its source has withdrawn. The 1998 set is recorded in
+DATA.md, and the Monte Carlo below is run against both, to see how much
+the update matters; the result is recorded, not used to choose.
+
+**The view is straight down.** The 1999 paper adapts the model to views
+off nadir (Eqs. 9-11) with an empirical change to bb that it gives only
+"to first order" for the plane 90 degrees from the sun, with errors of 6.1
+percent on average and 15 percent at most. That is left out; a caller
+wanting other views needs a radiative transfer code (section 86).
+
+**The sun.** The model takes theta_w below the surface; the function takes
+the sun's zenith angle in air, as every other function does, and refracts
+it by Snell's law with n = 1.34, the refractive index of the paper's runs
+(p. 6331). D_d = 1/cos(theta_w) treats the downwelling light as the sun's
+beam; the runs had a sky, and the docstring says so.
+
+**Public.** `lee1999_shallow_rrs(a, bb, /, *, depth_m, bottom_albedo,
+sun_zenith_deg)` returning `ShallowRrs` (a frozen dataclass compared by
+value): `rrs`, the total just below the surface; its two terms `column`
+and `bottom` (rrs_C and rrs_B of the 1999 paper's Eq. 3); `deep`, rrs_dp,
+the same water with no bottom; and `above_surface`, Rrs by Eq. (A9). Two
+public names (140 to 142).
+
+- a and bb as for `lee2011_rrs`: positive, NaN a gap. bottom_albedo
+  rho in [0, 1], depth_m positive and finite (no bottom is `deep`, so
+  infinity is refused as everywhere), the sun in [0, 90). None has a
+  default. All broadcast together, so a spectrum, a map of depths or both
+  can be given.
+- A ProvenanceWarning, not a refusal, outside what the runs covered: the
+  sun beyond 60 degrees; H outside 0.5-32 m (the 1998 runs; the 1999
+  paper does not give the ranges of its further runs); u above 0.6 (bb/a
+  up to 1.5, the 1998 abstract, and Fig. 9's range). The bottom albedo's
+  range 0-1 is the runs' and the physical one, so outside it is refused.
+- Not applied to the result: Raman scattering and fluorescence, which the
+  model leaves out (1999, p. 3832).
+
+**Checks, with their criteria set now.**
+
+1. Limits from the equations: H large gives `deep`; H small gives rho/pi
+   plus a vanishing column term; with u = 0, rho = 1 and H -> 0, Rrs =
+   0.5/pi / (1 - 1.5/pi) = 0.3046, against the 1998 paper's own check
+   with its constants, 0.31 for both rrs and Rrs (p. 6336). Hand calculations of every
+   field at one point.
+2. An independent Monte Carlo, `tools/shallow_rrs_mc.py`, built on
+   `tools/kd_monte_carlo.py`: a flat surface with Fresnel's reflection of
+   light from below (n = 1.34), a Lambertian bottom, the sun's beam only;
+   particles with NUC 2240's phase function (the stand-in for the average
+   particle since section 94; bb/b 0.018 against 0.019), pure water with
+   its own. rrs straight up just below the surface by a collision
+   estimator; Ed just below the surface including the light reflected
+   back down. Its own check first: without scattering and without the
+   surface's reflection, rrs = (rho/pi) exp(-a H / cos(theta_w)) exp(-a
+   H) to 1 percent.
+   Grid: a 0.05, 0.2 and 1.0 1/m; bp/a 0.3, 3 and 30; bw 0.002 1/m; H 1,
+   4 and 16 m and no bottom; rho 0, 0.3 and 1.0; the sun 0, 30 and 60
+   degrees (270 runs). Criterion, over the runs with u <= 0.6: the median
+   of model/MC within 5 percent of 1, and 90 percent of runs within 10
+   percent. Not the same as the paper's runs (its phase function, a
+   windy surface and a sky, which this does not model), so a miss would
+   be recorded with its pattern, not hidden. The 1998 constants against
+   the same runs are recorded, not judged.
+3. Out-of-tree tests skip what reads examples/data (section 50).
+
+**Documents.** DATA.md section 50 (both sets of constants, the update,
+the Monte Carlo's results); the map; the topic page on ocean colour;
+docs/api.rst; a part of `examples/ocean_colour_and_secchi.py` (the depth
+at which the bottom stops showing, for a few Jerlov types over a bottom
+whose albedo the example states); CHANGELOG; the Zenodo description.
+
+**Differences from the plan, noted after the code was written.**
+
+- The Monte Carlo's collision estimator first scored every scattering
+  with Petzold's phase function as sampled, down to 0.001 degree. Its
+  variance has no bound there (the phase function grows faster than
+  1/Theta), and a trial deep-water run with the sun overhead gave 0.10 +-
+  0.054. Scattering by less than 1 degree is now counted as none (b
+  reduced by that share, 22.9 percent at NUC 2240, the rest
+  renormalised); changing the cut to 0.5 or 2 degrees moved four trial
+  runs by amounts comparable to their noise. This was changed before the
+  grid was run, after the trial runs.
+- Criterion 2 was missed: model over Monte Carlo has a median of 0.999
+  (met), but 87.4 percent of the runs are within 10 percent, not 90. The
+  34 runs outside fall into three groups (DATA.md section 50): pure water
+  carrying most of the backscattering (model low, to 0.818), a black
+  bottom at 1 or 4 m in turbid water (model high, to 1.723), and a white
+  bottom at 1 or 4 m with bp/a = 30. The function is shipped as planned,
+  with the misses stated in its docstring and in DATA.md; the constants
+  are the paper's and are not adjusted.
+- The 1998 constants against the same runs: median 0.953, 70.7 percent
+  within 10 percent.
+- Text given as a depth (`depth_m="5"`) is read as the number, as in
+  the package's other functions that take arrays; no refusal was added.

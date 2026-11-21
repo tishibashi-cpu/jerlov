@@ -17,7 +17,8 @@ concentrations (DECISIONS.md section 66). Last, it inverts the reflectance
 again by the quasi-analytical algorithm, both versions, and sets the a and
 bbp they recover against the ones it started from (section 67). Finally,
 it builds a and bb from chlorophyll alone and compares the Kd they give
-with Morel & Maritorena's (section 72).
+with Morel & Maritorena's (section 72). Part 13 puts a bottom under the
+water (section 113).
 """
 
 import warnings
@@ -856,6 +857,65 @@ package could not reach. DATA.md section 47.""")
     return dict(correction=out, eq17_off=off, low=low)
 
 
+SHALLOW_WL = (450.0, 550.0, 650.0)
+#: Bottom albedos for part 13, flat in wavelength like those of Lee et
+#: al.'s runs (which were 0, 0.1, 0.3 and 1). Choices, not measurements of
+#: any sea bed.
+SHALLOW_ALBEDOS = (0.1, 0.3)
+#: The depths Lee et al.'s 1998 runs covered, m.
+SHALLOW_DEPTHS = np.linspace(0.5, 32.0, 631)
+#: The bottom counts as out of sight where its part of rrs falls below this.
+BOTTOM_SHARE = 0.1
+
+
+def shallow_part(caught):
+    rule("13. Shallow water: how deep the bottom stays in view")
+    print(f"""Over a bottom the reflectance has two parts, the water column's and the
+bottom's (`lee1999_shallow_rrs`, Lee et al. 1998, 1999), straight down,
+the sun at {SUN_ZENITH_DEG:g} degrees. For four types, a and b as in part 1 and
+bbp/bp = {PETZOLD_RATIO}: the depth at which the bottom's part of rrs falls to
+{100 * BOTTOM_SHARE:g} percent, for bottoms of albedo {SHALLOW_ALBEDOS[0]:g} and {SHALLOW_ALBEDOS[1]:g}, flat in wavelength.
+">32" means it is still above that at 32 m, the deepest of the paper's
+runs:
+""")
+    head = "".join(f" {f'{w:g} nm':>8}" for w in SHALLOW_WL)
+    print(f"  {'type':>4} {'albedo':>6}{head}")
+    out = {}
+    with warnings.catch_warnings(record=True) as record:
+        warnings.simplefilter("always")
+        for water_type in TYPES:
+            water, a, b_particles, bb_water = optics(water_type)
+            keep = np.isin(WL, SHALLOW_WL)
+            bb = bb_water[keep] + PETZOLD_RATIO * b_particles[keep]
+            for rho in SHALLOW_ALBEDOS:
+                r = jerlov.lee1999_shallow_rrs(
+                    a[keep], bb, depth_m=SHALLOW_DEPTHS[:, None],
+                    bottom_albedo=rho, sun_zenith_deg=SUN_ZENITH_DEG)
+                share = r.bottom / r.rrs
+                depths = []
+                for column in share.T:
+                    below = np.flatnonzero(column < BOTTOM_SHARE)
+                    depths.append(SHALLOW_DEPTHS[below[0]] if below.size
+                                  else np.inf)
+                out[(water_type, rho)] = depths
+                cells = "".join(f" {'>32' if d == np.inf else f'{d:.1f}':>8}"
+                                for d in depths)
+                print(f"  {water_type:>4} {rho:>6g}{cells}")
+            if water_type == "IB":
+                five = jerlov.lee1999_shallow_rrs(
+                    a[keep], bb, depth_m=5.0, bottom_albedo=0.3,
+                    sun_zenith_deg=SUN_ZENITH_DEG)
+    expect_provenance(record, caught)
+    ratio = five.above_surface / (0.5 * five.deep / (1 - 1.5 * five.deep))
+    print(f"""
+Over a bottom of albedo 0.3 at 5 m, IB's Rrs is {ratio[0]:.1f}, {ratio[1]:.1f} and {ratio[2]:.1f} times that of
+the same water with no bottom at {SHALLOW_WL[0]:g}, {SHALLOW_WL[1]:g} and {SHALLOW_WL[2]:g} nm. The model is a fit
+to HydroLight runs with a Lambertian bottom and one particle phase
+function; the bottom's albedo and depth are the caller's. DATA.md section
+50 sets it against a Monte Carlo.""")
+    return dict(depths=out, ratio_5m=ratio)
+
+
 def main():
     _banner()
     caught = set()
@@ -872,6 +932,7 @@ def main():
     editions = editions_part()
     clearest = clearest_part()
     nadir_fq = nadir_fq_part()
+    shallow = shallow_part(caught)
     if caught:
         rule("Warnings")
         print("Raised along the way, each a ProvenanceWarning:")
@@ -883,8 +944,9 @@ def main():
     measured; bb is built from them with a stated bbp/bp, since no Jerlov
     type determines it (DATA.md section 10).
   - The pure water terms are Morel's formula at {SALINITY_PSU:g} psu.
-  - The reflectance is for optically deep water: no bottom, no Raman
-    scattering, no fluorescence. Part 7 looks off nadir with Lee et al.'s
+  - The reflectance is for optically deep water, except in part 13: no
+    Raman scattering, no fluorescence. Part 13's bottoms are Lambertian
+    and flat in wavelength, with albedos chosen, not measured. Part 7 looks off nadir with Lee et al.'s
     (2011) seven printed geometries, and gives Raman scattering's share
     by Lee et al.'s (2013) correction, which is empirical.
   - The Secchi depth rests on the eye's contrast threshold and the white
@@ -905,7 +967,7 @@ def main():
                 recovered=recovered, case1=case1, geometry=geometry,
                 pure_water=pure_water, above_water=above_water,
                 editions=editions, clearest=clearest,
-                nadir_fq=nadir_fq, caught=caught)
+                nadir_fq=nadir_fq, shallow=shallow, caught=caught)
 
 
 if __name__ == "__main__":

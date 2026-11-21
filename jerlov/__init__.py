@@ -126,6 +126,8 @@ from .ocean_colour import (
     mobley_rho,
     morel2001_bbp,
     NadirFQ,
+    ShallowRrs,
+    lee1999_shallow_rrs,
     morel1988_kd,
     morel2002_nadir_fq,
     morel2001_kd,
@@ -278,6 +280,8 @@ __all__ = [
     "LEE2002_RRS_COEFFICIENTS",
     "LEE2011_RRS_COEFFICIENTS",
     "lee2011_rrs",
+    "lee1999_shallow_rrs",
+    "ShallowRrs",
     "lee2015_secchi_depth",
     "qaa_ioccg2006",
     "lee2013_raman_correction",
@@ -309,4 +313,4 @@ __all__ = [
     "OsoaaRadianceScan",
 ]
 
-__version__ = "1.25.2"
+__version__ = "1.26.0"

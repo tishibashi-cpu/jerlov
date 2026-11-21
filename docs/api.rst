@@ -346,6 +346,11 @@ Kd without a water type, Rrs and the Secchi depth
 .. autodata:: LEE2011_RRS_COEFFICIENTS
    :no-value:
 
+.. autofunction:: lee1999_shallow_rrs
+
+.. autoclass:: ShallowRrs
+   :members:
+
 .. autofunction:: lee2015_secchi_depth
 
 From Rrs to a and bb
