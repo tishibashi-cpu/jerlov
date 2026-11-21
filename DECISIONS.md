@@ -7369,3 +7369,65 @@ every figure. No value or code of the package changes. Version 1.26.2.
   factor of 1.027 at most. The first draft of the example called that cell
   the one where the stations differ most; it is not (1.72 there, 1.92 at
   a 0.2 1/m), and the text now gives both.
+
+## 116. The dip in Morel et al.'s (2002) archive at a sun of 45 degrees, located (1.26.3): the plan
+
+Section 105 found f.dat, in the authors' archive that
+`morel2002_fq_tables` reads (section 104), lying below the straight line
+in 1 - cos theta_s between its own values at 30 and 60 degrees by up to
+3.44 percent at 45 degrees (660 nm, 0.03 mg m^-3), which the paper's
+linear fits cannot follow, and left the reason open (NEXT_STEPS section 3).
+The user asked on 2026-11-21 for it to be taken up. The archive is the
+user's own copy and is not shipped (no licence is stated); everything
+below reads it, and its tests run only where it is present.
+
+**Step 1. Where the dip is.** For f, for f/Q in every one of the 17 x 13
+directions, and for Q at the nadir (f over the nadir f/Q): the departure
+at each interior sun angle (15, 30, 45 and 60 degrees) from the chord
+between its neighbours, in 1 - cos theta_s, for all 42 (wavelength, Chl)
+cases. The question is whether the dip belongs to one or a few
+(Chl, sun) runs or runs through the table.
+
+**Step 2. Against its neighbours in Chl.** f(theta_s)/f(0) at one Chl
+divided by the same at the next Chl, at each wavelength: smooth in
+theta_s where the runs are consistent with each other. A sun angle where
+this ratio falls out of order (lower than at the next larger angle) marks
+that run as out of line with the rest of the table.
+
+**What would follow.** If the dip is confined to one Chl at one sun
+angle, at every wavelength and every direction alike, and nowhere else
+exceeds what the other Chl show at the same angle, those values are
+recorded in DATA.md section 48 as suspect: out of line with the table
+they belong to, kept as the archive has them. `morel2002_fq_tables` then
+gives a `ProvenanceWarning` when `f` or `f_over_q` is asked for at that
+Chl and sun angle, naming DATA.md section 48; no value changes. What made
+them so is not known and is not guessed (the paper describes Raman
+emission computed for every run; nothing here can separate it). If the
+dip is not so confined, that is recorded instead and no warning is added.
+
+**Documents.** OPEN_QUESTIONS.md question 6, in the five parts; DATA.md
+section 48; a new example `examples/fq_at_45_degrees.py` (the thirtieth)
+that reads the archive from a path given as `--archive PATH` and, without
+one, says so and does nothing else, so that CI, which has no archive,
+runs it; tests that recompute every figure where the archive is present
+and are skipped elsewhere, as section 104's are. Version 1.26.3.
+
+**Differences from the plan, noted after the analysis.**
+
+- Step 1's measure for f/Q was first the range over all 221 directions.
+  It is wide at every sun angle (at 15 degrees already -4.53 to +4.26
+  percent), so it could not show where the dip lies; the example takes,
+  for each case, the median over the directions, which does (-3.52 to
+  -1.35 at the suspect run, -0.16 to +0.85 elsewhere).
+- At 30 degrees Chl 0.03 alone lies above its chord; that chord has the
+  low value at 45 as an end, so this follows from the run at 45 and is
+  not a second finding.
+- The example first took its archive with argparse; run as CI runs the
+  examples (runpy from "python -c"), sys.argv carries the script's own
+  path and argparse refused it. It now reads only an explicit
+  `--archive PATH`, as `radiative_transfer_inputs.py` reads `--read`.
+- The first draft of OPEN_QUESTIONS.md question 6 said the dip grows with
+  the wavelength "as Raman emission's share does at low Chl"; that share
+  was not computed. It now quotes what the paper says (p. 6298).
+- The existing tests in tests/test_fq_tables.py read every run and so
+  now meet the new warning; they ignore that one message.

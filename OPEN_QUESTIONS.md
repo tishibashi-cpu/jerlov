@@ -365,3 +365,51 @@ close it; what does order it is not found.
 `examples/shallow_water_closure.py`; `tools/shallow_rrs_mc.py` and
 `tools/lee1998_runs.py`, with their results in
 `examples/data/shallow_rrs_mc/`.
+
+## 6. Why does Morel et al.'s f/Q archive dip at a sun of 45 degrees?
+
+**The question.** Morel, Antoine & Gentili (2002) computed f and f/Q,
+the factors that turn the water-leaving radiance into the reflectance and
+correct it for the sun and the view, for six sun angles from 0 to 75
+degrees, and fitted them as straight lines in 1 - cos theta_s up to 60
+degrees. Their archive's f at 45 degrees lies up to 3.44 percent below
+the line between its own values at 30 and 60 (DATA.md section 48),
+which the fits cannot follow. Where does the dip lie, and is it physics
+or the table?
+
+**What was done.** From the user's own copy of the archive (not shipped:
+it states no licence), the departure of f, of f/Q in every one of the 221
+directions and of Q at the nadir from the chord between neighbouring sun
+angles, for all 42 (wavelength, Chl) cases; and f(theta_s)/f(0) at each
+Chl divided by the same at the next Chl, which is smooth in theta_s
+where the runs agree with each other. What would follow from each result
+was written down first (DECISIONS.md section 116).
+`examples/fq_at_45_degrees.py --archive PATH` prints every figure below.
+
+**What was found.**
+
+- The dip belongs to one run: the sun at 45 degrees and 0.03 mg m^-3.
+  There f lies below the chord at all 7 wavelengths, by 1.01 to 3.44
+  percent, growing with the wavelength; every other Chl lies 0.51 to
+  1.22 percent above it.
+- f/Q there follows f (median over the 221 directions -3.52 to -1.35
+  percent from the chord, the other Chl -0.16 to +0.85), and Q at the
+  nadir, their ratio, has no dip.
+- Against the next Chl, f(theta_s)/f(0) at 0.03 over the same at 0.1 is
+  out of order at 45 degrees at all 7 wavelengths (at 660 nm it reads
+  0.9849 at 30, 0.9267 at 45 and 0.9425 at 60 degrees); no other pair of
+  Chl is out of order at any sun angle.
+
+A physical cause would not single out one Chl at one sun angle while its
+neighbours in both stay in line. The values are kept and marked suspect;
+the package warns when they are read.
+
+**What is not known.** What made that run so. The paper computes Raman
+emission in every run and says that at 0.03 mg m^-3 "the influence of the
+Raman scattering is important for the green and red radiations" (p.
+6298), where the dip is deepest; but the archive gives only the totals,
+with and without Raman emission not apart, so that is not tested. A rerun
+of that one case would settle it.
+
+**Where.** DATA.md section 48; DECISIONS.md sections 105 and 116;
+`examples/fq_at_45_degrees.py`; `jerlov.morel2002_fq_tables`.

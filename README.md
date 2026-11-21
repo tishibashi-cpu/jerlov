@@ -161,9 +161,10 @@ python examples/reference_images.py            measured materials through three 
 python examples/radiative_transfer_inputs.py   files for OSOAA and HydroLight
 python examples/closure_with_jerlov_kd.py      an open question: IOPs against Jerlov's Kd
 python examples/shallow_water_closure.py       an open question: shallow-water Rrs
+python examples/fq_at_45_degrees.py --archive PATH   an open question: f/Q at a 45-degree sun
 ```
 
-Twenty-nine scripts, each aimed at a different reader; `examples/README.md` says
+Thirty scripts, each aimed at a different reader; `examples/README.md` says
 which to start with. CI runs all of them on every push, so an example that has
 stopped working is a failed build. Every one ends with the assumptions it
 made.

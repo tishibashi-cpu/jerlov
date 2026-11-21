@@ -53,3 +53,11 @@ line each:
    the ratio by a factor of up to 1.92. The example
    `shallow_water_closure.py <https://github.com/tishibashi-cpu/jerlov/blob/main/examples/shallow_water_closure.py>`_
    prints every figure.
+6. **Why does Morel et al.'s f/Q archive dip at a sun of 45 degrees?**
+   One run of the authors' archive, the sun at 45 degrees and 0.03 mg
+   m-3, lies below the line between 30 and 60 degrees at every wavelength,
+   by 1.01 to 3.44 percent, where every other chlorophyll lies above it;
+   it is out of order against its neighbour in chlorophyll and nowhere
+   else is. Its values are kept, marked suspect, and warn. The example
+   `fq_at_45_degrees.py <https://github.com/tishibashi-cpu/jerlov/blob/main/examples/fq_at_45_degrees.py>`_
+   prints every figure from your own copy of the archive.

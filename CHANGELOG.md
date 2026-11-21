@@ -4,6 +4,29 @@ Every release is archived on Zenodo under the concept DOI
 [10.5281/zenodo.22321312](https://doi.org/10.5281/zenodo.22321312), which
 always resolves to the latest version.
 
+## 1.26.3 — 2026-11-21
+
+The dip at a sun of 45 degrees in Morel et al.'s (2002) f/Q archive,
+located: a sixth open question (DECISIONS.md section 116). No value
+changed.
+
+**Found.** The dip belongs to one run of the authors' archive, the sun at
+45 degrees and 0.03 mg m^-3. There f lies below the line between its
+values at 30 and 60 degrees at all seven wavelengths, by 1.01 to 3.44
+percent, growing with the wavelength, where every other chlorophyll lies
+above it; f/Q follows f, and the run is out of order against its
+neighbour in chlorophyll at every wavelength, which no other run is. What
+made it so is not known. OPEN_QUESTIONS.md question 6, DATA.md section
+48.
+
+**Changed.** `Morel2002FQTables.f` and `.f_over_q` give a
+`ProvenanceWarning` at that sun angle and chlorophyll; the values are
+returned as the archive has them.
+
+**New.** `examples/fq_at_45_degrees.py`, the thirtieth example, which
+reads your own copy of the archive given as `--archive PATH` and without
+one only says so.
+
 ## 1.26.2 — 2026-11-21
 
 The fifth open question taken further: would keeping water and particles
