@@ -384,7 +384,8 @@ angles, for all 42 (wavelength, Chl) cases; and f(theta_s)/f(0) at each
 Chl divided by the same at the next Chl, which is smooth in theta_s
 where the runs agree with each other. What would follow from each result
 was written down first (DECISIONS.md section 116).
-`examples/fq_at_45_degrees.py --archive PATH` prints every figure below.
+`examples/fq_at_45_degrees.py --archive PATH --ocssw DIR` prints every
+figure below.
 
 **What was found.**
 
@@ -400,16 +401,29 @@ was written down first (DECISIONS.md section 116).
   0.9849 at 30, 0.9267 at 45 and 0.9425 at 60 degrees); no other pair of
   Chl is out of order at any sun angle.
 
+- The authors' own later tables do not have it (1.26.4, DECISIONS.md
+  section 117). NASA's OCSSW, the processing code behind SeaDAS,
+  distributes the archive's tables (morel_fq.nc, equal to the archive)
+  and "f and Q tables derived hyperspectrally by Bernard Gentili", one of
+  the authors, at 70 wavelengths for the same sun angles and Chl
+  (morel_fq_hyperspectral_2026.nc). There, at the archive's wavelengths,
+  nadir f/Q at 45 degrees and 0.03 mg m^-3 lies -0.19 to -0.13 percent
+  from its chord, as 0.1 mg m^-3 does (-0.29 to -0.17). The later tables
+  differ from the archive by -5.2 to +5.3 percent over all runs, but along
+  the sun angle follow it except at the one run, where their ratio to it
+  stands +1.23 to +3.47 percent above its chord (every other Chl -1.44 to
+  +0.01).
+
 A physical cause would not single out one Chl at one sun angle while its
-neighbours in both stay in line. The values are kept and marked suspect;
-the package warns when they are read.
+neighbours in both stay in line, and the authors' recomputation does not
+show it. The values are kept and marked suspect; the package warns when
+they are read.
 
-**What is not known.** What made that run so. The paper computes Raman
-emission in every run and says that at 0.03 mg m^-3 "the influence of the
-Raman scattering is important for the green and red radiations" (p.
-6298), where the dip is deepest; but the archive gives only the totals,
-with and without Raman emission not apart, so that is not tested. A rerun
-of that one case would settle it.
+**What is not known.** What went wrong in that run. The paper computes
+Raman emission in every run and says that at 0.03 mg m^-3 "the influence
+of the Raman scattering is important for the green and red radiations"
+(p. 6298), where the dip is deepest; neither the archive nor the later
+tables give it apart, so that is not tested.
 
-**Where.** DATA.md section 48; DECISIONS.md sections 105 and 116;
+**Where.** DATA.md section 48; DECISIONS.md sections 105, 116 and 117;
 `examples/fq_at_45_degrees.py`; `jerlov.morel2002_fq_tables`.

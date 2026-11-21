@@ -4,6 +4,28 @@ Every release is archived on Zenodo under the concept DOI
 [10.5281/zenodo.22321312](https://doi.org/10.5281/zenodo.22321312), which
 always resolves to the latest version.
 
+## 1.26.4 — 2026-11-21
+
+The dip at 45 degrees in Morel et al.'s f/Q archive, against the
+authors' own later tables (DECISIONS.md section 117). No value changed.
+
+**Found.** NASA's OCSSW, the processing code behind SeaDAS, distributes
+the archive's tables and f/Q tables recomputed by Bernard Gentili, one of
+the authors, at 70 wavelengths for the same sun angles and chlorophylls.
+The recomputation does not have the dip: at the sun of 45 degrees and
+0.03 mg m^-3 its nadir f/Q lies -0.19 to -0.13 percent from the line
+between 30 and 60 degrees, as at 0.1 mg m^-3, and against the archive,
+along the sun angle, it departs at that one run only. The archive's run
+stays suspect; what went wrong in it is not known. OPEN_QUESTIONS.md
+question 6, DATA.md section 48.
+
+**Changed.** The warning for that run says the later tables do not have
+the dip.
+
+**New.** `examples/fq_at_45_degrees.py --ocssw DIR` compares the archive
+with NASA's copies, which you fetch and which need h5py; nothing of them
+is shipped.
+
 ## 1.26.3 — 2026-11-21
 
 The dip at a sun of 45 degrees in Morel et al.'s (2002) f/Q archive,
