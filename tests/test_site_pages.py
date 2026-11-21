@@ -102,7 +102,7 @@ def test_the_page_asks_nothing_of_another_host(name):
 
 def test_the_site_carries_the_pages_and_links_to_them():
     conf = (ROOT / "docs" / "conf.py").read_text()
-    assert 'html_extra_path = ["pages"]' in conf
+    assert 'html_extra_path = ["pages", "extra"]' in conf
     assert '"pages"' in conf.split("exclude_patterns")[1].splitlines()[0]
     index = (ROOT / "docs" / "index.rst").read_text()
     assert "<dive.html>`_" in index and "<disagree.html>`_" in index
@@ -302,3 +302,31 @@ def test_the_second_pages_figures_are_jerlovs():
         (ROOT / "OPEN_QUESTIONS.md").read_text())
     cells = {(c["type"], c["wl"]): c["ratio"] for c in data["editions"]["cells"]}
     assert math.isclose(cells[("1C", 425.0)], 1.527, abs_tol=1e-3)
+
+
+# -- what a search engine is pointed to (DECISIONS.md section 112) ------------
+
+def test_the_search_console_file_is_googles_and_reaches_the_root():
+    name = "google8846fd1b128ec3b7.html"
+    assert (ROOT / "docs" / "extra" / name).read_text() == \
+        f"google-site-verification: {name}"
+    conf = (ROOT / "docs" / "conf.py").read_text()
+    assert 'html_extra_path = ["pages", "extra"]' in conf
+    assert '"extra"]' in conf.split("exclude_patterns")[1].splitlines()[0]
+
+
+def test_the_site_writes_a_sitemap_with_its_pages():
+    conf = (ROOT / "docs" / "conf.py").read_text()
+    assert 'html_baseurl = "https://tishibashi-cpu.github.io/jerlov/"' in conf
+    assert 'app.connect("build-finished", _sitemap)' in conf
+    assert '_EXTRA_PAGES = ("dive.html", "disagree.html")' in conf
+    # The docs workflow reads the built sitemap back.
+    docs_yml = (ROOT / ".github" / "workflows" / "docs.yml").read_text()
+    for page in ("index.html", "dive.html"):
+        assert f"<loc>https://tishibashi-cpu.github.io/jerlov/{page}</loc>" in docs_yml
+
+
+def test_the_zenodo_record_links_the_site():
+    record = json.loads((ROOT / ".zenodo.json").read_text())
+    assert {"identifier": "https://tishibashi-cpu.github.io/jerlov/",
+            "relation": "isDocumentedBy", "scheme": "url"} in record["related_identifiers"]
