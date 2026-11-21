@@ -449,7 +449,9 @@ package does not ship it), it finds that one run, the sun at 45 degrees
 and 0.03 mg/m3, lies below the line between 30 and 60 degrees at every
 wavelength, by **1.01 to 3.44** percent, where every other chlorophyll
 lies above it, and that the run is out of order against its neighbour in
-chlorophyll at all 7 wavelengths.
+chlorophyll at all 7 wavelengths. With `--ocssw DIR` (NASA's OCSSW copies,
+and h5py) it shows that the authors' later hyperspectral tables do not
+have the dip.
 
 ## What they do not show
 

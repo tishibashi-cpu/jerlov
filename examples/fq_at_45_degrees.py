@@ -4,14 +4,16 @@ An open question, with numbers (OPEN_QUESTIONS.md, question 6). For those
 who correct water-leaving radiance for the sun and the view with Morel,
 Antoine & Gentili's (2002) f/Q tables:
 
-    python examples/fq_at_45_degrees.py --archive PATH
+    python examples/fq_at_45_degrees.py --archive PATH [--ocssw DIR]
 
 PATH is your own copy of the authors' archive, DISTRIB_fQ_with_Raman.tar.gz
 (DATA.md section 48); the package does not ship it, and without it this
 example says so and stops. With it, the example finds where f.dat and the
 f/Q tables leave the line between their neighbouring sun angles, and
 whether one run of the table is out of line with the others
-(DECISIONS.md section 116).
+(DECISIONS.md section 116). With --ocssw DIR, the folder holding NASA's
+OCSSW copies of the tables and the authors' later recomputation, it sets
+the archive against those too (section 117; needs h5py).
 """
 
 import sys
@@ -160,7 +162,76 @@ At 660 nm, Chl 0.03 over 0.1: {', '.join(f'{v:.4f}' for v in example)} at
     return dict(pairs=pairs, count=len(out_of_order), example=example)
 
 
-def main(archive=None):
+#: NASA's OCSSW files (DECISIONS.md section 117): the archive's tables in
+#: netCDF, and Gentili's later tables at 70 wavelengths.
+OCSSW_ARCHIVE = "morel_fq.nc"
+OCSSW_HYPERSPECTRAL = "morel_fq_hyperspectral_2026.nc"
+
+
+def _read_nadir(path):
+    import h5py    # only for this part, which the package does not need
+
+    with h5py.File(path, "r") as f:
+        return (f["wave"][()].astype(float), f["chl"][()].astype(float),
+                f["solz"][()].astype(float),
+                f["foq"][()][:, :, :, 0, 0].astype(float))
+
+
+def ocssw_part(t, directory):
+    rule("3. Against the authors' later tables, as NASA distributes them")
+    import pathlib
+
+    folder = pathlib.Path(directory)
+    suns = t["suns"]
+    x = 1 - np.cos(np.radians(suns))
+    archive = t["foq"][:, :, :, 0, 0]              # (wl, chl, sun)
+    w0, c0, s0, netcdf = _read_nadir(folder / OCSSW_ARCHIVE)
+    w1, c1, s1, hyper = _read_nadir(folder / OCSSW_HYPERSPECTRAL)
+    assert list(s0) == list(s1) == list(suns)
+    netcdf = np.moveaxis(netcdf, 1, 2)             # (wl, chl, sun)
+    same = float(np.max(np.abs(netcdf - archive)))
+    hyper_at = np.array([[[np.interp(w, w1, hyper[:, s, c])
+                           for s in range(len(suns))]
+                          for c in range(len(c1))] for w in t["wl"]])
+    i45 = list(suns).index(45.0)
+    own = chord(hyper_at, x, i45)                  # (wl, chl)
+    ratio = hyper_at / archive
+    against = chord(ratio, x, i45)                 # (wl, chl)
+    k = list(t["chl"]).index(0.03)
+    rest = np.delete(against, k, axis=1)
+    out = dict(
+        same=same, own_dip=(own[:, k].min(), own[:, k].max()),
+        own_next=(own[:, k + 1].min(), own[:, k + 1].max()),
+        level=(100 * (ratio.min() - 1), 100 * (ratio.max() - 1)),
+        against=(against[:, k].min(), against[:, k].max()),
+        against_rest=(rest.min(), rest.max()),
+        red=(against[:, k].argmax() == len(t["wl"]) - 1),
+        waves=(w1.min(), w1.max(), len(w1)))
+    print(f"""NASA's OCSSW distributes the archive's tables as {OCSSW_ARCHIVE}, which agrees
+with your archive's nadir f/Q to {same:.1e} at most, and {OCSSW_HYPERSPECTRAL},
+"f and Q tables derived hyperspectrally by Bernard Gentili", one of the
+paper's authors: {out['waves'][2]} wavelengths from {out['waves'][0]:g} to {out['waves'][1]:g} nm, the same sun
+angles and Chl. Nadir f/Q at 45 degrees, percent from the chord between
+30 and 60, and the ratio later/archive at 45 against its own chord:
+""")
+    print(f"  {'nm':>6} {'later, 0.03':>12} {'later, 0.1':>11} {'ratio, 0.03':>12} "
+          f"{'ratio, other Chl':>18}")
+    for j, w in enumerate(t["wl"]):
+        others = np.delete(against[j], k)
+        print(f"  {w:>6g} {own[j, k]:>+12.2f} {own[j, k + 1]:>+11.2f} "
+              f"{against[j, k]:>+12.2f} {others.min():>+8.2f} to {others.max():+.2f}")
+    print(f"""
+The later tables have no dip: at 0.03 mg/m3 their nadir f/Q lies
+{out['own_dip'][0]:+.2f} to {out['own_dip'][1]:+.2f} percent from its chord, at 0.1 {out['own_next'][0]:+.2f} to {out['own_next'][1]:+.2f}. They
+differ from the archive by {out['level'][0]:+.1f} to {out['level'][1]:+.1f} percent over all runs, but along the
+sun angle they follow it except at the one run: there the ratio stands
+{out['against'][0]:+.2f} to {out['against'][1]:+.2f} percent above its chord, at every other Chl
+{out['against_rest'][0]:+.2f} to {out['against_rest'][1]:+.2f}. The authors' own later computation does not have
+the dip; what went wrong in the archive's run is not known.""")
+    return out
+
+
+def main(archive=None, ocssw=None):
     _banner()
     if not archive:
         print("""
@@ -171,6 +242,15 @@ The package does not ship it. Nothing else is done.""")
     t = read(archive)
     where = where_part(t)
     neighbours = neighbour_part(t)
+    later = None
+    if ocssw:
+        later = ocssw_part(t, ocssw)
+    else:
+        print("""
+Part 3 compares the archive with the authors' later tables, which NASA's
+OCSSW distributes; give the folder holding morel_fq.nc and
+morel_fq_hyperspectral_2026.nc as --ocssw DIR (DECISIONS.md section 117).
+It needs h5py, which the package does not.""")
     rule("Before you use any of this")
     print("""  - The chord is a straight line in 1 - cos(theta_s), the variable the
     paper's own fits are linear in up to 60 degrees; f bends away from it
@@ -179,7 +259,7 @@ The package does not ship it. Nothing else is done.""")
     Raman emission in every run; the archive gives only the totals, so
     nothing here can tell whether it is that part.
 """)
-    return dict(where=where, neighbours=neighbours)
+    return dict(where=where, neighbours=neighbours, later=later)
 
 
 if __name__ == "__main__":
@@ -187,5 +267,8 @@ if __name__ == "__main__":
     # "python -c", as CI runs the examples, sys.argv carries this script's
     # own path, which must not be taken for the archive.
     args = sys.argv[1:]
-    main(args[args.index("--archive") + 1]
-         if "--archive" in args[:-1] else None)
+
+    def option(name):
+        return args[args.index(name) + 1] if name in args[:-1] else None
+
+    main(option("--archive"), option("--ocssw"))

@@ -7485,12 +7485,13 @@ at 45 degrees against the chord of the same ratio at 30 and 60.
 - `morel_fq.nc` has the archive's dip unchanged: nadir f/Q at 45 degrees
   and 0.03 mg m^-3 is 1.35 to 3.54 percent below its chord.
 - The hyperspectral tables have no dip: at 0.03 mg m^-3, -0.25 to -0.13
-  percent from the chord, in line with 0.1 mg m^-3 (-0.34 to -0.14).
+  percent from the chord over their 70 wavelengths, in line with 0.1 mg
+  m^-3 (-0.34 to -0.14).
 - They differ from the archive by up to about 5 percent in every run (the
   recomputation is not a copy), but along the sun angle they follow it
   except at the one run: the ratio at 45 degrees against its own chord is
-  +1.23 to +3.47 percent at 0.03 mg m^-3, growing with the wavelength like
-  the dip, and -1.44 to +0.01 at every other Chl.
+  +1.23 to +3.47 percent at 0.03 mg m^-3, largest at 660 nm as the dip
+  is, and -1.44 to +0.01 at every other Chl.
 
 So the authors' own later computation does not have the dip: it is not a
 feature of the physics their model computes, and the archive's run is out

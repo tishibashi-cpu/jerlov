@@ -39,7 +39,8 @@ def _warn_suspect(case: tuple[float, float, float]) -> None:
             "f and f/Q at a sun of 45 degrees and 0.03 mg/m3 are suspect: "
             "at every wavelength they lie below the line between 30 and 60 "
             "degrees where every other Chl lies above it (by 1.0 to 3.4 "
-            "percent in f), out of line with the rest of the table; they "
+            "percent in f), out of line with the rest of the table and "
+            "absent from the authors' later hyperspectral tables; they "
             "are returned as the archive has them. DATA.md section 48",
             ProvenanceWarning, stacklevel=_data.caller_stacklevel())
 

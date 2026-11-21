@@ -3021,6 +3021,17 @@ describes two sets.
   values are kept as the archive has them and are **suspect**:
   `Morel2002FQTables.f` and `.f_over_q` give a ProvenanceWarning at that
   sun angle and Chl. What made them so is not known.
+- **The authors' later tables do not have the dip (1.26.4, DECISIONS.md
+  section 117).** NASA's OCSSW distributes `morel_fq.nc` (the archive's
+  tables, equal to them) and `morel_fq_hyperspectral_2026.nc`, "f and Q
+  tables derived hyperspectrally by Bernard Gentili", 70 wavelengths,
+  the same sun angles and Chl. At the archive's wavelengths its nadir
+  f/Q at 45 degrees and 0.03 mg m^-3 lies -0.19 to -0.13 percent from
+  the chord between 30 and 60, as at 0.1 (-0.29 to -0.17); against the
+  archive, along the sun angle, it departs at that one run only (+1.23
+  to +3.47 percent against the chord of the ratio, every other Chl -1.44
+  to +0.01). Not shipped; put the user's copies in `sources/ocssw/` for
+  the tests and the example (`--ocssw DIR`), which need h5py.
 
 ## 49. The light kept within an angle: Petzold's forward scattering (note)
 

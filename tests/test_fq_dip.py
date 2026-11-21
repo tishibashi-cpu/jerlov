@@ -118,3 +118,63 @@ def test_the_dip_is_one_run_as_the_documents_say(result):
     assert f"by {low:.2f} to {high:.2f} percent" in log
     source = (ROOT / "jerlov" / "fq_tables.py").read_text()
     assert f"(by {low:.1f} to {high:.1f} " in source
+
+
+# -- DECISIONS.md section 117: the authors' later tables, via NASA's OCSSW --
+
+OCSSW = ROOT / "sources" / "ocssw"
+try:
+    import h5py  # noqa: F401  (only for these tests; not a dependency)
+    _H5PY = True
+except ImportError:
+    _H5PY = False
+needs_ocssw = pytest.mark.skipif(
+    not (_H5PY and REAL.exists() and EXAMPLE.exists()
+         and (OCSSW / "morel_fq.nc").exists()
+         and (OCSSW / "morel_fq_hyperspectral_2026.nc").exists()),
+    reason="needs h5py, the archive and NASA's OCSSW files in sources/ocssw")
+
+
+@pytest.fixture(scope="module")
+def later():
+    module = runpy.run_path(str(EXAMPLE), run_name="fq_at_45_degrees")
+    with contextlib.redirect_stdout(io.StringIO()):
+        return module["main"](str(REAL), str(OCSSW))["later"]
+
+
+@needs_ocssw
+def test_the_ocssw_files_are_the_ones_recorded():
+    import hashlib
+    text = _flat("DECISIONS.md").split("## 117. ")[1]
+    for name in ("morel_fq.nc", "morel_fq_hyperspectral_2026.nc"):
+        digest = hashlib.sha256((OCSSW / name).read_bytes()).hexdigest()
+        row = [r for r in text.split("| ") if r.startswith(name)]
+        assert row, name
+        assert f"{digest[:8]}..." in text.split(name, 1)[1].split("|")[3], name
+
+
+@needs_ocssw
+def test_the_later_tables_are_quoted_as_computed(later):
+    assert later["same"] < 1e-6         # morel_fq.nc is the archive
+    assert later["red"]
+    oq = _flat("OPEN_QUESTIONS.md").split("## 6. ")[1]
+    data = _flat("DATA.md").split("## 48. ")[1].split("## 49. ")[0]
+    log = _flat("CHANGELOG.md").split("## 1.26.4")[1].split("## 1.26.3")[0]
+    own = (f"{later['own_dip'][0]:+.2f} to {later['own_dip'][1]:+.2f} percent "
+           "from its chord")
+    nxt = f"({later['own_next'][0]:+.2f} to {later['own_next'][1]:+.2f})"
+    against = (f"+{later['against'][0]:.2f} to +{later['against'][1]:.2f} "
+               "percent")
+    rest = (f"{later['against_rest'][0]:+.2f} to "
+            f"{later['against_rest'][1]:+.2f}")
+    level = f"{later['level'][0]:+.1f} to {later['level'][1]:+.1f} percent"
+    assert later["own_next"][0] < later["own_dip"][1] < 0.5
+    assert later["against"][0] > 1 and later["against_rest"][1] < 0.1
+    for text in (oq, data):
+        assert against in text and rest in text, text[:80]
+    assert own in oq and nxt.replace("(", "").replace(")", "") in oq
+    assert level in oq
+    assert (f"lies {later['own_dip'][0]:+.2f} to {later['own_dip'][1]:+.2f} "
+            "percent from the chord between 30 and 60") in data
+    assert (f"its nadir f/Q lies {later['own_dip'][0]:+.2f} to "
+            f"{later['own_dip'][1]:+.2f} percent from the line") in log

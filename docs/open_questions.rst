@@ -58,6 +58,7 @@ line each:
    m-3, lies below the line between 30 and 60 degrees at every wavelength,
    by 1.01 to 3.44 percent, where every other chlorophyll lies above it;
    it is out of order against its neighbour in chlorophyll and nowhere
-   else is. Its values are kept, marked suspect, and warn. The example
+   else is. The authors' own later tables, which NASA distributes, do not
+   have the dip. Its values are kept, marked suspect, and warn. The example
    `fq_at_45_degrees.py <https://github.com/tishibashi-cpu/jerlov/blob/main/examples/fq_at_45_degrees.py>`_
    prints every figure from your own copy of the archive.
