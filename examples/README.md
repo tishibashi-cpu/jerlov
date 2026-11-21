@@ -1,7 +1,7 @@
 # Examples
 
-Twenty-eight scripts. Each runs against the installed package and needs nothing beyond
-NumPy; `closure_with_jerlov_kd.py` also reads results kept beside it in
+Twenty-nine scripts. Each runs against the installed package and needs nothing beyond
+NumPy; `closure_with_jerlov_kd.py` and `shallow_water_closure.py` also read results kept beside them in
 `examples/data/`, so it needs the repository, and so does part 3 of
 `phase_function_choice.py`, which says so when they are not there.
 
@@ -33,6 +33,7 @@ python examples/water_lookup_tables.py
 python examples/phase_function_choice.py
 python examples/reference_images.py
 python examples/closure_with_jerlov_kd.py
+python examples/shallow_water_closure.py
 ```
 
 CI runs all of them on every push, so an example that has stopped working is a
@@ -424,6 +425,18 @@ that Williamson & Hollins's own campaigns measured
 nm of **0.59** and 0.53 of Jerlov's (1976), what their IOPs give, while
 IB's high blue rests on six campaigns, two of which measured a at or
 above their own Kd.
+
+**`shallow_water_closure.py`** — another open question with numbers
+(`OPEN_QUESTIONS.md`, question 5), for those who model or invert the
+reflectance of shallow water: why does `lee1999_shallow_rrs` miss a Monte
+Carlo where pure water carries most of the backscattering, and over a
+black bottom in shallow, turbid water? It rebuilds the waters of Lee et
+al.'s own runs and reads 144 more Monte Carlo runs in
+`examples/data/shallow_rrs_mc/`. The model over the Monte Carlo falls
+from **1.023-1.157** with particles alone to 0.783-0.902 with pure water
+nearly alone. Over a black bottom no single change closes the gap; the
+particles' phase function alone moves the ratio by a factor of up to
+**1.92**.
 
 ## What they do not show
 

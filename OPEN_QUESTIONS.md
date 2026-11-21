@@ -290,3 +290,63 @@ whose own pure water exceeds Solonenko & Mobley's a or b there.
 `examples/closure_with_jerlov_kd.py`, parts 5 and 6; `tools/sm_closure.py`
 and `examples/data/sm_closure/`; `tools/osoaa_sm_closure.py` and
 `examples/data/osoaa_sm_closure/`.
+
+## 5. Why does the shallow-water reflectance model miss two groups of runs?
+
+**The question.** Lee et al.'s (1998, 1999) model gives the remote
+sensing reflectance of shallow water from a, bb, the depth and the
+bottom's albedo, and was fitted to HydroLight. Against a Monte Carlo
+(DATA.md section 50) it is within 10 percent in 87.4 percent of 270 runs,
+and misses in two groups: where pure water carries most of the
+backscattering (16 runs, the model low, 0.818 to 0.893 of the Monte
+Carlo), and over a black bottom 1 or 4 m down in turbid water (13 runs,
+the model high, to 1.723). Why?
+
+**What was done.** HydroLight is not available, so the question is which
+difference between the paper's runs and the Monte Carlo moves each group,
+and by how much. The waters of the paper's runs were rebuilt from its
+Table 1 and Eqs. (12)-(15), 576 sets of IOPs. Then 72 Monte Carlo runs
+held u and a and varied pure water's share of bb from 0 to 0.95; and 72
+more took the black-bottom cells and changed one thing each: the
+particles' phase function (AUTEC 8 or HAOCE 11 for NUC 2240, a and bb
+held) or a sky (30 percent of the light diffuse). The model's column term
+with the 1998 constants was set beside the 1999 ones. What would count as
+an explanation was written down before the runs (DECISIONS.md section
+114). `examples/shallow_water_closure.py` prints every figure below.
+
+**What was found.**
+
+- Pure water's share of bb in the paper's runs is at most 0.46. The
+  first group's runs have 0.48 and 0.79.
+- Holding u, the model over the Monte Carlo falls as pure water's share
+  rises, in 12 of 12 cases: from 1.023-1.157 with particles alone to
+  0.783-0.902 with pure water nearly alone. In deep water the model is a
+  function of u alone, whoever does the backscattering; the Monte Carlo
+  is not. That accounts for the direction of the first group's miss. But
+  up to a share of 0.4 the ratio is still 0.927 to 1.157, not within the
+  5 percent the plan asked, so the share is not the whole of it.
+- The second group lies among the paper's waters: for 13 of its 13 runs,
+  the paper's runs of nearly the same u spanned its kappa H.
+- With a black bottom, the attenuation D the Monte Carlo implies for the
+  column is 0.61 to 0.92 of the model's where kappa H is below 0.1, and
+  0.89 to 1.10 where it is above 0.5: the model's single exponential
+  makes the column's part grow with depth faster than the Monte Carlo
+  does while kappa H is small, and agrees once it is not.
+- No single change brought 10 of the 13 within 10 percent, the measure set
+  beforehand. HAOCE 11's phase function brought 8, AUTEC 8's 3, the sky 3,
+  the 1998 constants 6. For the same cell, changing the particles' phase
+  function alone changed the ratio by a factor of 1.21 in the median cell
+  and 1.92 at the most; adding the sky, by 1.04 and 1.16.
+
+**What is not known.** Which phase function HydroLight's runs are nearest
+to (Petzold's average particle, whose table this package has not
+obtained), and how much of the second group the paper's own runs would
+show: its fits were judged on all runs together, and the 1999 refit's
+runs are not described. Whether a form with the phase function in it, or
+with water and particles apart as Lee et al. (2011) did for deep water,
+would close both groups is not tested here.
+
+**Where.** DATA.md section 50; DECISIONS.md sections 113 and 114;
+`examples/shallow_water_closure.py`; `tools/shallow_rrs_mc.py` and
+`tools/lee1998_runs.py`, with their results in
+`examples/data/shallow_rrs_mc/`.

@@ -7211,3 +7211,97 @@ whose albedo the example states); CHANGELOG; the Zenodo description.
   within 10 percent.
 - Text given as a depth (`depth_m="5"`) is read as the number, as in
   the package's other functions that take arrays; no refusal was added.
+
+## 114. Why the shallow-water model misses two groups of the Monte Carlo's runs (1.26.1): the plan
+
+Section 113's Monte Carlo found the model of Lee et al. (1999) outside 10
+percent in 34 of 270 runs, in three groups (DATA.md section 50). The user
+asked on 2026-11-21 for the causes of the two larger ones to be looked
+into: where pure water carries most of the backscattering (16 runs, model
+low, to 0.818), and a black bottom 1 or 4 m down in turbid water (13
+runs, model high, to 1.723). As in section 91, the package does not settle
+this: HydroLight, which the model was fitted to, is not available here.
+What can be done is to say which of the differences between the paper's
+runs and the Monte Carlo moves each group, and by how much, with every
+figure recomputed by a test. No value or code of the package changes.
+
+**Step 1. Where the paper's runs lay.** Their IOPs are rebuilt from the
+1998 paper: Table 1's chlorophyll (0.4, 1, 2, 5), ag(440) (0.05, 0.1,
+0.3) and B (0.3, 1, 5) at 400-700 nm every 20 nm; Eq. (12) with Table 2's
+a0 and a1 (p. 6331, read from the page image, the 16 rows used) and Eq.
+(13), af(440) = 0.06 [chl]^0.65; Eq. (14) for ag; Eq. (15), bp = B
+[chl]^0.62 550/lambda; Pope & Fry's pure water absorption and Morel's
+pure sea water scattering, as the paper says (pure sea water taken at 35
+psu, a choice: the paper gives no salinity); bbp = 0.019 bp (the phase
+function's 1.9 percent, p. 6332). From these: the range of u, of a, and of
+pure water's share of bb, and, for each depth of Table 1, the range of
+kappa H. Each Monte Carlo run of section 113 is then placed inside or
+outside that set, by its water share and, at its u, its kappa H.
+`tools/lee1998_runs.py` writes the 576 rebuilt IOP sets to
+`examples/data/shallow_rrs_mc/lee1998_runs.csv`.
+
+**Step 2. Pure water's share, alone.** Deep water and a black bottom at 4
+m, the sun at 30 degrees, u held at 0.01, 0.025 and 0.07 with a = 0.05 and
+0.2 1/m, and pure water's share of bb set to 0, 0.2, 0.4, 0.6, 0.8 and
+0.95 (bw from the share, bp from the rest; 72 runs). If model over Monte
+Carlo falls with the share, and is within 5 percent at shares up to the
+paper's largest, the first group is put down to pure water's share of
+the backscattering, and so to its phase function, which the model, fitted
+to runs where particles carried most of it, does not separate.
+
+**Step 3. The black bottom.** Three changes to the Monte Carlo, each
+alone, on the group's 13 runs and on the same cells with the sun at the
+other angles (24 runs each):
+
+- (a) the particles' phase function: AUTEC 8 (bb/b 0.044) and HAOCE 11
+  (0.014) in place of NUC 2240, a, bb and pure water's part held, so bp
+  changes;
+- (b) a sky: 30 percent of the irradiance just below the surface as
+  diffuse light, uniform in radiance in the air
+  (`kd_monte_carlo.sky_cosines`), since the paper's runs had a sky and
+  the model takes D_d = 1/cos theta_w;
+- (c) none to the Monte Carlo, but to the model: the column's term with
+  the 1998 constants (A0 1.03, D0 1.2, D1 2.0) beside the 1999 ones,
+  since the 1998 paper wrote that fixing A0 = 1 would need another form
+  (pp. 6334-6335).
+
+And from the existing runs, the column's attenuation the Monte Carlo
+implies: with a black bottom, rrs(H)/rrs_dp = 1 - exp(-D kappa H) gives D
+= -ln(1 - rrs(H)/rrs_dp) / (kappa H), both rrs from the Monte Carlo, to set
+beside the model's 1/cos theta_w + 1.03 (1 + 2.4 u)^0.5.
+
+A change is said to account for the group if it alone brings most of the
+group's runs (at least 10 of 13) within 10 percent. If none does, that is
+what is recorded.
+
+**Documents.** OPEN_QUESTIONS.md section 5, in the five parts; DATA.md
+section 50 extended; the site's open_questions page a line; a new example
+`examples/shallow_water_closure.py`, the twenty-ninth, for those who
+model or invert shallow-water reflectance, reading the runs from
+`examples/data/shallow_rrs_mc/` and printing every figure the document
+quotes (it needs the repository, as `closure_with_jerlov_kd.py` does).
+The new runs are written by `tools/shallow_rrs_mc.py`, given options for
+the share, the station and the sky, with the default runs unchanged
+bit for bit. Version 1.26.1.
+
+**Differences from the plan, noted after the runs.**
+
+- Step 2's test was missed: model over Monte Carlo falls with pure
+  water's share in all 12 cases, but up to a share of 0.4 it is 0.927 to
+  1.157, not within 5 percent. Recorded as accounting for the direction of
+  the first group's miss, not all of it.
+- Step 3's test was missed by every change: HAOCE 11 brought 8 of the 13
+  within 10 percent, AUTEC 8 and the sky 3, the 1998 constants 6. What is
+  recorded is how far each change moves the ratio in the same cell.
+- "Within what the paper's runs covered" was first judged by kappa H
+  where u is above 0.3 only; the second group has runs at u of 0.055 and
+  0.069 too. It is now judged run by run, against the paper's runs within
+  20 percent of its u, at the depths of Table 1: all 13 are covered.
+- The first drafts of the example said the first group "lies on this
+  trend" and that the column was attenuated "in the first tenth of an
+  attenuation length"; neither was computed. The example now reads the
+  trend off at the group's shares (0.823 to 1.003, against the misses'
+  0.818 to 0.893) and states D's ratio by kappa H.
+- In one cell the Monte Carlo gives more for a black bottom at 4 m than
+  for deep water, by 0.9 times the standard error of the difference; no D
+  is taken there.

@@ -3105,3 +3105,15 @@ table is shipped; the constants are in `jerlov/ocean_colour.py`.
   in the tool says why). Changing that cut to 0.5 or 2 degrees moved four
   trial runs by amounts comparable to their noise; those trials are not
   recorded.
+- **The two groups, looked into (1.26.1, DECISIONS.md section 114,
+  OPEN_QUESTIONS.md question 5).** The waters of the 1998 runs, rebuilt
+  from Table 1 and Eqs. (12)-(15) (`tools/lee1998_runs.py`, Table 2's a0
+  and a1 read from the page image), give pure water at most 0.46 of bb;
+  the first group's runs have 0.48 and 0.79. With u held, model over
+  Monte Carlo falls as pure water's share rises, in 12 of 12 cases. The
+  black-bottom group lies among the rebuilt waters; no single change to
+  the Monte Carlo (another of Petzold's phase functions, a sky) brought
+  10 of its 13 runs within 10 percent, and the particles' phase function
+  alone moves the ratio in a cell by a factor of up to 1.92. The runs are
+  `examples/data/shallow_rrs_mc/water_share.csv`, `black_bottom.csv` and
+  `lee1998_runs.csv`.

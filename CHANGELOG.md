@@ -4,6 +4,33 @@ Every release is archived on Zenodo under the concept DOI
 [10.5281/zenodo.22321312](https://doi.org/10.5281/zenodo.22321312), which
 always resolves to the latest version.
 
+## 1.26.1 — 2026-11-21
+
+Why the shallow-water reflectance model of 1.26.0 misses two groups of
+Monte Carlo runs: a fifth open question, with numbers (DECISIONS.md
+section 114). No shipped value, code or public name changed.
+
+**Found.** With u held, the model over the Monte Carlo falls as pure
+water's share of the backscattering rises, in 12 of 12 cases: the model,
+a function of u alone in deep water, does not tell water from particles,
+which accounts for the direction of the first group's miss but not all of
+its size. The waters of Lee et al.'s own runs, rebuilt from their Table 1
+and equations, have pure water at most 0.46 of bb. Over a black bottom in
+shallow, turbid water no single change to the Monte Carlo (another of
+Petzold's phase functions, a sky) brings the group back within 10
+percent, and the particles' phase function alone moves the ratio in a
+cell by a factor of up to 1.92: the model's column term depends on the
+phase function, which it does not take. OPEN_QUESTIONS.md question 5,
+DATA.md section 50.
+
+**New.** `examples/shallow_water_closure.py`, the twenty-ninth example,
+prints every figure from the runs kept in `examples/data/shallow_rrs_mc/`
+(written by `tools/shallow_rrs_mc.py`, now with a sky option, and
+`tools/lee1998_runs.py`).
+
+**Docs.** OPEN_QUESTIONS.md question 5, its line on the site's open
+questions page, DATA.md section 50 and the example lists.
+
 ## 1.26.0 — 2026-11-21
 
 The remote sensing reflectance of shallow water, with the bottom in view
