@@ -860,9 +860,10 @@ def lee2011_rrs(a, bb, /, *, bb_water, coefficients):
 
 #: Lee et al. (1999), Appendix A (p. 3842): the constants of Eqs. (A6),
 #: (A7) and (A9), which replaced the 1998 paper's after "correcting a
-#: calculation error in the earlier study". rrs_dp = (G0 + G1 u) u; the column's
-#: D_u^C = D0 (1 + D1 u)^0.5 and the bottom's D_u^B = D0' (1 + D1' u)^0.5;
-#: Rrs = ZETA rrs / (1 - GAMMA rrs). A0 = 1 and A1 = 1/pi are written out.
+#: calculation error in the earlier study". rrs_dp = (G0 + G1 u) u; the
+#: column's D_u^C = D0 (1 + D1 u)^0.5 and the bottom's D_u^B = D0' (1 +
+#: D1' u)^0.5; Rrs = ZETA rrs / (1 - GAMMA rrs). A0 = 1 and A1 = 1/pi are
+#: written out.
 _LEE1999_G = (0.084, 0.170)
 _LEE1999_D_COLUMN = (1.03, 2.4)
 _LEE1999_D_BOTTOM = (1.04, 5.4)
