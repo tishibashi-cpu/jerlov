@@ -44,3 +44,12 @@ line each:
    first run, the Monte Carlo had come out a few percent low, which was
    also why OSOAA's Kd had been up to 9.6 percent above it in the third
    question.
+5. **Why does the shallow-water reflectance model miss two groups of
+   runs?** Where pure water carries most of the backscattering, the
+   model, a function of u alone in deep water, comes out low, and the
+   more so the larger pure water's share. Over a black bottom in shallow,
+   turbid water it comes out high; there no single change to the Monte
+   Carlo closes the gap, and the particles' phase function alone moves
+   the ratio by a factor of up to 1.92. The example
+   `shallow_water_closure.py <https://github.com/tishibashi-cpu/jerlov/blob/main/examples/shallow_water_closure.py>`_
+   prints every figure.

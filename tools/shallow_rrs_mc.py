@@ -24,11 +24,14 @@ irradiance is the photons' number plus the weight reflected down.
 
     python tools/shallow_rrs_mc.py --check
     python tools/shallow_rrs_mc.py OUT.csv
+    python tools/shallow_rrs_mc.py --water-share OUT.csv
+    python tools/shallow_rrs_mc.py --black-bottom OUT.csv
 
 The first runs the check of section 113 (no scattering, no reflection at
 the surface: rrs = (rho/pi) exp(-a H / cos theta_w) exp(-a H)) and prints
-it; the second writes one row per run of section 113's grid. This is a
-tool for the comparison, not part of the package.
+it; the second writes one row per run of section 113's grid; the last two
+write the runs of section 114's steps 2 and 3. This is a tool for the
+comparison, not part of the package.
 """
 
 from __future__ import annotations
@@ -132,10 +135,14 @@ def fresnel_from_below(mu: np.ndarray) -> np.ndarray:
 
 def rrs(a: float, bp: float, bw: float, depth: float, rho: float,
         sun_deg: float, phase, photons: int = PHOTONS, seed: int = SEED,
-        surface: bool = True):
+        surface: bool = True, sky_share: float = 0.0):
     """rrs straight up just below the surface, and its standard error
     from BATCHES batches. ``surface`` False lets light leave through the
-    surface instead of being partly reflected (the check)."""
+    surface instead of being partly reflected (the check). ``sky_share``
+    of the irradiance just below the surface enters as diffuse light,
+    uniform in radiance in the air (kd_monte_carlo.sky_cosines); at 0, the
+    default, no random number is drawn for it, so earlier runs repeat bit
+    for bit (DECISIONS.md section 114)."""
     sample, pdf, below, _ = phase
     water = kd_monte_carlo.water_sampler()
     bp = bp * (1.0 - below)
@@ -153,6 +160,16 @@ def rrs(a: float, bp: float, bw: float, depth: float, rho: float,
     uz = np.full(photons, mu0)
     weight = np.ones(photons)
     alive = np.ones(photons, dtype=bool)
+    if sky_share > 0.0:
+        diffuse = rng.random(photons) < sky_share
+        n_sky = int(diffuse.sum())
+        cosines, cumulative = kd_monte_carlo.sky_cosines()
+        w_sky = np.interp(rng.random(n_sky), cumulative, cosines)
+        phi_sky = 2.0 * math.pi * rng.random(n_sky)
+        s_sky = np.sqrt(np.maximum(0.0, 1.0 - w_sky ** 2))
+        ux[diffuse] = s_sky * np.cos(phi_sky)
+        uy[diffuse] = s_sky * np.sin(phi_sky)
+        uz[diffuse] = w_sky
     while alive.any():
         idx = np.flatnonzero(alive)
         z1 = z[idx] + uz[idx] * (-np.log(rng.random(idx.size)) / c)
@@ -271,8 +288,98 @@ def main(path: str) -> None:
         writer.writerows(rows)
 
 
+#: DECISIONS.md section 114, step 2: u, a and pure water's share of bb.
+SHARE_U = (0.01, 0.025, 0.07)
+SHARE_A = (0.05, 0.2)
+SHARES = (0.0, 0.2, 0.4, 0.6, 0.8, 0.95)
+SHARE_DEPTHS = (4.0, math.inf)
+SHARE_SUN = 30.0
+#: Step 3: the black-bottom cells, and the changes made to them.
+DARK_A = (0.05, 0.2)
+DARK_BP_OVER_A = (3.0, 30.0)
+DARK_DEPTHS = (1.0, 4.0)
+OTHER_STATIONS = ("AUTEC 8", "HAOCE 11")
+SKY_SHARE = 0.3
+
+
+def _write(path, rows) -> None:
+    with open(path, "w", newline="") as f:
+        writer = csv.DictWriter(f, fieldnames=list(rows[0]))
+        writer.writeheader()
+        writer.writerows(rows)
+
+
+def _model(a, bb, depth, rho, sun):
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", jerlov.ProvenanceWarning)
+        m = jerlov.lee1999_shallow_rrs(
+            a, bb, depth_m=depth if math.isfinite(depth) else 1.0,
+            bottom_albedo=rho, sun_zenith_deg=sun)
+    return m.rrs if math.isfinite(depth) else m.deep
+
+
+def water_share(path: str) -> None:
+    """Step 2: deep water and a black bottom at 4 m, u and a held, pure
+    water's share of bb varied."""
+    phase = petzold_phase(STATION)
+    back = phase[3]
+    rows = []
+    for u, a, share, depth in itertools.product(SHARE_U, SHARE_A, SHARES,
+                                                SHARE_DEPTHS):
+        bb = u * a / (1.0 - u)
+        bw = 2.0 * share * bb
+        bp = (1.0 - share) * bb / back
+        value, error = rrs(a, bp, bw, depth, 0.0, SHARE_SUN, phase)
+        rows.append({
+            "u": u, "a": a, "water_share": share,
+            "depth_m": "inf" if not math.isfinite(depth) else depth,
+            "bp": f"{bp:.6g}", "bw": f"{bw:.6g}", "bb": f"{bb:.6g}",
+            "monte_carlo": f"{value:.6e}", "standard_error": f"{error:.2e}",
+            "model": f"{_model(a, bb, depth, 0.0, SHARE_SUN):.6e}",
+        })
+        print(rows[-1], flush=True)
+    _write(path, rows)
+
+
+def black_bottom(path: str) -> None:
+    """Step 3 (a) and (b): the black-bottom cells with another particle
+    phase function, a, bb and pure water's part held, or with a sky."""
+    base = petzold_phase(STATION)
+    rows = []
+    for a, ratio, depth, sun in itertools.product(DARK_A, DARK_BP_OVER_A,
+                                                  DARK_DEPTHS, SUNS):
+        bp0 = ratio * a
+        bb = 0.5 * BW + base[3] * bp0
+        for change in ("none",) + OTHER_STATIONS + ("sky",):
+            if change in OTHER_STATIONS:
+                phase = petzold_phase(change)
+                bp = (bb - 0.5 * BW) / phase[3]
+                sky = 0.0
+            else:
+                phase, bp = base, bp0
+                sky = SKY_SHARE if change == "sky" else 0.0
+            if change == "none":
+                continue        # in monte_carlo.csv already
+            value, error = rrs(a, bp, BW, depth, 0.0, sun, phase,
+                               sky_share=sky)
+            rows.append({
+                "a": a, "bp_over_a": ratio, "depth_m": depth,
+                "sun_deg": sun, "change": change, "bp": f"{bp:.6g}",
+                "bw": BW, "bb": f"{bb:.6g}",
+                "monte_carlo": f"{value:.6e}",
+                "standard_error": f"{error:.2e}",
+                "model": f"{_model(a, bb, depth, 0.0, sun):.6e}",
+            })
+            print(rows[-1], flush=True)
+    _write(path, rows)
+
+
 if __name__ == "__main__":
-    if sys.argv[1:] == ["--check"]:
+    if len(sys.argv) == 3 and sys.argv[1] == "--water-share":
+        water_share(sys.argv[2])
+    elif len(sys.argv) == 3 and sys.argv[1] == "--black-bottom":
+        black_bottom(sys.argv[2])
+    elif sys.argv[1:] == ["--check"]:
         for key, value in check().items():
             print(key, f"{value:.5f}")
     elif len(sys.argv) == 2:

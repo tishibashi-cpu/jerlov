@@ -1,10 +1,10 @@
 Examples
 ========
 
-Twenty-eight scripts, each for one kind of reader. Each runs against the
+Twenty-nine scripts, each for one kind of reader. Each runs against the
 installed package, needs nothing beyond NumPy, and prints what it
-computes; ``closure_with_jerlov_kd.py`` also reads results kept beside
-it, and so does part 3 of ``phase_function_choice.py``. CI runs every one of them, so an example that has stopped working is
+computes; ``closure_with_jerlov_kd.py`` and ``shallow_water_closure.py``
+also read results kept beside them, and so does part 3 of ``phase_function_choice.py``. CI runs every one of them, so an example that has stopped working is
 a failed build rather than something a reader discovers. They are in the
 repository, not in the installed package; from a clone:
 
@@ -76,3 +76,5 @@ repository, not in the installed package; from a clone:
      - `radiative_transfer_inputs.py <https://github.com/tishibashi-cpu/jerlov/blob/main/examples/radiative_transfer_inputs.py>`_
    * - see whether one source of a Jerlov type confirms another
      - `closure_with_jerlov_kd.py <https://github.com/tishibashi-cpu/jerlov/blob/main/examples/closure_with_jerlov_kd.py>`_
+   * - see why a shallow-water reflectance model misses where it does
+     - `shallow_water_closure.py <https://github.com/tishibashi-cpu/jerlov/blob/main/examples/shallow_water_closure.py>`_

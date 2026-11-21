@@ -7283,3 +7283,25 @@ quotes (it needs the repository, as `closure_with_jerlov_kd.py` does).
 The new runs are written by `tools/shallow_rrs_mc.py`, given options for
 the share, the station and the sky, with the default runs unchanged
 bit for bit. Version 1.26.1.
+
+**Differences from the plan, noted after the runs.**
+
+- Step 2's test was missed: model over Monte Carlo falls with pure
+  water's share in all 12 cases, but up to a share of 0.4 it is 0.927 to
+  1.157, not within 5 percent. Recorded as accounting for the direction of
+  the first group's miss, not all of it.
+- Step 3's test was missed by every change: HAOCE 11 brought 8 of the 13
+  within 10 percent, AUTEC 8 and the sky 3, the 1998 constants 6. What is
+  recorded is how far each change moves the ratio in the same cell.
+- "Within what the paper's runs covered" was first judged by kappa H
+  where u is above 0.3 only; the second group has runs at u of 0.055 and
+  0.069 too. It is now judged run by run, against the paper's runs within
+  20 percent of its u, at the depths of Table 1: all 13 are covered.
+- The first drafts of the example said the first group "lies on this
+  trend" and that the column was attenuated "in the first tenth of an
+  attenuation length"; neither was computed. The example now reads the
+  trend off at the group's shares (0.823 to 1.003, against the misses'
+  0.818 to 0.893) and states D's ratio by kappa H.
+- In one cell the Monte Carlo gives more for a black bottom at 4 m than
+  for deep water, by 0.9 times the standard error of the difference; no D
+  is taken there.
