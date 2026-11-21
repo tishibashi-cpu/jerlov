@@ -160,3 +160,75 @@ def test_the_changelog_quotes_the_same(result):
     assert f"factor of up to {d['spread'][1]:.2f}" in text
     assert (f"{result['share']['falling']} of {result['share']['cases']}"
             ) in text
+
+
+# -- DECISIONS.md section 115 --------------------------------------------------
+
+@pytest.mark.parametrize("name", ["water_share_nadir.csv", "cut_check.csv"])
+def test_the_new_runs_model_column_is_today_s_function(name):
+    with (DATA / name).open() as f:
+        rows = list(csv.DictReader(f))
+    for r in rows:
+        depth = float(r["depth_m"])
+        sun = float(r.get("sun_deg", 0.0))
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", jerlov.ProvenanceWarning)
+            m = jerlov.lee1999_shallow_rrs(
+                float(r["a"]), float(r["bb"]),
+                depth_m=depth if math.isfinite(depth) else 1.0,
+                bottom_albedo=0.0, sun_zenith_deg=sun)
+        want = m.rrs if math.isfinite(depth) else m.deep
+        assert float(r["model"]) == pytest.approx(want, rel=2e-5)
+
+
+def test_the_cut_check_stores_the_sampler_s_shares():
+    mc = _tool("shallow_rrs_mc")
+    with (DATA / "cut_check.csv").open() as f:
+        rows = list(csv.DictReader(f))
+    assert len(rows) == 9
+    for r in rows:
+        phase = mc.petzold_phase(r["station"], float(r["cut_deg"]))
+        assert float(r["share_below_cut"]) == pytest.approx(phase[2],
+                                                            rel=1e-5)
+        assert float(r["backscatter_share"]) == pytest.approx(phase[3],
+                                                              rel=1e-5)
+    below = {r["station"]: float(r["share_below_cut"]) for r in rows
+             if float(r["cut_deg"]) == 1.0}
+    decisions = _flat("DECISIONS.md").split("## 115. ")[1]
+    assert (f"({below['HAOCE 11']:.3f}, {below['NUC 2240']:.3f} and "
+            f"{below['AUTEC 8']:.3f} below 1 degree at HAOCE 11, NUC 2240 "
+            "and AUTEC 8)") in decisions
+
+
+def test_section_115_figures_are_quoted_as_computed(result):
+    s = result["separated"]
+    oq = _flat("OPEN_QUESTIONS.md").split("## 5. ")[1]
+    data = _flat("DATA.md").split("## 50. ")[1]
+    decisions = _flat("DECISIONS.md").split("## 115. ")[1]
+    log = _flat("CHANGELOG.md").split("## 1.26.2")[1].split("## 1.26.1")[0]
+    moves = (f"by {s['spread_2011'][0]:.3f} to {s['spread_2011'][1]:.3f} "
+             "times against the Monte Carlo")
+    old = f"by {s['spread_1999'][0]:.3f} to {s['spread_1999'][1]:.3f}"
+    for text in (oq, data, log):
+        assert moves in text
+        assert old in text
+    assert (f"lies at {s['q2011'][0]:.3f} to {s['q2011'][1]:.3f} of the "
+            "Monte Carlo") in oq
+    assert (f"is {s['fraction'][0]:.2f} to {s['fraction'][1]:.2f} of the "
+            "1999 model's") in decisions
+    assert s["fraction"][1] <= 1 / 3          # the plan's test, met
+    rising = f"rises with bb/b in {s['rising']} of the {s['cells']} cells " \
+        f"and falls in {'none' if s['falling'] == 0 else s['falling']}"
+    assert rising in oq
+    assert s["rising"] < 20 and s["falling"] < 20   # the plan's test, missed
+    assert (f"in {s['middle']} the middle station, {s['by_back'][1]}, gives "
+            "the highest") in oq
+    assert s["cosine_falls"]
+    assert f"by a factor of {s['cut_spread']:.3f} at most" in oq
+    assert f"by a factor of {s['cut_spread']:.3f} at most" in data
+    assert f"by a factor of {s['cut_spread']:.3f} at most" in decisions
+    assert (f"({s['at_cut_cell']:.2f} there, {s['largest']:.2f} at a 0.2 "
+            "1/m)") in decisions
+    assert f"rises with bb/b in {s['rising']} of {s['cells']} cells" in log
+    assert f"rises with the particles' bb/b in {s['rising']} of " \
+        f"{s['cells']} cells" in data

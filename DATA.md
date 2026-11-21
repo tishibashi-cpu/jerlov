@@ -3117,3 +3117,12 @@ table is shipped; the constants are in `jerlov/ocean_colour.py`.
   alone moves the ratio in a cell by a factor of up to 1.92. The runs are
   `examples/data/shallow_rrs_mc/water_share.csv`, `black_bottom.csv` and
   `lee1998_runs.csv`.
+- **A separated form, and the order of the black-bottom miss (1.26.2,
+  DECISIONS.md section 115).** Lee et al.'s (2011) published deep-water
+  coefficients, water and particles apart, nothing fitted, move by 1.054
+  to 1.079 times against the Monte Carlo across pure water's share where
+  the 1999 model moves by 1.232 to 1.333 (`water_share_nadir.csv`, the
+  sun at the zenith). Over a black bottom the miss rises with the
+  particles' bb/b in 5 of 24 cells and falls in none. A cut of 0.5, 1 or
+  2 degrees moves the ratio at any one station by a factor of 1.027 at
+  most (`cut_check.csv`).

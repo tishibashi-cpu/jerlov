@@ -4,6 +4,27 @@ Every release is archived on Zenodo under the concept DOI
 [10.5281/zenodo.22321312](https://doi.org/10.5281/zenodo.22321312), which
 always resolves to the latest version.
 
+## 1.26.2 — 2026-11-21
+
+The fifth open question taken further: would keeping water and particles
+apart, or the phase function, close the shallow-water model's two groups
+of misses (DECISIONS.md section 115)? No shipped value, code or public
+name changed.
+
+**Found.** Lee et al.'s (2011) deep-water form, which keeps water and
+particles apart, used with its published coefficients and nothing
+fitted, follows pure water's share of the backscattering where the 1999
+model does not: it moves by 1.054 to 1.079 times against the Monte Carlo
+across the shares, the 1999 model by 1.232 to 1.333. Over a black bottom
+the miss is ordered neither by the particles' bb/b (it rises with bb/b in
+5 of 24 cells) nor by the mean cosine, and the Monte Carlo's cut at 1
+degree does not set the stations apart. OPEN_QUESTIONS.md question 5,
+DATA.md section 50.
+
+**New.** A fourth part of `examples/shallow_water_closure.py`, and the
+runs it reads (`water_share_nadir.csv`, `cut_check.csv`, written by
+`tools/shallow_rrs_mc.py`).
+
 ## 1.26.1 — 2026-11-21
 
 Why the shallow-water reflectance model of 1.26.0 misses two groups of
