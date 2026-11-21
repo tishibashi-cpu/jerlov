@@ -7305,3 +7305,47 @@ bit for bit. Version 1.26.1.
 - In one cell the Monte Carlo gives more for a black bottom at 4 m than
   for deep water, by 0.9 times the standard error of the difference; no D
   is taken there.
+
+## 115. Would water and particles apart, or the phase function, close the shallow model's two groups? (1.26.2): the plan
+
+Section 114 left two things open (OPEN_QUESTIONS.md question 5): whether
+a form with pure water and particles apart, as Lee et al. (2011) wrote
+for deep water, would close the first group, and whether a form with the
+phase function in it would close the second. The user asked on
+2026-11-21 for this to go on. HydroLight is still not available, and no
+coefficient is fitted here: fitting a model to this package's own Monte
+Carlo would be deriving coefficients (section 12, out of scope) and would
+show only that the Monte Carlo agrees with itself. What can be done
+without fitting:
+
+**Step 1. Lee et al. (2011), as published, against pure water's share.**
+`lee2011_rrs` with the coefficients for the sun at the zenith and a
+nadir view, (0, 0, 0), keeps water and particles apart and needs no
+fitting. It gives Rrs above the surface; the Monte Carlo gives rrs below.
+They are put on one footing by Lee et al.'s (2002) Eq. (8), rrs = Rrs /
+(0.52 + 1.7 Rrs), which the package already uses (`above_surface_rrs`
+inverts it), and which is a stated assumption for these waters. New
+Monte Carlo runs: deep water, the sun at the zenith, u 0.01, 0.025 and
+0.07, pure water's share of bb 0, 0.2, 0.4, 0.6, 0.8 and 0.95 (18 runs;
+a does not matter in deep water at fixed u, which section 114's runs
+showed to the last digit). For each u, the spread of model over Monte
+Carlo across the shares (largest over smallest) is set beside the same
+spread for Lee et al. (1999)'s deep term. The separated form is said to
+follow pure water's share if its spread is at most a third of the 1999
+model's at every u. Its level is not judged, since the surface
+conversion is assumed.
+
+**Step 2. What orders the black-bottom miss.** Section 114 ran the 24
+black-bottom cells with three of Petzold's phase functions (NUC 2240,
+AUTEC 8, HAOCE 11), a, bb and pure water's part held. For each cell, is
+model over Monte Carlo monotonic in the particles' bb/b (0.018, 0.044,
+0.014 by the sampler), and in the same direction? If it is in at least 20
+of the 24 cells, bb/b (equivalently b at fixed bb) is recorded as ordering
+the miss, which a form with the phase function or b in it would have to
+take; if not, that is recorded. No new runs.
+
+**Documents.** OPEN_QUESTIONS.md question 5 extended (what was done, what
+was found, what is not known); DATA.md section 50; a fourth part of
+`examples/shallow_water_closure.py`; the runs to
+`examples/data/shallow_rrs_mc/water_share_nadir.csv`; tests that recompute
+every figure. No value or code of the package changes. Version 1.26.2.
