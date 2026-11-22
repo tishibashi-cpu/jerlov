@@ -178,3 +178,68 @@ def test_the_later_tables_are_quoted_as_computed(later):
             "percent from the chord between 30 and 60") in data
     assert (f"its nadir f/Q lies {later['own_dip'][0]:+.2f} to "
             f"{later['own_dip'][1]:+.2f} percent from the line") in log
+
+
+# -- DECISIONS.md section 118: the paper's own Fig. 13 --------------------------
+
+PAPER = ROOT / "sources" / "morel2002" / "Morel_Antoine_Gentili_2002_AO.pdf"
+FIG13 = ROOT / "examples" / "data" / "fq_at_45_degrees" / "fig13.csv"
+
+
+def _pdfimages():
+    import shutil
+    return shutil.which("pdfimages") is not None
+
+
+@pytest.mark.skipif(not (PAPER.exists() and EXAMPLE.exists() and _pdfimages()),
+                    reason="needs the user's copy of the paper and pdfimages")
+def test_the_fig13_readings_are_what_the_tool_writes(tmp_path):
+    import subprocess
+    import sys
+    out = tmp_path / "fig13.csv"
+    subprocess.run([sys.executable, str(ROOT / "tools" / "read_fig13.py"),
+                    str(PAPER), str(out)], check=True)
+    assert out.read_text() == FIG13.read_text()
+
+
+@source_tree
+def test_the_fig13_readings_are_well_formed():
+    import csv
+    with FIG13.open() as f:
+        rows = list(csv.DictReader(f))
+    assert {float(r["chl_mg_m3"]) for r in rows} == {0.03, 0.1}
+    for r in rows:
+        assert (float(r["bottom_f0_over_f"]) <= float(r["centre_f0_over_f"])
+                <= float(r["top_f0_over_f"]))
+    # The 0 degree symbol at 0.1 mg/m3 stands alone and must read 1.
+    top = max(rows, key=lambda r: (float(r["chl_mg_m3"]) == 0.1,
+                                   float(r["top_f0_over_f"])))
+    assert f"{float(top['centre_f0_over_f']):.4f}" == "1.0000"
+    assert "reads 1.0000" in _flat("DECISIONS.md").split("## 118. ")[1]
+
+
+@needs_archive
+def test_the_fig13_figures_are_quoted_as_computed(result):
+    g = result["figure"]
+    assert g["drawn"] == g["total"] == 60
+    assert g["off"] == [412.5, 510.0, 560.0, 620.0, 660.0]
+    assert g["far_waves"] == [560.0, 620.0, 660.0]
+    assert g["far"][0] > 10 * g["accuracy"]
+    acc = f"within {g['accuracy']:.4f} of its value"
+    far = f"within {g['far'][0]:.4f} to {g['far'][1]:.4f}"
+    oq = _flat("OPEN_QUESTIONS.md").split("## 6. ")[1]
+    data = _flat("DATA.md").split("## 48. ")[1].split("## 49. ")[0]
+    decisions = _flat("DECISIONS.md").split("## 118. ")[1]
+    log = _flat("CHANGELOG.md").split("## 1.26.5")[1].split("## 1.26.4")[0]
+    for text in (oq, data, decisions, log):
+        assert acc in text, text[:60]
+        assert far in text, text[:60]
+        assert "560, 620 and 660 nm" in text, text[:60]
+    for text in (oq, data):
+        assert "all 60 of the archive's values" in text
+    assert "all 60 of the archive's values" in decisions
+    fits = ", ".join(f"{v:.4f}" for v in g["fits"][4:6]) + \
+        f" and {g['fits'][6]:.4f}"
+    arch = ", ".join(f"{v:.4f}" for v in g["archive45"][4:6]) + \
+        f" and {g['archive45'][6]:.4f}"
+    assert f"({fits})" in decisions and f"({arch})" in decisions

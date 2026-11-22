@@ -4,6 +4,25 @@ Every release is archived on Zenodo under the concept DOI
 [10.5281/zenodo.22321312](https://doi.org/10.5281/zenodo.22321312), which
 always resolves to the latest version.
 
+## 1.26.5 — 2026-11-22
+
+The dip at 45 degrees in Morel et al.'s f/Q archive, in the paper's own
+Fig. 13 (DECISIONS.md section 118). No value changed.
+
+**Found.** Fig. 13 (p. 6301) plots f(0)/f against chlorophyll for five
+sun angles. Read from the page image, its symbols at 0.03 and 0.1 mg
+m^-3 hold all 60 of the archive's values there, a symbol on its own
+within 0.0006 of its value; where the paper's linear fits put f(0)/f at
+45 degrees and 0.03 mg m^-3, at 560, 620 and 660 nm, no symbol stands
+within 0.0110 to 0.0164. The dip was in the values the paper plotted,
+not brought in when the archive was packed. What went wrong in the run
+is still not known. OPEN_QUESTIONS.md question 6, DATA.md section 48.
+
+**New.** `tools/read_fig13.py PDF` reads the figure from your own copy of
+the paper (not shipped) into
+`examples/data/fq_at_45_degrees/fig13.csv`, which
+`examples/fq_at_45_degrees.py` sets against the archive and the fits.
+
 ## 1.26.4 — 2026-11-21
 
 The dip at 45 degrees in Morel et al.'s f/Q archive, against the
