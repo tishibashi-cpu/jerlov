@@ -7507,3 +7507,79 @@ package does not depend on. `examples/fq_at_45_degrees.py` gains
 then. OPEN_QUESTIONS.md question 6 and DATA.md section 48 record the
 finding; the run stays suspect, and its warning now says that the
 authors' recomputation does not have the dip. Version 1.26.4.
+
+## 118. The dip at 45 degrees in the paper's own Fig. 13 (1.26.5): the plan
+
+Sections 116 and 117 found the dip in one run of Morel et al.'s archive
+(the sun at 45 degrees, 0.03 mg m^-3), absent from the authors' later
+tables, and left open what went wrong. The user asked on 2026-11-21 for
+any mention of it by the authors; none was found (Voss et al. 2007,
+which compares Q ratios only and could not see it; MERIS ATBD 2.9, Morel
+& Antoine 2011; Mobley et al. 2016, NASA/TM-2016-217551; D'Alimonte et
+al. 2025 and Pitarch et al. 2025, Remote Sensing of Environment 321 and
+329, which say that Gentili revised the tables, 350-700 nm, and extended
+them to OLCI's bands, without a reason; NASA's orm_morel issues 1 and 2,
+which concern NASA's own code). EUMETSAT's OLCI table could not yet be
+obtained. On that search a look by eye at the paper's Fig. 13 (p. 6301:
+f0/f against Chl, the sun at 0, 15, 30, 45 and 75 degrees, one symbol
+per wavelength) suggested that its symbols at 45 degrees and 0.03 mg
+m^-3 sit where the archive's values are. The user asked on 2026-11-22
+for that to be recorded first, as 1.26.5. **The look came first; the
+measurement below is planned here, before it is made.**
+
+**The source.** The user's copy of the paper as Optica distributes it,
+`sources/morel2002/Morel_Antoine_Gentili_2002_AO.pdf` (536,070 bytes, MD5
+1daf887204a1cb949ec62b15544f082e); not shipped. Fig. 13 is embedded in
+page 13 as a one-bit image at 300 pixels per inch.
+
+**The reading.** A new tool, `tools/read_fig13.py PDF`, takes the image
+out with poppler's `pdfimages` and, with numpy only:
+
+- calibrates f0/f from the left axis's tick marks labelled 1.0 and 0.6,
+  linearly in pixels, and the Chl columns from the bottom axis's ticks
+  at 0.1, 1 and 10 (logarithmic), so that 0.03 sits where the
+  logarithm puts it;
+- finds the filled symbols (circles, triangles, diamonds, squares: every
+  wavelength but 442.5 nm, which is a cross) as what survives an erosion
+  that removes the one-pixel hatching, and keeps those whose centres
+  fall within the columns at 0.03 and 0.1 mg m^-3;
+- writes the f0/f of each centre to
+  `examples/data/morel2002_fig13.csv`: numbers read from the figure,
+  nothing else from the paper.
+
+Symbols are not told apart by shape; only the set of values in each
+column is used. The reading's accuracy is judged from the 0 degree row,
+which must read 1, and from how far the readings stand from the nearest
+archive value at the sun angles other than 45 degrees.
+
+**What is compared.** The readings at 0.03 and 0.1 mg m^-3 against: (a)
+the archive's f(0)/f(theta_s) at the five plotted sun angles and seven
+wavelengths; (b) the same from the paper's own linear fits, Eq. (B1)
+(`morel2002_nadir_fq`), at 45 degrees.
+
+**What would follow.**
+
+- If at 0.03 mg m^-3 the readings that belong to 45 degrees stand at the
+  archive's values, within the reading's accuracy, and none where Eq.
+  (B1) puts them, the values the paper plotted already had the dip: it
+  was in the computation the paper reported (October 2002), not brought
+  in when the archive was packed (June 2003), and the August 2002 fits
+  smoothed it out. DATA.md section 48's "why the archive (June 2003) and
+  the paper's fits (lin-approx.tar, August 2002) differ there is not
+  known" is then answered in part: the fits differ from the computed
+  values, which the paper's own figure shows.
+- If they stand where Eq. (B1) puts them, the dip came after the paper,
+  and that is recorded.
+- If the reading cannot tell the two apart, that is recorded, and
+  nothing more is claimed.
+
+In every case the run stays suspect, no value or warning changes, and
+what went wrong in the run stays not known.
+
+**Documents.** OPEN_QUESTIONS.md question 6 and DATA.md section 48 record
+the result; `sources/README.md` lists the paper's copy.
+`examples/fq_at_45_degrees.py` gains a fourth part that sets the shipped
+readings against the archive and the fits. Tests check that the readings
+are what the tool writes (where the paper's copy and pdfimages are
+present) and recompute every figure quoted (where the archive is
+present); both are skipped in CI, as before. Version 1.26.5.
