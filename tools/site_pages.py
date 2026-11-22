@@ -5,8 +5,8 @@
 
 DECISIONS.md section 109. ``docs/pages/dive.html`` shows the colour and
 amount of daylight left at each depth in the ten Jerlov types;
-``docs/pages/disagree.html`` gives the four questions of OPEN_QUESTIONS.md
-a figure each. The templates are in ``tools/site_pages/``. Every value the
+``docs/pages/disagree.html`` gives the questions of OPEN_QUESTIONS.md a
+figure each (questions 5 and 6 since 1.26.6, section 119). The templates are in ``tools/site_pages/``. Every value the
 pages draw is taken from jerlov here and embedded as JSON; the pages'
 scripts only multiply, integrate and draw. ``docs/conf.py`` copies
 ``docs/pages/`` to the site's root.
@@ -139,6 +139,91 @@ def _closure() -> dict:
                 down=round(down, 3), up=round(up, 3))
 
 
+def _hydrolight() -> dict:
+    """Question 4 (DECISIONS.md section 119): the Monte Carlo's Kd, with
+    pure water's own scattering and a clear sky, over HydroLight's as
+    Solonenko & Mobley printed it, at the 143 cells."""
+    with open(ROOT / "examples" / "data" / "sm_closure" / "runs.csv") as handle:
+        runs = [r for r in csv.DictReader(handle)
+                if r["set"] == "solonenko2015" and r["factor"] == "base"]
+    types = sorted({r["water_type"] for r in runs}, key=TYPES.index)
+    wavelengths = sorted({int(r["wavelength_nm"]) for r in runs})
+    cells = [dict(type=r["water_type"], wl=int(r["wavelength_nm"]),
+                  ratio=round(float(r["kd_to_10_percent"])
+                              / float(r["kd_hydrolight"]), 3))
+             for r in runs]
+    return dict(types=types, wl=wavelengths, cells=cells)
+
+
+def _example(name: str) -> dict:
+    """An example's functions, read without running its main."""
+    import runpy
+    return runpy.run_path(str(ROOT / "examples" / f"{name}.py"),
+                          run_name=name)
+
+
+def _shallow() -> dict:
+    """Question 5 (DECISIONS.md section 119): the shallow-water model over
+    the Monte Carlo, with the two groups as the example defines them."""
+    ex = _example("shallow_water_closure")
+    grid = ex["read"]("monte_carlo.csv")
+    q, water, dark = ex["groups"](grid)
+    share = (grid["bw"] / 2) / grid["bb"]
+    runs = []
+    for i in range(len(q)):
+        runs.append(dict(share=round(float(share[i]), 4),
+                         ratio=round(float(q[i]), 4),
+                         group=1 if water[i] else 2 if dark[i] else 0))
+    paper = ex["read"]("lee1998_runs.csv")
+    held = ex["read"]("water_share.csv")
+    ratio = held["model"] / held["monte_carlo"]
+    lines = []
+    for key in sorted(set(zip(held["u"], held["a"], held["depth_m"]))):
+        pick = ((held["u"] == key[0]) & (held["a"] == key[1])
+                & (held["depth_m"] == key[2]))
+        order = np.argsort(held["water_share"][pick])
+        lines.append(dict(
+            u=float(key[0]), a=float(key[1]),
+            depth=None if not np.isfinite(key[2]) else float(key[2]),
+            share=[float(x) for x in held["water_share"][pick][order]],
+            ratio=_rounded(ratio[pick][order], 4)))
+    return dict(runs=runs, paper_share_max=round(
+        float(paper["water_share"].max()), 4), held=lines, miss=ex["MISS"])
+
+
+#: The sun angles at which question 6's figure sets the paper's fits.
+FIG13_FIT_SUNS = (15.0, 30.0, 45.0)
+#: The reading's accuracy, as OPEN_QUESTIONS.md question 6 quotes it
+#: (a symbol on its own within 0.0006 of its value, DECISIONS.md section
+#: 118): a fit nearer a band than this is drawn as inside it.
+FIG13_ACCURACY = 0.0006
+
+
+def _fig13() -> dict:
+    """Question 6 (DECISIONS.md section 119): the paper's Fig. 13 as read
+    (section 118) and its own Eq. (B1), nothing from the archive."""
+    with open(ROOT / "examples" / "data" / "fq_at_45_degrees"
+              / "fig13.csv") as handle:
+        spans = [{k: float(v) for k, v in r.items()}
+                 for r in csv.DictReader(handle)]
+    columns = sorted({s["chl_mg_m3"] for s in spans})
+    fits = []
+    for chl in columns:
+        for wl in (412.5, 490.0, 510.0, 560.0, 620.0, 660.0):
+            f0 = jerlov.morel2002_nadir_fq(wl, chlorophyll_mg_m3=chl,
+                                           sun_zenith_deg=0.0).f
+            for sun in FIG13_FIT_SUNS:
+                f = jerlov.morel2002_nadir_fq(wl, chlorophyll_mg_m3=chl,
+                                              sun_zenith_deg=sun).f
+                fits.append(dict(chl=chl, wl=wl, sun=sun,
+                                 value=round(f0 / f, 4)))
+    return dict(columns=columns, suns=list(FIG13_FIT_SUNS),
+                accuracy=FIG13_ACCURACY,
+                spans=[dict(chl=s["chl_mg_m3"], top=s["top_f0_over_f"],
+                            bottom=s["bottom_f0_over_f"]) for s in spans],
+                fits=fits)
+
+
 def disagree_inputs() -> dict:
     """The values the second page embeds."""
     pure = {}
@@ -195,6 +280,9 @@ def disagree_inputs() -> dict:
         closure=_closure(),
         editions=dict(types=list(TYPES), wl=both, cells=editions),
         two_sources=two,
+        hydrolight=_hydrolight(),
+        shallow=_shallow(),
+        fig13=_fig13(),
     )
 
 
