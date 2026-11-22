@@ -7664,3 +7664,15 @@ and the site, 1.26.6.
 figure quoted is in OPEN_QUESTIONS.md (the existing list, extended); the
 counts above are recomputed; the page asks nothing of another host (the
 existing test).
+
+**Added to the plan before its code: question 4's figure.** While the
+above was being written, the user asked whether question 4 has nothing
+to draw. It has: section 109 left it without a figure, not for want of
+values. `examples/data/sm_closure/runs.csv` holds, for the 143 cells,
+the Monte Carlo's Kd to 10 percent of the surface light with pure
+water's own scattering and a clear sky (`set` solonenko2015, `factor`
+base) beside K_d^H. The page draws their ratio as question 3's is drawn,
+by type and wavelength with the same diverging colours, and computes the
+median and the share within 10 percent; a test checks these are
+OPEN_QUESTIONS.md's 0.970 and 94.4 percent. The reach of the unprinted
+conditions is quoted, not drawn.
