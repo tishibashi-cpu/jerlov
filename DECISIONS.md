@@ -7676,3 +7676,29 @@ by type and wavelength with the same diverging colours, and computes the
 median and the share within 10 percent; a test checks these are
 OPEN_QUESTIONS.md's 0.970 and 94.4 percent. The reach of the unprinted
 conditions is quoted, not drawn.
+
+**Result.** As planned, with question 4's figure added before its code.
+The page computes the 270 runs, 87.4 percent within 10 percent, the
+groups of 16 and 13 runs (0.818 to 0.893; to 1.723) and the shares 0.46,
+0.48 and 0.79 of question 5; the median 0.970 and 94.4 percent of
+question 4; and 0.0110 to 0.0164 for question 6. Tests find each in
+OPEN_QUESTIONS.md. The pages were looked at in Chromium, light and dark,
+at 1200 and 390 pixels wide; no script error, no sideways scroll of the
+page.
+
+**Differences from the plan, noted after the code.**
+
+- Question 6's dots were first drawn as outside a band whenever they
+  missed it at all; one fit at 30 degrees misses by 0.0006, the reading's
+  own accuracy. A dot is now drawn as on a symbol when it lies within that
+  accuracy (OPEN_QUESTIONS.md's 0.0006). The caption says so, and gives
+  the largest misses the page computes: up to 0.0044 at 0.1 mg m^-3 and
+  0.0164 at 0.03 mg m^-3 and 45 degrees. The fits at 0.1 mg m^-3 also
+  miss a few symbols, which the plan did not foresee.
+- Question 4's heat map has 15 wavelengths; its cells are narrower than
+  question 3's (38 pixels against 46) so that it fits beside the text.
+- Question 4's sentence on the reach of the unprinted conditions now
+  quotes OPEN_QUESTIONS.md's figures (-12.7 to +26.0 percent for the
+  stations, -12.7 to +21.5 for the sun); the median and the share within
+  10 percent are computed rather than quoted, and leave the list of
+  quoted figures.

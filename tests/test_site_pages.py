@@ -270,8 +270,6 @@ QUOTED = [
     ("of 1 to 10 per metre", "is between 1 and 10 m-1", "OPEN_QUESTIONS.md"),
     ("moves Kd by −0.63 to +0.13 %", "moves by -0.63 to +0.13 percent",
      "OPEN_QUESTIONS.md"),
-    ("a median 0.970 of HydroLight's, with 94.4 % of the cells within 10 %",
-     "| With it and a clear sky | 0.970 | 94.4 percent |", "OPEN_QUESTIONS.md"),
     ("At 143 cells from 350 to 700 nm", "run at the 143 cells from 350 to 700 nm",
      "OPEN_QUESTIONS.md"),
     ("a median within 0.95 to 1.05 and 90 % of the cells within 10 %",
@@ -279,6 +277,29 @@ QUOTED = [
      "OPEN_QUESTIONS.md"),
     ("Petzold's measurements of 1971", "Petzold's measurements of 1971",
      "OPEN_QUESTIONS.md"),
+    ("the other stations move it by -12.7 to +26.0 percent, the sun by -12.7 "
+     "to +21.5", "the other stations move it by -12.7 to +26.0 percent, the "
+     "sun by -12.7 to +21.5", "OPEN_QUESTIONS.md"),
+    ("in 12 of 12 cases: from 1.023-1.157 with particles alone to "
+     "0.783-0.902 with pure water nearly alone",
+     "in 12 of 12 cases: from 1.023-1.157 with particles alone to "
+     "0.783-0.902 with pure water nearly alone", "OPEN_QUESTIONS.md"),
+    ("No single change brought 10 of the 13 within 10 percent",
+     "No single change brought 10 of the 13 within 10 percent",
+     "OPEN_QUESTIONS.md"),
+    ("moves by 1.054 to 1.079 times across the shares against the Monte "
+     "Carlo, the 1999 model by 1.232 to 1.333",
+     "it moves by 1.054 to 1.079 times against the Monte Carlo, the 1999 "
+     "model by 1.232 to 1.333", "OPEN_QUESTIONS.md"),
+    ("Their archive's f at 45 degrees lies up to 3.44 percent below the line "
+     "between its own values at 30 and 60",
+     "Their archive's f at 45 degrees lies up to 3.44 percent below the line "
+     "between its own values at 30 and 60", "OPEN_QUESTIONS.md"),
+    ("at all 7 wavelengths, by 1.01 to 3.44 percent",
+     "f lies below the chord at all 7 wavelengths, by 1.01 to 3.44 percent",
+     "OPEN_QUESTIONS.md"),
+    ("Its symbols hold all 60 of the archive's values",
+     "hold all 60 of the archive's values", "OPEN_QUESTIONS.md"),
     ('it seems that the last word is not said about the behaviour of the '
      'irradiance attenuation in the "slope" region of 600 nm',
      'it seems that the last word is not said about the behaviour of the > '
@@ -330,3 +351,76 @@ def test_the_zenodo_record_links_the_site():
     record = json.loads((ROOT / ".zenodo.json").read_text())
     assert {"identifier": "https://tishibashi-cpu.github.io/jerlov/",
             "relation": "isDocumentedBy", "scheme": "url"} in record["related_identifiers"]
+
+
+# -- questions 4 to 6 on the second page (DECISIONS.md section 119) ----------
+
+def _oq(n):
+    text = _flat((ROOT / "OPEN_QUESTIONS.md").read_text())
+    return text.split(f"## {n}. ")[1].split(f"## {n + 1}. ")[0]
+
+
+def test_the_second_pages_hydrolight_figures_are_open_questions():
+    cells = _data(_page("disagree.html"))["hydrolight"]["cells"]
+    ratios = np.array([c["ratio"] for c in cells])
+    assert len(ratios) == 143
+    median = f"{np.median(ratios):.3f}"
+    within = f"{100 * np.mean(np.abs(ratios - 1) <= 0.1):.1f}"
+    assert f"| With it and a clear sky | {median} | {within} percent |" in _oq(4)
+
+
+def test_the_second_pages_shallow_figures_are_open_questions():
+    s = _data(_page("disagree.html"))["shallow"]
+    runs = s["runs"]
+    q = np.array([r["ratio"] for r in runs])
+    g1 = np.array([r["group"] == 1 for r in runs])
+    g2 = np.array([r["group"] == 2 for r in runs])
+    within = 100 * np.mean(np.abs(q - 1) <= s["miss"])
+    text = _oq(5)
+    assert f"within 10 percent in {within:.1f} percent of {len(q)} runs" in text
+    assert (f"({g1.sum()} runs, the model low, {q[g1].min():.3f} to "
+            f"{q[g1].max():.3f} of the Monte Carlo)") in text
+    assert f"({g2.sum()} runs, the model high, to {q[g2].max():.3f})" in text
+    shares = sorted({f"{r['share']:.2f}" for r in runs if r["group"] == 1})
+    assert (f"in the paper's runs is at most {s['paper_share_max']:.2f}. The "
+            f"first group's runs have {' and '.join(shares)}.") in text
+    assert len(s["held"]) == 12
+
+
+def test_the_second_pages_fig13_figures_are_open_questions():
+    f = _data(_page("disagree.html"))["fig13"]
+
+    def gap(chl, value):
+        return min(0.0 if s["bottom"] <= value <= s["top"]
+                   else min(abs(value - s["top"]), abs(value - s["bottom"]))
+                   for s in f["spans"] if s["chl"] == chl)
+
+    far = [gap(0.03, x["value"]) for x in f["fits"]
+           if x["chl"] == 0.03 and x["sun"] == 45.0 and x["wl"] >= 560]
+    text = _oq(6)
+    assert f"no symbol stands within {min(far):.4f} to {max(far):.4f}" in text
+    assert f"a symbol on its own within {f['accuracy']:.4f} of its value" in text
+    # The fits drawn are the package's Eq. (B1); nothing from the archive.
+    for x in f["fits"]:
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", jerlov.ProvenanceWarning)
+            f0 = jerlov.morel2002_nadir_fq(x["wl"], chlorophyll_mg_m3=x["chl"],
+                                           sun_zenith_deg=0.0).f
+            fs = jerlov.morel2002_nadir_fq(x["wl"], chlorophyll_mg_m3=x["chl"],
+                                           sun_zenith_deg=x["sun"]).f
+        assert x["value"] == round(f0 / fs, 4)
+
+
+def test_the_second_pages_fig13_misses_are_what_decisions_says():
+    f = _data(_page("disagree.html"))["fig13"]
+
+    def gap(chl, value):
+        return min(0.0 if s["bottom"] <= value <= s["top"]
+                   else min(abs(value - s["top"]), abs(value - s["bottom"]))
+                   for s in f["spans"] if s["chl"] == chl)
+
+    worst = {c: max(gap(c, x["value"]) for x in f["fits"] if x["chl"] == c)
+             for c in (0.03, 0.1)}
+    text = _flat((ROOT / "DECISIONS.md").read_text()).split("## 119. ")[1]
+    assert (f"up to {worst[0.1]:.4f} at 0.1 mg m^-3 and {worst[0.03]:.4f} at "
+            "0.03 mg m^-3 and 45 degrees") in text

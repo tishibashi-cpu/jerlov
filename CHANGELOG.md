@@ -4,6 +4,22 @@ Every release is archived on Zenodo under the concept DOI
 [10.5281/zenodo.22321312](https://doi.org/10.5281/zenodo.22321312), which
 always resolves to the latest version.
 
+## 1.26.6 — 2026-11-22
+
+The page "Where the sources disagree" gains questions 5 and 6, and a
+figure for question 4 (DECISIONS.md section 119). Nothing in the package
+changed.
+
+**Site.** Question 4: the Monte Carlo's Kd over HydroLight's at the 143
+cells, by type and wavelength. Question 5: the shallow-water model over
+the Monte Carlo against pure water's share of the backscattering, for the
+270 runs and for the 12 cases with only the share changed. Question 6:
+where the paper's own Fig. 13 draws its symbols, against the paper's
+straight-line fits; Morel et al.'s archive, which is not shipped, is not
+drawn. Every figure is made by `tools/site_pages.py` from the package and
+the repository's `examples/data/`, and the numbers the page computes are
+checked against OPEN_QUESTIONS.md.
+
 ## 1.26.5 — 2026-11-22
 
 The dip at 45 degrees in Morel et al.'s f/Q archive, in the paper's own
