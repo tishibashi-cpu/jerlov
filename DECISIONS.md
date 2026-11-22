@@ -7608,3 +7608,59 @@ paper plotted were the archive's, dip included.
 - `morel2002_nadir_fq`'s Notes said of Eq. (B1)'s departure from the
   archive "why is not known"; they now say that the largest is at the
   suspect run, which the paper's figure plots. No value changes.
+
+## 119. Questions 5 and 6 on the page "Where the sources disagree" (1.26.6): the plan
+
+`docs/pages/disagree.html` (section 109) gives the first four questions of
+OPEN_QUESTIONS.md a figure each; questions 5 (1.26.1) and 6 (1.26.3) came
+after it and are not there. The user asked on 2026-11-22 for both to be
+added, with figures, as 1.26.6. For question 6 the user chose figures made
+only of values the repository holds: Morel et al.'s archive states no
+licence and is not shipped (section 104), so nothing computed from it is
+put on the page. The page, like the rest of the site, is written by
+`tools/site_pages.py` from the package and the repository; no browser
+request leaves the site.
+
+**Question 5, two figures from `examples/data/shallow_rrs_mc/`.**
+
+- The 270 Monte Carlo runs (`monte_carlo.csv`): the 1999 model over the
+  Monte Carlo, log scale, against pure water's share of bb, (bw/2)/bb, with
+  the band within 10 percent shaded and the two groups of misses coloured
+  as `examples/shallow_water_closure.py` defines them (its `groups`, read
+  through runpy, so that the two cannot drift apart). The highest share
+  among the paper's 576 rebuilt waters (`lee1998_runs.csv`) is marked.
+- Pure water's share alone (`water_share.csv`): the ratio against the
+  share for each of the 12 cases with u and a held, one line each.
+
+The prose quotes OPEN_QUESTIONS.md question 5. The counts and ranges it
+states (270 runs, 87.4 percent within 10 percent, 16 and 13 runs, 0.818 to
+0.893, to 1.723, a share of at most 0.46) are also computed from the
+embedded values by the tool, and a test checks the two agree.
+
+**Question 6, one figure from what the package ships.** f(0)/f against
+the chlorophyll column of the paper's Fig. 13, at 0.03 and 0.1 mg m^-3:
+
+- the spans of the figure's filled symbols, as `tools/read_fig13.py` read
+  them (`examples/data/fq_at_45_degrees/fig13.csv`, section 118), drawn as
+  bands;
+- f(0)/f from the paper's own linear fits, Eq. (B1) of Appendix B
+  (`morel2002_nadir_fq`, shipped since 1.21.0), at 15, 30 and 45 degrees,
+  for the six wavelengths whose symbols are filled, drawn as dots in three
+  lanes, one per sun angle.
+
+A dot inside a band is where the paper drew a symbol; one outside is not.
+The page computes how far the fits at 45 degrees and 0.03 mg m^-3 stand
+from the nearest band at 560, 620 and 660 nm, and a test checks that this
+is OPEN_QUESTIONS.md's "0.0110 to 0.0164". The archive's own values, the
+chord's departures and the 60 matches are quoted from OPEN_QUESTIONS.md as
+words, not drawn.
+
+**Also.** The lede, the description and the footer say six questions and
+name the new sources and repository folders; question 4, which has no
+figure, keeps none. Nothing in the package changes. A release of documents
+and the site, 1.26.6.
+
+**Checks.** The page is what the tool writes (the existing test); each
+figure quoted is in OPEN_QUESTIONS.md (the existing list, extended); the
+counts above are recomputed; the page asks nothing of another host (the
+existing test).
