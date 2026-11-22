@@ -3007,7 +3007,9 @@ describes two sets.
   2.25 at 560 (0.03 mg m^-3), below by more than 1 percent in 7 of the 42
   cases, and up to 1.22 percent above (412.5 nm, 10 mg m^-3). The linear
   fits have no such dip. Why the archive (June 2003) and the paper's fits
-  (lin-approx.tar, August 2002) differ there is not known.
+  (lin-approx.tar, August 2002) differ there was not known; since 1.26.5
+  (below), the paper's own Fig. 13 shows the archive's values: the fits
+  differ from what was computed.
 - **Located: one run, suspect (1.26.3, DECISIONS.md section 116,
   OPEN_QUESTIONS.md question 6).** The dip belongs to the sun at 45
   degrees and 0.03 mg m^-3 alone. There f lies below the chord between 30
@@ -3032,6 +3034,18 @@ describes two sets.
   to +3.47 percent against the chord of the ratio, every other Chl -1.44
   to +0.01). Not shipped; put the user's copies in `sources/ocssw/` for
   the tests and the example (`--ocssw DIR`), which need h5py.
+- **The paper's own Fig. 13 has the dip (1.26.5, DECISIONS.md section
+  118).** Fig. 13 (p. 6301) plots f(0)/f against Chl for the sun at 0,
+  15, 30, 45 and 75 degrees. `tools/read_fig13.py` reads its filled
+  symbols at 0.03 and 0.1 mg m^-3 from the user's copy of the paper (not
+  shipped; MD5 1daf887204a1cb949ec62b15544f082e) into
+  `examples/data/fq_at_45_degrees/fig13.csv`, numbers read from the
+  figure. They hold all 60 of the archive's values there (six
+  wavelengths, 442.5 nm being a cross, by five sun angles), a symbol on
+  its own within 0.0006 of its value; where Eq. (B1) puts f(0)/f at 45
+  degrees and 0.03 mg m^-3, at 560, 620 and 660 nm, no symbol stands
+  within 0.0110 to 0.0164. The dip was in the values the paper plotted
+  (October 2002), not brought in when the archive was packed (June 2003).
 
 ## 49. The light kept within an angle: Petzold's forward scattering (note)
 

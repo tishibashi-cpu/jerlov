@@ -13,9 +13,14 @@ f/Q tables leave the line between their neighbouring sun angles, and
 whether one run of the table is out of line with the others
 (DECISIONS.md section 116). With --ocssw DIR, the folder holding NASA's
 OCSSW copies of the tables and the authors' later recomputation, it sets
-the archive against those too (section 117; needs h5py).
+the archive against those too (section 117; needs h5py). Part 4 sets the
+archive and the paper's own fits against the symbols of the paper's Fig.
+13, as read by tools/read_fig13.py into examples/data/fq_at_45_degrees/
+(section 118).
 """
 
+import csv
+import pathlib
 import sys
 import warnings
 
@@ -231,6 +236,92 @@ the dip; what went wrong in the archive's run is not known.""")
     return out
 
 
+#: The filled symbols of the paper's Fig. 13 at 0.03 and 0.1 mg/m3, read by
+#: tools/read_fig13.py from the user's copy of the paper (DECISIONS.md
+#: section 118): numbers read from the figure, nothing else.
+FIG13 = (pathlib.Path(__file__).resolve().parent / "data" /
+         "fq_at_45_degrees" / "fig13.csv")
+#: The sun angles Fig. 13 plots (60 degrees is left out, its caption says).
+FIG13_SUNS = (0.0, 15.0, 30.0, 45.0, 75.0)
+
+
+def figure_part(t):
+    rule("4. Against the paper's own Fig. 13")
+    with open(FIG13) as handle:
+        rows = [{k: float(v) for k, v in r.items()}
+                for r in csv.DictReader(handle)]
+    columns = sorted({r["chl_mg_m3"] for r in rows})
+    suns = list(t["suns"])
+    # 442.5 nm is drawn as a cross, which the reading does not keep.
+    waves = [j for j, w in enumerate(t["wl"]) if w != 442.5]
+
+    def gap(chl, v):
+        """How far v lies outside the nearest symbol of the column; 0 if
+        some symbol spans it."""
+        return min(0.0 if r["bottom_f0_over_f"] <= v <= r["top_f0_over_f"]
+                   else min(abs(v - r["top_f0_over_f"]),
+                            abs(v - r["bottom_f0_over_f"]))
+                   for r in rows if r["chl_mg_m3"] == chl)
+
+    def shape(k, s):
+        return t["f"][:, k, 0] / t["f"][:, k, suns.index(s)]
+
+    drawn = total = 0
+    residuals = []
+    for chl in columns:
+        k = list(t["chl"]).index(chl)
+        values = np.array([shape(k, s)[waves] for s in FIG13_SUNS])
+        at = np.repeat(FIG13_SUNS, len(waves))
+        values = values.ravel()
+        total += values.size
+        drawn += sum(gap(chl, v) == 0 for v in values)
+        for r in rows:
+            if r["chl_mg_m3"] != chl:
+                continue
+            inside = ((values >= r["bottom_f0_over_f"])
+                      & (values <= r["top_f0_over_f"]))
+            # A symbol on its own, away from the sun angle in question.
+            if inside.sum() == 1 and at[inside][0] != 45.0:
+                residuals.append(r["centre_f0_over_f"] - values[inside][0])
+    accuracy = float(np.max(np.abs(residuals)))
+    k = list(t["chl"]).index(0.03)
+    archive45 = shape(k, 45.0)
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", jerlov.ProvenanceWarning)
+        fits = np.array([
+            jerlov.morel2002_nadir_fq(w, chlorophyll_mg_m3=0.03,
+                                      sun_zenith_deg=0.0).f
+            / jerlov.morel2002_nadir_fq(w, chlorophyll_mg_m3=0.03,
+                                        sun_zenith_deg=45.0).f
+            for w in t["wl"]])
+    print(f"""Fig. 13 (p. 6301) plots f(0)/f(theta_s) against Chl for the sun at
+{', '.join(f'{s:g}' for s in FIG13_SUNS)} degrees. Its filled symbols at {' and '.join(f'{c:g}' for c in columns)} mg/m3, read
+from the page image (tools/read_fig13.py; symbols that touch are one
+span), hold {drawn} of the archive's {total} values there (six wavelengths, 442.5 nm
+being a cross, by five sun angles), and a symbol standing on its own,
+at a sun angle other than 45 degrees, lies within {accuracy:.4f} of its value.
+At 0.03 mg/m3 and 45 degrees:
+""")
+    print(f"  {'nm':>6} {'archive':>8} {'Eq. (B1)':>9} {'B1 off every symbol by':>24}")
+    gaps = []
+    for j in waves:
+        g = gap(0.03, fits[j])
+        gaps.append(g)
+        print(f"  {t['wl'][j]:>6g} {archive45[j]:>8.4f} {fits[j]:>9.4f} "
+              f"{g:>24.4f}")
+    off = [t["wl"][j] for j, g in zip(waves, gaps) if g > 0]
+    far = [g for g in gaps if g > 10 * accuracy]
+    far_waves = [t["wl"][j] for j, g in zip(waves, gaps) if g > 10 * accuracy]
+    print(f"""
+The figure draws the archive's values, dip included: where the paper's
+fits put f(0)/f at 45 degrees, at {', '.join(f'{w:g}' for w in far_waves)} nm, there is no symbol
+within {min(far):.4f} to {max(far):.4f}, more than ten times the reading's accuracy.
+The values the paper plotted already had the dip; the fits smooth it out.""")
+    return dict(drawn=drawn, total=total, accuracy=accuracy,
+                off=off, far=(min(far), max(far)), far_waves=far_waves,
+                archive45=archive45, fits=fits)
+
+
 def main(archive=None, ocssw=None):
     _banner()
     if not archive:
@@ -251,6 +342,7 @@ Part 3 compares the archive with the authors' later tables, which NASA's
 OCSSW distributes; give the folder holding morel_fq.nc and
 morel_fq_hyperspectral_2026.nc as --ocssw DIR (DECISIONS.md section 117).
 It needs h5py, which the package does not.""")
+    figure = figure_part(t)
     rule("Before you use any of this")
     print("""  - The chord is a straight line in 1 - cos(theta_s), the variable the
     paper's own fits are linear in up to 60 degrees; f bends away from it
@@ -259,7 +351,8 @@ It needs h5py, which the package does not.""")
     Raman emission in every run; the archive gives only the totals, so
     nothing here can tell whether it is that part.
 """)
-    return dict(where=where, neighbours=neighbours, later=later)
+    return dict(where=where, neighbours=neighbours, later=later,
+                figure=figure)
 
 
 if __name__ == "__main__":

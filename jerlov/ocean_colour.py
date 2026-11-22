@@ -1515,9 +1515,11 @@ def morel2002_nadir_fq(wavelength_nm, /, *, chlorophyll_mg_m3,
     The accuracies above are the paper's, against the values the fits
     were fitted to. Against the f of the authors' distributed archive
     (f.dat), Eq. (B1) departs by up to 0.47 percent with the sun at 15
-    degrees, 1.10 at 30, 2.70 at 45 and 1.29 at 60 (DATA.md section 48);
-    why is not known. DECISIONS.md sections 103 and 105, DATA.md section
-    47.
+    degrees, 1.10 at 30, 2.70 at 45 and 1.29 at 60 (DATA.md section 48).
+    The largest is at the archive's one suspect run (the sun at 45
+    degrees, 0.03 mg/m3), whose values the paper's own Fig. 13 plots
+    (since 1.26.5): the fits do not follow what was computed there.
+    DECISIONS.md sections 103, 105 and 118, DATA.md section 47.
     """
     wl = _data.finite_number(wavelength_nm, "wavelength_nm")
     chl = _data.finite_number(chlorophyll_mg_m3, "chlorophyll_mg_m3")

@@ -7583,3 +7583,28 @@ readings against the archive and the fits. Tests check that the readings
 are what the tool writes (where the paper's copy and pdfimages are
 present) and recompute every figure quoted (where the archive is
 present); both are skipped in CI, as before. Version 1.26.5.
+
+**What was found.** The filled symbols at 0.03 and 0.1 mg m^-3 hold all
+60 of the archive's values there (six wavelengths by the five plotted sun
+angles); a symbol on its own, at a sun angle other than 45 degrees, lies
+within 0.0006 of its value, and the 0 degree symbol at 0.1 mg m^-3,
+which stands on its own, reads 1.0000. At 0.03 mg m^-3 and 45 degrees,
+where Eq. (B1) puts f(0)/f at 560, 620 and 660 nm (0.9135, 0.9038 and
+0.8984), no symbol stands within 0.0110 to 0.0164, more than ten times
+that accuracy; the archive's values there (0.9312, 0.9282 and 0.9265)
+lie within a span of symbols. The first case above holds: the values the
+paper plotted were the archive's, dip included.
+
+**Differences from the plan, noted after the reading.**
+
+- The readings are in `examples/data/fq_at_45_degrees/fig13.csv`, one
+  folder per example as `examples/data/shallow_rrs_mc/` is, not
+  `examples/data/morel2002_fig13.csv`.
+- The bottom axis's tick labels survive the erosion; the reading drops
+  everything from three pixels above the bottom frame line down, as it
+  drops the legend's box.
+- At 0.03 mg m^-3 the 0 degree symbols touch the 15 degree ones; the 0
+  degree check is made at 0.1 mg m^-3, where that symbol stands alone.
+- `morel2002_nadir_fq`'s Notes said of Eq. (B1)'s departure from the
+  archive "why is not known"; they now say that the largest is at the
+  suspect run, which the paper's figure plots. No value changes.

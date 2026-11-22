@@ -385,7 +385,7 @@ Chl divided by the same at the next Chl, which is smooth in theta_s
 where the runs agree with each other. What would follow from each result
 was written down first (DECISIONS.md section 116).
 `examples/fq_at_45_degrees.py --archive PATH --ocssw DIR` prints every
-figure below.
+figure below; `tools/read_fig13.py` reads the paper's Fig. 13.
 
 **What was found.**
 
@@ -414,6 +414,17 @@ figure below.
   stands +1.23 to +3.47 percent above its chord (every other Chl -1.44 to
   +0.01).
 
+- The paper's own figure already has it (1.26.5, DECISIONS.md section
+  118). Fig. 13 (p. 6301) plots f(0)/f against Chl for the sun at 0, 15,
+  30, 45 and 75 degrees. Read from the page image, its filled symbols at
+  0.03 and 0.1 mg m^-3 hold all 60 of the archive's values there, a
+  symbol on its own within 0.0006 of its value; where the paper's linear
+  fits (Eq. B1) put f(0)/f at 45 degrees and 0.03 mg m^-3, at 560, 620
+  and 660 nm, no symbol stands within 0.0110 to 0.0164. The values the
+  paper plotted were the archive's, dip included: it was in the
+  computation the paper reported, not brought in when the archive was
+  packed, and the fits smooth it out.
+
 A physical cause would not single out one Chl at one sun angle while its
 neighbours in both stay in line, and the authors' recomputation does not
 show it. The values are kept and marked suspect; the package warns when
@@ -425,5 +436,5 @@ of the Raman scattering is important for the green and red radiations"
 (p. 6298), where the dip is deepest; neither the archive nor the later
 tables give it apart, so that is not tested.
 
-**Where.** DATA.md section 48; DECISIONS.md sections 105, 116 and 117;
+**Where.** DATA.md section 48; DECISIONS.md sections 105, 116, 117 and 118;
 `examples/fq_at_45_degrees.py`; `jerlov.morel2002_fq_tables`.
