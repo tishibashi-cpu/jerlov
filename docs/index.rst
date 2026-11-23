@@ -17,6 +17,17 @@ euphotic zone, how a coloured object looks through water, the heating of
 the upper ocean, and, with a visual pigment template and a model of receptor
 noise, how far apart two colours are to an eye.
 
+.. figure:: figures/kd_types.svg
+   :alt: Kd of the ten Jerlov types from 350 to 700 nm, and the colour of
+      the daylight left at 10 m in each
+   :width: 100%
+
+   The ten types as Jerlov (1976) gave them: how fast daylight fades with
+   depth, Kd, and the colour of what is left at 10 m, white-balanced at the
+   surface and clipped to sRGB (the sun 30 degrees from the zenith, Kd
+   constant with depth).
+   Drawn from the package by ``tools/site_figures.py``.
+
 Every coefficient carries the source it came from. Values that a published
 table got wrong are flagged rather than quietly repaired, and quantities
 that the data do not determine are refused rather than guessed.
@@ -63,8 +74,10 @@ Two pages to look at
   sunlight left at each depth in the ten types, from 0 to 100 m.
 - `Where the sources disagree <disagree.html>`_: the open questions,
   one figure each.
+- `The waters side by side <waters.html>`_: every source of each type on
+  one set of axes, a, b, c and Kd.
 
-Both are made from the package's own values by ``tools/site_pages.py``
+All three are made from the package's own values by ``tools/site_pages.py``
 and say on the page what they assume.
 
 Where to go next

@@ -1,0 +1,205 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The waters side by side · jerlov</title>
+<meta name="description" content="The ten Jerlov water types as each published source gives them: absorption, scattering, attenuation and Kd, side by side.">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="jerlov">
+<meta property="og:title" content="The waters side by side · jerlov">
+<meta property="og:description" content="The ten Jerlov water types as each published source gives them: absorption, scattering, attenuation and Kd, side by side.">
+<meta property="og:image" content="https://tishibashi-cpu.github.io/jerlov/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:url" content="https://tishibashi-cpu.github.io/jerlov/waters.html">
+<meta name="twitter:card" content="summary_large_image">
+<!-- Written by tools/site_pages.py from tools/site_pages/; do not edit the copy in docs/pages/ (DECISIONS.md section 120). -->
+<style>
+/* Layout: one figure with its controls, the sources named below it. */
+:root {
+  --bg: #f3f6f7; --surface: #ffffff; --fg: #12232b; --muted: #56707b; --line: #d3dee2; --accent: #0b6e8a;
+  --lo: #2f6fb0; --hi: #c4621a; --mid: #eef2f3; --beyond: #12232b;
+  --s1: #0b7f99; --s2: #c8641a; --s3: #7a52b3; --s4: #3a8a3a; --s5: #c23a6b;
+  --autec: #2f6fb0; --haoce: #3a8a3a; --nuc: #a5682a;
+  --display: "Avenir Next", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+  --body: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --mono: ui-monospace, "SFMono-Regular", Menlo, Consolas, "Liberation Mono", monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #071318; --surface: #0d1e25; --fg: #e3eef1; --muted: #8aa5af; --line: #1f3740; --accent: #5cc6e2;
+    --lo: #6aa8e8; --hi: #f0a060; --mid: #16282f; --beyond: #f3f6f7;
+    --s1: #5cc6e2; --s2: #f0a060; --s3: #b796f0; --s4: #7cc87c; --s5: #f07aa6;
+    --autec: #6aa8e8; --haoce: #7cc87c; --nuc: #d9a066; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #071318; --surface: #0d1e25; --fg: #e3eef1; --muted: #8aa5af; --line: #1f3740; --accent: #5cc6e2;
+  --lo: #6aa8e8; --hi: #f0a060; --mid: #16282f; --beyond: #f3f6f7;
+  --s1: #5cc6e2; --s2: #f0a060; --s3: #b796f0; --s4: #7cc87c; --s5: #f07aa6;
+  --autec: #6aa8e8; --haoce: #7cc87c; --nuc: #d9a066; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+img { max-width: 100%; }
+/* The hidden attribute must win over a class's display (DECISIONS.md section 111). */
+[hidden] { display: none !important; }
+body { background: var(--bg); color: var(--fg); font-family: var(--body); font-size: 15px; line-height: 1.6; }
+.wrap { max-width: 1120px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 28px 56px; }
+h1, h2, h3 { font-family: var(--display); text-wrap: balance; margin: 0; }
+h1 { font-size: clamp(30px, 5vw, 46px); font-weight: 800; letter-spacing: -0.01em; }
+h2 { font-size: 24px; font-weight: 800; }
+h3 { font-size: 16px; font-weight: 700; margin: 18px 0 6px; }
+.eyebrow { font-family: var(--mono); font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent); margin-bottom: 8px; }
+.lede { max-width: 68ch; color: var(--muted); margin: 10px 0 0; }
+.q { display: grid; grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.3fr); gap: 28px; padding-block: 34px; border-top: 1px solid var(--line); margin-top: 30px; }
+@media (max-width: 880px) { .q { grid-template-columns: minmax(0, 1fr); } }
+.q p, .q li { max-width: 64ch; }
+.q ul { padding-left: 18px; margin: 6px 0; }
+.qn { font-family: var(--mono); font-size: 13px; color: var(--accent); }
+.label { font-family: var(--mono); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); margin-top: 14px; }
+.fig { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 16px; min-width: 0; }
+.fig svg { width: 100%; display: block; overflow: visible; }
+.cap { font-size: 13px; color: var(--muted); margin: 8px 0 0; }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 12px; color: var(--muted); margin-top: 8px; }
+.legend i { display: inline-block; width: 14px; height: 3px; vertical-align: middle; margin-right: 6px; border-radius: 2px; }
+.scroll { overflow-x: auto; }
+.seg { display: inline-flex; flex-wrap: wrap; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; margin-bottom: 8px; }
+.seg button { font: 500 13px var(--body); border: 0; background: transparent; color: var(--muted); padding: 5px 10px; cursor: pointer; }
+.seg button[aria-pressed="true"] { background: var(--accent); color: var(--surface); }
+button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.num { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+blockquote { margin: 8px 0; padding-left: 12px; border-left: 2px solid var(--line); color: var(--muted); font-style: italic; }
+.foot { border-top: 1px solid var(--line); margin-top: 30px; padding-top: 24px; font-size: 13px; color: var(--muted); }
+.foot p { max-width: 80ch; }
+a { color: var(--accent); }
+.nav { font-size: 13px; margin-bottom: 22px; color: var(--muted); }
+code { font-family: var(--mono); font-size: 0.92em; }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <nav class="nav"><a href="index.html">jerlov documentation</a> · <a href="dive.html">Daylight on the way down</a> · <a href="disagree.html">Where the sources disagree</a></nav>
+  <div class="eyebrow">Ocean optics · the Jerlov types</div>
+  <h1>The waters side by side</h1>
+  <p class="lede">A Jerlov type is a name, not a measurement. Several papers give numbers for the same type, and they do not agree: some measured the water, some inverted the light, one replaced a type's values with pure sea water. Pick a type to see every source the package has for it on one set of axes, or a source to see all its types.</p>
+
+  <section class="q" id="explore" style="grid-template-columns:minmax(0,1fr)">
+    <div class="fig">
+      <div class="seg" role="group" aria-label="What to compare" id="mode-seg"></div>
+      <div class="seg" role="group" aria-label="Quantity" id="q-seg"></div>
+      <div class="seg" role="group" aria-label="Water type or source" id="pick-seg"></div>
+      <div class="scroll"><svg id="fw" role="img" aria-label="Optical coefficients of Jerlov water types against wavelength"></svg></div>
+      <div class="legend" id="lw"></div>
+      <p class="cap" id="cw"></p>
+    </div>
+  </section>
+
+  <section class="q" id="sources" style="grid-template-columns:minmax(0,1fr)">
+    <div>
+      <div class="label" style="margin-top:0">The sources, and what the package says of each</div>
+      <div id="src-list"></div>
+    </div>
+  </section>
+
+  <div class="foot">
+    <p>Every value on this page is what <a href="https://tishibashi-cpu.github.io/jerlov/" target="_blank" rel="noopener">jerlov</a> <span id="ver"></span> returns from <code>water(type, source=...)</code>, every 5 nm from 350 to 700 nm or at the source's own wavelengths where it gives fewer; nothing is drawn where a source gives nothing. Williamson &amp; Hollins measured from 412 to 715 nm, so their lines start at 415 nm. The caveats are the package's own, as <code>jerlov.SOURCES</code> states them. Where the numbers came from is in DATA.md, and why the package keeps the sources apart in DECISIONS.md.</p>
+  </div>
+</div>
+
+<script>
+const DATA = /*DATA*/;
+const NS = "http://www.w3.org/2000/svg";
+const v = (n) => `var(${n})`;
+const $ = (id) => document.getElementById(id);
+$("ver").textContent = DATA.jerlov_version;
+const f2 = (x) => x.toFixed(2);
+
+function svgEl(svg, w, h) { svg.setAttribute("viewBox", `0 0 ${w} ${h}`); svg.innerHTML = ""; return svg; }
+function add(svg, tag, attrs, text) {
+  const e = document.createElementNS(NS, tag);
+  let style = "";
+  for (const k in attrs) {
+    // A CSS variable is not read in a presentation attribute by every browser; a style is.
+    if (String(attrs[k]).includes("var(")) style += `${k}:${attrs[k]};`;
+    else e.setAttribute(k, attrs[k]);
+  }
+  if (style) e.setAttribute("style", style);
+  if (text !== undefined) e.textContent = text;
+  svg.appendChild(e); return e;
+}
+const lin = (d0, d1, r0, r1) => (x) => r0 + ((x - d0) / (d1 - d0)) * (r1 - r0);
+const logs = (d0, d1, r0, r1) => (x) => r0 + ((Math.log10(x) - Math.log10(d0)) / (Math.log10(d1) - Math.log10(d0))) * (r1 - r0);
+const T = { "font-family": "var(--mono)", "font-size": 10, fill: v("--muted") };
+function line(svg, pts, stroke, extra = {}) {
+  let d = "", pen = false;
+  for (const p of pts) { if (!p) { pen = false; continue; } d += (pen ? "L" : "M") + p[0].toFixed(1) + "," + p[1].toFixed(1); pen = true; }
+  add(svg, "path", Object.assign({ d, fill: "none", stroke, "stroke-width": 1.8, "stroke-linejoin": "round" }, extra));
+}
+function legend(box, items) { box.innerHTML = items.map(([c, t]) => `<span><i style="background:${c}"></i>${t}</span>`).join(""); }
+
+
+const NAMES = { williamson2022: "Williamson & Hollins 2022", solonenko2015: "Solonenko & Mobley 2015", jerlov1968: "Jerlov 1968", jerlov1976: "Jerlov 1976", austin1986: "Austin & Petzold 1986" };
+const KD_NAMES = { solonenko2015: "HydroLight Kd, Solonenko & Mobley 2015" };
+const LABEL = { a: "absorption a", b: "scattering b", c: "attenuation c = a + b", Kd: "diffuse attenuation Kd" };
+const SRC_COL = { williamson2022: "--s1", solonenko2015: "--s2", jerlov1968: "--s3", jerlov1976: "--s4", austin1986: "--s5" };
+const TYPE_COL = { I: "#08306b", IA: "#1d5fa0", IB: "#3a87c0", II: "#6aaed6", III: "#8fb8d0", "1C": "#3a8a3a", "3C": "#6b9a2e", "5C": "#a5882a", "7C": "#a5682a", "9C": "#6e4219" };
+const TYPE_COL_DARK = { I: "#9ecae1", IA: "#7fb5dc", IB: "#5b9fd0", II: "#3f86c0", III: "#2f6aa8", "1C": "#7cc87c", "3C": "#a8c860", "5C": "#d9c060", "7C": "#d9a066", "9C": "#c08050" };
+const dark = () => document.documentElement.dataset.theme === "dark" || (document.documentElement.dataset.theme !== "light" && matchMedia("(prefers-color-scheme: dark)").matches);
+const typeColour = (t) => (dark() ? TYPE_COL_DARK : TYPE_COL)[t];
+const state = { mode: "type", q: "Kd", type: "II", source: "jerlov1976" };
+
+function seg(box, items, current, onPick) {
+  box.innerHTML = items.map(([k, t]) => `<button type="button" data-k="${k}" aria-pressed="${k === current}">${t}</button>`).join("");
+  box.onclick = (e) => { const b = e.target.closest("button"); if (b) onPick(b.dataset.k); };
+}
+const sourceName = (q, s) => (q === "Kd" && KD_NAMES[s]) || NAMES[s];
+
+function draw() {
+  seg($("mode-seg"), [["type", "One type, every source"], ["source", "One source, every type"]], state.mode, (k) => { state.mode = k; draw(); });
+  seg($("q-seg"), Object.keys(LABEL).map((q) => [q, q]), state.q, (k) => { state.q = k; draw(); });
+  const ofQ = DATA.series.filter((s) => s.quantity === state.q);
+  let lines;
+  if (state.mode === "type") {
+    seg($("pick-seg"), DATA.types.map((t) => [t, t]), state.type, (k) => { state.type = k; draw(); });
+    lines = ofQ.filter((s) => s.type === state.type).map((s) => ({ s, colour: v(SRC_COL[s.source]), name: sourceName(state.q, s.source) }));
+  } else {
+    const srcs = [...new Set(ofQ.map((s) => s.source))];
+    if (!srcs.includes(state.source)) state.source = srcs[0];
+    seg($("pick-seg"), srcs.map((s) => [s, sourceName(state.q, s)]), state.source, (k) => { state.source = k; draw(); });
+    lines = ofQ.filter((s) => s.source === state.source).map((s) => ({ s, colour: typeColour(s.type), name: s.type }));
+  }
+  const all = lines.flatMap((l) => l.s.v).filter((x) => x != null && x > 0);
+  const W = 760, H = 380, m = { l: 52, r: 26, t: 14, b: 34 };
+  const svg = svgEl($("fw"), W, H);
+  svg.style.minWidth = "520px";
+  const x = lin(350, 700, m.l, W - m.r);
+  const lo = Math.pow(10, Math.floor(Math.log10(Math.min(...all)))), hi = Math.pow(10, Math.ceil(Math.log10(Math.max(...all))));
+  const y = logs(lo, hi, H - m.b, m.t);
+  for (let d = lo; d <= hi * 1.0001; d *= 10) for (const k of [1, 2, 5]) {
+    const g = d * k; if (g > hi * 1.0001) break;
+    add(svg, "line", { x1: m.l, x2: W - m.r, y1: y(g), y2: y(g), stroke: v("--line") });
+    add(svg, "text", Object.assign({ x: m.l - 6, y: y(g) + 3, "text-anchor": "end" }, T), +g.toPrecision(2));
+  }
+  for (let l = 350; l <= 700; l += 50) add(svg, "text", Object.assign({ x: x(l), y: H - 14, "text-anchor": "middle" }, T), l + " nm");
+  add(svg, "text", Object.assign({ x: m.l, y: m.t - 2 }, T), LABEL[state.q] + ", 1/m (log scale)");
+  if (!lines.length) add(svg, "text", Object.assign({ x: W / 2, y: H / 2, "text-anchor": "middle" }, T), "no source gives this");
+  for (const l of lines) {
+    line(svg, l.s.wl.map((w, i) => (l.s.v[i] == null || l.s.v[i] <= 0 ? null : [x(w), y(l.s.v[i])])), l.colour, { "stroke-width": 2 });
+    if (l.s.wl.length < 40) l.s.wl.forEach((w, i) => l.s.v[i] != null && l.s.v[i] > 0 && add(svg, "circle", { cx: x(w), cy: y(l.s.v[i]), r: 2.6, fill: l.colour }));
+  }
+  legend($("lw"), lines.map((l) => [l.colour, l.name]));
+  const shown = [...new Set(lines.map((l) => l.s.source))];
+  $("cw").textContent = state.mode === "type"
+    ? `Jerlov type ${state.type}: ${LABEL[state.q]} from ${lines.length} source${lines.length === 1 ? "" : "s"}. ` + (lines.length ? "" : "None of the sources gives it for this type. ") + "Dots mark where a source gives values only at a few wavelengths."
+    : `${LABEL[state.q]} of every type ${sourceName(state.q, state.source)} gives.`;
+  $("src-list").innerHTML = shown.map((s) => `<h3>${sourceName(state.q, s)}</h3><p class="cap" style="margin-top:0">${DATA.sources[s].citation.replace(/&/g, "&amp;").replace(/</g, "&lt;")}. ${DATA.sources[s].measured ? "Measured." : "Not measured: derived."}</p><ul>${DATA.sources[s].caveats.map((c) => `<li class="cap">${c.replace(/&/g, "&amp;").replace(/</g, "&lt;")}</li>`).join("")}</ul>`).join("");
+}
+draw();
+window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", draw);
+new MutationObserver(draw).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+</script>
+</body>
+</html>

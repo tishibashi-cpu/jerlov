@@ -7702,3 +7702,99 @@ page.
   stations, -12.7 to +21.5 for the sun); the median and the share within
   10 percent are computed rather than quoted, and leave the list of
   quoted figures.
+
+## 120. More to look at on the site: a figure on the front page, a gallery of the examples, a third page, and a card for sharing (1.26.7): the plan
+
+The user asked on 2026-11-23 for all four of the proposals made after
+1.26.6 (NEXT_STEPS section 1), to bring readers to the package (the
+direction of 2026-11-18). Nothing in the package changes. Every figure
+is made from the package's own values by `tools/site_pages.py`, as the two
+pages of section 109 are, and a test checks that what is committed is
+what the tool writes now. No page loads anything from another host.
+
+**1. A figure on the front page.** `docs/figures/kd_types.svg`: Kd of the
+ten types from Jerlov (1976), 350 to 700 nm, log scale, one line per
+type, labelled at the right; and the same ten as a colour strip of the
+daylight left at 10 m (`spectrum_to_srgb` of the surface irradiance of
+`dive.html`, section 109, times exp(-Kd 10 m), white-balanced at the
+surface). Placed in `docs/index.rst` under the first paragraph, with a
+caption naming the source and the choices (sun 30 degrees, Kd constant
+with depth).
+
+**2. A gallery of the examples.** `docs/examples.rst` gains, above its
+table, six cards, each a small figure from the package and the examples
+it leads to:
+
+- the light at depth: PAR left with depth, ten types (`par_profile` with
+  the surface spectrum of `dive.html`) — `light_at_depth.py`,
+  `euphotic_zone.py`, `isolumes.py`, `seagrass_depth_limit.py`;
+- why the source is an argument: Kd of type II from Jerlov (1968, 1976),
+  Austin & Petzold (1986) and Solonenko & Mobley (2015) —
+  `sources_disagree.py`;
+- colours through water: the daylight left at 0, 5, 10 and 20 m in IB,
+  1C and 5C, as swatches — `lure_colours.py`, `what_an_eye_sees.py`,
+  `painted_sphere.py`, `fish_colour_differences.py`;
+- heating the upper ocean: the fraction of solar irradiance left with
+  depth (`solar_fraction`), ten types — `solar_heating.py`;
+- from chlorophyll: Kd from `morel2001_kd` at 0.03 to 10 mg m^-3 —
+  `ocean_colour_and_secchi.py`, `what_is_in_the_water.py`;
+- scattering: Petzold's phase functions (`petzold_scattering`) —
+  `measured_scattering.py`, `phase_function_choice.py`.
+
+Each card is a static SVG in `docs/figures/`, drawn by the tool, with the
+quantity, the source and the axes on it. The table of all thirty stays.
+
+**3. A third page: the waters side by side.** `docs/pages/waters.html`,
+in the style of `disagree.html`: pick a type, and see every source the
+package has for it on one set of axes: a and b (Williamson & Hollins
+2022, Solonenko & Mobley 2015), c = a + b, and Kd (Jerlov 1968 and 1976,
+Austin & Petzold 1986, Solonenko & Mobley's HydroLight Kd); or pick a
+quantity and a source and see all its types. Values outside what a
+source gives are not drawn; the page names each source's caveats as the
+package states them (`SOURCES`). Linked from the index, the other two
+pages and the sitemap.
+
+**4. A card for sharing.** `docs/extra/og.png`, 1200 by 630 pixels,
+rendered by a new tool, `tools/og_image.py`, from the front page's figure
+with Playwright's Chromium (a tool's need, not the package's; the PNG is
+committed). Every page of the site gets Open Graph and Twitter card tags
+(title, description, image, address): the Sphinx pages through a
+`docs/_templates/layout.html` that extends the theme's, the three pages
+in their templates.
+
+**Checks.** The figures and pages are what the tool writes (the existing
+test, extended); the front-page strip and the swatches are
+`spectrum_to_srgb` of the stated spectra; the third page draws only what
+`water()` returns (a test compares its embedded values); the card is a
+PNG of 1200 by 630 and every page names it; no page asks anything of
+another host (the existing test, extended). A release of documents and
+the site, 1.26.7.
+
+**Result.** As planned. The site was built with `sphinx-build -W` and
+looked at in Chromium: the front page's figure, the six cards, the third
+page in light and dark at 1200 and 390 pixels wide (no script error, no
+sideways scroll of the page) in both of its modes, and the card. Tests
+check that the figures and the three pages are what the tools write
+now, that the swatches and the strip are `spectrum_to_srgb` of the stated
+spectra, that the third page's values are `water()`'s and its caveats
+`SOURCES`', and that the card is a PNG of 1200 by 630 named by every page.
+
+**Differences from the plan, noted after the code.**
+
+- The figures are drawn by a module of their own, `tools/site_figures.py`,
+  which `tools/site_pages.py` loads and writes into `docs/figures/`; the
+  pages stay in `site_pages.py`.
+- `tools/og_image.py` renders the card with a headless Chromium's
+  `--screenshot`, not through Playwright's Python package, which is not
+  installed where the tool was written; it finds Playwright's Chromium,
+  or another named by CHROME or on the PATH.
+- On the third page Williamson & Hollins's lines start at 415 nm: they
+  measured from 412 nm, and their source's caveat says the values below
+  are a model's. "Values outside what a source gives are not drawn" is
+  read so.
+- `spectrum_to_srgb` warns that 380-700 nm leaves 0.2 percent of the
+  observer out and that some colours are clipped to sRGB; the figures
+  silence both, as `dive.html` does, and the front page's caption now says
+  the colours are clipped.
+- The docs workflow also checks that the sitemap names `waters.html` and
+  that `og.png` is in the built site.

@@ -4,6 +4,29 @@ Every release is archived on Zenodo under the concept DOI
 [10.5281/zenodo.22321312](https://doi.org/10.5281/zenodo.22321312), which
 always resolves to the latest version.
 
+## 1.26.7 — 2026-11-23
+
+More to look at on the site (DECISIONS.md section 120). Nothing in the
+package changed.
+
+**Site.**
+
+- The front page shows Kd of the ten types from Jerlov (1976), and the
+  colour of the daylight left at 10 m in each.
+- The examples page opens with six figures, each leading to the examples
+  that print its numbers: the light at depth, why the source is an
+  argument, colours through water, heating the upper ocean, Kd from
+  chlorophyll, and scattering.
+- A third page, "The waters side by side" (`waters.html`), puts every
+  source of a type on one set of axes, for a, b, c and Kd, or every type
+  of one source, with the caveats the package states for each.
+- Links to the site now show a card when shared (`og.png`, with Open
+  Graph and Twitter tags on every page).
+
+**New tools.** `tools/site_figures.py` draws the figures (called by
+`tools/site_pages.py`); `tools/og_image.py` renders the card with a
+headless Chromium.
+
 ## 1.26.6 — 2026-11-22
 
 The page "Where the sources disagree" gains questions 5 and 6, and a

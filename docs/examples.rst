@@ -14,6 +14,64 @@ repository, not in the installed package; from a clone:
 
 `examples/README.md <https://github.com/tishibashi-cpu/jerlov/blob/main/examples/README.md>`_ says what each shows in more detail.
 
+Six things they show
+--------------------
+
+Each figure is drawn from the package by ``tools/site_figures.py``; the
+examples below it print the numbers.
+
+.. list-table::
+   :widths: 50 50
+
+   * - .. image:: figures/card_par.svg
+          :alt: PAR left with depth in the ten Jerlov types
+          :width: 100%
+
+       **The light at depth.** PAR left with depth in the ten types.
+       `light_at_depth.py <https://github.com/tishibashi-cpu/jerlov/blob/main/examples/light_at_depth.py>`_,
+       `euphotic_zone.py <https://github.com/tishibashi-cpu/jerlov/blob/main/examples/euphotic_zone.py>`_,
+       `isolumes.py <https://github.com/tishibashi-cpu/jerlov/blob/main/examples/isolumes.py>`_,
+       `seagrass_depth_limit.py <https://github.com/tishibashi-cpu/jerlov/blob/main/examples/seagrass_depth_limit.py>`_
+     - .. image:: figures/card_sources.svg
+          :alt: Kd of type II from four sources
+          :width: 100%
+
+       **Why the source is an argument.** Kd of one type, four sources.
+       `sources_disagree.py <https://github.com/tishibashi-cpu/jerlov/blob/main/examples/sources_disagree.py>`_
+   * - .. image:: figures/card_colours.svg
+          :alt: The colour of the daylight left at four depths in three types
+          :width: 100%
+
+       **Colours through water.** The daylight left at 0 to 20 m.
+       `lure_colours.py <https://github.com/tishibashi-cpu/jerlov/blob/main/examples/lure_colours.py>`_,
+       `what_an_eye_sees.py <https://github.com/tishibashi-cpu/jerlov/blob/main/examples/what_an_eye_sees.py>`_,
+       `painted_sphere.py <https://github.com/tishibashi-cpu/jerlov/blob/main/examples/painted_sphere.py>`_,
+       `fish_colour_differences.py <https://github.com/tishibashi-cpu/jerlov/blob/main/examples/fish_colour_differences.py>`_
+     - .. image:: figures/card_heating.svg
+          :alt: Solar irradiance left with depth in the oceanic types
+          :width: 100%
+
+       **Heating the upper ocean.** The solar irradiance left with depth.
+       `solar_heating.py <https://github.com/tishibashi-cpu/jerlov/blob/main/examples/solar_heating.py>`_
+   * - .. image:: figures/card_chlorophyll.svg
+          :alt: Kd of case 1 water from its chlorophyll
+          :width: 100%
+
+       **From chlorophyll.** Kd of case 1 water, 0.03 to 10 mg/m3.
+       `ocean_colour_and_secchi.py <https://github.com/tishibashi-cpu/jerlov/blob/main/examples/ocean_colour_and_secchi.py>`_,
+       `what_is_in_the_water.py <https://github.com/tishibashi-cpu/jerlov/blob/main/examples/what_is_in_the_water.py>`_
+     - .. image:: figures/card_scattering.svg
+          :alt: Phase functions of Petzold's eight stations
+          :width: 100%
+
+       **Scattering.** Petzold's eight phase functions.
+       `measured_scattering.py <https://github.com/tishibashi-cpu/jerlov/blob/main/examples/measured_scattering.py>`_,
+       `phase_function_choice.py <https://github.com/tishibashi-cpu/jerlov/blob/main/examples/phase_function_choice.py>`_
+
+All thirty
+----------
+
+
 .. list-table::
    :header-rows: 1
    :widths: 60 40
