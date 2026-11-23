@@ -1,15 +1,19 @@
-"""Write the two pages of the site that are made from the package's values.
+"""Write the pages and figures of the site that are made from the package's values.
 
-    python tools/site_pages.py              # writes docs/pages/
-    python tools/site_pages.py --out DIR    # writes them elsewhere
+    python tools/site_pages.py              # writes docs/pages/ and docs/figures/
+    python tools/site_pages.py --out DIR    # writes the pages elsewhere
 
 DECISIONS.md section 109. ``docs/pages/dive.html`` shows the colour and
 amount of daylight left at each depth in the ten Jerlov types;
 ``docs/pages/disagree.html`` gives the questions of OPEN_QUESTIONS.md a
-figure each (questions 5 and 6 since 1.26.6, section 119). The templates are in ``tools/site_pages/``. Every value the
-pages draw is taken from jerlov here and embedded as JSON; the pages'
-scripts only multiply, integrate and draw. ``docs/conf.py`` copies
-``docs/pages/`` to the site's root.
+figure each (questions 5 and 6 since 1.26.6, section 119);
+``docs/pages/waters.html`` sets every source of each type side by side,
+and ``docs/figures/`` holds the front page's figure and the gallery of
+the examples (both since 1.26.7, section 120, drawn by
+``tools/site_figures.py``). The templates are in ``tools/site_pages/``.
+Every value the pages draw is taken from jerlov here and embedded as JSON;
+the pages' scripts only multiply, integrate and draw. ``docs/conf.py``
+copies ``docs/pages/`` to the site's root.
 
 ``tests/test_site_pages.py`` checks that the pages in ``docs/pages/`` are
 what this writes now, so run it again after any change to a value the
@@ -286,6 +290,44 @@ def disagree_inputs() -> dict:
     )
 
 
+# -- the third page: the waters side by side (DECISIONS.md section 120) -----
+
+#: What the third page draws: (quantity, source, the method of Water).
+WATER_SERIES = (
+    ("a", "williamson2022", "a"), ("a", "solonenko2015", "a"),
+    ("b", "williamson2022", "b"), ("b", "solonenko2015", "b"),
+    ("c", "williamson2022", "c"), ("c", "solonenko2015", "c"),
+    ("Kd", "jerlov1968", "kd"), ("Kd", "jerlov1976", "kd"),
+    ("Kd", "austin1986", "kd"), ("Kd", "solonenko2015", "kd_hydrolight"),
+)
+#: Williamson & Hollins measured from 412 to 715 nm; beyond it their table
+#: is a model's (their source's caveat), so the page starts at 415 nm.
+WATER_RANGE = {"williamson2022": (415.0, 700.0)}
+
+
+def waters_inputs() -> dict:
+    """The values the third page embeds: what water() returns, every 5 nm
+    from 350 to 700 nm (or the source's own wavelengths where coarser)."""
+    series = []
+    for quantity, source, method in WATER_SERIES:
+        lo, hi = WATER_RANGE.get(source, (350.0, 700.0))
+        for t in jerlov.SOURCES[source].water_types:
+            w = jerlov.water(t, source=source)
+            wl = np.asarray(w.wavelengths, dtype=float)
+            keep = (wl >= lo) & (wl <= hi) & (wl % 5 == 0)
+            values = np.asarray(getattr(w, method)(wl[keep]), dtype=float)
+            series.append(dict(quantity=quantity, source=source, type=t,
+                               wl=wl[keep].tolist(), v=_rounded(values, 5)))
+    sources = {}
+    for _, source, _ in WATER_SERIES:
+        src = jerlov.SOURCES[source]
+        sources[source] = dict(citation=src.citation,
+                               caveats=list(src.caveats),
+                               measured=bool(src.measured))
+    return dict(jerlov_version=jerlov.__version__, types=list(TYPES),
+                series=series, sources=sources)
+
+
 # -- writing -----------------------------------------------------------------
 
 def _fill(template: str, data: dict, figures: dict, core: str = "") -> str:
@@ -307,23 +349,45 @@ def pages() -> dict[str, str]:
         warnings.simplefilter("ignore", jerlov.ProvenanceWarning)
         dive = dive_inputs()
         disagree = disagree_inputs()
+        waters = waters_inputs()
         figures = dive_figures(dive)
     return {
         "dive.html": _fill((TEMPLATES / "dive.html").read_text(), dive, figures,
                            (TEMPLATES / "dive_core.js").read_text()),
         "disagree.html": _fill((TEMPLATES / "disagree.html").read_text(),
                                disagree, {}),
+        "waters.html": _fill((TEMPLATES / "waters.html").read_text(),
+                             waters, {}),
     }
+
+
+#: The static figures of the documentation (DECISIONS.md section 120).
+FIGURES = ROOT / "docs" / "figures"
+
+
+def figures() -> dict[str, str]:
+    """The SVGs of tools/site_figures.py, by file name."""
+    import importlib.util
+    spec = importlib.util.spec_from_file_location(
+        "site_figures", ROOT / "tools" / "site_figures.py")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module.figures()
 
 
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--out", type=Path, default=OUT)
+    parser.add_argument("--figures", type=Path, default=FIGURES)
     args = parser.parse_args(argv)
     args.out.mkdir(parents=True, exist_ok=True)
     for name, text in pages().items():
         (args.out / name).write_text(text)
         print(f"wrote {args.out / name} ({len(text.encode()):,} bytes)")
+    args.figures.mkdir(parents=True, exist_ok=True)
+    for name, text in figures().items():
+        (args.figures / name).write_text(text)
+        print(f"wrote {args.figures / name} ({len(text.encode()):,} bytes)")
 
 
 if __name__ == "__main__":

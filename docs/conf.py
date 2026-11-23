@@ -23,15 +23,19 @@ autodoc_typehints = "signature"
 # Types by their own names, not the module paths 1.0 does not promise.
 python_use_unqualified_type_names = True
 exclude_patterns = ["_build", "pages", "extra"]
-# Two pages made from the package's values by tools/site_pages.py, copied to
-# the site's root as they are (DECISIONS.md section 109), and files a search
-# engine asks for there (section 112).
+# Pages made from the package's values by tools/site_pages.py, copied to the
+# site's root as they are (DECISIONS.md sections 109 and 120), and files a
+# search engine or a sharing card asks for there (sections 112 and 120).
 html_extra_path = ["pages", "extra"]
 # Gives every page a canonical link, and the sitemap its addresses
 # (section 112).
 html_baseurl = "https://tishibashi-cpu.github.io/jerlov/"
 #: The pages html_extra_path copies that a reader should find.
-_EXTRA_PAGES = ("dive.html", "disagree.html")
+_EXTRA_PAGES = ("dive.html", "disagree.html", "waters.html")
+
+# The theme's layout with a card for sharing (DECISIONS.md section 120).
+templates_path = ["_templates"]
+html_context = {"theme_og_root": html_baseurl}
 
 html_theme = "alabaster"
 html_title = f"jerlov {release}"

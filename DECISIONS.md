@@ -7769,3 +7769,32 @@ test, extended); the front-page strip and the swatches are
 PNG of 1200 by 630 and every page names it; no page asks anything of
 another host (the existing test, extended). A release of documents and
 the site, 1.26.7.
+
+**Result.** As planned. The site was built with `sphinx-build -W` and
+looked at in Chromium: the front page's figure, the six cards, the third
+page in light and dark at 1200 and 390 pixels wide (no script error, no
+sideways scroll of the page) in both of its modes, and the card. Tests
+check that the figures and the three pages are what the tools write
+now, that the swatches and the strip are `spectrum_to_srgb` of the stated
+spectra, that the third page's values are `water()`'s and its caveats
+`SOURCES`', and that the card is a PNG of 1200 by 630 named by every page.
+
+**Differences from the plan, noted after the code.**
+
+- The figures are drawn by a module of their own, `tools/site_figures.py`,
+  which `tools/site_pages.py` loads and writes into `docs/figures/`; the
+  pages stay in `site_pages.py`.
+- `tools/og_image.py` renders the card with a headless Chromium's
+  `--screenshot`, not through Playwright's Python package, which is not
+  installed where the tool was written; it finds Playwright's Chromium,
+  or another named by CHROME or on the PATH.
+- On the third page Williamson & Hollins's lines start at 415 nm: they
+  measured from 412 nm, and their source's caveat says the values below
+  are a model's. "Values outside what a source gives are not drawn" is
+  read so.
+- `spectrum_to_srgb` warns that 380-700 nm leaves 0.2 percent of the
+  observer out and that some colours are clipped to sRGB; the figures
+  silence both, as `dive.html` does, and the front page's caption now says
+  the colours are clipped.
+- The docs workflow also checks that the sitemap names `waters.html` and
+  that `og.png` is in the built site.

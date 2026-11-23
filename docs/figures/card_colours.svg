@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 230" width="360" height="230" role="img" aria-label="The colour of the daylight left at 0, 5, 10 and 20 m in Jerlov types IB, 1C and 5C" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="10">
+<rect width="360" height="230" fill="#ffffff"/>
+<text x="46.0" y="16.0" text-anchor="start" fill="#12232b" font-size="10">daylight left, white-balanced at the surface</text>
+<text x="83.0" y="28.0" text-anchor="middle" fill="#56707b" font-size="10">0 m</text>
+<text x="157.0" y="28.0" text-anchor="middle" fill="#56707b" font-size="10">5 m</text>
+<text x="231.0" y="28.0" text-anchor="middle" fill="#56707b" font-size="10">10 m</text>
+<text x="305.0" y="28.0" text-anchor="middle" fill="#56707b" font-size="10">20 m</text>
+<text x="38.0" y="66.0" text-anchor="end" fill="#12232b" font-size="12">IB</text>
+<rect x="48.0" y="36.0" width="70.0" height="52.0" rx="4" fill="#ffffff" stroke="#dde6ea"/>
+<rect x="122.0" y="36.0" width="70.0" height="52.0" rx="4" fill="#58dcee" stroke="#dde6ea"/>
+<rect x="196.0" y="36.0" width="70.0" height="52.0" rx="4" fill="#00bddd" stroke="#dde6ea"/>
+<rect x="270.0" y="36.0" width="70.0" height="52.0" rx="4" fill="#008dbd" stroke="#dde6ea"/>
+<text x="38.0" y="122.0" text-anchor="end" fill="#12232b" font-size="12">1C</text>
+<rect x="48.0" y="92.0" width="70.0" height="52.0" rx="4" fill="#ffffff" stroke="#dde6ea"/>
+<rect x="122.0" y="92.0" width="70.0" height="52.0" rx="4" fill="#5dc192" stroke="#dde6ea"/>
+<rect x="196.0" y="92.0" width="70.0" height="52.0" rx="4" fill="#008f54" stroke="#dde6ea"/>
+<rect x="270.0" y="92.0" width="70.0" height="52.0" rx="4" fill="#004c19" stroke="#dde6ea"/>
+<text x="38.0" y="178.0" text-anchor="end" fill="#12232b" font-size="12">5C</text>
+<rect x="48.0" y="148.0" width="70.0" height="52.0" rx="4" fill="#ffffff" stroke="#dde6ea"/>
+<rect x="122.0" y="148.0" width="70.0" height="52.0" rx="4" fill="#567f43" stroke="#dde6ea"/>
+<rect x="196.0" y="148.0" width="70.0" height="52.0" rx="4" fill="#173b0a" stroke="#dde6ea"/>
+<rect x="270.0" y="148.0" width="70.0" height="52.0" rx="4" fill="#000600" stroke="#dde6ea"/>
+</svg>

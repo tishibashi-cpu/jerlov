@@ -34,6 +34,8 @@ jobs:
       - run: |
           grep -q "<loc>https://tishibashi-cpu.github.io/jerlov/index.html</loc>" docs/_build/html/sitemap.xml
           grep -q "<loc>https://tishibashi-cpu.github.io/jerlov/dive.html</loc>" docs/_build/html/sitemap.xml
+          grep -q "<loc>https://tishibashi-cpu.github.io/jerlov/waters.html</loc>" docs/_build/html/sitemap.xml
+          test -f docs/_build/html/og.png
           grep -qx "google-site-verification: google8846fd1b128ec3b7.html" docs/_build/html/google8846fd1b128ec3b7.html
       - uses: actions/upload-pages-artifact@v5
         if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'

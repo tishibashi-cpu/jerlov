@@ -79,7 +79,10 @@ def _close(made, kept, where):
 
 # -- the pages are what the tool writes now ----------------------------------
 
-@pytest.mark.parametrize("name", ["dive.html", "disagree.html"])
+PAGE_NAMES = ["dive.html", "disagree.html", "waters.html"]
+
+
+@pytest.mark.parametrize("name", PAGE_NAMES)
 def test_the_page_is_what_the_tool_writes_now(name):
     made = _tool().pages()[name]
     kept = _page(name)
@@ -90,7 +93,7 @@ def test_the_page_is_what_the_tool_writes_now(name):
     assert _data(kept)["jerlov_version"] == jerlov.__version__
 
 
-@pytest.mark.parametrize("name", ["dive.html", "disagree.html"])
+@pytest.mark.parametrize("name", PAGE_NAMES)
 def test_the_page_asks_nothing_of_another_host(name):
     text = _page(name)
     assert "<script src" not in text
@@ -106,6 +109,8 @@ def test_the_site_carries_the_pages_and_links_to_them():
     assert '"pages"' in conf.split("exclude_patterns")[1].splitlines()[0]
     index = (ROOT / "docs" / "index.rst").read_text()
     assert "<dive.html>`_" in index and "<disagree.html>`_" in index
+    assert "<waters.html>`_" in index
+    assert '"waters.html"' in conf.split("_EXTRA_PAGES")[1].splitlines()[0]
     assert "<disagree.html>`_" in (ROOT / "docs" / "open_questions.rst").read_text()
 
 
@@ -340,7 +345,7 @@ def test_the_site_writes_a_sitemap_with_its_pages():
     conf = (ROOT / "docs" / "conf.py").read_text()
     assert 'html_baseurl = "https://tishibashi-cpu.github.io/jerlov/"' in conf
     assert 'app.connect("build-finished", _sitemap)' in conf
-    assert '_EXTRA_PAGES = ("dive.html", "disagree.html")' in conf
+    assert '_EXTRA_PAGES = ("dive.html", "disagree.html", "waters.html")' in conf
     # The docs workflow reads the built sitemap back.
     docs_yml = (ROOT / ".github" / "workflows" / "docs.yml").read_text()
     for page in ("index.html", "dive.html"):
@@ -424,3 +429,106 @@ def test_the_second_pages_fig13_misses_are_what_decisions_says():
     text = _flat((ROOT / "DECISIONS.md").read_text()).split("## 119. ")[1]
     assert (f"up to {worst[0.1]:.4f} at 0.1 mg m^-3 and {worst[0.03]:.4f} at "
             "0.03 mg m^-3 and 45 degrees") in text
+
+
+# -- the figures, the third page and the card (DECISIONS.md section 120) ------
+
+NUMBER = re.compile(r"-?\d+(?:\.\d+)?")
+
+
+def _figures_tool():
+    spec = importlib.util.spec_from_file_location(
+        "site_figures", ROOT / "tools" / "site_figures.py")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+@pytest.fixture(scope="module")
+def made_figures():
+    return _tool().figures()
+
+
+def test_the_figures_are_what_the_tool_writes_now(made_figures):
+    """Byte for byte but for coordinates, which may round the other way on
+    another machine: those within 0.15 of a pixel."""
+    kept_names = sorted(p.name for p in (ROOT / "docs" / "figures").glob("*.svg"))
+    assert kept_names == sorted(made_figures)
+    for name, made in made_figures.items():
+        kept = (ROOT / "docs" / "figures" / name).read_text()
+        assert NUMBER.sub("#", made) == NUMBER.sub("#", kept), name
+        for a, b in zip(NUMBER.findall(made), NUMBER.findall(kept)):
+            assert abs(float(a) - float(b)) <= 0.15, (name, a, b)
+
+
+def test_the_figures_name_what_they_draw(made_figures):
+    for name, svg in made_figures.items():
+        assert 'role="img" aria-label="' in svg, name
+        assert "<script" not in svg and "href" not in svg, name
+    assert "Jerlov 1976" in made_figures["kd_types.svg"]
+
+
+def test_the_swatches_are_spectrum_to_srgb_of_the_stated_spectra(made_figures):
+    tool = _figures_tool()
+    es = tool.surface()
+    wl = tool.WL
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        for t, z in (("IB", 0.0), ("1C", 10.0), ("5C", 20.0), ("II", 10.0)):
+            kd = np.asarray(jerlov.water(t, source="jerlov1976").kd(wl))
+            rgb = jerlov.spectrum_to_srgb(es * np.exp(-kd * z), wl, white=es)
+            hexed = "#" + "".join(f"{int(round(255 * min(max(float(c), 0), 1))):02x}"
+                                  for c in rgb)
+            assert tool.colour_at(t, z, es) == hexed
+            where = "kd_types.svg" if z == 10.0 and t == "II" else "card_colours.svg"
+            assert f'fill="{hexed}"' in made_figures[where], (t, z)
+
+
+def test_the_docs_show_the_figures():
+    index = (ROOT / "docs" / "index.rst").read_text()
+    assert ".. figure:: figures/kd_types.svg" in index
+    examples = (ROOT / "docs" / "examples.rst").read_text()
+    for name in ("par", "sources", "colours", "heating", "chlorophyll",
+                 "scattering"):
+        assert f".. image:: figures/card_{name}.svg" in examples
+
+
+def test_the_third_page_draws_what_water_returns():
+    data = _data(_page("waters.html"))
+    tool = _tool()
+    assert len(data["series"]) == sum(
+        len(jerlov.SOURCES[s].water_types) for _, s, _ in tool.WATER_SERIES)
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", jerlov.ProvenanceWarning)
+        for s in data["series"][::7]:
+            method = {(q, src): m for q, src, m in tool.WATER_SERIES}[
+                (s["quantity"], s["source"])]
+            w = jerlov.water(s["type"], source=s["source"])
+            values = np.asarray(getattr(w, method)(np.asarray(s["wl"])), float)
+            for got, want in zip(s["v"], values):
+                if got is None:
+                    assert not np.isfinite(want)
+                else:
+                    assert got == pytest.approx(want, abs=1e-5)
+    for s in data["series"]:
+        if s["source"] == "williamson2022":
+            assert min(s["wl"]) >= 412.0     # measured from 412 nm
+    for source, info in data["sources"].items():
+        assert info["caveats"] == list(jerlov.SOURCES[source].caveats)
+
+
+def test_the_card_is_a_png_of_1200_by_630_and_every_page_names_it():
+    import struct
+    png = (ROOT / "docs" / "extra" / "og.png").read_bytes()
+    assert png[:8] == b"\x89PNG\r\n\x1a\n"
+    assert struct.unpack(">II", png[16:24]) == (1200, 630)
+    image = '<meta property="og:image" content="https://tishibashi-cpu.github.io/jerlov/og.png">'
+    for name in PAGE_NAMES:
+        assert image in _page(name), name
+        assert (f'<meta property="og:url" content="https://tishibashi-cpu.github.io/'
+                f'jerlov/{name}">') in _page(name)
+    layout = (ROOT / "docs" / "_templates" / "layout.html").read_text()
+    assert '{% extends "!layout.html" %}' in layout
+    assert 'content="{{ theme_og_root }}og.png"' in layout
+    conf = (ROOT / "docs" / "conf.py").read_text()
+    assert 'templates_path = ["_templates"]' in conf
