@@ -4,6 +4,31 @@ Every release is archived on Zenodo under the concept DOI
 [10.5281/zenodo.22321312](https://doi.org/10.5281/zenodo.22321312), which
 always resolves to the latest version.
 
+## 1.26.8 — 2026-11-25
+
+A fourth page on the site (DECISIONS.md section 121). Nothing in the
+package changed.
+
+**Site.** "When the bottom shows through" (`shallow.html`) puts a flat
+bottom under each of the ten types and evaluates `lee1999_shallow_rrs`
+(Lee et al. 1998, 1999) straight down: pick the type, the bottom's depth
+(0.5 to 32 m) and albedo, the sun (0, 30 or 60 degrees) and the
+particles' bbp/bp (0.005, 0.0183 or 0.03). It draws Rrs with and without
+the bottom, the bottom's share of the reflectance with depth at 450, 550
+and 650 nm, and the colour seen from above with and without the bottom.
+a and bb are Solonenko & Mobley's (2015) through `Water.a` and
+`Water.bb`; where that source has gaps (3C beyond 650 nm, 5C beyond 575
+nm) nothing is drawn, and the package's warnings for the type are shown
+beside it. The page also gives the model's equations, what it leaves
+out, and how it fares against the Monte Carlo of 1.26.0. Every page's
+navigation, the index and the sitemap link to it.
+
+**Tests.** The page is what `tools/site_pages.py` writes; its a, bb,
+constants and warnings are the package's; its script, run by node, gives
+`lee1999_shallow_rrs` to 1e-12 and `spectrum_to_srgb`'s colours to 1e-5;
+the Monte Carlo figures it quotes are those of OPEN_QUESTIONS.md and
+DATA.md.
+
 ## 1.26.7 — 2026-11-23
 
 More to look at on the site (DECISIONS.md section 120). Nothing in the

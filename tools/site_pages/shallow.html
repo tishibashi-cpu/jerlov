@@ -1,0 +1,338 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>When the bottom shows through · jerlov</title>
+<meta name="description" content="Shallow water seen from above: how a bottom of chosen depth and brightness changes the reflectance and colour of the ten Jerlov types, by Lee et al.&#39;s published model.">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="jerlov">
+<meta property="og:title" content="When the bottom shows through · jerlov">
+<meta property="og:description" content="Shallow water seen from above: how a bottom of chosen depth and brightness changes the reflectance and colour of the ten Jerlov types, by Lee et al.&#39;s published model.">
+<meta property="og:image" content="https://tishibashi-cpu.github.io/jerlov/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:url" content="https://tishibashi-cpu.github.io/jerlov/shallow.html">
+<meta name="twitter:card" content="summary_large_image">
+<!-- Written by tools/site_pages.py from tools/site_pages/; do not edit the copy in docs/pages/ (DECISIONS.md section 121). -->
+<style>
+/* Layout: the controls, then the figures, then what the model is. */
+:root {
+  --bg: #f3f6f7; --surface: #ffffff; --fg: #12232b; --muted: #56707b; --line: #d3dee2; --accent: #0b6e8a;
+  --lo: #2f6fb0; --hi: #c4621a; --mid: #eef2f3; --beyond: #12232b;
+  --s1: #0b7f99; --s2: #c8641a; --s3: #7a52b3; --s4: #3a8a3a; --s5: #c23a6b;
+  --autec: #2f6fb0; --haoce: #3a8a3a; --nuc: #a5682a;
+  --display: "Avenir Next", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+  --body: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --mono: ui-monospace, "SFMono-Regular", Menlo, Consolas, "Liberation Mono", monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #071318; --surface: #0d1e25; --fg: #e3eef1; --muted: #8aa5af; --line: #1f3740; --accent: #5cc6e2;
+    --lo: #6aa8e8; --hi: #f0a060; --mid: #16282f; --beyond: #f3f6f7;
+    --s1: #5cc6e2; --s2: #f0a060; --s3: #b796f0; --s4: #7cc87c; --s5: #f07aa6;
+    --autec: #6aa8e8; --haoce: #7cc87c; --nuc: #d9a066; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #071318; --surface: #0d1e25; --fg: #e3eef1; --muted: #8aa5af; --line: #1f3740; --accent: #5cc6e2;
+  --lo: #6aa8e8; --hi: #f0a060; --mid: #16282f; --beyond: #f3f6f7;
+  --s1: #5cc6e2; --s2: #f0a060; --s3: #b796f0; --s4: #7cc87c; --s5: #f07aa6;
+  --autec: #6aa8e8; --haoce: #7cc87c; --nuc: #d9a066; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+img { max-width: 100%; }
+/* The hidden attribute must win over a class's display (DECISIONS.md section 111). */
+[hidden] { display: none !important; }
+body { background: var(--bg); color: var(--fg); font-family: var(--body); font-size: 15px; line-height: 1.6; }
+.wrap { max-width: 1120px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 28px 56px; }
+h1, h2, h3 { font-family: var(--display); text-wrap: balance; margin: 0; }
+h1 { font-size: clamp(30px, 5vw, 46px); font-weight: 800; letter-spacing: -0.01em; }
+h2 { font-size: 24px; font-weight: 800; }
+h3 { font-size: 16px; font-weight: 700; margin: 18px 0 6px; }
+.eyebrow { font-family: var(--mono); font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent); margin-bottom: 8px; }
+.lede { max-width: 68ch; color: var(--muted); margin: 10px 0 0; }
+.q { display: grid; grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.3fr); gap: 28px; padding-block: 34px; border-top: 1px solid var(--line); margin-top: 30px; }
+@media (max-width: 880px) { .q { grid-template-columns: minmax(0, 1fr); } }
+.q p, .q li { max-width: 64ch; }
+.q ul { padding-left: 18px; margin: 6px 0; }
+.qn { font-family: var(--mono); font-size: 13px; color: var(--accent); }
+.label { font-family: var(--mono); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); margin-top: 14px; }
+.fig { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 16px; min-width: 0; }
+.fig svg { width: 100%; display: block; overflow: visible; }
+.cap { font-size: 13px; color: var(--muted); margin: 8px 0 0; }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 12px; color: var(--muted); margin-top: 8px; }
+.legend i { display: inline-block; width: 14px; height: 3px; vertical-align: middle; margin-right: 6px; border-radius: 2px; }
+.scroll { overflow-x: auto; }
+.seg { display: inline-flex; flex-wrap: wrap; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; margin-bottom: 8px; }
+.seg button { font: 500 13px var(--body); border: 0; background: transparent; color: var(--muted); padding: 5px 10px; cursor: pointer; }
+.seg button[aria-pressed="true"] { background: var(--accent); color: var(--surface); }
+button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.num { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+blockquote { margin: 8px 0; padding-left: 12px; border-left: 2px solid var(--line); color: var(--muted); font-style: italic; }
+.foot { border-top: 1px solid var(--line); margin-top: 30px; padding-top: 24px; font-size: 13px; color: var(--muted); }
+.foot p { max-width: 80ch; }
+a { color: var(--accent); }
+.nav { font-size: 13px; margin-bottom: 22px; color: var(--muted); }
+code { font-family: var(--mono); font-size: 0.92em; }
+.controls { display: grid; gap: 10px 22px; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); }
+.ctl .label { margin-top: 0; margin-bottom: 4px; }
+.ctl input[type=range] { width: 100%; accent-color: var(--accent); }
+.ctl output { font-family: var(--mono); font-size: 13px; color: var(--fg); }
+.swatches { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 12px; }
+.sw { border-radius: 8px; height: 120px; border: 1px solid var(--line); }
+.swl { font-size: 12px; color: var(--muted); margin-top: 4px; }
+.pair { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 20px; margin-top: 20px; }
+@media (max-width: 880px) { .pair { grid-template-columns: minmax(0, 1fr); } }
+.warn { color: var(--hi); font-size: 13px; }
+pre.eq { font-family: var(--mono); font-size: 12.5px; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; overflow-x: auto; max-width: 100%; }
+
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <nav class="nav"><a href="index.html">jerlov documentation</a> · <a href="dive.html">Daylight on the way down</a> · <a href="disagree.html">Where the sources disagree</a> · <a href="waters.html">The waters side by side</a></nav>
+  <div class="eyebrow">Ocean optics · shallow water</div>
+  <h1>When the bottom shows through</h1>
+  <p class="lede">Over shallow water, the light that comes back up is partly the water's and partly the bottom's. How much of each depends on how deep the bottom is, how bright it is, and how clear the water is. This page puts a flat bottom under each of the ten Jerlov types and evaluates Lee et al.&#39;s published model of what a sensor looking straight down would see.</p>
+
+  <section class="q" id="explore" style="grid-template-columns:minmax(0,1fr)">
+    <div class="fig">
+      <div class="controls">
+        <div class="ctl"><div class="label">Jerlov type</div><div class="seg" role="group" aria-label="Jerlov type" id="type-seg"></div></div>
+        <div class="ctl"><div class="label">Sun, degrees from the zenith</div><div class="seg" role="group" aria-label="Sun" id="sun-seg"></div></div>
+        <div class="ctl"><div class="label">Particles&#39; bbp/bp</div><div class="seg" role="group" aria-label="Particles' backscattering ratio" id="ratio-seg"></div></div>
+        <div class="ctl"><div class="label"><label for="depth">Bottom depth</label> <output id="depth-out"></output></div><input type="range" id="depth" min="-1" max="5" step="0.01" aria-describedby="depth-out"></div>
+        <div class="ctl"><div class="label"><label for="albedo">Bottom albedo</label> <output id="albedo-out"></output></div><input type="range" id="albedo" min="0" max="1" step="0.01" aria-describedby="albedo-out"></div>
+      </div>
+      <p class="warn" id="warn" hidden></p>
+      <p class="cap" id="flags" hidden></p>
+    </div>
+
+    <div class="pair">
+      <div class="fig">
+        <div class="label" style="margin-top:0">Seen straight down</div>
+        <div class="swatches">
+          <div><div class="sw" id="sw-bottom"></div><div class="swl" id="swl-bottom"></div></div>
+          <div><div class="sw" id="sw-deep"></div><div class="swl">The same water with no bottom in view</div></div>
+        </div>
+        <p class="cap" id="csw"></p>
+      </div>
+      <div class="fig">
+        <div class="label" style="margin-top:0">Remote sensing reflectance</div>
+        <div class="scroll"><svg id="fs" role="img" aria-label="Remote sensing reflectance against wavelength, with and without the bottom"></svg></div>
+        <div class="legend" id="ls"></div>
+        <p class="cap" id="cs"></p>
+      </div>
+    </div>
+
+    <div class="fig" style="margin-top:20px">
+      <div class="label" style="margin-top:0">How much of the reflectance is the bottom&#39;s, with depth</div>
+      <div class="scroll"><svg id="fd" role="img" aria-label="The bottom's share of the reflectance against bottom depth at three wavelengths"></svg></div>
+      <div class="legend" id="ld"></div>
+      <p class="cap" id="cd"></p>
+    </div>
+  </section>
+
+  <section class="q" id="model">
+    <div>
+      <span class="qn">The model</span>
+      <h2>A fit to radiative transfer</h2>
+      <p>Lee, Carder, Mobley, Steward and Patch fitted a model of the reflectance just beneath the surface to HydroLight runs: a uniform water with Petzold&#39;s average-particle phase function over a flat, Lambertian bottom (<a href="https://doi.org/10.1364/AO.37.006329" target="_blank" rel="noopener">Appl. Opt. 37, 6329, 1998</a>), and refitted it with more runs a year later, correcting a calculation error (<a href="https://doi.org/10.1364/AO.38.003831" target="_blank" rel="noopener">Appl. Opt. 38, 3831, 1999</a>). jerlov uses only the 1999 constants, in <code>lee1999_shallow_rrs</code>.</p>
+      <p>The water column and the bottom each contribute a term. The column&#39;s grows with depth towards the deep-water value; the bottom&#39;s fades twice over, on the way down and on the way back, by the depth times a + bb.</p>
+    </div>
+    <div>
+      <pre class="eq">rrs  = rrs_dp (1 &minus; exp(&minus;(1/cos &theta;w + 1.03 (1 + 2.4 u)^0.5) &kappa; H))
+     + (&rho;/&pi;) exp(&minus;(1/cos &theta;w + 1.04 (1 + 5.4 u)^0.5) &kappa; H)
+rrs_dp = (0.084 + 0.170 u) u,   u = bb/(a + bb),   &kappa; = a + bb
+Rrs  = 0.5 rrs / (1 &minus; 1.5 rrs)</pre>
+      <p class="cap">H is the bottom depth, &rho; its albedo, &theta;w the sun&#39;s angle in the water (refracted with n = 1.34, the paper&#39;s), rrs_dp the reflectance of the same water with no bottom, and Rrs the reflectance just above the surface.</p>
+    </div>
+  </section>
+
+  <section class="q" id="trust">
+    <div>
+      <span class="qn">How far to trust it</span>
+      <h2>Against a Monte Carlo</h2>
+    </div>
+    <div>
+      <p>jerlov set the model against its own Monte Carlo, {{MC_RUNS}} runs with another of Petzold&#39;s phase functions and a flat surface. The median of the model over the Monte Carlo is {{MC_MEDIAN}}, and it is within 10 percent in {{MC_WITHIN}} percent of the runs. It misses in two groups: it runs low where pure water carries most of the backscattering, and high over a dark bottom a few metres down in turbid water. Both are drawn in <a href="disagree.html#shallow">question 5 of &ldquo;Where the sources disagree&rdquo;</a>.</p>
+      <p>What the model leaves out: views other than straight down (the 1999 paper&#39;s change for them is not used), a sky that is not the sun&#39;s beam, Raman scattering and fluorescence, a bottom that is not flat or not Lambertian, and water that is not uniform. The controls stop at the runs&#39; own limits: the bottom from 0.5 to 32 m, the sun at the runs&#39; three angles, 400 to 700 nm.</p>
+    </div>
+  </section>
+
+  <div class="foot">
+    <p>Every value on this page comes from <a href="https://tishibashi-cpu.github.io/jerlov/" target="_blank" rel="noopener">jerlov</a> <span id="ver"></span>; the page evaluates the equations above on them, as <code>lee1999_shallow_rrs</code> does. The water&#39;s a is Solonenko &amp; Mobley&#39;s (2015), the only source with a and b for all ten types; they give it every 25 nm, and between those wavelengths the values are the package&#39;s linear interpolation. bb is <code>Water.bb</code> with the particles&#39; bbp/bp chosen above: 0.0183 is that of Petzold&#39;s average-particle phase function, which Lee et al.&#39;s runs used, and 0.005 and 0.03 bracket it. Neither the albedo nor bbp/bp is set by the Jerlov type, so both are yours to choose; the package ships no albedos of sea beds. The colours are &pi; Rrs under Gregg &amp; Carder&#39;s (1990) clear sky above the surface (the sky of &ldquo;Daylight on the way down&rdquo;: 21 June, a visibility of {{VISIBILITY}} km, at the chosen sun), through the CIE 1931 observer from 400 to 700 nm with that sky as white, clipped to sRGB. The sky reflected by the surface is not in Rrs and not in the colours. DECISIONS.md section 121 says how the page was made, DATA.md section 50 where the model&#39;s numbers came from.</p>
+  </div>
+</div>
+
+<script>
+/*CORE*/
+const DATA = /*DATA*/;
+const NS = "http://www.w3.org/2000/svg";
+const v = (n) => `var(${n})`;
+const $ = (id) => document.getElementById(id);
+$("ver").textContent = DATA.jerlov_version;
+const f2 = (x) => x.toFixed(2);
+
+function svgEl(svg, w, h) { svg.setAttribute("viewBox", `0 0 ${w} ${h}`); svg.innerHTML = ""; return svg; }
+function add(svg, tag, attrs, text) {
+  const e = document.createElementNS(NS, tag);
+  let style = "";
+  for (const k in attrs) {
+    // A CSS variable is not read in a presentation attribute by every browser; a style is.
+    if (String(attrs[k]).includes("var(")) style += `${k}:${attrs[k]};`;
+    else e.setAttribute(k, attrs[k]);
+  }
+  if (style) e.setAttribute("style", style);
+  if (text !== undefined) e.textContent = text;
+  svg.appendChild(e); return e;
+}
+const lin = (d0, d1, r0, r1) => (x) => r0 + ((x - d0) / (d1 - d0)) * (r1 - r0);
+const logs = (d0, d1, r0, r1) => (x) => r0 + ((Math.log10(x) - Math.log10(d0)) / (Math.log10(d1) - Math.log10(d0))) * (r1 - r0);
+const T = { "font-family": "var(--mono)", "font-size": 10, fill: v("--muted") };
+function line(svg, pts, stroke, extra = {}) {
+  let d = "", pen = false;
+  for (const p of pts) { if (!p) { pen = false; continue; } d += (pen ? "L" : "M") + p[0].toFixed(1) + "," + p[1].toFixed(1); pen = true; }
+  add(svg, "path", Object.assign({ d, fill: "none", stroke, "stroke-width": 1.8, "stroke-linejoin": "round" }, extra));
+}
+function legend(box, items) { box.innerHTML = items.map(([c, t]) => `<span><i style="background:${c}"></i>${t}</span>`).join(""); }
+
+
+const S = Shallow.make(DATA);
+const W1 = [450, 550, 650];
+const WCOL = { 450: "--lo", 550: "--s4", 650: "--hi" };
+const state = { type: "IB", sun: 30, ratio: 0.0183, depth: 5, albedo: 0.3 };
+const colourCore = {};
+function colour(sun) {
+  const k = String(sun);
+  if (!colourCore[k]) colourCore[k] = Core.make({ wl: DATA.wl, cmf: DATA.cmf, es: DATA.sky[k], xyz_to_srgb: DATA.xyz_to_srgb, srgb_white: DATA.srgb_white });
+  return colourCore[k];
+}
+// The linear sRGB of pi Rrs under the sky above the surface, with that sky as white.
+function swatch(sun, Rrs) {
+  const c = colour(sun), sky = DATA.sky[String(sun)];
+  return c.linear(Rrs.map((r, i) => Math.PI * r * sky[i]));
+}
+function seg(box, items, current, onPick) {
+  box.innerHTML = items.map(([k, t]) => `<button type="button" data-k="${k}" aria-pressed="${String(k) === String(current)}">${t}</button>`).join("");
+  box.onclick = (e) => { const b = e.target.closest("button"); if (b) onPick(b.dataset.k); };
+}
+const at = (wl) => DATA.wl.indexOf(wl);
+const share = (r, i) => (r.rrs[i] > 0 ? r.bottom[i] / r.rrs[i] : 0);
+function depthOfShare(i, f) {
+  // The bottom's share falls as the bottom deepens: bisect on log depth within the runs' range.
+  const s = (H) => share(S.rrs(state.type, state.sun, state.ratio, H, state.albedo), i);
+  const [lo0, hi0] = DATA.model.depth;
+  if (s(lo0) < f) return -Infinity;
+  if (s(hi0) >= f) return Infinity;
+  let lo = Math.log(lo0), hi = Math.log(hi0);
+  for (let k = 0; k < 50; k++) { const m = 0.5 * (lo + hi); (s(Math.exp(m)) >= f ? (lo = m) : (hi = m)); }
+  return Math.exp(0.5 * (lo + hi));
+}
+const fm = (x) => (x < 10 ? x.toFixed(1) : x.toFixed(0));
+
+function draw() {
+  seg($("type-seg"), DATA.types.map((t) => [t, t]), state.type, (k) => { state.type = k; draw(); });
+  seg($("sun-seg"), DATA.suns.map((s) => [s, s + "°"]), state.sun, (k) => { state.sun = +k; draw(); });
+  seg($("ratio-seg"), DATA.ratios.map((r) => [r, r === 0.0183 ? "0.0183 (Petzold average)" : String(r)]), state.ratio, (k) => { state.ratio = +k; draw(); });
+  $("depth").value = Math.log2(state.depth);
+  $("albedo").value = state.albedo;
+  $("depth-out").textContent = (state.depth < 10 ? state.depth.toFixed(1) : state.depth.toFixed(0)) + " m";
+  $("albedo-out").textContent = state.albedo.toFixed(2);
+
+  const r = S.rrs(state.type, state.sun, state.ratio, state.depth, state.albedo);
+  const gaps = DATA.wl.filter((w, i) => Number.isNaN(r.rrs[i]));
+  // The last wavelength before the first gap: between it and the gap, interpolation has nothing to stand on.
+  const lastGood = gaps.length ? DATA.wl[DATA.wl.indexOf(gaps[0]) - 1] : null;
+  const fl = DATA.flags[state.type];
+  $("flags").hidden = !fl.length;
+  $("flags").textContent = fl.length ? "What the package says of this type's values: " + fl.join(" ") : "";
+  const uMax = Math.max(...r.u.filter((x) => !Number.isNaN(x)));
+  const warn = $("warn");
+  warn.hidden = !(uMax > DATA.model.u_max);
+  warn.textContent = `u = bb/(a + bb) reaches ${uMax.toFixed(2)}, above the ${DATA.model.u_max} of Lee et al.'s runs: here the result is the model's, not its fit.`;
+
+  // Swatches, one exposure for both.
+  $("swl-bottom").textContent = `A bottom of albedo ${state.albedo.toFixed(2)} at ${fm(state.depth)} m`;
+  if (gaps.length) {
+    // A colour needs the whole spectrum; where the source has a gap, none is drawn.
+    $("sw-bottom").style.background = $("sw-deep").style.background = "transparent";
+    $("csw").textContent = `No colour for ${state.type}: Solonenko & Mobley give no absorption beyond ${lastGood} nm, and a colour needs the whole spectrum.`;
+  } else {
+    const lb = swatch(state.sun, r.above), ld = swatch(state.sun, r.aboveDeep);
+    const peak = Math.max(...lb, ...ld);
+    const k = peak > 0 ? 0.85 / peak : 1;
+    const css = (lin) => { const c = colour(state.sun).encode(lin.map((x) => x * k)); return `rgb(${c.map((x) => Math.round(255 * x)).join(",")})`; };
+    $("sw-bottom").style.background = css(lb);
+    $("sw-deep").style.background = css(ld);
+    $("csw").textContent = `Both drawn ${+k.toPrecision(2)} times brighter than π Rrs would look beside a white surface under the same sky, so that the brighter fills the swatch; the ratio between them is kept. Colours outside sRGB are clipped.`;
+  }
+
+  // Spectrum.
+  {
+    const Wd = 520, H = 300, m = { l: 58, r: 16, t: 26, b: 32 };
+    const svg = svgEl($("fs"), Wd, H);
+    svg.style.minWidth = "320px";
+    const x = lin(400, 700, m.l, Wd - m.r);
+    const top = Math.max(...r.above.filter((x) => !Number.isNaN(x)), ...r.aboveDeep.filter((x) => !Number.isNaN(x))) * 1.08;
+    const step = [0.0005, 0.001, 0.002, 0.005, 0.01, 0.02, 0.05, 0.1].find((s) => top / s <= 6) || 0.1;
+    const y = lin(0, step * Math.ceil(top / step), H - m.b, m.t);
+    for (let g = 0; g <= top + 1e-12; g += step) {
+      add(svg, "line", { x1: m.l, x2: Wd - m.r, y1: y(g), y2: y(g), stroke: v("--line") });
+      add(svg, "text", Object.assign({ x: m.l - 6, y: y(g) + 3, "text-anchor": "end" }, T), +g.toPrecision(3));
+    }
+    for (let l = 400; l <= 700; l += 50) add(svg, "text", Object.assign({ x: x(l), y: H - 12, "text-anchor": "middle" }, T), l + " nm");
+    add(svg, "text", Object.assign({ x: m.l, y: m.t - 12 }, T), "Rrs, 1/sr");
+    const pt = (w, val) => (Number.isNaN(val) ? null : [x(w), y(val)]);
+    line(svg, DATA.wl.map((w, i) => pt(w, r.aboveDeep[i])), v("--muted"), { "stroke-dasharray": "5 4" });
+    line(svg, DATA.wl.map((w, i) => pt(w, r.above[i])), v("--accent"), { "stroke-width": 2.4 });
+    legend($("ls"), [[v("--accent"), `with the bottom at ${fm(state.depth)} m`], [v("--muted"), "no bottom in view (dashed)"]]);
+    const i550 = at(550);
+    const times = r.above[i550] / r.aboveDeep[i550];
+    $("cs").textContent = `Jerlov type ${state.type}, a from Solonenko & Mobley (2015), bbp/bp ${state.ratio}, sun ${state.sun}° from the zenith. At 550 nm the bottom makes Rrs ${times.toFixed(2)} times that of the same water with no bottom.` + (gaps.length ? ` Nothing is drawn beyond ${lastGood} nm, where the source gives no absorption.` : "") + (state.albedo === 0 ? " A black bottom reflects nothing: it shows only by taking away the light the water below it would have sent back." : "");
+  }
+
+  // The bottom's share with depth.
+  {
+    const Wd = 760, H = 280, m = { l: 52, r: 20, t: 26, b: 34 };
+    const svg = svgEl($("fd"), Wd, H);
+    svg.style.minWidth = "480px";
+    const [d0, d1] = DATA.model.depth;
+    const x = logs(d0, d1, m.l, Wd - m.r);
+    const y = lin(0, 1, H - m.b, m.t);
+    for (let g = 0; g <= 1.0001; g += 0.2) {
+      add(svg, "line", { x1: m.l, x2: Wd - m.r, y1: y(g), y2: y(g), stroke: v("--line") });
+      add(svg, "text", Object.assign({ x: m.l - 6, y: y(g) + 3, "text-anchor": "end" }, T), Math.round(100 * g) + "%");
+    }
+    for (const d of [0.5, 1, 2, 4, 8, 16, 32]) add(svg, "text", Object.assign({ x: x(d), y: H - 14, "text-anchor": "middle" }, T), d + " m");
+    add(svg, "line", { x1: m.l, x2: Wd - m.r, y1: y(0.1), y2: y(0.1), stroke: v("--muted"), "stroke-dasharray": "3 3" });
+    add(svg, "text", Object.assign({ x: Wd - m.r, y: y(0.1) - 4, "text-anchor": "end" }, T), "10%");
+    add(svg, "line", { x1: x(state.depth), x2: x(state.depth), y1: m.t, y2: H - m.b, stroke: v("--fg"), "stroke-width": 1 });
+    add(svg, "text", Object.assign({ x: m.l, y: m.t - 12 }, T), "the bottom's part of rrs, bottom depth on a log scale");
+    const depths = [];
+    for (let k = 0; k <= 120; k++) depths.push(d0 * Math.pow(d1 / d0, k / 120));
+    const runs = depths.map((H2) => S.rrs(state.type, state.sun, state.ratio, H2, state.albedo));
+    for (const wl of W1) {
+      const i = at(wl);
+      if (Number.isNaN(r.rrs[i])) continue;
+      line(svg, depths.map((H2, k) => [x(H2), y(share(runs[k], i))]), v(WCOL[wl]), { "stroke-width": 2 });
+      add(svg, "circle", { cx: x(state.depth), cy: y(share(r, i)), r: 3.5, fill: v(WCOL[wl]) });
+    }
+    legend($("ld"), W1.map((wl) => [v(WCOL[wl]), wl + " nm"]));
+    const fall = W1.map((wl) => { if (Number.isNaN(r.rrs[at(wl)])) return "(no absorption given)"; const d = depthOfShare(at(wl), 0.1); return d === Infinity ? "beyond 32 m" : d === -Infinity ? "nowhere in the range" : `at ${fm(d)} m`; });
+    $("cd").textContent = state.albedo === 0
+      ? "A black bottom has no part of rrs at any depth; it lowers the reflectance instead (see the reflectance figure)."
+      : `Over a bottom of albedo ${state.albedo.toFixed(2)}, its part of rrs falls to 10 percent ${fall[0]} at 450 nm, ${fall[1]} at 550 nm and ${fall[2]} at 650 nm. The 10 percent line is the one examples/ocean_colour_and_secchi.py uses to call the bottom out of sight; it is a choice, not a property of the eye or of a sensor.`;
+  }
+}
+$("depth").addEventListener("input", (e) => { state.depth = Math.pow(2, +e.target.value); draw(); });
+$("albedo").addEventListener("input", (e) => { state.albedo = +e.target.value; draw(); });
+draw();
+window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", draw);
+new MutationObserver(draw).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+</script>
+</body>
+</html>

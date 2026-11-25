@@ -31,7 +31,7 @@ html_extra_path = ["pages", "extra"]
 # (section 112).
 html_baseurl = "https://tishibashi-cpu.github.io/jerlov/"
 #: The pages html_extra_path copies that a reader should find.
-_EXTRA_PAGES = ("dive.html", "disagree.html", "waters.html")
+_EXTRA_PAGES = ("dive.html", "disagree.html", "waters.html", "shallow.html")
 
 # The theme's layout with a card for sharing (DECISIONS.md section 120).
 templates_path = ["_templates"]

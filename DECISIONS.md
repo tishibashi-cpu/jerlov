@@ -7798,3 +7798,94 @@ spectra, that the third page's values are `water()`'s and its caveats
   the colours are clipped.
 - The docs workflow also checks that the sitemap names `waters.html` and
   that `og.png` is in the built site.
+
+## 121. A fourth page: when the bottom shows through (1.26.8): the plan
+
+The user chose on 2026-11-25, of the proposals after 1.26.7, a page for
+the shallow-water reflectance of 1.26.0 (section 113). Nothing in the
+package changes. As with the three pages of sections 109 and 120, every
+value is taken from jerlov by `tools/site_pages.py` and embedded; the
+page's script only evaluates the published model on it, and a test
+checks that script against the package's own function.
+
+**The page.** `docs/pages/shallow.html`, "When the bottom shows through".
+The reader picks a type, a bottom depth (0.5 to 32 m, the depths of Lee
+et al.'s 1998 runs), a bottom albedo (0 to 1, flat in wavelength, like
+those of the runs), the sun (0, 30 or 60 degrees, the angles of the runs)
+and the particles' bbp/bp (0.005, 0.0183 or 0.03, the three of
+`examples/ocean_colour_and_secchi.py`; 0.0183 is that of Petzold's
+average-particle phase function, which the runs used, and is selected
+first). The controls stop at the runs' limits, so the model's
+ProvenanceWarnings for the sun and the depth cannot arise; if u = bb/(a +
+bb) passes 0.6 anywhere, the page says so, as the function warns.
+
+- **The water's a and bb.** a from Solonenko & Mobley (2015), the only
+  source with a and b for all ten types, every 5 nm from 400 to 700 nm
+  (the runs' range) by `Water.a`; bb by `Water.bb(...,
+  particle_backscatter_ratio=r)`, embedded for each of the three r. The
+  source tabulates every 25 nm; between, the values are the package's
+  linear interpolation, and the page says so.
+- **Three figures.** (1) Rrs above the surface against wavelength: with
+  the bottom, the same water with no bottom, and the bottom's part. (2)
+  The bottom's share of rrs against depth at 450, 550 and 650 nm (the
+  wavelengths of the example's part 13), the chosen depth marked, and the
+  10 percent line at which that part counts the bottom out of sight. (3)
+  Two swatches, the colour seen straight down with the bottom and without
+  it: the reflectance pi Rrs under Gregg & Carder's (1990) sky of
+  `dive.html` above the surface (at the chosen sun), through
+  `spectrum_to_srgb` with that sky as white, both scaled by one factor
+  the page prints. Reflection of the sky at the surface is not in Rrs and
+  not in the swatches; the page says so.
+- **What the model is.** The model's equations, its source (Lee et al.
+  1998, 1999, with DOIs) and what it leaves out (oblique views, Raman,
+  fluorescence, a sky that is not the sun's beam), as the docstring says.
+  How it fares against the Monte Carlo of section 113 (the median ratio,
+  the share within 10 percent, and the number of runs), computed by the
+  tool from the data of question 5 and linked to `disagree.html`.
+
+**The script.** The model is `tools/site_pages/shallow_core.js`; the
+colour reuses `dive_core.js`'s `linear`. Both are embedded in the page.
+
+**Links.** From the index, the other three pages' navigation, and the
+sitemap (`_EXTRA_PAGES`), with the Open Graph tags of section 120.
+
+**Checks.** The page is what the tool writes; it asks nothing of another
+host; its embedded a and bb are `water()`'s; the script, run by node,
+gives `lee1999_shallow_rrs`'s rrs, column, bottom, deep and above_surface
+within 1e-5 (relative) over types, depths, albedos, suns and ratios, and
+`spectrum_to_srgb`'s colours within 1e-5; the Monte Carlo figures it
+quotes are in OPEN_QUESTIONS.md; the index, the nav and the sitemap name
+it. The site is built with `sphinx-build -W` and looked at in Chromium in
+light and dark, at 1200 and 390 pixels wide. A release of the site,
+1.26.8.
+
+**Result.** As planned, with the differences below. The page was looked
+at in Chromium in light and dark at 1200 and 390 pixels wide (no script
+error, no sideways scroll of the page). Tests check that the page is what
+the tool writes, that its a, bb, the model's constants (and the
+equations as printed) and the warnings it shows are the package's, that
+its script, run by node, gives `lee1999_shallow_rrs`'s five quantities to
+1e-12 over 20 cases and `spectrum_to_srgb`'s colours to 1e-5, that the
+Monte Carlo figures are those of OPEN_QUESTIONS.md question 5 and DATA.md
+section 50, and that the index, the sitemap and every page's navigation
+name it.
+
+**Differences from the plan, noted after the code.**
+
+- Solonenko & Mobley's values carry flags the plan did not foresee: b of
+  I and IA is suspect at every wavelength (Table 3's Bs or Bl does not fit
+  the b column), and a is missing for 3C at 675-700 nm and for 5C at
+  600-700 nm (Table 7's duplicated rows, DATA.md section 1). The page
+  shows, beside the type, the ProvenanceWarnings the package gives for it
+  (read by the tool, word for word); it draws nothing where a is missing
+  (with the package's linear interpolation, 3C beyond 650 nm and 5C beyond
+  575 nm), and gives no colour for those two types, since a colour needs
+  the whole spectrum.
+- `Water.bb` refuses a particles' ratio of 0, so bb is embedded for each
+  of the three ratios rather than as bb(0) and bp.
+- A further test sets the page's values against
+  `examples/ocean_colour_and_secchi.py` part 13: the depths at which the
+  bottom's share falls to 10 percent agree within 3.6 percent, the
+  difference being pure water's backscattering (the example takes
+  `pure_water_backscattering`, the page `Water.bb`, the source's own
+  model).
