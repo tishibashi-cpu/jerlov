@@ -1,7 +1,7 @@
 Examples
 ========
 
-Thirty scripts, each for one kind of reader. Each runs against the
+Thirty-one scripts, each for one kind of reader. Each runs against the
 installed package, needs nothing beyond NumPy, and prints what it
 computes; ``closure_with_jerlov_kd.py`` and ``shallow_water_closure.py``
 also read results kept beside them, and so does part 3 of ``phase_function_choice.py``. CI runs every one of them, so an example that has stopped working is
@@ -68,8 +68,8 @@ examples below it print the numbers.
        `measured_scattering.py <https://github.com/tishibashi-cpu/jerlov/blob/main/examples/measured_scattering.py>`_,
        `phase_function_choice.py <https://github.com/tishibashi-cpu/jerlov/blob/main/examples/phase_function_choice.py>`_
 
-All thirty
-----------
+All thirty-one
+--------------
 
 
 .. list-table::
@@ -120,6 +120,8 @@ All thirty
      - `sunlight_and_d65.py <https://github.com/tishibashi-cpu/jerlov/blob/main/examples/sunlight_and_d65.py>`_
    * - see under water along a slanted line, looking up or down
      - `looking_up_and_down.py <https://github.com/tishibashi-cpu/jerlov/blob/main/examples/looking_up_and_down.py>`_
+   * - look up from under water, or study what animals see from below
+     - `snells_window.py <https://github.com/tishibashi-cpu/jerlov/blob/main/examples/snells_window.py>`_
    * - render water, in film, games or simulation
      - `rendering_export.py <https://github.com/tishibashi-cpu/jerlov/blob/main/examples/rendering_export.py>`_
    * - make images of water in RGB, and wonder what it costs the colours
