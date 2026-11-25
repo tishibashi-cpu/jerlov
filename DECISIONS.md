@@ -7889,3 +7889,79 @@ name it.
   difference being pure water's backscattering (the example takes
   `pure_water_backscattering`, the page `Water.bb`, the source's own
   model).
+
+## 122. The dip at 45 degrees against EUMETSAT's OLCI table (1.26.9): a record
+
+NEXT_STEPS left one comparison for the dip of section 116: the f/Q table
+of the operational OLCI processor, in the auxiliary file `OL_2_OCP_AX`,
+which the user could not obtain from EUMETSAT or from the Copernicus
+reprocessing service. **This section is a record, as section 117 was:**
+the file turned up on 2026-11-26, was read and compared before anything
+went into the repository, and is written down here with the method as it
+was run. The user asked on 2026-11-26 for it to be recorded as 1.26.9.
+
+**The file.** The user found that the new processing framework (EOPF)
+names the file `S03_ADF_OLOCP` (its OLCI documentation, version 0.3.0,
+https://s3.pages.eopf.copernicus.eu/OLCI/s3olci/0.3.0/pdfs/ADFS_S3_OLCI.myst.html,
+which lists the name and gives no detail). The EOPF project's ADF
+documentation (`docs/adfs/access.md` of the public repository
+cpm/adf-auxiliary-data-file on gitlab.eopf.copernicus.eu) says that
+"The common ADFs generated in the EOPF format are available in the common
+public read-only buckets" at endpoint https://s3.sbg.perf.cloud.ovh.net/,
+bucket `dpr-common`. Listed without credentials, the bucket's folder
+`S3AOLCIdataset/` holds the legacy OLCI Level-2 files, among them
+
+    S3A_OL_2_OCP_AX_20160216T000000_20991231T235959_20170609T120000___________________MPC_O_AL_003.SEN3.zip
+
+4,095,096 bytes, MD5 2d080e4c1834281212e0583ad0f02e56 (the bucket's
+ETag), SHA-256 f0289859027e33fc0846b5fb9d40834774b66ac952d6628d7ff8aaf008dd2ea8,
+fetched 2026-11-25 (UTC). It holds `OL_2_OCP_AX.nc` (netCDF-4, dated
+2017-07-05 in the zip) and a manifest. This is version AL_003 of
+Sentinel-3A's file, the one the reprocessing baseline lists
+(RRPP-TN-0007, AUXIP); EUMETSAT's product notice of 2019 names AL_004 as
+operational, and NEXT_STEPS records EUM_O_AL_008 as the latest. No
+Sentinel-3B file is in the bucket. Which of these differ in f/Q is not
+known.
+
+**What the file holds.** `f_over_q_LUT`, "LUT for the bidirectional
+factor f_over_q (case1 waters)", over an aerosol optical thickness of 0.1
+(one value), wind speeds 0, 5 and 10 m/s, 11 OLCI wavelengths (400 to
+708.75 nm), the sun at 0 to 75 degrees every 15, 30 refracted nadir
+angles from 1.0785 degrees (the archive's first 17 to within 0.0005), 13
+azimuths and the archive's six Chl, as EUMETSAT's format specification
+(EUM/RSP/DOC/23/1380745, Table 8) describes it. At the first nadir angle
+it does not depend on the azimuth.
+
+**What was compared.** As in section 117: f/Q at the first nadir angle;
+the departure at 45 degrees from the chord between 30 and 60 degrees, in
+1 - cos theta_s; and the ratio EUMETSAT/archive at the six wavelengths
+both have (412.5 to 620 nm; the archive's 660 is not an OLCI band), at 45
+degrees against the chord of the same ratio. Each wind speed separately,
+since the archive has no wind.
+
+**What was found.**
+
+- It is not the archive: over all runs at the shared wavelengths it
+  differs by -6.8 to +5.2 percent. Nor is it NASA's recomputation of
+  section 117 read at the same aerosol optical thickness: they differ by
+  0.6 to 5.2 percent at the nadir (their nadir rows are not at the same
+  angle, and the NASA file has no wind), so this is not followed further.
+- It has no dip: at 0.03 mg m^-3 its nadir f/Q at 45 degrees lies -0.31
+  to -0.20 percent from the chord over all 11 wavelengths and three wind
+  speeds, as 0.1 mg m^-3 does (-0.28 to -0.05); every Chl, -0.31 to
+  +0.84.
+- Along the sun angle it follows the archive except at the one run: the
+  ratio stands +1.09 to +2.96 percent above its chord at 0.03 mg m^-3,
+  largest at 620 nm, the reddest shared wavelength, and -0.64 to +0.29 at
+  every other Chl.
+
+So the table the operational processor uses does not have the dip, as the
+authors' later tables do not; the archive's run stays the one out of line.
+
+**What goes into the repository.** The file is not shipped, for the
+reason of section 117 (no licence stated with it). The user's copy goes
+to `sources/eumetsat_ocp/` (ignored by git). `examples/fq_at_45_degrees.py`
+gains `--olci PATH` (the zip or the .nc in it), read with h5py if it is
+installed and only then; the tests that read it are skipped without it.
+OPEN_QUESTIONS.md question 6 and DATA.md section 48 record the finding.
+Nothing in the package changes; the run stays suspect. Version 1.26.9.
