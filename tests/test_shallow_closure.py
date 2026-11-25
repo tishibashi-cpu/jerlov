@@ -156,7 +156,7 @@ def test_the_readmes_and_the_site_quote_the_same(result):
 
 def test_the_changelog_quotes_the_same(result):
     d = result["dark"]
-    text = _flat("CHANGELOG.md").split("## 1.26.1")[1].split("## 1.26.0")[0]
+    text = _flat("CHANGELOG.md").split("## 1.26.1 ")[1].split("## 1.26.0")[0]
     assert f"factor of up to {d['spread'][1]:.2f}" in text
     assert (f"{result['share']['falling']} of {result['share']['cases']}"
             ) in text

@@ -4,6 +4,22 @@ Every release is archived on Zenodo under the concept DOI
 [10.5281/zenodo.22321312](https://doi.org/10.5281/zenodo.22321312), which
 always resolves to the latest version.
 
+## 1.26.10 — 2026-11-26
+
+A new example, the 31st (DECISIONS.md section 123). Nothing in the
+package changed.
+
+**New.** `examples/snells_window.py`, for those who look up from under
+water: divers, underwater photographers, and those who study what animals
+see from below. Through a flat surface the whole sky fills a cone of
+half-angle 48.3 degrees (n = 1.34); the example works out where in it a
+thing at a given height appears, how bright the window is from centre to
+rim under an even sky, the mirror outside it, and its size on the
+surface. It then looks for the window's edge in Tyler's (1958) measured
+radiance (`tyler1958_radiance`): with a test set beforehand, the step
+across the edge is the steepest looking up at some azimuths down to 29 m,
+and at none from 41.3 m down.
+
 ## 1.26.9 — 2026-11-26
 
 The dip at 45 degrees in Morel et al.'s f/Q archive, against the f/Q

@@ -1,6 +1,6 @@
 # Examples
 
-Thirty scripts. Each runs against the installed package and needs nothing beyond
+Thirty-one scripts. Each runs against the installed package and needs nothing beyond
 NumPy, except `fq_at_45_degrees.py`, which reads your own copy of Morel et
 al.'s f/Q archive given as `--archive PATH` and without it only says so;
 `closure_with_jerlov_kd.py` and `shallow_water_closure.py` also read results kept beside them in
@@ -29,6 +29,7 @@ python examples/fish_colour_differences.py
 python examples/ocean_colour_and_secchi.py
 python examples/sunlight_and_d65.py
 python examples/looking_up_and_down.py
+python examples/snells_window.py
 python examples/rendering_export.py
 python examples/rgb_versus_spectral.py
 python examples/water_lookup_tables.py
@@ -72,6 +73,7 @@ copy of the package silently wins over the working tree. In a clone, run
 | have a chlorophyll concentration, or a and bb, rather than a water type; or want a Secchi depth | `ocean_colour_and_secchi.py` |
 | have used D65 as the light above the sea, or need the sun's spectrum at the surface | `sunlight_and_d65.py` |
 | see under water along a slanted line, looking up or down | `looking_up_and_down.py` |
+| look up from under water, or study what animals see from below | `snells_window.py` |
 | render water, in film, games or simulation | `rendering_export.py` |
 | make images of water in RGB, and wonder what it costs the colours | `rgb_versus_spectral.py` |
 | draw water every frame from a precomputed table, in a game or simulator | `water_lookup_tables.py` |
@@ -337,6 +339,17 @@ across and 7.0 m down. Tyler's K differs by direction by a factor of 2.0
 near the surface and agrees within 12 percent from 16.6 to 53.7 m, as
 Duntley's asymptotic light field has it. Duntley's eq. (12) as printed
 would make the open water read 46 times what Tyler measured.
+
+**`snells_window.py`** — the sky seen from under water through a flat
+surface: a cone of half-angle **48.3** degrees at n = 1.34 (47.8 to 48.8
+from 1.33 to 1.35), into which the lowest 20 degrees of sky crowd within
+its outer **3.7** degrees; the window **1.76** times as bright as an even
+sky at its centre and half as bright 0.4 degrees inside its rim; outside
+it, a mirror of the water below; a circle on the surface 1.121 times the
+eye's depth in radius. In Tyler's (1958) measured radiance, the step
+across the edge is the steepest looking up at 3 of 5 azimuths away from
+the sun at 4.24 m and at 29 m, at 1 and 2 at 10.4 and 16.6 m, and at
+none from 41.3 m down.
 
 **`rendering_export.py`** — Jerlov III and 1C as a renderer in RGB takes
 them: one extinction, absorption and scattering coefficient per channel

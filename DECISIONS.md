@@ -7966,3 +7966,93 @@ gains `--olci PATH` (the zip or the .nc in it), read with h5py if it is
 installed and only then; the tests that read it are skipped without it.
 OPEN_QUESTIONS.md question 6 and DATA.md section 48 record the finding.
 Nothing in the package changes; the run stays suspect. Version 1.26.9.
+
+## 123. An example on Snell's window (1.26.10): the plan
+
+NEXT_STEPS (section 2, polarisation) kept one thing within reach without
+solving radiative transfer: the geometry of Snell's window, "in an
+example". The user asked for it on 2026-11-26. Nothing in the package
+changes; the example is the 31st, `examples/snells_window.py`, for those
+who look up from under water: divers, underwater photographers, and those
+who study what animals see from below.
+
+**What it computes.** Parts 1 to 5 are geometry and Fresnel's equations
+at a flat surface, written in the example (the package has no public
+Fresnel function, and examples use only the public API). Part 6 is
+measured.
+
+1. The window's half-angle, arcsin(1/n). The package carries no
+   refractive index of sea water as a function; it uses 1.333 (Gordon
+   1989, section 74) and 1.34 (Lee et al. 1998, section 113). The example
+   gives the half-angle for n from 1.33 to 1.35, a range that covers
+   fresh to sea water across the visible, and says the value moves with
+   wavelength, salinity and temperature; it puts no number on that.
+2. The squeeze. Where in the window an object at elevation e above the
+   horizon appears (theta_w = arcsin(cos e / n) from the zenith), and the
+   solid angle: the whole sky, 2 pi sr, fills a cone of
+   2 pi (1 - cos theta_c).
+3. How bright the window is across its radius, for a sky of uniform
+   radiance: n^2 (1 - rho(theta_a)), rho Fresnel's reflectance for
+   unpolarised light; the darkening towards the rim.
+4. Outside the window: the reflectance of light from below, which rises
+   to 1 at the critical angle; outside it the surface is a mirror of the
+   water below.
+5. The window on the surface: radius d tan(theta_c) for an eye at depth d.
+6. Measured: Tyler's (1958) radiance distribution
+   (`tyler1958_radiance`, Lake Pend Oreille, clear sky, sun at 56.6
+   degrees altitude), tilts every 10 degrees, acceptance 6.6 degrees.
+
+**Part 6's test, set before it is run.** Already seen while planning:
+the columns at azimuths 90 and 180 degrees at 4.24, 10.4 and 29.0 m,
+where at 4.24 m the step from 40 to 50 degrees looked the steepest and at
+10.4 m it did not. The test: at each depth and at each tabulated azimuth
+from 90 to 180 degrees from the sun's (away from the sun and its glitter),
+take the ratio of radiance between neighbouring tilts, L(t)/L(t + 10),
+for t from 0 to 80 degrees (looking up). The window's edge, at 47.8 to
+48.8 degrees, lies in the 40-50 step; the edge counts as seen at a depth
+and azimuth where that step has the largest ratio. The example reports
+at which depths and azimuths it is, and nothing about why beyond what
+the numbers show. Tyler's cells marked suspect are not used.
+
+**Before you use any of this** (the example's closing list): a flat
+surface (waves break the window into moving pieces); a uniform sky in
+part 3; one refractive index for all wavelengths; no scattering in parts
+1 to 5, which is what part 6 shows blurring the edge with depth;
+Tyler's lake, one day, one sun.
+
+**Checks.** Every number the documents quote is the example's own output
+(a new test file); the geometry is checked against identities (the
+window's half-angle at e = 0 is theta_c; reflectance 0.02 at normal
+incidence for n = 1.333 to within 0.001; transmittance plus reflectance
+equal 1); the example uses only the public API. README.md,
+examples/README.md and docs/examples.rst count and list it. A release of
+an example, 1.26.10.
+
+**Result.** Parts 1 to 5 as planned: the half-angle is 48.3 degrees at n
+= 1.34 (47.8 to 48.8 from 1.33 to 1.35); the lowest 20 degrees of sky
+crowd into the outer 3.7 degrees of the window; an even sky is seen 1.76
+times as bright at the window's centre, and the transmitted share falls
+below a half 0.4 degrees inside the rim; the window is a circle 1.121
+times the eye's depth in radius.
+
+Part 6, by the test set beforehand: Tyler tabulated azimuths every 20
+degrees, so the azimuths tested are 100 to 180. Of the 5 at each depth,
+the 40-50 step is the steepest at 3 at 4.24 m, 1 at 10.4 m, 2 at 16.6 m,
+3 at 29 m, and at none from 41.3 m down. At the other 26 the steepest step
+is near the zenith (0-10 degrees, 7), at 30-40 (1), or below the edge
+(50 to 80, 18). So the edge stands out in the measurements at some
+azimuths down to 29 m and nowhere deeper; at 10 degree steps with a 6.6
+degree field of view, that is all they can say.
+
+**Differences from the plan, noted after the code.**
+
+- What was seen before the test: the column printed as "azimuth 90" was
+  in fact azimuth 80 (the tenth of the ten azimuths, 0 to 180 every 20,
+  is 180; the fifth is 80), so what was looked at was azimuths 80 and
+  180. At 4.24 m both showed the 40-50 step as the steepest of the steps
+  from 30 to 60 degrees, which suggested the edge would be seen there at
+  every azimuth; the full test, which also counts the 0-10 step, finds it
+  at 3 of 5.
+- The table of part 3 stops at 48.2 degrees, inside the window at n =
+  1.34; the half-transmission angle is found on a fine grid, not from the
+  table's rows.

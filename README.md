@@ -153,6 +153,7 @@ python examples/fish_colour_differences.py     colour differences for a fish's c
 python examples/ocean_colour_and_secchi.py      Kd from chlorophyll or a and bb, the Secchi depth
 python examples/sunlight_and_d65.py            the clear sky at the surface against D65
 python examples/looking_up_and_down.py         contrast looking up, across and down
+python examples/snells_window.py               the sky seen from under water
 python examples/rendering_export.py            water for Mitsuba, pbrt and Blender
 python examples/rgb_versus_spectral.py         what RGB rendering does to colours
 python examples/water_lookup_tables.py         tables for games and real-time shaders
@@ -164,7 +165,7 @@ python examples/shallow_water_closure.py       an open question: shallow-water R
 python examples/fq_at_45_degrees.py --archive PATH   an open question: f/Q at a 45-degree sun
 ```
 
-Thirty scripts, each aimed at a different reader; `examples/README.md` says
+Thirty-one scripts, each aimed at a different reader; `examples/README.md` says
 which to start with. CI runs all of them on every push, so an example that has
 stopped working is a failed build. Every one ends with the assumptions it
 made.
