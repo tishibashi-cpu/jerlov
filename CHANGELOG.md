@@ -4,6 +4,27 @@ Every release is archived on Zenodo under the concept DOI
 [10.5281/zenodo.22321312](https://doi.org/10.5281/zenodo.22321312), which
 always resolves to the latest version.
 
+## 1.26.9 — 2026-11-26
+
+The dip at 45 degrees in Morel et al.'s f/Q archive, against the f/Q
+table of EUMETSAT's OLCI processor (DECISIONS.md section 122). No value
+changed, and nothing in the package changed.
+
+**Found.** The OLCI processor's auxiliary file `OL_2_OCP_AX` (one version
+of Sentinel-3A's, from the public bucket of ESA's new processing
+framework) holds f/Q at 11 OLCI wavelengths for the archive's sun angles
+and chlorophylls and three wind speeds. It does not have the dip: at the
+sun of 45 degrees and 0.03 mg m^-3 its nadir f/Q lies -0.31 to -0.20
+percent from the line between 30 and 60 degrees, as at 0.1 mg m^-3, and
+against the archive, along the sun angle, it departs at that one run
+only. The archive's run stays suspect; what went wrong in it is not
+known. OPEN_QUESTIONS.md question 6, DATA.md section 48, and the page
+"Where the sources disagree".
+
+**New.** `examples/fq_at_45_degrees.py --olci PATH` compares the archive
+with that file (the .SEN3.zip or the .nc in it), which you fetch and
+which needs h5py; nothing of it is shipped.
+
 ## 1.26.8 — 2026-11-25
 
 A fourth page on the site (DECISIONS.md section 121). Nothing in the

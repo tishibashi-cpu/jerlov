@@ -3046,6 +3046,19 @@ describes two sets.
   degrees and 0.03 mg m^-3, at 560, 620 and 660 nm, no symbol stands
   within 0.0110 to 0.0164. The dip was in the values the paper plotted
   (October 2002), not brought in when the archive was packed (June 2003).
+- **EUMETSAT's OLCI table does not have the dip (1.26.9, DECISIONS.md
+  section 122).** The OLCI processor's auxiliary file `OL_2_OCP_AX`
+  (Sentinel-3A, version MPC_O_AL_003, from the EOPF project's public
+  bucket; MD5 2d080e4c1834281212e0583ad0f02e56) holds `f_over_q_LUT` at
+  11 OLCI wavelengths, the archive's sun angles and Chl, three wind speeds
+  and one aerosol optical thickness. Its nadir f/Q at 45 degrees and 0.03
+  mg m^-3 lies -0.31 to -0.20 percent from the chord between 30 and 60
+  over every wavelength and wind speed; against the archive, at the six
+  wavelengths both have, it departs along the sun angle at that one run
+  only (+1.09 to +2.96 percent against the chord of the ratio, every
+  other Chl -0.64 to +0.29). Not shipped; put the user's copy in
+  `sources/eumetsat_ocp/` for the tests and the example (`--olci PATH`),
+  which need h5py.
 
 ## 49. The light kept within an angle: Petzold's forward scattering (note)
 

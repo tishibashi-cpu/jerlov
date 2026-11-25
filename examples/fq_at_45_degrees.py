@@ -4,7 +4,7 @@ An open question, with numbers (OPEN_QUESTIONS.md, question 6). For those
 who correct water-leaving radiance for the sun and the view with Morel,
 Antoine & Gentili's (2002) f/Q tables:
 
-    python examples/fq_at_45_degrees.py --archive PATH [--ocssw DIR]
+    python examples/fq_at_45_degrees.py --archive PATH [--ocssw DIR] [--olci PATH]
 
 PATH is your own copy of the authors' archive, DISTRIB_fQ_with_Raman.tar.gz
 (DATA.md section 48); the package does not ship it, and without it this
@@ -16,7 +16,10 @@ OCSSW copies of the tables and the authors' later recomputation, it sets
 the archive against those too (section 117; needs h5py). Part 4 sets the
 archive and the paper's own fits against the symbols of the paper's Fig.
 13, as read by tools/read_fig13.py into examples/data/fq_at_45_degrees/
-(section 118).
+(section 118). With --olci PATH, EUMETSAT's auxiliary file OL_2_OCP_AX
+for the OLCI processor (the .SEN3.zip or the .nc in it), part 5 sets the
+archive against the f/Q table the operational processor uses (section
+122; needs h5py).
 """
 
 import csv
@@ -322,7 +325,95 @@ The values the paper plotted already had the dip; the fits smooth it out.""")
                 archive45=archive45, fits=fits)
 
 
-def main(archive=None, ocssw=None):
+#: The f/Q table of EUMETSAT's OLCI processor (DECISIONS.md section 122).
+OLCI_FILE = "OL_2_OCP_AX.nc"
+
+
+def _read_olci(path):
+    """The nadir row of f_over_q_LUT: (wind, wavelength, sun, Chl), and its
+    axes. path is the .SEN3.zip as distributed, or the .nc in it."""
+    import io
+    import zipfile
+
+    import h5py    # only for this part, which the package does not need
+
+    path = pathlib.Path(path)
+    if zipfile.is_zipfile(path):
+        with zipfile.ZipFile(path) as z:
+            name = next(n for n in z.namelist() if n.endswith(OLCI_FILE))
+            raw = io.BytesIO(z.read(name))
+    else:
+        raw = path
+    with h5py.File(raw, "r") as f:
+        lut = f["f_over_q_LUT"][()].astype(float)
+        axes = {k: f[k][()].astype(float) for k in (
+            "tau_a_FOQ", "wind_speeds_FOQ", "wavelengths_FOQ", "SZA_FOQ",
+            "PZA_FOQ", "RAA_FOQ", "chl_FOQ")}
+    # (tau, wind, wl, sun, nadir, azimuth, Chl); one tau, the first nadir
+    # angle, where the azimuth makes no difference.
+    nadir = lut[0, :, :, :, 0, :, :]
+    spread = float(np.max(nadir.max(axis=-2) / nadir.min(axis=-2)) - 1)
+    return axes, nadir[..., 0, :], spread
+
+
+def olci_part(t, path):
+    rule("5. Against the table of EUMETSAT's OLCI processor")
+    axes, nadir, spread = _read_olci(path)
+    suns = t["suns"]
+    assert list(axes["SZA_FOQ"]) == list(suns)
+    assert np.allclose(axes["chl_FOQ"], t["chl"], rtol=1e-6)
+    x = 1 - np.cos(np.radians(suns))
+    i45 = list(suns).index(45.0)
+    k = list(t["chl"]).index(0.03)
+    waves = list(axes["wavelengths_FOQ"])
+    winds = axes["wind_speeds_FOQ"]
+    own = chord(np.moveaxis(nadir, 2, 3), x, i45)          # (wind, wl, chl)
+    shared = [j for j, w in enumerate(t["wl"]) if w in waves]
+    olci_at = np.moveaxis(nadir[:, [waves.index(t["wl"][j]) for j in shared]],
+                          2, 3)                            # (wind, wl, chl, sun)
+    archive = t["foq"][shared][:, :, :, 0, 0]              # (wl, chl, sun)
+    ratio = olci_at / archive
+    against = chord(ratio, x, i45)                         # (wind, wl, chl)
+    rest = np.delete(against, k, axis=2)
+    out = dict(
+        first_nadir=float(axes["PZA_FOQ"][0]), spread=spread,
+        taus=axes["tau_a_FOQ"].tolist(), winds=winds.tolist(),
+        waves=(min(waves), max(waves), len(waves)),
+        shared=(t["wl"][shared[0]], t["wl"][shared[-1]], len(shared)),
+        own_dip=(own[:, :, k].min(), own[:, :, k].max()),
+        own_next=(own[:, :, k + 1].min(), own[:, :, k + 1].max()),
+        own_all=(own.min(), own.max()),
+        level=(100 * (ratio.min() - 1), 100 * (ratio.max() - 1)),
+        against=(against[:, :, k].min(), against[:, :, k].max()),
+        against_rest=(rest.min(), rest.max()),
+        red=bool(np.all(against[:, :, k].argmax(axis=1) == len(shared) - 1)))
+    azimuth = ("makes no difference" if spread == 0
+               else f"changes it by up to {100 * spread:.2g} percent")
+    print(f"""EUMETSAT's auxiliary file OL_2_OCP_AX holds f_over_q_LUT, the f/Q table of
+the OLCI processor: {out['waves'][2]} wavelengths from {out['waves'][0]:g} to {out['waves'][1]:g} nm, the
+archive's sun angles and Chl, wind speeds {', '.join(f'{w:g}' for w in winds)} m/s and an aerosol
+optical thickness of {', '.join(f'{v:g}' for v in out['taus'])}. Its first nadir angle is {out['first_nadir']:.4f} degrees,
+where the azimuth {azimuth}. Nadir f/Q at 45 degrees, percent from the
+chord between 30 and 60, at 0.03 and 0.1 mg/m3, each wind speed:
+""")
+    print(f"  {'nm':>7}" + "".join(f" {f'{w:g} m/s':>14}" for w in winds))
+    for j, w in enumerate(waves):
+        print(f"  {w:>7g}" + "".join(
+            f"   {own[i, j, k]:+.2f} {own[i, j, k + 1]:+.2f}"
+            for i in range(len(winds))))
+    print(f"""
+No dip: at 0.03 mg/m3 the table lies {out['own_dip'][0]:+.2f} to {out['own_dip'][1]:+.2f} percent from its chord
+over every wavelength and wind speed, at 0.1 {out['own_next'][0]:+.2f} to {out['own_next'][1]:+.2f}, at every Chl
+{out['own_all'][0]:+.2f} to {out['own_all'][1]:+.2f}. At the {out['shared'][2]} wavelengths it shares with the archive ({out['shared'][0]:g}
+to {out['shared'][1]:g} nm) it differs from the archive by {out['level'][0]:+.1f} to {out['level'][1]:+.1f} percent over all
+runs, but along the sun angle follows it except at the one run: there
+the ratio stands {out['against'][0]:+.2f} to {out['against'][1]:+.2f} percent above its chord, at every other
+Chl {out['against_rest'][0]:+.2f} to {out['against_rest'][1]:+.2f}. The OLCI processor's table does not have the
+dip, as the authors' later tables do not.""")
+    return out
+
+
+def main(archive=None, ocssw=None, olci=None):
     _banner()
     if not archive:
         print("""
@@ -343,6 +434,14 @@ OCSSW distributes; give the folder holding morel_fq.nc and
 morel_fq_hyperspectral_2026.nc as --ocssw DIR (DECISIONS.md section 117).
 It needs h5py, which the package does not.""")
     figure = figure_part(t)
+    olci_result = None
+    if olci:
+        olci_result = olci_part(t, olci)
+    else:
+        print("""
+Part 5 compares the archive with the f/Q table of EUMETSAT's OLCI
+processor; give its auxiliary file OL_2_OCP_AX (the .SEN3.zip or the .nc
+in it) as --olci PATH (DECISIONS.md section 122). It needs h5py.""")
     rule("Before you use any of this")
     print("""  - The chord is a straight line in 1 - cos(theta_s), the variable the
     paper's own fits are linear in up to 60 degrees; f bends away from it
@@ -350,9 +449,12 @@ It needs h5py, which the package does not.""")
   - What made the one run out of line is not known. The paper computes
     Raman emission in every run; the archive gives only the totals, so
     nothing here can tell whether it is that part.
+  - The OLCI table compared in part 5 is one version of Sentinel-3A's
+    file (the one named in DECISIONS.md section 122); later versions were
+    not available to compare.
 """)
     return dict(where=where, neighbours=neighbours, later=later,
-                figure=figure)
+                figure=figure, olci=olci_result)
 
 
 if __name__ == "__main__":
@@ -364,4 +466,4 @@ if __name__ == "__main__":
     def option(name):
         return args[args.index(name) + 1] if name in args[:-1] else None
 
-    main(option("--archive"), option("--ocssw"))
+    main(option("--archive"), option("--ocssw"), option("--olci"))
