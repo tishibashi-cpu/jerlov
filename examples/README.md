@@ -451,9 +451,11 @@ wavelength, by **1.01 to 3.44** percent, where every other chlorophyll
 lies above it, and that the run is out of order against its neighbour in
 chlorophyll at all 7 wavelengths. With `--ocssw DIR` (NASA's OCSSW copies,
 and h5py) it shows that the authors' later hyperspectral tables do not
-have the dip; and it shows that the paper's own Fig. 13, read by
+have the dip; it shows that the paper's own Fig. 13, read by
 `tools/read_fig13.py` into `examples/data/fq_at_45_degrees/`, already
-plots it.
+plots it; and with `--olci PATH` (EUMETSAT's auxiliary file
+`OL_2_OCP_AX`, and h5py) that the f/Q table of the OLCI processor does not
+have the dip either.
 
 ## What they do not show
 

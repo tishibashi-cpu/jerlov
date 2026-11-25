@@ -59,7 +59,8 @@ line each:
    by 1.01 to 3.44 percent, where every other chlorophyll lies above it;
    it is out of order against its neighbour in chlorophyll and nowhere
    else is. The authors' own later tables, which NASA distributes, do not
-   have the dip, and the paper's own Fig. 13 already plots it. Its values
+   have the dip, nor does the f/Q table of EUMETSAT's OLCI processor, and
+   the paper's own Fig. 13 already plots it. Its values
    are kept, marked suspect, and warn. The example
    `fq_at_45_degrees.py <https://github.com/tishibashi-cpu/jerlov/blob/main/examples/fq_at_45_degrees.py>`_
    prints every figure from your own copy of the archive.

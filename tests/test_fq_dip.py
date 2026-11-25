@@ -180,6 +180,61 @@ def test_the_later_tables_are_quoted_as_computed(later):
             f"{later['own_dip'][1]:+.2f} percent from the line") in log
 
 
+# -- DECISIONS.md section 122: the table of EUMETSAT's OLCI processor --------
+
+OLCI = (ROOT / "sources" / "eumetsat_ocp" /
+        "S3A_OL_2_OCP_AX_20160216T000000_20991231T235959_20170609T120000"
+        "___________________MPC_O_AL_003.SEN3.zip")
+needs_olci = pytest.mark.skipif(
+    not (_H5PY and REAL.exists() and EXAMPLE.exists() and OLCI.exists()),
+    reason="needs h5py, the archive and EUMETSAT's OL_2_OCP_AX in "
+           "sources/eumetsat_ocp")
+
+
+@pytest.fixture(scope="module")
+def olci():
+    module = runpy.run_path(str(EXAMPLE), run_name="fq_at_45_degrees")
+    with contextlib.redirect_stdout(io.StringIO()):
+        return module["main"](str(REAL), None, str(OLCI))["olci"]
+
+
+@needs_olci
+def test_the_olci_file_is_the_one_recorded():
+    import hashlib
+    data = OLCI.read_bytes()
+    text = _flat("DECISIONS.md").split("## 122. ")[1]
+    assert f"{len(data):,} bytes, MD5 {hashlib.md5(data).hexdigest()}" in text
+    assert f"SHA-256 {hashlib.sha256(data).hexdigest()}" in text
+    assert OLCI.name.split("_", 1)[1] in text.replace(" ", "")
+
+
+@needs_olci
+def test_the_olci_table_is_quoted_as_computed(olci):
+    assert olci["spread"] == 0        # the azimuth makes no difference at nadir
+    assert olci["red"]                # largest at the reddest shared wavelength
+    assert olci["own_dip"][1] < 0 and olci["against"][0] > 1
+    assert olci["against_rest"][1] < 0.5
+    oq = _flat("OPEN_QUESTIONS.md").split("## 6. ")[1]
+    data = _flat("DATA.md").split("## 48. ")[1].split("## 49. ")[0]
+    decisions = _flat("DECISIONS.md").split("## 122. ")[1]
+    log = _flat("CHANGELOG.md").split("## 1.26.9")[1].split("## 1.26.8")[0]
+    own = f"{olci['own_dip'][0]:+.2f} to {olci['own_dip'][1]:+.2f} percent"
+    nxt = f"({olci['own_next'][0]:+.2f} to {olci['own_next'][1]:+.2f})"
+    every = f"{olci['own_all'][0]:+.2f} to {olci['own_all'][1]:+.2f}"
+    level = f"{olci['level'][0]:+.1f} to {olci['level'][1]:+.1f} percent"
+    against = (f"+{olci['against'][0]:.2f} to +{olci['against'][1]:.2f} "
+               "percent")
+    rest = (f"{olci['against_rest'][0]:+.2f} to "
+            f"{olci['against_rest'][1]:+.2f}")
+    for text in (oq, data, decisions):
+        assert own in text and against in text and rest in text, text[:60]
+    for text in (oq, decisions):
+        assert nxt in text and level in text, text[:60]
+    assert f"every Chl, {every}" in decisions
+    assert f"{olci['waves'][2]} OLCI wavelengths" in data + oq
+    assert own in log
+
+
 # -- DECISIONS.md section 118: the paper's own Fig. 13 --------------------------
 
 PAPER = ROOT / "sources" / "morel2002" / "Morel_Antoine_Gentili_2002_AO.pdf"

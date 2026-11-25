@@ -425,9 +425,21 @@ figure below; `tools/read_fig13.py` reads the paper's Fig. 13.
   computation the paper reported, not brought in when the archive was
   packed, and the fits smooth it out.
 
+- The OLCI processor's table does not have it either (1.26.9,
+  DECISIONS.md section 122). EUMETSAT's auxiliary file OL_2_OCP_AX
+  (Sentinel-3A, one version, found in the public bucket of ESA's new
+  processing framework) holds f/Q at 11 OLCI wavelengths for the
+  archive's sun angles and Chl and three wind speeds. Its nadir f/Q at
+  45 degrees and 0.03 mg m^-3 lies -0.31 to -0.20 percent from its
+  chord, as 0.1 mg m^-3 does (-0.28 to -0.05). It differs from the
+  archive by -6.8 to +5.2 percent at the six wavelengths both have, but
+  along the sun angle follows it except at the one run, where their
+  ratio stands +1.09 to +2.96 percent above its chord (every other Chl
+  -0.64 to +0.29).
+
 A physical cause would not single out one Chl at one sun angle while its
-neighbours in both stay in line, and the authors' recomputation does not
-show it. The values are kept and marked suspect; the package warns when
+neighbours in both stay in line, and neither the authors' recomputation
+nor the OLCI processor's table shows it. The values are kept and marked suspect; the package warns when
 they are read.
 
 **What is not known.** What went wrong in that run. The paper computes
@@ -436,5 +448,5 @@ of the Raman scattering is important for the green and red radiations"
 (p. 6298), where the dip is deepest; neither the archive nor the later
 tables give it apart, so that is not tested.
 
-**Where.** DATA.md section 48; DECISIONS.md sections 105, 116, 117 and 118;
+**Where.** DATA.md section 48; DECISIONS.md sections 105, 116, 117, 118 and 122;
 `examples/fq_at_45_degrees.py`; `jerlov.morel2002_fq_tables`.

@@ -7893,7 +7893,7 @@ name it.
 ## 122. The dip at 45 degrees against EUMETSAT's OLCI table (1.26.9): a record
 
 NEXT_STEPS left one comparison for the dip of section 116: the f/Q table
-of the operational OLCI processor, in the auxiliary file `OL_2_OCP_AX`,
+of the OLCI processor, in the auxiliary file `OL_2_OCP_AX`,
 which the user could not obtain from EUMETSAT or from the Copernicus
 reprocessing service. **This section is a record, as section 117 was:**
 the file turned up on 2026-11-26, was read and compared before anything
@@ -7955,8 +7955,9 @@ since the archive has no wind.
   largest at 620 nm, the reddest shared wavelength, and -0.64 to +0.29 at
   every other Chl.
 
-So the table the operational processor uses does not have the dip, as the
-authors' later tables do not; the archive's run stays the one out of line.
+So this version of the OLCI processor's table does not have the dip, as
+the authors' later tables do not; the archive's run stays the one out of
+line.
 
 **What goes into the repository.** The file is not shipped, for the
 reason of section 117 (no licence stated with it). The user's copy goes
