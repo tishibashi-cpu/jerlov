@@ -8,6 +8,8 @@ amount of daylight left at each depth in the ten Jerlov types;
 ``docs/pages/disagree.html`` gives the questions of OPEN_QUESTIONS.md a
 figure each (questions 5 and 6 since 1.26.6, section 119);
 ``docs/pages/waters.html`` sets every source of each type side by side,
+``docs/pages/shallow.html`` puts a bottom under the water (1.26.8,
+section 121),
 and ``docs/figures/`` holds the front page's figure and the gallery of
 the examples (both since 1.26.7, section 120, drawn by
 ``tools/site_figures.py``). The templates are in ``tools/site_pages/``.
@@ -328,6 +330,72 @@ def waters_inputs() -> dict:
                 series=series, sources=sources)
 
 
+# -- the fourth page: when the bottom shows through (DECISIONS.md section 121) -
+
+#: The runs' wavelengths, 400-700 nm (Lee et al. 1998, Table 1), every 5 nm.
+SHALLOW_WL = np.arange(400.0, 701.0, 5.0)
+#: The suns of the runs (1998, Table 1), degrees from the zenith.
+SHALLOW_SUNS = (0.0, 30.0, 60.0)
+#: The particles' bbp/bp of examples/ocean_colour_and_secchi.py; 0.0183 is
+#: that of Petzold's average-particle phase function, which the runs used.
+SHALLOW_RATIOS = (0.005, 0.0183, 0.03)
+#: The source with a and b for all ten types.
+SHALLOW_SOURCE = "solonenko2015"
+
+
+def shallow_inputs() -> dict:
+    """The values the fourth page embeds."""
+    from jerlov import ocean_colour as oc
+    a, bb, flags = {}, {}, {}
+    for t in TYPES:
+        w = jerlov.water(t, source=SHALLOW_SOURCE)
+        with warnings.catch_warnings(record=True) as record:
+            # What the source flags, in the package's own words: the page
+            # shows them beside the type.
+            warnings.simplefilter("always", jerlov.ProvenanceWarning)
+            a[t] = _rounded(w.a(SHALLOW_WL), 7)
+            bb[t] = {f"{r:g}": _rounded(w.bb(SHALLOW_WL,
+                                              particle_backscatter_ratio=r), 9)
+                     for r in SHALLOW_RATIOS}
+        flags[t] = list(dict.fromkeys(
+            str(x.message) for x in record
+            if issubclass(x.category, jerlov.ProvenanceWarning)))
+    sky = {}
+    for sun in SHALLOW_SUNS:
+        s = jerlov.gregg1990_irradiance(SHALLOW_WL, sun_zenith_deg=sun,
+                                        visibility_km=VISIBILITY_KM,
+                                        **ATMOSPHERE)
+        sky[f"{sun:g}"] = _rounded(s.above, 6)
+    cmf_wl, cmf = jerlov.cie_1931_cmf()
+    return dict(
+        jerlov_version=jerlov.__version__,
+        wl=SHALLOW_WL.tolist(), types=list(TYPES),
+        suns=list(SHALLOW_SUNS), ratios=list(SHALLOW_RATIOS),
+        a=a, bb=bb, flags=flags, sky=sky,
+        model=dict(g=list(oc._LEE1999_G), dc=list(oc._LEE1999_D_COLUMN),
+                   db=list(oc._LEE1999_D_BOTTOM), zeta=oc._LEE1999_ZETA,
+                   gamma=oc._LEE1999_GAMMA, n=oc._LEE1998_N,
+                   depth=list(oc._LEE1998_DEPTH), u_max=oc._LEE1998_U),
+        cmf=[_rounded(np.interp(SHALLOW_WL, cmf_wl, cmf[:, k]), 7)
+             for k in range(3)],
+        xyz_to_srgb=np.asarray(XYZ_TO_LINEAR_SRGB).tolist(),
+        srgb_white=[float(v) for v in SRGB_WHITEPOINT_XYZ],
+    )
+
+
+def shallow_figures() -> dict:
+    """The numbers the fourth page's prose gives: the model against the
+    Monte Carlo of DECISIONS.md section 113, from question 5's data."""
+    s = _shallow()
+    q = np.array([r["ratio"] for r in s["runs"]])
+    return {
+        "MC_RUNS": f"{len(q)}",
+        "MC_MEDIAN": f"{np.median(q):.3f}",
+        "MC_WITHIN": f"{100 * np.mean(np.abs(q - 1) <= s['miss']):.1f}",
+        "VISIBILITY": f"{VISIBILITY_KM:g}",
+    }
+
+
 # -- writing -----------------------------------------------------------------
 
 def _fill(template: str, data: dict, figures: dict, core: str = "") -> str:
@@ -350,7 +418,9 @@ def pages() -> dict[str, str]:
         dive = dive_inputs()
         disagree = disagree_inputs()
         waters = waters_inputs()
+        shallow = shallow_inputs()
         figures = dive_figures(dive)
+        shallow_numbers = shallow_figures()
     return {
         "dive.html": _fill((TEMPLATES / "dive.html").read_text(), dive, figures,
                            (TEMPLATES / "dive_core.js").read_text()),
@@ -358,6 +428,10 @@ def pages() -> dict[str, str]:
                                disagree, {}),
         "waters.html": _fill((TEMPLATES / "waters.html").read_text(),
                              waters, {}),
+        "shallow.html": _fill((TEMPLATES / "shallow.html").read_text(),
+                              shallow, shallow_numbers,
+                              (TEMPLATES / "dive_core.js").read_text()
+                              + (TEMPLATES / "shallow_core.js").read_text()),
     }
 
 

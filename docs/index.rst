@@ -67,8 +67,8 @@ in different papers, so :func:`jerlov.water` takes ``source=``, and the
 :class:`jerlov.Water` it returns says where its numbers came from and what
 is doubtful about them.
 
-Two pages to look at
---------------------
+Pages to look at
+----------------
 
 - `Daylight on the way down <dive.html>`_: the colour and amount of
   sunlight left at each depth in the ten types, from 0 to 100 m.
@@ -76,8 +76,11 @@ Two pages to look at
   one figure each.
 - `The waters side by side <waters.html>`_: every source of each type on
   one set of axes, a, b, c and Kd.
+- `When the bottom shows through <shallow.html>`_: a bottom of chosen
+  depth and albedo under each type, and how it changes the reflectance
+  and colour seen from above.
 
-All three are made from the package's own values by ``tools/site_pages.py``
+All four are made from the package's own values by ``tools/site_pages.py``
 and say on the page what they assume.
 
 Where to go next

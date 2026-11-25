@@ -7822,8 +7822,7 @@ bb) passes 0.6 anywhere, the page says so, as the function warns.
 - **The water's a and bb.** a from Solonenko & Mobley (2015), the only
   source with a and b for all ten types, every 5 nm from 400 to 700 nm
   (the runs' range) by `Water.a`; bb by `Water.bb(...,
-  particle_backscatter_ratio=r)`, embedded as its value at r = 0 and the
-  particles' bp, so that the page forms bb = bb(0) + r bp exactly. The
+  particle_backscatter_ratio=r)`, embedded for each of the three r. The
   source tabulates every 25 nm; between, the values are the package's
   linear interpolation, and the page says so.
 - **Three figures.** (1) Rrs above the surface against wavelength: with
@@ -7859,3 +7858,34 @@ quotes are in OPEN_QUESTIONS.md; the index, the nav and the sitemap name
 it. The site is built with `sphinx-build -W` and looked at in Chromium in
 light and dark, at 1200 and 390 pixels wide. A release of the site,
 1.26.8.
+
+**Result.** As planned, with the differences below. The page was looked
+at in Chromium in light and dark at 1200 and 390 pixels wide (no script
+error, no sideways scroll of the page). Tests check that the page is what
+the tool writes, that its a, bb, the model's constants (and the
+equations as printed) and the warnings it shows are the package's, that
+its script, run by node, gives `lee1999_shallow_rrs`'s five quantities to
+1e-12 over 20 cases and `spectrum_to_srgb`'s colours to 1e-5, that the
+Monte Carlo figures are those of OPEN_QUESTIONS.md question 5 and DATA.md
+section 50, and that the index, the sitemap and every page's navigation
+name it.
+
+**Differences from the plan, noted after the code.**
+
+- Solonenko & Mobley's values carry flags the plan did not foresee: b of
+  I and IA is suspect at every wavelength (Table 3's Bs or Bl does not fit
+  the b column), and a is missing for 3C at 675-700 nm and for 5C at
+  600-700 nm (Table 7's duplicated rows, DATA.md section 1). The page
+  shows, beside the type, the ProvenanceWarnings the package gives for it
+  (read by the tool, word for word); it draws nothing where a is missing
+  (with the package's linear interpolation, 3C beyond 650 nm and 5C beyond
+  575 nm), and gives no colour for those two types, since a colour needs
+  the whole spectrum.
+- `Water.bb` refuses a particles' ratio of 0, so bb is embedded for each
+  of the three ratios rather than as bb(0) and bp.
+- A further test sets the page's values against
+  `examples/ocean_colour_and_secchi.py` part 13: the depths at which the
+  bottom's share falls to 10 percent agree within 3.6 percent, the
+  difference being pure water's backscattering (the example takes
+  `pure_water_backscattering`, the page `Water.bb`, the source's own
+  model).

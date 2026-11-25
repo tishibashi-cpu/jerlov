@@ -79,7 +79,7 @@ def _close(made, kept, where):
 
 # -- the pages are what the tool writes now ----------------------------------
 
-PAGE_NAMES = ["dive.html", "disagree.html", "waters.html"]
+PAGE_NAMES = ["dive.html", "disagree.html", "waters.html", "shallow.html"]
 
 
 @pytest.mark.parametrize("name", PAGE_NAMES)
@@ -109,8 +109,14 @@ def test_the_site_carries_the_pages_and_links_to_them():
     assert '"pages"' in conf.split("exclude_patterns")[1].splitlines()[0]
     index = (ROOT / "docs" / "index.rst").read_text()
     assert "<dive.html>`_" in index and "<disagree.html>`_" in index
-    assert "<waters.html>`_" in index
+    assert "<waters.html>`_" in index and "<shallow.html>`_" in index
     assert '"waters.html"' in conf.split("_EXTRA_PAGES")[1].splitlines()[0]
+    assert '"shallow.html"' in conf.split("_EXTRA_PAGES")[1].splitlines()[0]
+    # Each page's navigation names the other three (DECISIONS.md section 121).
+    for name in PAGE_NAMES:
+        nav = _page(name).split('<nav class="nav">')[1].split("</nav>")[0]
+        for other in PAGE_NAMES:
+            assert (f'href="{other}"' in nav) == (other != name), (name, other)
     assert "<disagree.html>`_" in (ROOT / "docs" / "open_questions.rst").read_text()
 
 
@@ -345,10 +351,11 @@ def test_the_site_writes_a_sitemap_with_its_pages():
     conf = (ROOT / "docs" / "conf.py").read_text()
     assert 'html_baseurl = "https://tishibashi-cpu.github.io/jerlov/"' in conf
     assert 'app.connect("build-finished", _sitemap)' in conf
-    assert '_EXTRA_PAGES = ("dive.html", "disagree.html", "waters.html")' in conf
+    assert ('_EXTRA_PAGES = ("dive.html", "disagree.html", "waters.html", '
+            '"shallow.html")') in conf
     # The docs workflow reads the built sitemap back.
     docs_yml = (ROOT / ".github" / "workflows" / "docs.yml").read_text()
-    for page in ("index.html", "dive.html"):
+    for page in ("index.html", "dive.html", "shallow.html"):
         assert f"<loc>https://tishibashi-cpu.github.io/jerlov/{page}</loc>" in docs_yml
 
 
@@ -532,3 +539,167 @@ def test_the_card_is_a_png_of_1200_by_630_and_every_page_names_it():
     assert 'content="{{ theme_og_root }}og.png"' in layout
     conf = (ROOT / "docs" / "conf.py").read_text()
     assert 'templates_path = ["_templates"]' in conf
+
+
+# -- the fourth page: when the bottom shows through (DECISIONS.md section 121) -
+
+def test_the_fourth_page_embeds_what_water_returns():
+    data = _data(_page("shallow.html"))
+    tool = _tool()
+    wl = np.asarray(data["wl"], float)
+    assert wl[0] == 400.0 and wl[-1] == 700.0
+    assert data["types"] == list(tool.TYPES)
+    assert data["ratios"] == [0.005, 0.0183, 0.03]
+    def array(values):
+        return np.array([np.nan if x is None else x for x in values], float)
+
+    for t in data["types"]:
+        w = jerlov.water(t, source="solonenko2015")
+        with warnings.catch_warnings(record=True) as record:
+            warnings.simplefilter("always", jerlov.ProvenanceWarning)
+            assert np.allclose(array(data["a"][t]), w.a(wl), rtol=0,
+                               atol=1e-7, equal_nan=True)
+            for r in data["ratios"]:
+                assert np.allclose(array(data["bb"][t][f"{r:g}"]),
+                                   w.bb(wl, particle_backscatter_ratio=r),
+                                   rtol=0, atol=1e-9, equal_nan=True)
+        # The flags the page shows are the package's own warnings.
+        said = {str(x.message) for x in record
+                if issubclass(x.category, jerlov.ProvenanceWarning)}
+        assert set(data["flags"][t]) == said, t
+    # The gaps of Table 7 (DATA.md section 1) and the suspect b of I and IA
+    # are on the page.
+    assert data["a"]["5C"][data["wl"].index(600.0)] is None
+    assert data["a"]["3C"][data["wl"].index(675.0)] is None
+    assert data["a"]["3C"][data["wl"].index(650.0)] is not None
+    assert all(data["flags"][t] for t in ("I", "IA", "3C", "5C"))
+    assert not data["flags"]["IB"]
+    from jerlov import ocean_colour as oc
+    m = data["model"]
+    assert (tuple(m["g"]), tuple(m["dc"]), tuple(m["db"])) == (
+        oc._LEE1999_G, oc._LEE1999_D_COLUMN, oc._LEE1999_D_BOTTOM)
+    assert (m["zeta"], m["gamma"], m["n"], m["u_max"]) == (
+        oc._LEE1999_ZETA, oc._LEE1999_GAMMA, oc._LEE1998_N, oc._LEE1998_U)
+    assert tuple(m["depth"]) == oc._LEE1998_DEPTH
+    # The equations as the page prints them carry the same constants.
+    import html
+    text = html.unescape(_flat(_page("shallow.html"))).replace("\u2212", "-")
+    assert (f"{m['dc'][0]:g} (1 + {m['dc'][1]:g} u)^0.5" in text
+            and f"{m['db'][0]:g} (1 + {m['db'][1]:g} u)^0.5" in text)
+    assert f"rrs_dp = ({m['g'][0]:.3f} + {m['g'][1]:.3f} u) u" in text
+    assert (f"Rrs = {m['zeta']:g} rrs / (1 - {m['gamma']:g} rrs)" in text)
+    assert f"n = {m['n']:g}" in text
+
+
+def test_the_fourth_page_quotes_the_monte_carlo_as_the_records_do():
+    text = _flat(_page("shallow.html"))
+    figures = _tool().shallow_figures()
+    quoted = (f"{figures['MC_RUNS']} runs", f"is {figures['MC_MEDIAN']}",
+              f"within 10 percent in {figures['MC_WITHIN']} percent")
+    for q in quoted:
+        assert q in text, q
+    assert (f"within 10 percent in {figures['MC_WITHIN']} percent of "
+            f"{figures['MC_RUNS']} runs") in _oq(5)
+    data_md = _flat((ROOT / "DATA.md").read_text())
+    assert (f"median {figures['MC_MEDIAN']}, within 10 percent in "
+            f"{figures['MC_WITHIN']} percent") in data_md
+
+
+SHALLOW_CASES = [(t, sun, r, depth, albedo)
+                 for t, sun, r in (("I", 0.0, 0.0183), ("IB", 30.0, 0.005),
+                                   ("1C", 60.0, 0.03), ("9C", 30.0, 0.0183),
+                                   ("5C", 30.0, 0.0183))
+                 for depth, albedo in ((0.5, 1.0), (5.0, 0.3), (17.3, 0.0),
+                                       (32.0, 0.1))]
+
+
+@pytest.mark.skipif(shutil.which("node") is None, reason="node is not installed")
+def test_the_fourth_pages_own_script_gives_jerlovs_values(tmp_path):
+    """shallow_core.js against lee1999_shallow_rrs, and dive_core.js's colour
+    against spectrum_to_srgb, on the page's own values."""
+    data = _data(_page("shallow.html"))
+    (tmp_path / "data.json").write_text(json.dumps(data))
+    pages = ROOT / "tools" / "site_pages"
+    (tmp_path / "run.js").write_text(f"""
+const Core = require({json.dumps(str(pages / "dive_core.js"))});
+const Shallow = require({json.dumps(str(pages / "shallow_core.js"))});
+const D = require("./data.json");
+const S = Shallow.make(D);
+const out = {json.dumps(SHALLOW_CASES)}.map(([t, sun, r, H, rho]) => {{
+  const x = S.rrs(t, sun, r, H, rho);
+  const sky = D.sky[String(sun)];
+  const c = Core.make({{ wl: D.wl, cmf: D.cmf, es: sky, xyz_to_srgb: D.xyz_to_srgb, srgb_white: D.srgb_white }});
+  return [x, c.linear(x.above.map((v, i) => Math.PI * v * sky[i]))];
+}});
+console.log(JSON.stringify(out));
+""")
+    result = subprocess.run(["node", str(tmp_path / "run.js")], capture_output=True,
+                            text=True, check=True, cwd=tmp_path)
+    wl = np.asarray(data["wl"], float)
+    for (t, sun, r, depth, albedo), (got, linear) in zip(
+            SHALLOW_CASES, json.loads(result.stdout)):
+        a = np.array([np.nan if x is None else x for x in data["a"][t]])
+        bb = np.asarray(data["bb"][t][f"{r:g}"], float)
+        got = {k: np.array([np.nan if x is None else x for x in v])
+               for k, v in got.items()}
+        want = jerlov.lee1999_shallow_rrs(a, bb, depth_m=depth,
+                                          bottom_albedo=albedo,
+                                          sun_zenith_deg=sun)
+        for mine, theirs in (("rrs", "rrs"), ("column", "column"),
+                             ("bottom", "bottom"), ("deep", "deep"),
+                             ("above", "above_surface")):
+            assert np.allclose(got[mine], getattr(want, theirs),
+                               rtol=1e-12, atol=1e-15, equal_nan=True), (
+                t, sun, r, depth, mine)
+        deep_above = 0.5 * want.deep / (1 - 1.5 * want.deep)
+        assert np.allclose(got["aboveDeep"], deep_above, rtol=1e-12,
+                           equal_nan=True)
+        if np.isnan(a).any():
+            continue    # no colour where the source has a gap
+        sky = np.asarray(data["sky"][f"{sun:g}"], float)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", jerlov.GamutWarning)
+            warnings.simplefilter("ignore", jerlov.CoverageWarning)
+            rgb = jerlov.spectrum_to_srgb(np.pi * want.above_surface * sky, wl,
+                                          white=sky, clip=False)
+        assert np.max(np.abs(_signed_gamma(np.asarray(linear)) - rgb)) < 1e-5
+
+
+def test_the_fourth_page_agrees_with_the_example_on_when_the_bottom_fades():
+    """The depth at which the bottom's part of rrs falls to 10 percent, by
+    the page's values, against examples/ocean_colour_and_secchi.py part 13,
+    which takes pure water's backscattering from
+    pure_water_backscattering rather than the source's own model (Water.bb):
+    the depths differ by up to 3.6 percent (DECISIONS.md section 121)."""
+    data = _data(_page("shallow.html"))
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", jerlov.ProvenanceWarning)
+        ex = _example_module("ocean_colour_and_secchi")
+        import contextlib
+        import io
+        with contextlib.redirect_stdout(io.StringIO()):
+            got = ex["shallow_part"](set())["depths"]
+    depths = ex["SHALLOW_DEPTHS"]
+    wl = list(data["wl"])
+    for (t, rho), want in got.items():
+        cols = [wl.index(w) for w in ex["SHALLOW_WL"]]
+        a = np.asarray(data["a"][t], float)[cols]
+        bb = np.asarray(data["bb"][t]["0.0183"], float)[cols]
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", jerlov.ProvenanceWarning)
+            r = jerlov.lee1999_shallow_rrs(a, bb, depth_m=depths[:, None],
+                                           bottom_albedo=rho,
+                                           sun_zenith_deg=ex["SUN_ZENITH_DEG"])
+        share = r.bottom / r.rrs
+        for k, column in enumerate(share.T):
+            below = np.flatnonzero(column < ex["BOTTOM_SHARE"])
+            mine = depths[below[0]] if below.size else np.inf
+            if np.isinf(want[k]):
+                assert np.isinf(mine), (t, rho, k)
+            else:
+                assert mine == pytest.approx(want[k], rel=0.04), (t, rho, k)
+
+
+def _example_module(name):
+    import runpy
+    return runpy.run_path(str(ROOT / "examples" / f"{name}.py"), run_name=name)
