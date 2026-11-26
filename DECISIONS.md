@@ -8056,3 +8056,70 @@ degree field of view, that is all they can say.
 - The table of part 3 stops at 48.2 degrees, inside the window at n =
   1.34; the half-transmission angle is found on a fine grid, not from the
   table's rows.
+
+## 124. The refractive index of sea water: Quan & Fry (1995) (1.27.0): the plan
+
+The package carries no refractive index of water as a function: two
+functions hold the index their papers used (1.333 for Gordon 1989,
+section 74; 1.34 for Lee et al. 1998, section 113), and the Snell's-window
+example (section 123) had to take a range, 1.33 to 1.35, as a choice. The
+user asked on 2026-11-26 for a function, built on Quan & Fry (1995).
+
+**The source.** Quan, X. and Fry, E. S. (1995), "Empirical equation for
+the index of refraction of seawater", Appl. Opt. 34(18), 3477-3480,
+doi:10.1364/AO.34.003477 (the DOI resolves to this paper; the PDF read is
+a copy on a university site, not shipped). Their Eq. (3), at atmospheric
+pressure:
+
+    n(S, T, l) = n0 + (n1 + n2 T + n3 T^2) S + n4 T^2
+                 + (n5 + n6 S + n7 T) / l + n8 / l^2 + n9 / l^3
+
+with S in per mil, T in degrees Celsius, l in nm, and n0 = 1.31405, n1 =
+1.779e-4, n2 = -1.05e-6, n3 = 1.6e-8, n4 = -2.02e-6, n5 = 15.868, n6 =
+0.01155, n7 = -0.00423, n8 = -4382, n9 = 1.1455e6 (p. 3479, read from the
+page image: the text layer garbles the minus signs). "The ranges of
+validity are 0 < T < 30 C, 0 < S < 35 per mil, and 400 nm < l < 700 nm."
+The equation is a fit to Austin & Halikas's (1976, SIO Ref. 76-1) selected
+data, reprinted as the paper's Table 1: 11 wavelengths (404.7 to 700 nm),
+S = 0 and 34.998, T = 1 to 30 C, 154 values, measured by Mehu &
+Johannin-Gilles (stated accuracy 3e-5), except those at 700 nm, which
+"are extrapolations from the experimental data that were made by A&H".
+The paper gives the fit's rms deviation from Table 1 as 1.5e-5; computed
+here from the transcription, 1.56e-5 (seen while planning).
+
+**The function.** `quan1995_refractive_index(wavelength_nm, /, *,
+salinity_psu, temperature_c)`, in a new module `jerlov/refraction.py`.
+Public names 142 -> 143.
+
+- Salinity and temperature have no default (the package's rule: what the
+  water does not fix is the caller's). The keyword is `salinity_psu`, as
+  everywhere in the package; the paper's S is in per mil, from
+  Copenhagen standard water, and the difference between that and
+  practical salinity is not modelled; the docstring says so.
+- The three inputs broadcast. Outside 400-700 nm, 0-35 and 0-30 C (the
+  ends included, as Table 1 has them) is refused with ValueError, not
+  extrapolated; inf is refused; NaN in the wavelength gives NaN.
+- Above 643.8 nm the fit rests on the 700 nm values, which are Austin &
+  Halikas's extrapolations, not measurements: a ProvenanceWarning there,
+  as the package warns wherever a source extrapolated.
+- Pressure is left out. The paper's own estimate (p. 3477): at 100 m the
+  index rises by less than 1.37e-4; the docstring quotes it and adds
+  nothing.
+- Nothing else changes: Gordon's 1.333 and Lee's 1.34 are their papers'
+  values and stay.
+
+**Tests.** Table 1 transcribed into the test file as numbers written out
+(checked against the page image), with the paper's own check: the rms
+deviation of the function from it, 1.5e-5 to the digit the paper prints;
+every value within 5e-5. The coefficients and range as printed; the
+refusals; NaN; broadcasting; the warning only above 643.8 nm; the
+caller's arrays not modified.
+
+**Where it is used.** `examples/snells_window.py` part 1 takes its range
+of indices from the function (fresh to sea water, 0 to 30 C, 400 to 700
+nm) instead of the stated 1.33 to 1.35, and gives the half-angle at its
+extremes; the rest of the example keeps n = 1.34, which the function
+gives for sea water in the green (to be stated with the number it
+gives). DATA.md gains section 51; docs/api.rst and docs/choosing.rst
+list the function; `.zenodo.json` gains a line. A release with a new
+public function, 1.27.0.
