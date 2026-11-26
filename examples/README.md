@@ -341,8 +341,9 @@ Duntley's asymptotic light field has it. Duntley's eq. (12) as printed
 would make the open water read 46 times what Tyler measured.
 
 **`snells_window.py`** — the sky seen from under water through a flat
-surface: a cone of half-angle **48.3** degrees at n = 1.34 (47.8 to 48.8
-from 1.33 to 1.35), into which the lowest 20 degrees of sky crowd within
+surface: a cone of half-angle **48.3** degrees at n = 1.34 (47.7 to 48.8
+over the range of `quan1995_refractive_index`, 0 to 35, 0 to 30 C and
+400 to 700 nm), into which the lowest 20 degrees of sky crowd within
 its outer **3.7** degrees; the window **1.76** times as bright as an even
 sky at its centre and half as bright 0.4 degrees inside its rim; outside
 it, a mirror of the water below; a circle on the surface 1.121 times the

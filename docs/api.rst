@@ -123,6 +123,8 @@ Scattering and backscattering
 
 .. autofunction:: pure_water_scattering
 
+.. autofunction:: quan1995_refractive_index
+
 .. autofunction:: bb_from_vsf
 
 .. autoclass:: Backscattering

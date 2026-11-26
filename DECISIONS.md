@@ -8123,3 +8123,23 @@ gives for sea water in the green (to be stated with the number it
 gives). DATA.md gains section 51; docs/api.rst and docs/choosing.rst
 list the function; `.zenodo.json` gains a line. A release with a new
 public function, 1.27.0.
+
+**Result.** As planned. The function reproduces Table 1 within 5e-5 at
+every value; the index runs from 1.3291 to 1.3515 over the equation's
+range, and sea water at 35, 20 C and 550 nm has 1.3408.
+`examples/snells_window.py` part 1 now shows four waters from the
+function and its extremes over the range (half-angle 47.7 to 48.8
+degrees, against 47.8 to 48.8 from the fixed indices of 1.26.10); parts 2
+to 6 keep n = 1.34, 0.04 degrees from sea water at 550 nm.
+
+**Differences from the plan, noted after the code.**
+
+- The plan expected the rms deviation from Table 1 to round to the
+  paper's 1.5e-5. Over all 154 values it is 1.56e-5, which does not; over
+  the 140 measured ones, without the 14 extrapolated at 700 nm, it is
+  1.47e-5, which does. Why the paper's figure is the lower one is not
+  known; the test checks both numbers and that the paper's lies within
+  0.1e-5 of them.
+- The example's part 1 shows the index at 700 nm, which warns; the
+  example catches that warning by type and says why it shows the value
+  all the same (it is the lowest the equation gives).

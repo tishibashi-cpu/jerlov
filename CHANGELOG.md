@@ -4,6 +4,28 @@ Every release is archived on Zenodo under the concept DOI
 [10.5281/zenodo.22321312](https://doi.org/10.5281/zenodo.22321312), which
 always resolves to the latest version.
 
+## 1.27.0 — 2026-11-26
+
+The refractive index of sea water (DECISIONS.md section 124). No shipped
+value changed.
+
+**New.** `quan1995_refractive_index(wavelength_nm, salinity_psu=,
+temperature_c=)`: Quan & Fry's (1995) empirical equation for sea water at
+atmospheric pressure, 400 to 700 nm, salinity 0 to 35 and 0 to 30 C, with
+no default for salinity or temperature and no extrapolation outside those
+ranges. Above 643.8 nm it warns: there the equation rests on Austin &
+Halikas's values at 700 nm, which are extrapolations. Against the data it
+was fitted to (Quan & Fry's Table 1, 154 values) its rms deviation is
+1.56e-5, where the paper prints 1.5e-5. Over its range the index runs from
+1.3291 to 1.3515. DATA.md section 51. The indices that `gordon1989_d0`
+(1.333) and `lee1999_shallow_rrs` (1.34) use are their papers' and do not
+change.
+
+**Changed.** `examples/snells_window.py` part 1 takes the refractive
+index from the new function, so the window's half-angle now runs from
+47.7 to 48.8 degrees over the equation's range, instead of the earlier
+fixed range of indices, 1.33 to 1.35.
+
 ## 1.26.10 — 2026-11-26
 
 A new example, the 31st (DECISIONS.md section 123). Nothing in the

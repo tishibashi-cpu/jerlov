@@ -40,12 +40,15 @@ def _banner():
     print(f"jerlov {jerlov.__version__} from {jerlov.__file__}")
 
 
-#: Refractive indices of water to show. The package uses 1.333 (Gordon
-#: 1989) and 1.34 (Lee et al. 1998); fresh to sea water across the visible
-#: lies within 1.33 to 1.35. Which one holds depends on wavelength,
-#: salinity and temperature, which this example does not model.
-INDICES = (1.33, 1.333, 1.34, 1.35)
-#: The index used where one is needed.
+#: Waters to show in part 1, by jerlov.quan1995_refractive_index (Quan &
+#: Fry 1995): (label, wavelength nm, salinity, temperature C). The first
+#: and last are the lowest and highest index within the equation's range.
+WATERS = (("fresh, 30 C, 700 nm (lowest)", 700.0, 0.0, 30.0),
+          ("fresh, 20 C, 550 nm", 550.0, 0.0, 20.0),
+          ("sea, 35, 20 C, 550 nm", 550.0, 35.0, 20.0),
+          ("sea, 35, 0 C, 400 nm (highest)", 400.0, 35.0, 0.0))
+#: The index used from part 2 on: that of Lee et al.'s shallow-water runs,
+#: which part 1 sets beside the sea water at 550 nm.
 N_WATER = 1.34
 
 
@@ -66,22 +69,45 @@ def fresnel(cos_i, n1, n2):
     return np.where(total, 1.0, 0.5 * (rs + rp))
 
 
-def size_part():
+def _index(wavelength, salinity, temperature, caught):
+    with warnings.catch_warnings(record=True) as record:
+        warnings.simplefilter("always", jerlov.ProvenanceWarning)
+        n = jerlov.quan1995_refractive_index(
+            wavelength, salinity_psu=salinity, temperature_c=temperature)
+    caught.update(str(w.message) for w in record
+                  if issubclass(w.category, jerlov.ProvenanceWarning))
+    return n
+
+
+def size_part(caught):
     rule("1. How wide the window is")
     print("""Light from the whole sky, down to the horizon, enters the water within a
-cone of half-angle arcsin(1/n) about the vertical. For refractive
-indices of water (fresh to sea water, across the visible):
+cone of half-angle arcsin(1/n) about the vertical. The refractive index
+n depends on the wavelength, the salinity and the temperature
+(jerlov.quan1995_refractive_index, Quan & Fry 1995):
 """)
-    print(f"  {'n':>6} {'half-angle':>11} {'full cone':>10}")
-    angles = {}
-    for n in INDICES:
+    print(f"  {'water':<31} {'n':>7} {'half-angle':>11} {'full cone':>10}")
+    rows = []
+    for label, wl, sal, temp in WATERS:
+        n = _index(wl, sal, temp, caught)
         c = float(critical_deg(n))
-        angles[n] = c
-        print(f"  {n:>6g} {c:>10.2f}° {2 * c:>9.1f}°")
+        rows.append(dict(label=label, n=n, angle=c))
+        print(f"  {label:<31} {n:>7.4f} {c:>10.2f}° {2 * c:>9.1f}°")
+    # The extremes over the equation's whole range, on a grid.
+    grid = _index(np.linspace(400.0, 700.0, 61)[:, None, None],
+                  np.linspace(0.0, 35.0, 8)[None, :, None],
+                  np.linspace(0.0, 30.0, 7)[None, None, :], caught)
+    low, high = float(grid.min()), float(grid.max())
+    assert np.isclose(low, rows[0]["n"]) and np.isclose(high, rows[-1]["n"])
+    sea = rows[2]["n"]
     print(f"""
-The edge moves by {angles[INDICES[0]] - angles[INDICES[-1]]:.2f} degrees over that range; the rest of this
-example uses n = {N_WATER:g}, the index of Lee et al.'s shallow-water runs.""")
-    return angles
+Over 400 to 700 nm, 0 to 35 and 0 to 30 C the index runs from {low:.4f} to
+{high:.4f}, and the edge moves by {rows[0]["angle"] - rows[-1]["angle"]:.2f} degrees. The rest of this example
+uses n = {N_WATER:g}, the index of Lee et al.'s shallow-water runs; sea water at
+550 nm and 20 C has {sea:.4f}, whose edge lies {float(critical_deg(N_WATER)) - float(critical_deg(sea)):.2f} degrees nearer the
+vertical than n = {N_WATER:g} puts it.""")
+    return dict(rows=rows, low=low, high=high, sea=sea,
+                at_n=float(critical_deg(N_WATER)))
 
 
 #: Heights above the horizon, degrees, to place in the window.
@@ -198,9 +224,9 @@ def _suspect_cells(distribution):
     return cells
 
 
-def measured_part(caught):
+def measured_part(caught, size):
     rule("6. Is the edge in a measured radiance distribution?")
-    edge = (float(critical_deg(INDICES[-1])), float(critical_deg(INDICES[0])))
+    edge = (float(critical_deg(size["high"])), float(critical_deg(size["low"])))
     rows = []
     for depth in jerlov.TYLER1958_DEPTHS:
         with warnings.catch_warnings(record=True) as record:
@@ -265,23 +291,24 @@ other 10 degrees looking up. At the other {sum(others.values())} the steepest st
 def main():
     _banner()
     caught = set()
-    size = size_part()
+    size = size_part(caught)
     squeeze = squeeze_part()
     bright = brightness_part()
     mirror = mirror_part()
     footprint = footprint_part()
-    measured = measured_part(caught)
+    measured = measured_part(caught, size)
     if caught:
-        print("\nTyler's tables warned, as the package does where cells are "
-              "suspect:\n  " + "\n  ".join(sorted(caught)) +
-              "\n  None of those cells is used above.")
+        print("\nThe package warned:\n  " + "\n  ".join(sorted(caught)) +
+              "\n  Part 1 shows the index at 700 nm all the same, as the "
+              "lowest the\n  equation gives; none of Tyler's suspect cells "
+              "is used in part 6.")
     rule("Before you use any of this")
     print(f"""  - The surface is flat. Waves tilt it, and the window breaks into
     moving pieces whose edges come and go.
   - Part 3's sky has the same radiance in every direction, and its light
     is taken as unpolarised. A real sky is neither.
-  - One refractive index, n = {N_WATER:g}, for every wavelength. The edge
-    moves by about a degree between 1.33 and 1.35 (part 1).
+  - One refractive index, n = {N_WATER:g}, for every wavelength from part 2
+    on. Part 1 shows how far the edge moves with the water.
   - Parts 1 to 5 have no scattering in the water. Part 6 is one lake, on
     one day, under one sun,
     with a {measured['acceptance']:g} degree field of view and 10 degree steps; it says
