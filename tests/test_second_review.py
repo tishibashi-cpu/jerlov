@@ -342,9 +342,13 @@ def test_text_for_a_number_is_a_value_error():
 
 
 def test_an_unknown_tyler_depth_is_a_key_error_whatever_it_is():
-    for bad in ("abc", None, 5.0):
+    for bad in (None, 5.0):
         with pytest.raises(KeyError, match="no table"):
             jerlov.tyler1958_radiance(bad)
+    # Since 1.29.0 text is refused before the look-up (DECISIONS.md
+    # section 126).
+    with pytest.raises(ValueError, match="not the text 'abc'"):
+        jerlov.tyler1958_radiance("abc")
 
 
 def test_vsf_at_says_what_shape_it_wants():

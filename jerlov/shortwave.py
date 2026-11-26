@@ -61,6 +61,9 @@ class ShortwaveParameters:
         """
         z = np.atleast_1d(np.asarray(depth_m, dtype=float))
         _require_number(z, "depth_m")
+        if np.any(np.isinf(z)):
+            raise ValueError("depth_m must be finite (DECISIONS.md section "
+                             "126)")
         if np.any(z < 0):
             raise ValueError("depth_m cannot be negative")
         if self.fit_depth_m is not None and np.any(z > self.fit_depth_m):

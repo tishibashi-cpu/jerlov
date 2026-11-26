@@ -43,10 +43,13 @@ def test_morel2002_nadir_fq_by_keyword():
 
 @pytest.mark.parametrize("bad", ["412.5", np.nan, np.inf, [412.5], None])
 def test_morel2002_nadir_fq_takes_one_finite_number(bad):
-    with pytest.raises(ValueError, match="must be one finite number"):
+    # Text is refused by the check every public function has since 1.29.0
+    # (DECISIONS.md section 126), in its own words.
+    said = "must be (one finite number|a number or numbers)"
+    with pytest.raises(ValueError, match=said):
         jerlov.morel2002_nadir_fq(bad, chlorophyll_mg_m3=0.1,
                                   sun_zenith_deg=0.0)
-    with pytest.raises(ValueError, match="sun_zenith_deg must be one"):
+    with pytest.raises(ValueError, match="sun_zenith_deg " + said):
         jerlov.morel2002_nadir_fq(412.5, chlorophyll_mg_m3=0.1,
                                   sun_zenith_deg=bad)
 
@@ -77,12 +80,19 @@ def test_one_check_of_one_number():
 
 @pytest.mark.parametrize("method,extra", [("flat", {}),
                                           ("flat+", {"a_ref": 0.01})])
-def test_the_flat_methods_keep_a_gap_in_cm(method, extra):
+def test_the_flat_methods_ignore_a_gap_in_cm(method, extra):
+    """Section 105 kept cm's gaps in the flat methods' result; since 1.29.0
+    (section 126) they do not reach it, since Eqs. (1) and (3) do not use
+    cm. A gap in am still does."""
     out = jerlov.rottgers2013_scatter_correction(
         np.array([0.5, 0.4]), np.array([np.nan, 1.0]), 0.05, 0.5,
         method=method, **extra)
-    assert np.isnan(out[0]) and np.isfinite(out[1])
-    assert "a gap in either is a gap in the result" in " ".join(
+    assert np.all(np.isfinite(out))
+    gap = jerlov.rottgers2013_scatter_correction(
+        np.array([np.nan, 0.4]), np.array([1.0, 1.0]), 0.05, 0.5,
+        method=method, **extra)
+    assert np.isnan(gap[0]) and np.isfinite(gap[1])
+    assert "a gap in cm leaves their result as it is" in " ".join(
         jerlov.rottgers2013_scatter_correction.__doc__.split())
 
 
