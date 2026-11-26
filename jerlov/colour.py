@@ -154,6 +154,9 @@ def integrate_response(spectrum, wavelengths, response, response_wavelengths,
     """
     spectrum = np.asarray(spectrum, dtype=float)
     wavelengths = np.asarray(wavelengths, dtype=float)
+    if spectrum.ndim != 1 or wavelengths.ndim != 1:
+        raise ValueError("spectrum and wavelengths must be one-dimensional, "
+                         "one value per wavelength")
     response = np.atleast_2d(np.asarray(response, dtype=float))
     if response.shape[0] != np.size(response_wavelengths):
         response = response.T
@@ -229,6 +232,9 @@ def xyz_to_srgb(xyz, *, clip: bool = True) -> np.ndarray:
     falls outside the display gamut, which underwater colours often do.
     """
     xyz = np.asarray(xyz, dtype=float)
+    if xyz.ndim == 0 or xyz.shape[-1] != 3:
+        raise ValueError("xyz must end in an axis of three, X, Y and Z, not "
+                         f"have shape {xyz.shape}")
     if np.any(np.isinf(xyz)):
         # Clipping turned an infinite X into a plain colour.
         raise ValueError("xyz must not be infinite; NaN gives NaN")

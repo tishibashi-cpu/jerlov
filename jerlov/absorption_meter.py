@@ -53,10 +53,12 @@ def rottgers2013_scatter_correction(am, cm, am_ref, cm_ref, /, *, method,
     ----------
     am, cm:
         The measured absorption and attenuation, 1/m, at the wavelengths
-        to correct; numbers or arrays that broadcast. NaN marks a gap,
-        and a gap in either is a gap in the result, by the flat methods
-        too, which do not use cm: a wavelength the measurement has a gap
-        at gives nothing there (DECISIONS.md section 105).
+        to correct; numbers or arrays that broadcast. NaN marks a gap. A
+        gap in am is a gap in the result; a gap in cm is one only for the
+        proportional methods, which use cm. The flat methods do not, so
+        since 1.29.0 a gap in cm leaves their result as it is (until then
+        it made it NaN; DECISIONS.md sections 105 and 126). cm must still
+        broadcast with am, and the result has the broadcast shape.
     am_ref, cm_ref:
         The same at the reference wavelength, 1/m; ``cm_ref`` is not used
         by the flat methods but must still be a number.
@@ -106,7 +108,10 @@ def rottgers2013_scatter_correction(am, cm, am_ref, cm_ref, /, *, method,
     cm_r = _number(cm_ref, "cm_ref")
     offset = am_r - (_number(a_ref, "a_ref") if plus else 0.0)
     if not proportional:
-        out = am_arr - offset + 0.0 * cm_arr
+        # cm is not in Eqs. (1) and (3): its gaps do not reach the result,
+        # but its shape does (DECISIONS.md section 126).
+        shape = np.broadcast_shapes(am_arr.shape, cm_arr.shape)
+        out = np.broadcast_to(am_arr - offset, shape).copy()
         return _result(out, am, cm)
     ec_value = _number(ec, "ec")
     if ec_value <= 0:

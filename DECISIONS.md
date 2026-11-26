@@ -8307,3 +8307,34 @@ and with each numeric argument made a bool or text: refused, with the
 parameter's name in the message; switches and names still accepted; the
 public names are all wrapped (so a new one cannot escape); C, D and E as
 above; the whole suite and the examples unchanged otherwise.
+
+**Result.** As planned. The harness run again after the change: a bool or
+text is refused at every numeric argument of every function it calls (it
+was read at 101 and 42), no caller's array is modified, and every
+function's valid call still works. The 31 examples run unchanged with
+ProvenanceWarning as an error. The check costs nothing measurable:
+`Water.a` over 301 wavelengths took 443 microseconds wrapped against 524
+unwrapped, in one timing on one machine (within its noise).
+
+**Differences from the plan, noted after the code.**
+
+- A switch is recognised by its annotation alone (`bool`), not by name:
+  `bb_from_vsf`'s first argument is also called `beta`, a number, and a
+  list of switch names let a bool through there. The names that take
+  text stay a list, since several are not annotated.
+- The list also has `water` and `scattering`, which take a `Water` or a
+  `ScatteringFunction` and already answer a name with their own
+  `TypeError` (tests/test_rendering.py checks it), and `wind`, which
+  `Morel2002FQTables.surface_factor` takes as "flat" or a speed. A bool
+  is still refused at all three. Found when the tests were run outside
+  the source tree, not by the harness, which passed numbers only.
+- Two older tests asserted the error for text at a numeric argument:
+  `tyler1958_radiance("abc")` gave a `KeyError` and
+  `morel2002_nadir_fq("412.5", ...)` the message of `finite_number`. Both
+  now get the check's `ValueError`, and the tests say so.
+- `integrate_response` now asks for a one-dimensional spectrum and
+  wavelengths in so many words, as its docstring describes them (one
+  value per wavelength).
+- The test of section 105 that pinned the flat methods' NaN
+  (`test_the_flat_methods_keep_a_gap_in_cm`) is rewritten to the new
+  behaviour and renamed, as the plan said it would be.

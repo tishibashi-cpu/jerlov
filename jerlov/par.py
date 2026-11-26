@@ -510,6 +510,9 @@ def par_profile(surface_downwelling, wavelengths, /, depths_m, *, kd,
         )
     band_nm = _band(band)
     wl = np.array(wavelengths, dtype=float, ndmin=1)
+    if wl.size == 0:
+        raise ValueError("wavelengths is empty; the spectrum needs at least "
+                         "the band it is integrated over")
     if wl.ndim != 1 or not np.all(np.isfinite(wl)) or np.any(np.diff(wl) <= 0):
         raise ValueError("wavelengths must be finite and strictly ascending")
     lo, hi = band_nm

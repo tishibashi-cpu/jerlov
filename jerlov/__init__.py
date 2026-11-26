@@ -4,6 +4,7 @@ Every coefficient carries its source, and values that a published table got
 wrong are flagged rather than quietly repaired.
 """
 
+from . import _data
 from .backscattering import (
     AngleWarning,
     Backscattering,
@@ -319,4 +320,8 @@ __all__ = [
     "OsoaaRadianceScan",
 ]
 
-__version__ = "1.28.0"
+# Every public function and method refuses a bool or text given where a
+# number is meant (DECISIONS.md section 126).
+_data.check_public(globals(), __all__)
+
+__version__ = "1.29.0"

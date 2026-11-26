@@ -55,11 +55,15 @@ _F = TypeVar("_F", bound=Callable[..., Any])
 
 
 def finite_number(value: Any, name: str) -> float:
-    """One finite number, else ValueError (DECISIONS.md section 105).
+    """One finite number, else ValueError (DECISIONS.md sections 105 and
+    126).
 
-    Text and arrays are refused (``np.isfinite`` has no answer for text);
-    what NumPy counts as a number is accepted.
+    Text, arrays and bools are refused (``np.isfinite`` has no answer for
+    text; a bool is a switch, not a quantity); what else NumPy counts as a
+    number is accepted.
     """
+    if isinstance(value, (bool, np.bool_)):
+        raise ValueError(f"{name} must be one finite number, not {value!r}")
     try:
         ok = np.ndim(value) == 0 and bool(np.isfinite(value))
     except TypeError:               # text, say: isfinite has no answer
@@ -366,3 +370,107 @@ def b_from_c_ratio() -> tuple[np.ndarray, dict[str, np.ndarray]]:
         }
         out[stat] = _frozen(np.array([by_wl[w] for w in wl]))
     return _frozen(np.array(wl)), out
+
+
+# -- what a public argument may be (DECISIONS.md section 126) ----------------
+
+#: Parameters that take a name, not a number, whatever their annotation.
+#: ``water`` and ``scattering`` take an object and say so themselves when
+#: given a name; ``wind`` takes "flat" or a speed.
+TEXT_PARAMETERS = frozenset({
+    "source", "method", "colour_space", "text", "path", "types", "bound",
+    "chromophore", "irradiance", "key", "material", "name", "panel",
+    "quantity", "scattering", "sky", "station", "surface_water_type",
+    "unit", "variable", "water", "water_type", "wind"})
+
+
+def _refuse(value: Any, name: str, text_ok: bool, bool_ok: bool) -> None:
+    """Refuse a bool or text where a number is meant, alone or inside an
+    array, list, tuple or a dict's values. Other objects (a Water, a
+    ScatteringFunction, ...) are left to the function."""
+    if value is None:
+        return
+    if isinstance(value, (bool, np.bool_)):
+        if not bool_ok:
+            raise ValueError(f"{name} must be a number, not {value!r}: a "
+                             "bool is not a quantity")
+        return
+    if isinstance(value, (str, bytes, np.str_, np.bytes_)):
+        if not text_ok:
+            raise ValueError(f"{name} must be a number or numbers, not the "
+                             f"text {value!r}")
+        return
+    if isinstance(value, np.ndarray):
+        if value.dtype.kind == "b" and not bool_ok:
+            raise ValueError(f"{name} must be numbers, not an array of "
+                             "bools")
+        if value.dtype.kind in "USa" and not text_ok:
+            raise ValueError(f"{name} must be numbers, not an array of text")
+        if value.dtype.kind == "O":
+            for item in value.ravel():
+                _refuse(item, name, text_ok, bool_ok)
+        return
+    if isinstance(value, (list, tuple)):
+        for item in value:
+            _refuse(item, name, text_ok, bool_ok)
+        return
+    if isinstance(value, dict):
+        for item in value.values():
+            _refuse(item, name, text_ok, bool_ok)
+
+
+def checked(function: _F) -> _F:
+    """Wrap a public function or method so that a bool or text given where
+    a number is meant is refused with ValueError naming the parameter
+    (DECISIONS.md section 126). Applied to every public name by
+    ``jerlov/__init__.py``; idempotent."""
+    if getattr(function, "_jerlov_checked", False):
+        return function
+    parameters = [p for p in inspect.signature(function).parameters.values()
+                  if p.name not in ("self", "cls")]
+    method = "self" in inspect.signature(function).parameters
+    rules = {}
+    for p in parameters:
+        annotation = str(p.annotation)
+        # A switch is annotated bool (clip, beta of visual_pigment_template,
+        # include_sparse, include_non_types); bb_from_vsf's beta, a number,
+        # is not.
+        rules[p.name] = (p.name in TEXT_PARAMETERS or annotation == "str",
+                         annotation == "bool")
+    names = [p.name for p in parameters
+             if p.kind in (p.POSITIONAL_ONLY, p.POSITIONAL_OR_KEYWORD)]
+
+    @functools.wraps(function)
+    def wrapper(*args: Any, **kwargs: Any) -> Any:
+        given = args[1:] if method else args
+        for i, value in enumerate(given):
+            if i < len(names):
+                _refuse(value, names[i], *rules[names[i]])
+        for key, value in kwargs.items():
+            text_ok, bool_ok = rules.get(key, (True, True))
+            _refuse(value, key, text_ok, bool_ok)
+        return function(*args, **kwargs)
+
+    wrapper._jerlov_checked = True  # type: ignore[attr-defined]
+    return wrapper  # type: ignore[return-value]
+
+
+def check_public(namespace: dict, names: list[str]) -> None:
+    """Apply :func:`checked` to every public function in ``names`` (in the
+    package's namespace and in the module that defines it) and to every
+    public method of every public class."""
+    for name in names:
+        obj = namespace[name]
+        if inspect.isclass(obj):
+            if issubclass(obj, BaseException):
+                continue
+            for attr, value in list(vars(obj).items()):
+                if attr.startswith("_") or not inspect.isfunction(value):
+                    continue
+                setattr(obj, attr, checked(value))
+        elif inspect.isfunction(obj):
+            wrapped = checked(obj)
+            namespace[name] = wrapped
+            module = sys.modules.get(obj.__module__)
+            if module is not None and getattr(module, name, None) is obj:
+                setattr(module, name, wrapped)

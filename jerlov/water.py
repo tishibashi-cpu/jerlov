@@ -1358,7 +1358,7 @@ def pure_water_absorption_uncertainty(wavelength_nm, /, *, source: str):
                 f"{wl[k]:g} nm. Uncertainties are not interpolated "
                 "(DECISIONS.md section 125).")
         picked.append(int(hit[0]))
-    index = np.array(picked)
+    index = np.array(picked, dtype=int)
     flagged = sorted({j for j in index if statuses[j] in _data.QUESTIONABLE})
     if flagged:
         warnings.warn(

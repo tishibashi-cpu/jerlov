@@ -4,6 +4,46 @@ Every release is archived on Zenodo under the concept DOI
 [10.5281/zenodo.22321312](https://doi.org/10.5281/zenodo.22321312), which
 always resolves to the latest version.
 
+## 1.29.0 — 2026-11-26
+
+A review of the whole package after 1.28.0 (DECISIONS.md section 126). No
+calculated value was found wrong. Two kinds of returned value change:
+the flat methods of `rottgers2013_scatter_correction` where only cm has a
+gap, and inputs that used to be read and are now refused.
+
+**Changed.** Every public function and every public method of a public
+class refuses a bool or text where a number is meant, alone or inside an
+array, list, tuple or a dict's values, with a ValueError naming the
+parameter. Until now `True` was read as 1 and `"500"` as 500 in most
+places, while `_data.finite_number` (since 1.22.1) refused text: the same
+input was refused by one function and read by the next. Switches
+(`clip`, `beta` of `visual_pigment_template`, `include_sparse`,
+`include_non_types`) still take a bool, and names (`source`, `method`,
+`water_type`, ...) still take text. No docstring offered either. An
+argument that takes a `Water` or a `ScatteringFunction` still answers a
+name with its own TypeError. Text at a numeric argument now gets this
+ValueError everywhere: `tyler1958_radiance("abc")` gave a KeyError.
+
+**Changed.** The flat methods of `rottgers2013_scatter_correction`
+(`"flat"` and `"flat+"`) no longer carry a gap in cm into the result:
+Eqs. (1) and (3) do not use cm. A gap in am is still a gap in the result,
+and cm must still broadcast with am. Until now the result was NaN wherever
+cm was (1.22.1).
+
+**Fixed.** `solar_fraction` and `ShortwaveParameters.fraction_at` refuse
+an infinite depth, which returned 0 with a warning.
+`pure_water_absorption_uncertainty` returns empty arrays for an empty
+request, as `pure_water_absorption_table` does, instead of failing with
+IndexError (since 1.28.0). `par_profile` with no wavelengths,
+`xyz_to_srgb` with a single number and `integrate_response` with a single
+number for the spectrum now say what is wrong in a ValueError, instead of
+failing with IndexError inside the computation.
+
+**Tests.** A table of valid calls to every public function, and each
+numeric argument made a bool or text (`tests/test_public_inputs.py`); a
+check that every public function and method is covered, so that a new
+one cannot be missed.
+
 ## 1.28.0 — 2026-11-26
 
 The uncertainties printed with the published pure water absorption
