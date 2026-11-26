@@ -165,6 +165,8 @@ from .water import (
     profile_depth,
     pure_water_absorption,
     pure_water_absorption_table,
+    pure_water_absorption_uncertainty,
+    PureWaterAbsorptionUncertainty,
     water,
     water_type_at_depth,
 )
@@ -226,6 +228,8 @@ __all__ = [
     "QUANTA_BAND_NM",
     "pure_water_absorption",
     "pure_water_absorption_table",
+    "pure_water_absorption_uncertainty",
+    "PureWaterAbsorptionUncertainty",
     "petzold_scattering",
     "forward_scatter",
     "ForwardScatter",
@@ -315,4 +319,4 @@ __all__ = [
     "OsoaaRadianceScan",
 ]
 
-__version__ = "1.27.0"
+__version__ = "1.28.0"

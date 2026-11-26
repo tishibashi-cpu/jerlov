@@ -19,6 +19,12 @@ Water types and their coefficients
 .. autofunction:: pure_water_absorption
 .. autofunction:: pure_water_absorption_table
 
+.. autofunction:: pure_water_absorption_uncertainty
+
+.. autoclass:: PureWaterAbsorptionUncertainty
+   :members:
+   :undoc-members:
+
 .. autofunction:: measured_points
 
 .. autoclass:: MeasuredPoints

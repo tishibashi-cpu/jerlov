@@ -1791,9 +1791,16 @@ between another pair, leaving IB's a short by 9.6 percent (DECISIONS.md
 section 86). No laboratory measurement newer than Mason et al. (2016)
 was found on 2026-11-15.
 
-**Not used.** The standard deviations and Delta aw are in the CSVs but
-the function does not return them. Pope & Fry and Mason et al. measured
-fresh water; no salinity or temperature correction is applied.
+**Uncertainties (returned since 1.28.0, DECISIONS.md section 125).**
+`pure_water_absorption_uncertainty` returns Pope & Fry's sigma and percent
+error, Mason et al.'s sigma and Lee et al.'s Delta aw as printed, at the
+printed wavelengths only, with what each is in the paper's terms: Pope &
+Fry's sigma is a statistical standard deviation and their percent adds a
+2 percent calibration error; Lee et al.'s Delta aw is propagated from an
+assumed 15 percent uncertainty in each component (pp. 554-555), an
+estimate rather than a measured spread. Smith & Baker and Morel et al.
+print none. Pope & Fry and Mason et al. measured fresh water; no salinity
+or temperature correction is applied.
 
 **What the choice does to the reflectance (1.15.9, DECISIONS.md section
 97).** With pure sea water alone (a = aw, bb = bw / 2, bw from Williamson &

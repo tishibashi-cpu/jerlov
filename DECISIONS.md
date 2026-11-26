@@ -8167,7 +8167,7 @@ quantity, and the package does not make them one.
 - Lee et al. (2015), Table 1: Delta aw, "the estimated uncertainty of
   aw_D, which is derived from the absorption properties of the gyre waters
   following the error propagation scheme", their Eq. (17), assuming "a 15%
-  uncertainty for each component" (p. 556, read from the PDF on
+  uncertainty for each component" (pp. 554-555, read from the PDF on
   2026-11-26). An estimate from a propagation with an assumed input, not a
   measured spread.
 - Smith & Baker (1981) and Morel et al. (2007) print none.
@@ -8208,3 +8208,14 @@ refused; the warning for `lee2015_smoothed` at exactly its five
 wavelengths; scalar and array forms; the caller's array is not modified;
 `pure_water_absorption_table` returns what it did. A release with new
 public names, 1.28.0.
+
+**Result.** As planned. The function returns each paper's column as
+printed at all of its printed wavelengths (140 for Pope & Fry, 131 for
+Mason et al., 41 for Lee et al.); Pope & Fry's percent error follows from
+sigma and 2 percent at every row, as the build script already checks;
+`lee2015_smoothed` warns at 360, 370, 385, 395 and 400 nm and nowhere
+else; `pure_water_absorption_table` returns what it did.
+
+**Difference from the plan.** The plan gave the page of Lee et al.'s
+words as 556; they are on pp. 554 ("the estimated uncertainty") and 555
+("a 15% uncertainty"), corrected before the code.
