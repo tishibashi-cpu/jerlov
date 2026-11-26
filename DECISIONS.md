@@ -8219,3 +8219,91 @@ else; `pure_water_absorption_table` returns what it did.
 **Difference from the plan.** The plan gave the page of Lee et al.'s
 words as 556; they are on pp. 554 ("the estimated uncertainty") and 555
 ("a 15% uncertainty"), corrected before the code.
+
+## 126. A review after 1.28.0, and what every public input must be (1.29.0): the plan
+
+The user asked on 2026-11-26 for a review of the whole package, for bugs,
+inconsistencies and what could be better, and with it two items of
+NEXT_STEPS section 6: (1) one number's check accepts a bool, which section
+105 left as it was; (2) the flat methods of
+`rottgers2013_scatter_correction` keep a gap in cm, which section 105
+made the documented behaviour.
+
+**How the review was made.** Not every value was derived again: the
+earlier reviews (sections 80, 88 and 105) and the tests against the
+papers stand for that. This one (a) called every one of the 84 public
+functions from a valid call, then with each numeric argument in turn
+replaced by a bool, NaN, inf, numeric text ("1.0"), a negative value and
+an empty array, recording what each did, and checked that no call
+changed the caller's arrays; (b) checked that every warning points at
+the caller (`caller_stacklevel`), that no module integrates with
+`np.trapz` directly, that the parameters a docstring documents exist,
+and that a single number in gives a float out; (c) read the code added
+since section 105: `forward_scatter`, `attenuation_within` (1.23.0),
+`lee1999_shallow_rrs` (1.26.0), the suspect-run warning of
+`morel2002_fq_tables` (1.26.3), `quan1995_refractive_index` (1.27.0) and
+`pure_water_absorption_uncertainty` (1.28.0). The harness is a script
+kept out of the repository; what it found is below.
+
+**Found.** No wrong value, no input modified, no warning pointing inside
+the package, no documented parameter that does not exist.
+
+- **A. A bool is taken as a number almost everywhere** (item 1): by 101
+  of the numeric arguments probed (all but those that already refuse it
+  through a range check), in arrays as well as alone, and by the
+  methods (`Water.a(True)` is refused only because 1 nm is out of range).
+- **B. Numeric text is taken as a number in many places**: 42 numeric
+  arguments of functions, and methods such as `Water.a("500")`, convert
+  "1.0" with `np.asarray(..., dtype=float)`. Since 1.22.1
+  `_data.finite_number` refuses text (section 105, item 3); the rest of
+  the package does not. The same input is refused in one function and
+  read in the next.
+- **C. `solar_fraction` takes an infinite depth** and returns 0 with a
+  ProvenanceWarning, where the package's rule is that inf is refused.
+- **D. IndexError where a ValueError is meant**:
+  `pure_water_absorption_uncertainty` with an empty array (added in
+  1.28.0; `pure_water_absorption_table` returns an empty array), and
+  `par_profile` with no wavelengths, `xyz_to_srgb` with a single number
+  and `integrate_response` with a single number for the spectrum, which
+  fail inside the computation instead of saying what is wrong.
+- **E. Item 2.**
+
+**What changes.**
+
+- **A and B, in one place.** Every public function and every public
+  method of a public class (33 methods: `Water.a`, `Scene.observe`,
+  `ParProfile.depth_of_fraction`, ...) checks its arguments on entry: a
+  bool, alone or as an element of an array, list, tuple or dict's
+  values, is refused with ValueError unless the parameter is a switch
+  (annotated `bool`: `clip`, `beta`, `include_sparse`,
+  `include_non_types`); text is refused the same way unless the
+  parameter names something (annotated `str`, or one of the unannotated
+  names that take a name: `source`, `method`, `colour_space`,
+  `station`, `water_type`, `types`, `material`, `text`, `path`, ...).
+  The check wraps the package's public names once, in
+  `jerlov/__init__.py`, both where the package exports them and in the
+  module that defines them, so that it cannot be missed by a new
+  function, and a test calls every public function and method with a
+  bool and with text in each numeric argument. `_data.finite_number`
+  also refuses a bool itself. These are refusals of inputs no docstring
+  offered, as in sections 81 and 105.
+- **C.** `solar_fraction` (and `ShortwaveParameters.fraction_at`)
+  refuse an infinite depth.
+- **D.** `pure_water_absorption_uncertainty` returns empty arrays for an
+  empty request, as `pure_water_absorption_table` does; the other three
+  refuse with a ValueError naming what is wrong.
+- **E.** The flat methods stop carrying cm's NaN into the result: they do
+  not use cm, so a gap in cm says nothing about the result there. cm must
+  still broadcast with am, and the result keeps the broadcast shape. This
+  changes returned values (NaN becomes a number where only cm has a gap),
+  so the docstring, the test of section 105 and the CHANGELOG say so.
+
+Because values change (E) and inputs that were read are refused (A, B,
+C), the release is 1.29.0, not a patch. Nothing a docstring documents
+stops working.
+
+**Tests.** A table of valid calls to every public function and method,
+and with each numeric argument made a bool or text: refused, with the
+parameter's name in the message; switches and names still accepted; the
+public names are all wrapped (so a new one cannot escape); C, D and E as
+above; the whole suite and the examples unchanged otherwise.
