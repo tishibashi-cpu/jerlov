@@ -1234,8 +1234,10 @@ def pure_water_absorption_table(wavelength_nm, /, *, source: str):
       Quickenden & Irvin (1980), joined to aw1 at 366 nm.
 
     Linear interpolation between the printed wavelengths, no
-    extrapolation. Uncertainties are in the tables but not returned. See
-    DATA.md section 29 and DECISIONS.md section 70.
+    extrapolation. The uncertainties three of the papers print are
+    returned, at the printed wavelengths only, by
+    :func:`pure_water_absorption_uncertainty`. See DATA.md section 29 and
+    DECISIONS.md sections 70 and 125.
     """
     wl, aw, statuses, notes = _aw_table(source)
     query = _as_array(wavelength_nm)
@@ -1255,6 +1257,140 @@ def pure_water_absorption_table(wavelength_nm, /, *, source: str):
             stacklevel=_data.caller_stacklevel(),
         )
     return _like_input(np.interp(query, wl, aw), wavelength_nm)
+
+
+#: What each table's uncertainty column is, in its paper's terms
+#: (DECISIONS.md section 125): (CSV column, description).
+_AW_UNCERTAINTY = {
+    "pope1997": ("sigma_per_m",
+                 "Pope & Fry's statistical standard deviation (Table 3); "
+                 "their percent error adds a 2 percent calibration error "
+                 "in quadrature and rounds up (p. 8719)"),
+    "mason2016": ("sigma_per_m",
+                  "Mason, Cone & Fry's sigma, printed with each value of "
+                  "Table 2"),
+    "lee2015": ("delta_aw_per_m",
+                "Lee et al.'s estimated uncertainty Delta aw (Table 1), "
+                "propagated by their Eq. (17) assuming a 15 percent "
+                "uncertainty in each component (pp. 554-555); an estimate, "
+                "not a measured spread"),
+}
+_AW_UNCERTAINTY["lee2015_smoothed"] = _AW_UNCERTAINTY["lee2015"]
+
+
+@_data.compared_by_value
+@dataclass(frozen=True, eq=False)
+class PureWaterAbsorptionUncertainty:
+    """A published pure water absorption with the uncertainty its paper
+    prints, from :func:`pure_water_absorption_uncertainty`.
+
+    The numeric fields are floats for a single wavelength, otherwise
+    arrays. The uncertainties of different papers are different
+    quantities; ``meaning`` says which this one is.
+    """
+
+    #: The wavelengths asked for, nm: printed wavelengths of the table.
+    wavelengths_nm: np.ndarray
+    #: aw, 1/m, as :func:`pure_water_absorption_table` gives it there.
+    aw: np.ndarray
+    #: The paper's uncertainty column, 1/m, as printed.
+    uncertainty: np.ndarray
+    #: Pope & Fry's printed percent error (sigma and a 2 percent
+    #: calibration error in quadrature, rounded up); None for the others.
+    percent_error: np.ndarray | None
+    #: What ``uncertainty`` is, in the paper's terms.
+    meaning: str
+    #: The ``source`` asked for.
+    source: str
+
+
+@_data.positional_only()
+def pure_water_absorption_uncertainty(wavelength_nm, /, *, source: str):
+    """A published pure water absorption and the uncertainty printed with it.
+
+    For the tables of :func:`pure_water_absorption_table` that print one:
+
+    - ``"pope1997"``: sigma, the statistical standard deviation, and the
+      percent error, which adds a 2 percent calibration error in
+      quadrature, rounded up to an integer (Pope & Fry 1997, p. 8719).
+    - ``"mason2016"``: sigma, as Table 2 prints it.
+    - ``"lee2015"`` and ``"lee2015_smoothed"``: Delta aw, an uncertainty
+      Lee et al. (2015) estimated by propagating an assumed 15 percent
+      uncertainty in each component through their inversion (Eq. 17), not
+      a measured spread. The table gives one per row, for the unsmoothed
+      value; at the five wavelengths where ``"lee2015_smoothed"`` replaces
+      it, a :class:`ProvenanceWarning` says so.
+
+    ``"smith1981"``, ``"morel2007"`` and ``"morel2007_aw2"`` print none:
+    :class:`MissingQuantityError`.
+
+    Only the printed wavelengths are accepted. aw is interpolated between
+    them elsewhere in the package, but an uncertainty between two printed
+    ones is not known, and is not made up here. Returns
+    :class:`PureWaterAbsorptionUncertainty`. DECISIONS.md section 125,
+    DATA.md section 29.
+    """
+    if source not in _AW_TABLES:
+        raise KeyError(f"unknown pure water absorption table {source!r} "
+                       f"(available: {', '.join(_AW_TABLES)})")
+    if source not in _AW_UNCERTAINTY:
+        raise MissingQuantityError(
+            f"{_AW_TABLES[source][1]} prints no uncertainty. Those that do: "
+            f"{', '.join(_AW_UNCERTAINTY)}.")
+    wl, aw, statuses, notes = _aw_table(source)
+    query = _as_array(wavelength_nm).copy()
+    _require_number(query, "wavelength_nm")
+    filename = _AW_TABLES[source][0]
+    column = _AW_COLUMN.get(source, "aw_per_m")
+    rows = [r for r in _data._rows(filename) if r[column].strip()]
+    picked: list[int] = []
+    for w in query.ravel():
+        hit = np.flatnonzero(np.isclose(wl, w, rtol=0, atol=1e-9))
+        if not hit.size:
+            if w < wl[0] or w > wl[-1]:
+                raise ValueError(
+                    f"wavelength outside the range of {source!r} ({wl[0]:g}-"
+                    f"{wl[-1]:g} nm). This package does not extrapolate.")
+            k = int(np.searchsorted(wl, w))
+            raise ValueError(
+                f"{w:g} nm is not a wavelength {source!r} prints an "
+                f"uncertainty at; the nearest are {wl[k - 1]:g} and "
+                f"{wl[k]:g} nm. Uncertainties are not interpolated "
+                "(DECISIONS.md section 125).")
+        picked.append(int(hit[0]))
+    index = np.array(picked)
+    flagged = sorted({j for j in index if statuses[j] in _data.QUESTIONABLE})
+    if flagged:
+        warnings.warn(
+            f"{_AW_TABLES[source][1]}: "
+            + "; ".join(f"{statuses[j]} at {wl[j]:g} nm: {notes[j]}"
+                        for j in flagged),
+            ProvenanceWarning, stacklevel=_data.caller_stacklevel())
+    if source == "lee2015_smoothed":
+        smoothed = sorted({j for j in index
+                           if rows[j]["smoothed_aw_per_m"].strip()})
+        if smoothed:
+            warnings.warn(
+                "Lee et al. (2015) print Delta aw for the unsmoothed aw; at "
+                + ", ".join(f"{wl[j]:g}" for j in smoothed)
+                + " nm the smoothed value is returned with that Delta aw, "
+                "which was not given for it.",
+                ProvenanceWarning, stacklevel=_data.caller_stacklevel())
+    key, meaning = _AW_UNCERTAINTY[source]
+    sigma = np.array([float(rows[j][key]) for j in index])
+    percent = (np.array([float(rows[j]["percent_error"]) for j in index])
+               if source == "pope1997" else None)
+    shape = np.shape(wavelength_nm)
+
+    def out(values):
+        return _like_input(values, wavelength_nm) if not shape else \
+            values.reshape(shape)
+
+    return PureWaterAbsorptionUncertainty(
+        wavelengths_nm=out(wl[index].copy()), aw=out(aw[index].copy()),
+        uncertainty=out(sigma),
+        percent_error=None if percent is None else out(percent),
+        meaning=meaning, source=source)
 
 
 #: Austin & Petzold (1986) state their model holds below this K(490), 1/m.

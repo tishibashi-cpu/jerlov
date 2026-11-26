@@ -8143,3 +8143,79 @@ to 6 keep n = 1.34, 0.04 degrees from sea water at 550 nm.
 - The example's part 1 shows the index at 700 nm, which warns; the
   example catches that warning by type and says why it shows the value
   all the same (it is the lowest the equation gives).
+
+## 125. The uncertainties of the published pure water absorption spectra (1.28.0): the plan
+
+Since 1.4.0 (section 70) the CSVs of `pure_water_absorption_table` carry
+each paper's uncertainty column, transcribed and checked, but the function
+does not return them (NEXT_STEPS section 6). The user asked on 2026-11-26
+for them to be returned.
+
+**What the columns are, by each paper's own words.** They are not the same
+quantity, and the package does not make them one.
+
+- Pope & Fry (1997), Table 3: sigma, "the statistical standard
+  deviation", and a percent error that adds it "in quadrature with the
+  error in the absolute value of the absorption coefficient for the
+  calibration reference samples (estimated at 2%) ... rounding up to an
+  integer percentage" (p. 8719, as quoted in `tools/build_pure_water_aw.py`,
+  which checks all 140 rows against that rule).
+- Mason, Cone & Fry (2016), Table 2: sigma, printed with every value in
+  units of 1e-3 1/m; the abstract gives the minimum as 0.000811 +/-
+  0.000227 1/m (DATA.md section 29). The paper was read for 1.4.0; it is
+  not openly available and was not read again for this.
+- Lee et al. (2015), Table 1: Delta aw, "the estimated uncertainty of
+  aw_D, which is derived from the absorption properties of the gyre waters
+  following the error propagation scheme", their Eq. (17), assuming "a 15%
+  uncertainty for each component" (pp. 554-555, read from the PDF on
+  2026-11-26). An estimate from a propagation with an assumed input, not a
+  measured spread.
+- Smith & Baker (1981) and Morel et al. (2007) print none.
+
+**The function.** A new one, so that `pure_water_absorption_table` and
+what it returns stay as they are (the 1.0 promise):
+`pure_water_absorption_uncertainty(wavelength_nm, /, *, source)` returns
+`PureWaterAbsorptionUncertainty`: `wavelengths_nm`, `aw` (as
+`pure_water_absorption_table` gives it there), `uncertainty` (1/m, the
+paper's column as printed), `percent_error` (Pope & Fry's printed
+percent; None for the others), `meaning` (one sentence: which quantity
+the column is, from the list above) and `source`. Public names 143 -> 145.
+
+- **Only at the printed wavelengths.** Between them the package
+  interpolates aw linearly, but an uncertainty is not a quantity whose
+  value between two independent estimates is known; asking at another
+  wavelength is refused with ValueError naming the nearest printed ones.
+- **Sources without one** (`smith1981`, `morel2007`, `morel2007_aw2`):
+  MissingQuantityError, the package's error for what the data do not
+  give.
+- **`lee2015_smoothed`**: the table prints one Delta aw per row, for
+  aw_D; at the five wavelengths where the smoothed value replaces it, the
+  Delta aw is returned with a ProvenanceWarning that it was not given for
+  the smoothed value.
+- Flagged rows warn as they do in `pure_water_absorption_table`.
+- Scalars in, floats out; arrays in, arrays out (copies).
+
+**Docs.** `pure_water_absorption_table`'s docstring points to the new
+function; DATA.md section 29's "Not used" paragraph says what is now
+returned (no new DATA section); docs/api.rst and docs/choosing.rst list
+both names.
+
+**Tests.** The values equal the CSV columns at every printed wavelength;
+Pope & Fry's percent is returned as printed and follows from sigma and
+2 percent (the build script's rule, recomputed); off-grid and
+out-of-range wavelengths and the three sources without a column are
+refused; the warning for `lee2015_smoothed` at exactly its five
+wavelengths; scalar and array forms; the caller's array is not modified;
+`pure_water_absorption_table` returns what it did. A release with new
+public names, 1.28.0.
+
+**Result.** As planned. The function returns each paper's column as
+printed at all of its printed wavelengths (140 for Pope & Fry, 131 for
+Mason et al., 41 for Lee et al.); Pope & Fry's percent error follows from
+sigma and 2 percent at every row, as the build script already checks;
+`lee2015_smoothed` warns at 360, 370, 385, 395 and 400 nm and nowhere
+else; `pure_water_absorption_table` returns what it did.
+
+**Difference from the plan.** The plan gave the page of Lee et al.'s
+words as 556; they are on pp. 554 ("the estimated uncertainty") and 555
+("a 15% uncertainty"), corrected before the code.

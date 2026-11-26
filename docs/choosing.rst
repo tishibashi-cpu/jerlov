@@ -218,6 +218,11 @@ Pure water
    * - A published aw, by your choice
      - :func:`~jerlov.pure_water_absorption_table`
      - the ``source=`` you name
+   * - The uncertainty that paper prints with it, at its printed
+       wavelengths
+     - :func:`~jerlov.pure_water_absorption_uncertainty`, which returns
+       :class:`~jerlov.PureWaterAbsorptionUncertainty`
+     - Pope & Fry (1997), Mason et al. (2016), Lee et al. (2015)
    * - Its scattering, backscattering or volume scattering function
      - :func:`~jerlov.pure_water_scattering`,
        :func:`~jerlov.pure_water_backscattering`,

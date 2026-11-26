@@ -4,6 +4,24 @@ Every release is archived on Zenodo under the concept DOI
 [10.5281/zenodo.22321312](https://doi.org/10.5281/zenodo.22321312), which
 always resolves to the latest version.
 
+## 1.28.0 — 2026-11-26
+
+The uncertainties printed with the published pure water absorption
+spectra (DECISIONS.md section 125). No shipped value changed.
+
+**New.** `pure_water_absorption_uncertainty(wavelength_nm, source=)`
+returns `PureWaterAbsorptionUncertainty`: aw and the uncertainty its paper
+prints, for Pope & Fry (1997), Mason, Cone & Fry (2016) and Lee et al.
+(2015), with what that uncertainty is in the paper's terms. Pope & Fry's
+is a statistical standard deviation, and their percent error, which adds
+a 2 percent calibration error, is returned too; Lee et al.'s Delta aw is
+propagated from an assumed 15 percent uncertainty in each component, an
+estimate rather than a measured spread. Only the printed wavelengths are
+accepted: an uncertainty between two printed ones is not known, so it is
+not interpolated. Smith & Baker (1981) and Morel et al. (2007) print none,
+and asking for theirs raises MissingQuantityError.
+`pure_water_absorption_table` is unchanged. DATA.md section 29.
+
 ## 1.27.0 — 2026-11-26
 
 The refractive index of sea water (DECISIONS.md section 124). No shipped
