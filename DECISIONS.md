@@ -8338,3 +8338,137 @@ unwrapped, in one timing on one machine (within its noise).
 - The test of section 105 that pinned the flat methods' NaN
   (`test_the_flat_methods_keep_a_gap_in_cm`) is rewritten to the new
   behaviour and renamed, as the plan said it would be.
+
+## 127. The Fournier-Forand phase function (1.30.0): the plan
+
+Section 13 left out forward-scatter blur because it needs the whole phase
+function, and section 27 shipped Petzold's eight stations as measured,
+without the "average particle" phase function HydroLight users know.
+Since then three things have needed a phase function the caller can set
+by its backscatter ratio: the shallow-water closure (section 115, where
+the phase function alone moved the model against the Monte Carlo by up
+to 1.92 times), `lee2011_rrs`, whose coefficients were fitted to
+HydroLight runs with a blend of Petzold's average and a Fournier-Forand
+of bb/b = 1 percent (section 73), and the forward-scatter candidates of
+NEXT_STEPS section 5. The user chose this on 2026-11-26.
+
+**The sources.** The form used is the one Mobley, Sundman & Boss (2002),
+"Phase function effects on oceanic light fields", Appl. Opt. 41(6),
+1035-1050, doi:10.1364/AO.41.001035, print as Eqs. (1) and (2), p. 1037,
+calling it the "latest form" of Fournier & Forand's phase function, from
+Fournier & Jonasz (1999), "Computer-based underwater imaging analysis",
+Proc. SPIE 3761, 62-70, doi:10.1117/12.366488:
+
+    beta(psi) = 1 / (4 pi (1 - d)^2 d^nu)
+                  [nu (1 - d) - (1 - d^nu)
+                   + (d (1 - d^nu) - nu (1 - d)) sin^-2(psi / 2)]
+              + (1 - d180^nu) / (16 pi (d180 - 1) d180^nu) (3 cos^2 psi - 1)
+
+    nu = (3 - mu) / 2,  d = 4 / (3 (n - 1)^2) sin^2(psi / 2)
+
+with n the particles' real index of refraction relative to water, mu the
+slope of the hyperbolic (Junge) size distribution and d180 the d at 180
+degrees; and Eq. (3), the backscatter fraction:
+
+    B = 1 - (1 - d90^(nu + 1) - 0.5 (1 - d90^nu)) / ((1 - d90) d90^nu).
+
+Neither 1999 paper nor Fournier & Forand (1994, Proc. SPIE 2258,
+194-201) was obtained; the equations are read from Mobley et al.'s page
+image (the PDF read is a copy on the University of Maine's course site,
+misclab.umeoce.maine.edu, not shipped), and the docstring says they were
+read there. Mobley's Ocean Optics Web Book page on the function
+(oceanopticsbook.info, updated 2021-10-13) prints the same three
+equations.
+
+**What a backscatter ratio does not fix.** B depends on n and mu
+together, and Mobley et al. say so (p. 1042: "there is no unique pair of
+n and mu values corresponding to a given Bp"). For HydroLight they chose
+a line, "for simplicity", through n = 1.01 at the smallest mu (3) and
+their fit to Petzold's average (n = 1.10, mu = 3.5835):
+
+    n = 1.01 + 0.1542 (mu - 3),               Eq. (7)
+    2 / (3 d90) = (0.01 - 0.3084 nu)^2,       Eq. (8), the same line.
+
+It is a choice, not a law: the Web Book's own Table 1 gives five (n, mu)
+pairs for B = 0.0001 to 0.4, and none lies on it (at B = 0.4, n = 1.15
+where the line gives 1.299). Seen while planning, with Eq. (3): those
+five pairs give B = 0.000103, 0.00100, 0.0100, 0.1001 and 0.4005, the
+printed values to their digits.
+
+**The functions.** A new module `jerlov/fournier_forand.py`. Public names
+145 -> 148.
+
+1. `fournier_forand(*, refractive_index, junge_slope)` -> `FournierForand`:
+   the phase function of a given n and mu, both required, no default.
+2. `mobley2002_fournier_forand(backscatter_ratio, /)` -> `FournierForand`:
+   n and mu on Mobley et al.'s line, Eq. (8) solved with Eq. (3) for nu
+   (by bisection; B rises with mu along the line, to be checked by a
+   test). The line is in the name, so that whoever calls it has chosen
+   it, as with `qaa_v6` or `lee2011_rrs`.
+3. `FournierForand`, a frozen result with `refractive_index`,
+   `junge_slope`, `nu`, `backscatter_ratio` (Eq. 3), `relation` (None, or
+   the line's citation when made by 2), and three methods:
+   - `phase_function(angle_deg)`, 1/sr, Eq. (1). Refuses 0 degrees,
+     where it is infinite, and anything outside (0, 180].
+   - `cumulative(angle_deg)`: the share of scattering within angle_deg,
+     2 pi integral from 0 of beta sin. Mobley et al. say a closed form
+     exists in Fournier & Jonasz, which was not obtained. Derived here
+     from Eq. (1), with s = sin^2(psi / 2):
+
+         F(psi) = (1 - d^(nu + 1) - (1 - d^nu) s) / ((1 - d) d^nu)
+                + (1 - d180^nu) / (8 (d180 - 1) d180^nu) cos(psi) sin^2(psi).
+
+     F(0) = 0, F(90) = 1 - B of Eq. (3), F(180) = 1; seen while
+     planning: its derivative matches 2 pi beta sin(psi) to 5e-7 at the
+     Petzold fit. The same quantity as `ForwardScatter.fraction`, for
+     this phase function.
+   - `mean_cosine()`: -1 + integral from 0 to pi of F(psi) sin(psi), by
+     the trapezoid on a fine grid (F is bounded, beta is not).
+
+   Where d^nu would lose digits (nu near 0), 1 - d^nu is computed as
+   -expm1(nu log d).
+
+**The range accepted.** The form is for 3 < mu <= 5, the range the Web
+Book gives for oceanic Junge slopes and Mobley et al.'s Fig. 2 axis: at
+mu = 3 (nu = 0) it is 0/0, and at mu = 5 it is symmetric, B = 0.5 for any
+n. n must exceed 1, and d180 must exceed 1 (n < 1 + 2/sqrt(3) = 2.155),
+or the form divides by zero within 0-180 degrees. Seen while planning:
+on a 120 x 120 grid over that region the function is positive at every
+angle tried. Mobley et al.'s Fig. 2 shows n only to 1.20 and the Web
+Book's pairs to 1.175; the line reaches 1.318 at B = 0.5. Values between
+are accepted without a warning: the form is a formula, not a table, and
+nothing is extrapolated from data (the docstring states where the
+published pairs lie). For `mobley2002_fournier_forand`, B from 0.0001 to
+0.5, the range of HydroLight's library of these functions (Mobley & Sundman, HydroLight 5.1
+Technical Documentation, p. 22) and of the line within 3 < mu <= 5.
+
+What is refused, as elsewhere: NaN and inf (one number each, so no gap
+to mark), a bool or text (section 126), angles outside (0, 180], arrays
+of angles of more than one dimension. The caller's array is not
+modified.
+
+**Not done here.** `forward_scatter`, `attenuation_within`,
+`henyey_greenstein_fit` and `osoaa_phase_function` take a Petzold
+`ScatteringFunction` only, and stay so; letting them take a
+`FournierForand` is a later decision, with its own section. No average
+Petzold phase function is added (section 27 stands). No example changes.
+
+**Tests (the criteria).**
+- Eq. (1) over the sphere integrates to 1 within 1e-6, numerically in
+  log angle, at five (n, mu) pairs with mu >= 3.3 (nearer 3 the forward
+  peak is too narrow for a numerical integral, and F is checked instead).
+- `cumulative`: F(180) = 1 within 1e-12; 1 - F(90) equals Eq. (3) within
+  1e-12; the central difference of F equals 2 pi beta sin within 1e-5
+  relative at angles from 0.1 to 179 degrees.
+- Eq. (3) equals the numerical integral over 90-180 degrees within 1e-6.
+- Mobley et al.'s Petzold fit: n = 1.10, mu = 3.5835 gives B = 0.0183
+  to the printed digits; `mobley2002_fournier_forand(0.0183)` gives
+  mu = 3.5835 and n = 1.10 to the printed digits; Eqs. (7) and (8) agree.
+- The Web Book's five pairs give its five B to the printed digits.
+- Along the line B rises with mu; mu = 5 gives B = 0.5.
+- The function is positive at every angle on a grid of (n, mu).
+- The refusals; arrays and numbers; the caller's array untouched.
+
+DATA.md gains section 52; docs/api.rst, docs/choosing.rst and the topic
+page on measurements and scattering list the functions; `.zenodo.json`
+gains a line. A release with new public functions, 1.30.0.
