@@ -139,6 +139,11 @@ from .absorption_meter import (rottgers2013_a715,
                                rottgers2013_scatter_correction)
 from .clearest import ClearWaterStation, morel2007_stations
 from .refraction import quan1995_refractive_index
+from .fournier_forand import (
+    FournierForand,
+    fournier_forand,
+    mobley2002_fournier_forand,
+)
 from .fq_tables import Morel2002FQTables, morel2002_fq_tables
 from .qaa import (QAAResult, RamanCorrection, lee2013_raman_correction,
                   qaa_ioccg2006, qaa_v6)
@@ -235,6 +240,9 @@ __all__ = [
     "forward_scatter",
     "ForwardScatter",
     "attenuation_within",
+    "fournier_forand",
+    "mobley2002_fournier_forand",
+    "FournierForand",
     "PETZOLD_STATIONS",
     "ScatteringFunction",
     "shortwave_parameters",
@@ -324,4 +332,4 @@ __all__ = [
 # number is meant (DECISIONS.md section 126).
 _data.check_public(globals(), __all__)
 
-__version__ = "1.29.0"
+__version__ = "1.30.0"

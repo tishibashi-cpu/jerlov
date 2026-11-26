@@ -156,6 +156,13 @@ Scattering and backscattering
 
 .. autofunction:: attenuation_within
 
+.. autofunction:: fournier_forand
+
+.. autofunction:: mobley2002_fournier_forand
+
+.. autoclass:: FournierForand
+   :members:
+
 Measured reflectances
 ---------------------
 

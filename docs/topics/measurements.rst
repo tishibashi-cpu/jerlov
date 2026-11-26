@@ -45,6 +45,28 @@ on eight days in 1971, at 530 nm, water and particles together; none of them
 is a Jerlov type. Every value was transcribed from the report and checked
 against its own integrals and its second printing; DATA.md section 21.
 
+An analytic phase function
+--------------------------
+
+When a phase function is needed for a backscatter ratio rather than for a
+measured water, the Fournier-Forand form is what HydroLight uses: the
+particles' index of refraction n and the slope mu of their size
+distribution set it, both without a default.
+
+.. code-block:: python
+
+   p = jerlov.fournier_forand(refractive_index=1.10, junge_slope=3.5835)
+   p.backscatter_ratio                      # Mobley et al.'s fit to Petzold's average
+   p.phase_function([1.0, 90.0, 180.0])     # 1/sr; times the particles' b for their vsf
+   p.cumulative(5.0)                        # the share within 5 degrees
+   p.mean_cosine()
+
+   q = jerlov.mobley2002_fournier_forand(0.01)   # n and mu on HydroLight's line
+
+A backscatter ratio alone does not fix n and mu; many pairs give it, with
+somewhat different shapes. ``mobley2002_fournier_forand`` takes the line
+Mobley et al. (2002) chose "for simplicity"; DATA.md section 52.
+
 Measured reflectances of real materials
 ---------------------------------------
 

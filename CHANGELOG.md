@@ -4,6 +4,29 @@ Every release is archived on Zenodo under the concept DOI
 [10.5281/zenodo.22321312](https://doi.org/10.5281/zenodo.22321312), which
 always resolves to the latest version.
 
+## 1.30.0 — 2026-11-26
+
+The Fournier-Forand phase function (DECISIONS.md section 127). No shipped
+value changed.
+
+**New.** `fournier_forand(refractive_index=, junge_slope=)` returns a
+`FournierForand`: the analytic phase function of particles with a Junge
+size distribution, as Mobley, Sundman & Boss (2002, Appl. Opt. 41,
+1035-1050) print it after Fournier & Jonasz (1999), with the particles'
+index of refraction and the slope of their size distribution both
+required. It gives the phase function at any angle above 0 degrees, the
+backscatter ratio (their Eq. 3), the share of scattering within an angle
+in closed form, and the mean cosine. The slope must lie above 3 and at most
+5, the index above 1 and below 2.155, where the form is defined.
+
+**New.** `mobley2002_fournier_forand(backscatter_ratio)`: the same
+function for a particle backscatter ratio from 0.0001 to 0.5, with the
+index and slope on the line Mobley et al. chose for HydroLight, their
+Eq. (7). A ratio does not fix the two by itself, and the line is one
+choice among many, which is why its source is in the name. Their fit to
+Petzold's average-particle phase function, n = 1.10 and mu = 3.5835,
+gives 0.0183. DATA.md section 52.
+
 ## 1.29.0 — 2026-11-26
 
 A review of the whole package after 1.28.0 (DECISIONS.md section 126). No

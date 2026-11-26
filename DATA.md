@@ -3,7 +3,7 @@
 What every shipped table is, where it came from, what was verified, and what
 is known to be wrong with it.
 
-Fifty-one entries are recorded below. Thirteen are confirmed defects, three were
+Fifty-two entries are recorded below. Thirteen are confirmed defects, three were
 open questions that the first edition of Jerlov settled, and the rest are
 notes rather than defects. None of them is repaired silently: values that
 could be recovered carry `status = reconstructed` and say how, values that
@@ -3213,3 +3213,38 @@ from the page image, since the PDF's text layer garbles the minus signs.
   water at 35, 20 C and 550 nm has 1.3408. The two indices the package
   already uses, 1.333 for Gordon (1989) and 1.34 for Lee et al. (1998),
   are their papers' values and stay as they are.
+
+## 52. The Fournier-Forand phase function: Mobley et al. (2002) (note)
+
+Since 1.30.0, `fournier_forand(refractive_index=, junge_slope=)` and
+`mobley2002_fournier_forand(backscatter_ratio)` give the Fournier-Forand
+phase function as Mobley, Sundman & Boss (2002), "Phase function effects on
+oceanic light fields", Appl. Opt. 41(6), 1035-1050,
+doi:10.1364/AO.41.001035, print it: Eqs. (1)-(3), p. 1037, and the line of
+Eqs. (7)-(8), p. 1042 (DECISIONS.md section 127). No table is shipped.
+
+- **Where the equations were read.** From the page images of Mobley et
+  al.'s paper (a copy on the University of Maine's course site, not
+  shipped). They call it the "latest form", from Fournier & Jonasz (1999,
+  Proc. SPIE 3761, 62-70); neither that paper nor Fournier & Forand (1994,
+  Proc. SPIE 2258, 194-201) was obtained. Mobley's Ocean Optics Web Book
+  page on the function (updated 2021-10-13) prints the same three
+  equations.
+- **Checked against themselves.** Eq. (1) integrates to one over the
+  sphere and Eq. (3) is its integral over 90-180 degrees, both to 1e-6.
+  The closed form of the cumulative share used by
+  `FournierForand.cumulative` is not printed in either source; it was
+  derived from Eq. (1) and is checked by differentiation.
+- **Mobley et al.'s fit to Petzold's average,** n = 1.10 and mu = 3.5835
+  (p. 1037), gives a backscatter ratio of 0.018313, the printed 0.0183.
+  That point lies just off their own line, Eq. (7) (which gives n =
+  1.099976 at that mu); solved on the line, 0.0183 gives mu = 3.5834.
+- **The line is one choice.** Eqs. (7) and (8) are the same line, as the
+  paper says. Of the five (n, mu) pairs in the Web Book's Table 1, which
+  give its five ratios (0.0001 to 0.4) to their printed digits, four lie
+  within 0.005 of the line in n; the one for 0.4 (n = 1.15, mu = 4.874)
+  does not (the line gives 1.299 there).
+- **Its range.** For mu = 5 the form is symmetric, with a backscatter
+  ratio of 0.5 at any n; at mu = 3 it is 0/0. On the line, ratios from
+  0.0001 to 0.5 (HydroLight's library, HydroLight 5.1 Technical
+  Documentation, p. 22) take n from 1.021 to 1.318.

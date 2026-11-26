@@ -8472,3 +8472,36 @@ Petzold phase function is added (section 27 stands). No example changes.
 DATA.md gains section 52; docs/api.rst, docs/choosing.rst and the topic
 page on measurements and scattering list the functions; `.zenodo.json`
 gains a line. A release with new public functions, 1.30.0.
+
+**Result.** As planned in the functions and their range. Eq. (1)
+integrates to one and Eq. (3) is its integral over the back hemisphere,
+both within 1e-6; the closed-form cumulative share meets 1 at 180 degrees
+and 1 - B at 90 within 1e-12, and its derivative is Eq. (1) times 2 pi
+sin within 1e-5. Mobley et al.'s fit to Petzold's average gives B =
+0.018313. Along their line B rises with mu, from n = 1.021 at B = 0.0001
+to n = 1.318 at 0.5. The function is positive at every angle tried over
+the accepted (n, mu). Its mean cosine at the Petzold fit is 0.9300.
+
+**Differences from the plan, noted after the code.**
+
+- The plan said none of the Web Book's five (n, mu) pairs lies on
+  Mobley et al.'s line. That was written from a glance at the numbers,
+  not computed, and is wrong: four lie within 0.005 of it in n (at their
+  mu the line gives 1.0214, 1.0410, 1.0845 and 1.1742 against 1.021,
+  1.040, 1.08 and 1.175); only the one for B = 0.4 (n = 1.15, mu = 4.874,
+  where the line gives 1.299) is far from it. The point the plan made
+  stands on that one pair: the line is a choice, not what every author
+  uses. The docstring, DATA.md section 52 and a test say it this way.
+- The plan expected `mobley2002_fournier_forand(0.0183)` to give mu =
+  3.5835 to the printed digits. It gives 3.5834: the fit (n = 1.10, mu =
+  3.5835) lies just off the line (n = 1.099976 at that mu), and its B is
+  0.018313, not 0.0183 exactly. From the fit's own B the line gives mu
+  within 1e-4 of 3.5835, and the test checks that.
+- The integral of Eq. (1) over the sphere could not be taken numerically
+  right up to 0 degrees: below 1e-9 degree the forward peak is too narrow
+  to sample, and at n = 1.05, mu = 3.3 that part is 0.12 percent of the
+  whole. The tests take that part from the closed form (checked under 0.2
+  percent) and the rest numerically, for the sphere and the mean cosine
+  alike.
+- `MOBLEY2002_RELATION` stayed private; the text of the line is in the
+  result's `relation`.
