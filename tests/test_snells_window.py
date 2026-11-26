@@ -43,6 +43,21 @@ def test_fresnel_at_normal_incidence_and_beyond_the_critical_angle(module):
     assert fresnel(np.cos(c - 1e-2), 1.34, 1.0) < 1.0
 
 
+def test_part_1_takes_the_index_from_quan_and_fry(result):
+    import warnings
+
+    import jerlov
+    size = result["size"]
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", jerlov.ProvenanceWarning)
+        corners = [jerlov.quan1995_refractive_index(
+            w, salinity_psu=s, temperature_c=t)
+            for w in (400.0, 700.0) for s in (0.0, 35.0) for t in (0.0, 30.0)]
+    assert size["low"] == pytest.approx(min(corners))
+    assert size["high"] == pytest.approx(max(corners))
+    assert round(size["sea"], 2) == 1.34      # the n used from part 2 on
+
+
 def test_the_horizon_is_seen_at_the_window_s_edge(module, result):
     seen = result["squeeze"]["seen"]
     elevations = module["ELEVATIONS"]
@@ -74,8 +89,10 @@ def test_examples_readme_quotes_the_example(result):
     text = text.split("**`")[0]
     size, sq, br = result["size"], result["squeeze"], result["bright"]
     m = result["measured"]
-    assert f"half-angle **{size[1.34]:.1f}** degrees at n = 1.34" in text
-    assert f"({size[1.35]:.1f} to {size[1.33]:.1f} from 1.33 to 1.35)" in text
+    assert f"half-angle **{size['at_n']:.1f}** degrees at n = 1.34" in text
+    rows = size["rows"]
+    assert (f"({rows[-1]['angle']:.1f} to {rows[0]['angle']:.1f} over the "
+            "range of `quan1995_refractive_index`") in text
     assert (f"lowest {sq['low']} degrees of sky crowd within its outer "
             f"**{sq['outer']:.1f}** degrees") in text
     assert f"**{br['centre']:.2f}** times as bright" in text
@@ -97,4 +114,4 @@ def test_decisions_and_changelog_quote_the_example(result):
     assert counts in decisions
     others = sum(1 for r in m["rows"] if not r["seen"])
     assert f"At the other {others} the steepest step" in decisions
-    assert f"{result['size'][1.34]:.1f} degrees" in log
+    assert f"{result['size']['at_n']:.1f} degrees" in log

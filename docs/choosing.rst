@@ -223,6 +223,10 @@ Pure water
        :func:`~jerlov.pure_water_backscattering`,
        :func:`~jerlov.pure_water_vsf`, at a salinity you give
      -
+   * - The refractive index of sea water, at a salinity and temperature
+       you give
+     - :func:`~jerlov.quan1995_refractive_index`
+     - Quan & Fry (1995)
 
 Colour and vision
 -----------------

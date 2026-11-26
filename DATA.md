@@ -3,7 +3,7 @@
 What every shipped table is, where it came from, what was verified, and what
 is known to be wrong with it.
 
-Fifty entries are recorded below. Thirteen are confirmed defects, three were
+Fifty-one entries are recorded below. Thirteen are confirmed defects, three were
 open questions that the first edition of Jerlov settled, and the rest are
 notes rather than defects. None of them is repaired silently: values that
 could be recovered carry `status = reconstructed` and say how, values that
@@ -3177,3 +3177,32 @@ table is shipped; the constants are in `jerlov/ocean_colour.py`.
   particles' bb/b in 5 of 24 cells and falls in none. A cut of 0.5, 1 or
   2 degrees moves the ratio at any one station by a factor of 1.027 at
   most (`cut_check.csv`).
+
+## 51. The refractive index of sea water: Quan & Fry (1995) (note)
+
+Since 1.27.0, `quan1995_refractive_index(wavelength_nm, salinity_psu=,
+temperature_c=)` gives Quan & Fry's (1995) Eq. (3), Appl. Opt. 34(18),
+3477-3480, doi:10.1364/AO.34.003477 (DECISIONS.md section 124). No table
+is shipped; the ten coefficients are in `jerlov/refraction.py`, read
+from the page image, since the PDF's text layer garbles the minus signs.
+
+- **The data behind it.** The equation is a fit to Austin & Halikas's
+  (1976, SIO Ref. 76-1) selected data, reprinted as the paper's Table 1:
+  11 wavelengths from 404.7 to 700 nm, salinity 0 and 34.998 per mil, 1 to
+  30 C, 154 values. They were measured by Mehu & Johannin-Gilles (stated
+  accuracy 3e-5), except those at 700 nm, which Austin & Halikas
+  extrapolated. The function warns above 643.8 nm, the last measured
+  wavelength.
+- **The fit, recomputed.** Against Table 1 as transcribed (in
+  `tests/test_quan1995.py`, checked against the page image) the rms
+  deviation is 1.56e-5 over all 154 values and 1.47e-5 without the 700 nm
+  extrapolations; the paper prints 1.5e-5. Every value is within 5e-5.
+- **What it leaves out.** Pressure: the paper estimates that at 100 m it
+  raises the index by less than 1.37e-4 (p. 3477). The paper's salinity
+  is in per mil of Copenhagen standard water; the difference from
+  practical salinity is not modelled.
+- **Over its range** (400-700 nm, 0-35, 0-30 C) the index runs from
+  1.3291 (fresh water, 30 C, 700 nm) to 1.3515 (35, 0 C, 400 nm); sea
+  water at 35, 20 C and 550 nm has 1.3408. The two indices the package
+  already uses, 1.333 for Gordon (1989) and 1.34 for Lee et al. (1998),
+  are their papers' values and stay as they are.

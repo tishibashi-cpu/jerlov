@@ -137,6 +137,7 @@ from .ocean_colour import (
 from .absorption_meter import (rottgers2013_a715,
                                rottgers2013_scatter_correction)
 from .clearest import ClearWaterStation, morel2007_stations
+from .refraction import quan1995_refractive_index
 from .fq_tables import Morel2002FQTables, morel2002_fq_tables
 from .qaa import (QAAResult, RamanCorrection, lee2013_raman_correction,
                   qaa_ioccg2006, qaa_v6)
@@ -241,6 +242,7 @@ __all__ = [
     "pure_water_vsf",
     "pure_water_backscattering",
     "pure_water_scattering",
+    "quan1995_refractive_index",
     "Backscattering",
     "AngleWarning",
     "ShortwaveParameters",
@@ -313,4 +315,4 @@ __all__ = [
     "OsoaaRadianceScan",
 ]
 
-__version__ = "1.26.10"
+__version__ = "1.27.0"
