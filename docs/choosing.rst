@@ -276,6 +276,11 @@ For other software
    * - Coefficients per RGB channel, or the transmittance itself
      - :func:`~jerlov.rgb_attenuation`, :func:`~jerlov.rgb_transmittance`
      -
+   * - A particle phase function set by n and the Junge slope you give,
+       or by a backscatter ratio on HydroLight's line
+     - :func:`~jerlov.fournier_forand`,
+       :func:`~jerlov.mobley2002_fournier_forand`
+     - Mobley et al. (2002), after Fournier & Jonasz (1999)
    * - A Henyey-Greenstein g
      - :func:`~jerlov.henyey_greenstein_fit`
      - Petzold (1972)

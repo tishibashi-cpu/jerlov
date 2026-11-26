@@ -95,6 +95,8 @@ def calls():
         "pure_water_backscattering": ((WL,), dict(salinity_psu=35.0)),
         "pure_water_scattering": ((WL,), dict(salinity_psu=35.0)),
         "quan1995_refractive_index": ((WL,), dict(salinity_psu=35.0, temperature_c=20.0)),
+        "fournier_forand": ((), dict(refractive_index=1.10, junge_slope=3.5835)),
+        "mobley2002_fournier_forand": ((0.0183,), {}),
         "kd_spectrum": ((0.05, 490.0, WL), {}),
         "k_from_secchi": ((10.0,), dict(coefficient=1.44)),
         "b_from_c": ((np.array([0.3, 0.25, 0.2]), WL), dict(bw=np.array([0.004, 0.003, 0.002]), cw=np.array([0.02, 0.03, 0.06]))),
