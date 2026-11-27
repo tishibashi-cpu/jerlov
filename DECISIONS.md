@@ -8505,3 +8505,128 @@ the accepted (n, mu). Its mean cosine at the Petzold fit is 0.9300.
   alike.
 - `MOBLEY2002_RELATION` stayed private; the text of the line is in the
   result's `relation`.
+
+## 128. Why the colour changes on the first site page, and forward scattering with a Fournier-Forand phase function (1.31.0): the plan
+
+Two pieces of work, one release, as the user asked on 2026-11-27.
+
+### A. The first site page says why the colour moves from blue to orange
+
+The user, looking at `dive.html`, asked why the columns turn from blue
+in type I to orange in 9C, and whether research explains it. The page
+shows the colour but not the reason. It gains a panel, "Why the colour
+changes", between the readouts and the materials.
+
+**What it shows.** A chart of Kd against wavelength, 380-700 nm, on a
+log scale: the ten types' Kd (Jerlov 1976, the values the page already
+embeds) as thin lines, the selected type drawn heavily, with a dot at the
+printed wavelength where its Kd is least; and pure water's absorption,
+Pope & Fry (1997), dashed, from `pure_water_absorption_table(...,
+source="pope1997")`, as the floor no water can go below at the red end.
+It follows the type the reader picks.
+
+**What it says,** every number computed by tools/site_pages.py from the
+package and filled into the page, so that tests/test_site_pages.py checks
+it, as the page's other figures are:
+
+1. The window. Among the wavelengths Jerlov printed (400 to 700 nm,
+   every 25 nm), Kd is least at 475 nm for I, IA, IB and II, at 500 nm
+   for III, at 550 nm for 1C to 7C and at 575 nm for 9C (seen while
+   planning). The window is where the light that is left lies, so its
+   colour follows it.
+2. The red end. At 650 nm pure water alone absorbs 0.34 /m (Pope & Fry),
+   and Kd is 0.36 to 0.76 /m over the ten types: in the clearest water,
+   almost all the red that is lost is lost to the water itself.
+3. The blue end. At 400 nm Kd is 0.028 /m in I and 2.4 /m in 9C, 86 times
+   as much; at 650 nm only 2.1 times. What is added to the water absorbs
+   most in the blue.
+4. What is in it, in the sources' own words. Jerlov (1976, *Marine
+   Optics*, p. 137), quoted in DATA.md section 41 (read for 1.15.8): the
+   coastal types "are derived from observations along the coast of
+   Scandinavia and western North America. These northern water masses
+   are characterized by a relatively high amount of yellow substance."
+   And the model Williamson & Hollins (2022) fitted to the types IB to 5C:
+   what their a holds beyond pure water's (a - aw, with the aw they used,
+   DATA.md section 20) is 5.4 times as large at 412 nm as at 550 nm in IB
+   and 4.3 times in 5C.
+5. What is not known: which part of each type's blue loss is dissolved
+   matter, which phytoplankton and which other particles was not recorded
+   with the types, and the page says so. Nothing is said of what any one
+   substance absorbs beyond what these sources print.
+
+The colours themselves are already qualified on the page ("Many of them
+lie outside sRGB and are clipped"); the panel adds that a narrow window
+makes nearly monochromatic light, which is why the deeper colours are
+the ones clipped. Sources: Pope & Fry (1997) and Williamson & Hollins
+(2022) join the page's list.
+
+**Tests.** The page is what the tool writes (as now); the windows, the
+red and blue figures and the ratios are recomputed from the package in
+tests/test_site_pages.py and found on the page; the quotation is found in
+DATA.md as well as on the page; the page still asks nothing of another
+host.
+
+### B. Forward scattering with a Fournier-Forand phase function
+
+1.30.0 added `FournierForand` and left `forward_scatter` and
+`attenuation_within` taking Petzold's stations only (section 127, "Not
+done here"). This lets them take a Fournier-Forand too.
+
+**The difference that matters.** A Petzold station is the whole water,
+pure water and particles. A Fournier-Forand phase function is the
+particles' alone, so applying its share to a water's whole b would give
+pure water the particles' forward peak. Pure water scatters almost
+nothing forward of small angles: with the shape `pure_water_vsf` uses
+(Morel's, depolarisation ratio 0.09), its share within 5 degrees is
+0.27 percent and within 20 degrees 4.2 percent (seen while planning;
+closed form below), against 56 and 84 percent for the Fournier-Forand of
+Mobley et al.'s Petzold fit.
+
+**The changes.**
+
+1. `forward_scatter(scattering, half_angle_deg)` takes a
+   `FournierForand` as well as a `ScatteringFunction`. For it, the share
+   is `cumulative(half_angle_deg)`, exact, so there is no warning; the
+   half-angle may be 0 to 180 degrees. The result is a `ForwardScatter`
+   whose `station` names the phase function (n and mu), whose
+   `extension_fraction` is 0, and whose `wavelength_nm`, `c` and
+   `c_within` are NaN: the phase function has no water and no c of its
+   own. A new field `particles_only` (default False, added at the end so
+   existing constructions are unchanged) is True for it.
+2. `attenuation_within(water, wavelengths, /, *, forward,
+   pure_water_b=None)`. With a Petzold `forward`, as before, and
+   `pure_water_b` must be left out (given, it is refused: the station
+   already holds its water). With a particles-only `forward`,
+   `pure_water_b` is required (`MissingQuantityError` without it, as the
+   package does for what the data do not fix): the pure water scattering
+   the water's b was built on, 1/m, one number or one per wavelength;
+   for example `pure_water_scattering(wl, salinity_psu=...)`. Then
+
+       c_within = c - F_p (b - b_w) - F_w b_w
+
+   with F_p the Fournier-Forand share and F_w pure water's share within
+   the same half-angle, from the shape of `pure_water_vsf`:
+
+       F_w(theta0) = [(1 - cos theta0) + r (1 - cos^3 theta0) / 3]
+                     / [2 (1 + r / 3)],   r = (1 - 0.09) / (1 + 0.09).
+
+   Where b_w exceeds b, refused; NaN in the water stays NaN.
+
+No new public name; one new keyword and one new field. The Petzold path
+gives the same numbers as before, to the bit.
+
+**Tests.** The Petzold path unchanged (its existing tests); for a
+Fournier-Forand: the share equals `cumulative` and at 180 degrees
+c_within = a; F_w against a numerical integral of `pure_water_vsf`
+within 1e-8 at 1, 5, 20, 90 and 180 degrees; the formula against a
+direct computation on a water; the refusals (pure_water_b missing,
+given with Petzold, larger than b, a bool or text); the caller's array
+not modified.
+
+**For the record,** computed in the result, not judged: the share within
+1, 5 and 20 degrees of the Fournier-Forand of Mobley et al.'s Petzold fit
+against Petzold's stations with a similar B/S.
+
+**Documents.** The topic page on seeing through water and the map gain
+the Fournier-Forand path; CHANGELOG; the Zenodo description. A release
+with a new keyword and a new page section, 1.31.0.
