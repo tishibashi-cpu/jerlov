@@ -4,6 +4,20 @@ Every release is archived on Zenodo under the concept DOI
 [10.5281/zenodo.22321312](https://doi.org/10.5281/zenodo.22321312), which
 always resolves to the latest version.
 
+## 1.31.1 — 2026-11-27
+
+A correction to 1.31.0 (DECISIONS.md section 129). No value and no code
+changed.
+
+**Fixed.** 1.31.0 said, on the first site page and in its notes, that
+Jerlov's Kd lying below pure water's absorption at 675 and 700 nm (types
+I to II, by up to 10 percent) had been found while drawing the new panel,
+and that the page did not reconcile the two. It was not new: Austin &
+Petzold (1986) pointed it out and recommended replacing Jerlov's Kd, and
+DATA.md section 3 has recorded it since the package began, with their
+values shipped as the source `austin1986`. The page now says so and cites
+them.
+
 ## 1.31.0 — 2026-11-27
 
 Forward scattering with a Fournier-Forand phase function, and a panel on

@@ -8671,3 +8671,42 @@ extension below 0.1 degree).
   failed (PR #110). `ForwardScatter` now takes `_data.compared_by_value`
   (section 81), which counts NaN equal to NaN on every version and gives
   the station results the answer the generated `==` gave them.
+
+## 129. A correction to section 128: Jerlov's Kd below pure water was known (1.31.1): the plan
+
+Section 128 recorded, as found while drawing the new panel of the first
+site page, that at 675 and 700 nm the Kd Jerlov (1976) printed for types
+I to II lies below Pope & Fry's absorption of pure water, by up to 10
+percent, and said the cause was "not looked into here". The page said
+"this page does not reconcile the two", and NEXT_STEPS listed it as a new
+question, not recorded in DATA.md.
+
+That was wrong. It has been known since Austin & Petzold (1986, Opt. Eng.
+25(3), 471-479, section 7), who wrote that "at some wavelengths the values
+given by Jerlov for K are less than the values of absorption alone
+published by Morel and Prieur" and recommended replacing them; DATA.md
+section 3 records it ("Jerlov's Kd falls below pure sea water (confirmed,
+documented in 1986)"), the source 'jerlov1976' carries it as a caveat,
+and the package ships Austin & Petzold's replacement as the source
+'austin1986'. The search before section 128 was for "below pure", which
+the heading's "falls below pure sea water" does not contain.
+
+**The changes.** No value and no code change.
+
+- The panel's caption keeps its computed figures and says instead that
+  Austin & Petzold (1986) pointed this out and recommended replacing
+  Jerlov's Kd, which jerlov ships as the source 'austin1986' (DATA.md
+  section 3). Austin & Petzold join the page's list of sources. A test
+  finds the quoted sentence in DATA.md and the citation on the page.
+- This section corrects section 128, which stays as written (the file is
+  appended to only).
+- What is left open is why Jerlov's values lie there; that is the next
+  release's work (OPEN_QUESTIONS.md, a seventh question), not this one.
+
+A patch release, 1.31.1.
+
+**Result.** As planned. The caption cites Austin & Petzold (1986) and
+DATA.md section 3; the test that finds the figures also finds their
+sentence in DATA.md (block quote markers taken out) and the DOI on the
+page. The merged description of PR #110 cannot be changed; this section
+and CHANGELOG 1.31.1 are the correction of record.
