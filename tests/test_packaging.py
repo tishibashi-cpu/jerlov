@@ -526,7 +526,7 @@ WORD_COUNTS = {"Eight": 8, "Nine": 9, "Ten": 10, "Eleven": 11, "Twelve": 12,
                "Twenty-one": 21, "Twenty-two": 22, "Twenty-three": 23,
                "Twenty-four": 24, "Twenty-five": 25, "Twenty-six": 26,
                "Twenty-seven": 27, "Twenty-eight": 28, "Twenty-nine": 29,
-               "Thirty": 30, "Thirty-one": 31}
+               "Thirty": 30, "Thirty-one": 31, "Thirty-two": 32}
 
 
 @source_tree

@@ -64,3 +64,13 @@ line each:
    are kept, marked suspect, and warn. The example
    `fq_at_45_degrees.py <https://github.com/tishibashi-cpu/jerlov/blob/main/examples/fq_at_45_degrees.py>`_
    prints every figure from your own copy of the archive.
+7. **Why does Jerlov's Kd lie below the absorption of pure water in
+   places?** Austin & Petzold (1986) pointed it out for type I: against
+   Smith & Baker's absorption, his Kd is as low as 0.666 of it at 600 nm in
+   1968 and 0.862 at 700 nm in 1976. Rounding cannot do it. By Marshall &
+   Smith's (1990) Eq. (37), a broad filter can lower the attenuation a
+   detector sees by that much at 600 and 700 nm, but not at 675 nm;
+   Jerlov's filters' widths are not known, and Raman scattering is quoted,
+   not computed. The example
+   `jerlov_kd_below_pure_water.py <https://github.com/tishibashi-cpu/jerlov/blob/main/examples/jerlov_kd_below_pure_water.py>`_
+   prints every figure.

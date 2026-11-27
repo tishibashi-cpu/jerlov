@@ -366,7 +366,35 @@ def disagree_inputs() -> dict:
         hydrolight=_hydrolight(),
         shallow=_shallow(),
         fig13=_fig13(),
+        below=_below_pure_water(),
     )
+
+
+def _below_pure_water() -> dict:
+    """Question 7 (DECISIONS.md section 130): what the example computes,
+    taken from the example itself so that there is one calculation."""
+    import contextlib
+    import io
+    import runpy
+    with contextlib.redirect_stdout(io.StringIO()):
+        module = runpy.run_path(
+            str(ROOT / "examples" / "jerlov_kd_below_pure_water.py"),
+            run_name="jerlov_kd_below_pure_water")
+        out = module["main"]()
+    table = out["filters"]["table"]
+    below = out["where"]["below"]
+    widths = [float(w) for w in module["WIDTHS"]]
+    lines, marks = [], []
+    for centre in module["CENTRES"]:
+        row = table[("smith1981", centre)]
+        lines.append(dict(wl=float(centre),
+                          ratio=[round(row[w], 4) for w in widths]))
+        for edition in ("jerlov1968", "jerlov1976"):
+            r = below[("smith1981", edition, "I")].get(centre)
+            if r is not None:
+                marks.append(dict(wl=float(centre), edition=edition[-4:],
+                                  ratio=round(r, 4)))
+    return dict(widths=widths, lines=lines, marks=marks)
 
 
 # -- the third page: the waters side by side (DECISIONS.md section 120) -----

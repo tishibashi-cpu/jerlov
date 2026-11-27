@@ -8789,3 +8789,41 @@ filter's at each width, for the three wavelengths); DATA.md section 3 a
 paragraph pointing there; the example lists (thirty-two scripts).
 Every figure recomputed by a test from the example's output. A release
 with an example and no code change, 1.31.2.
+
+**Result.** As planned in what was computed. Type I lies below Smith &
+Baker's absorption at 7 of the 13 printed wavelengths in both editions,
+least 0.666 (600 nm, 1968) and 0.862 (700 nm, 1976); below Pope & Fry's
+at 4 and 2, least 0.731 and 0.897. Rounding moves Kd by at most 1.1
+percent (1976) and 3.6 percent (1968) from 600 to 700 nm. Through
+Gaussian filters, pure water over 0-10 m appears at 0.974, 0.922, 0.853
+and 0.799 of its absorption at 700 nm for 10, 20, 40 and 60 nm (Smith &
+Baker), and 0.954 to 0.706 at 600 nm. By the criterion written in the
+plan: filters of 10 and 40 nm reach the 1976 deficits at 600 and 700 nm;
+no filter up to 60 nm reaches either edition's value at 675 nm, nor the
+1968 value at 600 nm against Smith & Baker (against Pope & Fry, 60 nm
+does). The page "Where the sources disagree" draws it, from the example's
+own output.
+
+**Differences from the plan, noted after the code.**
+
+- The plan's figures at 600 nm (0.954 to 0.759) came from a table that
+  started at 560 nm, which cut a wide filter's short-wavelength tail. The
+  example cuts each Gaussian at three standard deviations, and 60 nm then
+  gives 0.706. The light that reaches 10 m through a filter comes mostly
+  from that tail, where water absorbs less, so where it is cut moves the
+  result; the example says so and quotes Marshall & Smith that real
+  filters' tails are longer than a Gaussian's (p. 78).
+- With Pope & Fry, whose table ends at 727.5 nm, filters wider than 40 nm
+  at 675 nm and 20 nm at 700 nm leave the table and are not computed; the
+  example says which widths were tried. At 675 nm their absorption makes
+  the narrow filters' apparent attenuation slightly larger than the
+  absorption (1.004 to 1.009), not smaller.
+- A wide filter at 700 nm reaches Smith & Baker's 710 nm value, which the
+  package marks suspect; the example catches that warning by type and
+  reports it.
+- The first draft of question 7 said the 2 nm filters stay "within 0.6
+  percent"; the largest departure is 0.64 percent, and the test found it.
+  It says 0.7. It also said that at 675 nm "the absorption of water
+  changes little with wavelength", which was not shown (Smith & Baker's
+  rises from 0.35 to 0.65 per metre between 650 and 700 nm); that clause
+  was taken out before the commit.
