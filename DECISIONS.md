@@ -9214,3 +9214,66 @@ HAOCE 11 the backward half raises the rrs by a median factor of 1.53
 with the sun overhead, 1.21 at 30 degrees and 1.06 at 60; the forward
 half moves ln rrs by a median of 0.043, 0.033 and 0.054. The interaction
 is 0.035 in the median pair (0.171 at most).
+
+## 136. Petzold's average-particle phase function, built from the three San Diego Harbor stations, in the shallow-water closure (1.32.4): the plan
+
+Question 5 is left at this: which backward shape HydroLight's runs had is
+not known, since the "average particle" phase function HydroLight uses
+was not in hand (sections 27, 113). The user obtained the Ocean Optics
+Web Book's page on Petzold's measurements, its data file
+`Petzold_data.txt` (CC BY, "Data taken from Petzold (1972) and Light and
+Water, Table 3.10"), and Mobley et al. (2002), and asked on 2026-11-27 to
+go on as follows.
+
+**What the sources say.** Mobley et al. (2002, p. 1037): the average
+particle phase function "is derived from three measurements of the VSF
+in San Diego Harbor; tabulated values are given in Mobley et al. [1993]
+and Mobley [1994]", and "When numerically integrated over 90 <= psi <=
+180 deg, this phase function gives a particle backscatter fraction of Bp
+= 0.0183". The Web Book: subtract the pure sea water VSF at 514 nm from
+each of the three, divide by each one's particle b, and average at each
+angle; it is normalised with psi^-m below 0.1 degree, m = 1.346 "from the
+two smallest measured scattering angles".
+
+**Seen while planning (the file read whole, 55 rows).** The three NUC
+stations shipped here (NUC 2040, 2200, 2240), each less `pure_water_vsf`
+at 514 nm with salinity 35 and divided by b less `pure_water_scattering`,
+averaged, give the file's `avg-part PF` within 0.43 percent at all 55
+angles (median 0.34 percent; fresh water 1.1 percent at most). The
+file's other columns are AUTEC 8, HAOCE 11 and NUC 2040 within 0.5
+percent. Integrated with log-log interpolation and the power law below
+0.1 degree, the file's function gives 0.9937 over the sphere and 0.01818
+beyond 90 degrees.
+
+**What is done.** Section 27 stands: nothing is shipped under Petzold's
+name, and the package does not change. The tool builds the function from
+the package's own stations, as the sources describe, so no table is
+copied: `tools/shallow_rrs_mc.py`, `average_particle_table()` (the
+salinity 35 a stated choice; the Web Book does not give one), and an
+`average_particle_phase()` sampler on the same grid as `petzold_phase`,
+normalised by its own integral, scattering below 1 degree counted as
+none as for the stations. The Web Book's file is not added to the
+repository; a test holds the reconstruction against twelve of its
+values, transcribed with the citation (CC BY 2.0 asks for attribution).
+
+**The runs.** `--average-particle OUT.csv`: the 24 black-bottom cells of
+section 114, a, bb and pure water's part held, bp = (bb - bw/2) / B with
+B the sampler's backscatter share. 24 runs, the same photons, batches
+and seed; `examples/data/shallow_rrs_mc/average_particle.csv`.
+
+**Measure, set now.** Section 114's: the model within 10 percent of the
+Monte Carlo in at least 10 of the 13 runs of the black-bottom group. If
+met, the second group is recorded as accounted for by HydroLight's own
+phase function; if not, as not. Recorded beside it, not judged: the
+average particle's rrs over NUC 2240's in each cell, and its phase
+function at the angle of single scattering over NUC 2240's.
+
+**Checks.** The reconstruction against the transcribed values within 0.5
+percent; the sampler's backscatter share against 0.0183 (reported, with
+the 0.6 percent the log-log integral of the file leaves); a stored run
+reproduced bit for bit.
+
+**Documents.** OPEN_QUESTIONS.md question 5; DATA.md sections 21 and 50
+(what the average particle is, and where it was checked); a part 6 of
+`examples/shallow_water_closure.py`; CHANGELOG. No value or code of the
+package changes: 1.32.4.
