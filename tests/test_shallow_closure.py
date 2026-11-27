@@ -232,3 +232,132 @@ def test_section_115_figures_are_quoted_as_computed(result):
     assert f"rises with bb/b in {s['rising']} of {s['cells']} cells" in log
     assert f"rises with the particles' bb/b in {s['rising']} of " \
         f"{s['cells']} cells" in data
+
+
+# -- Section 134: the shape apart from bb/b, with Fournier-Forands ----------
+
+def _ff_rows():
+    with (DATA / "fournier_forand.csv").open() as f:
+        return list(csv.DictReader(f))
+
+
+def test_the_fournier_forand_runs_hold_all_but_the_shape():
+    mc = _tool("shallow_rrs_mc")
+    rows = _ff_rows()
+    assert len(rows) == 72
+    for station in ("NUC 2240", "AUTEC 8", "HAOCE 11"):
+        back = mc.petzold_phase(station)[3]
+        ff = jerlov.mobley2002_fournier_forand(back)
+        phase = mc.fournier_forand_phase(ff)
+        assert phase[3] == pytest.approx(back, abs=1e-6)
+        for r in rows:
+            if r["station"] == station:
+                assert float(r["backscatter_share"]) == pytest.approx(
+                    back, rel=1e-5)
+                assert float(r["refractive_index"]) == pytest.approx(
+                    ff.refractive_index, rel=1e-5)
+                bb = float(r["bb"])
+                assert float(r["bp"]) == pytest.approx(
+                    (bb - 0.5 * float(r["bw"])) / back, rel=1e-5)
+    # bp and bb are the station's run's: the black-bottom file's.
+    with (DATA / "black_bottom.csv").open() as f:
+        stored = {(r["a"], r["bp_over_a"], r["depth_m"], r["sun_deg"],
+                   r["change"]): r for r in csv.DictReader(f)}
+    for r in rows:
+        key = (r["a"], r["bp_over_a"], r["depth_m"], r["sun_deg"],
+               r["station"])
+        if key in stored:
+            assert r["bp"] == stored[key]["bp"]
+            assert r["bb"] == stored[key]["bb"]
+
+
+def test_a_stored_fournier_forand_run_is_reproduced():
+    mc = _tool("shallow_rrs_mc")
+    r = next(x for x in _ff_rows() if x["station"] == "AUTEC 8")
+    # As the tool builds them, not from the rounded columns.
+    back = mc.petzold_phase("AUTEC 8")[3]
+    a = float(r["a"])
+    bb = 0.5 * mc.BW + mc.petzold_phase(mc.STATION)[3] * float(
+        r["bp_over_a"]) * a
+    ff = jerlov.mobley2002_fournier_forand(back)
+    value, error = mc.rrs(a, (bb - 0.5 * mc.BW) / back, mc.BW,
+                          float(r["depth_m"]), 0.0, float(r["sun_deg"]),
+                          mc.fournier_forand_phase(ff))
+    assert f"{value:.6e}" == r["monte_carlo"]
+    assert f"{error:.2e}" == r["standard_error"]
+
+
+def test_the_fournier_forand_sampler_is_its_closed_form():
+    import numpy as np
+    mc = _tool("shallow_rrs_mc")
+    ff = jerlov.mobley2002_fournier_forand(0.0183)
+    sample, pdf, below, back = mc.fournier_forand_phase(ff)
+    assert below == pytest.approx(float(ff.cumulative(1.0)), rel=1e-12)
+    draws = np.degrees(sample(np.random.default_rng(1).random(400_000)))
+    assert draws.min() >= 1.0 - 1e-9
+    for cone in (5.0, 30.0, 90.0):
+        want = (float(ff.cumulative(cone)) - below) / (1 - below)
+        assert float(np.mean(draws <= cone)) == pytest.approx(want,
+                                                              abs=0.003)
+    angle = np.radians(np.array([10.0, 90.0, 170.0]))
+    np.testing.assert_allclose(
+        pdf(angle), np.asarray(ff.phase_function(np.degrees(angle)))
+        / (1 - below), rtol=1e-3)
+
+
+def test_the_fournier_forand_model_column_is_today_s_function():
+    for r in _ff_rows():
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", jerlov.ProvenanceWarning)
+            m = jerlov.lee1999_shallow_rrs(
+                float(r["a"]), float(r["bb"]), depth_m=float(r["depth_m"]),
+                bottom_albedo=0.0, sun_zenith_deg=float(r["sun_deg"]))
+        assert float(r["model"]) == pytest.approx(m.rrs, rel=2e-5)
+
+
+def test_section_134_figures_are_quoted_as_computed(result):
+    f = result["fournier"]
+    v = [x for values in f["by_station"].values() for x in values]
+    span = f"{min(v):.2f} to {max(v):.2f}"
+    assert span == "0.49 to 1.09"
+    oq = _flat("OPEN_QUESTIONS.md").split("## 5. ")[1].split("## 6. ")[0]
+    data = _flat("DATA.md").split("## 50. ")[1].split("## 51. ")[0]
+    decisions = _flat("DECISIONS.md").split("## 134. ")[1]
+    log = _flat("CHANGELOG.md").split("## 1.32.2")[1].split("## 1.32.1")[0]
+    readme = _flat("examples/README.md")
+    site = _flat("docs/open_questions.rst")
+    pairs = f"{f['same']} of the {f['pairs']} pairs"
+    assert (f["same"], f["pairs"]) == (43, 72) and f["same"] < 54
+    for text in (oq, data, decisions):
+        assert pairs in text
+    assert f"{f['same']} of 72 pairs" in log
+    for text in (oq, data, decisions, log, site):
+        assert span in text
+    assert f"**{span}**" in readme
+    assert "reads 243 more Monte Carlo runs" in readme
+    counted = 0
+    for name in ("water_share.csv", "black_bottom.csv",
+                 "water_share_nadir.csv", "cut_check.csv",
+                 "fournier_forand.csv"):
+        with (DATA / name).open() as handle:
+            counted += len(list(csv.DictReader(handle)))
+    assert counted == 243
+    assert (f["rising"], f["falling"]) == (8, 4)
+    assert f"rises with bb/b in {f['rising']} cells and falls in " \
+        f"{f['falling']}" in decisions
+    assert f"(rising in {f['rising']} cells, falling in {f['falling']}" in oq
+    assert f["ordered"] == 1
+    assert f"in {f['ordered']} of 24 cells" in oq
+    assert f"in {f['ordered']} of the 24 cells" in decisions
+    median = f"{float(__import__('numpy').median(f['ff_spread'])):.2f}"
+    assert f"by a factor of only {median} in the median cell" in oq
+    assert f"by a factor of {median} in the median cell" in decisions
+    assert f"({max(f['ff_spread']):.2f} at most)" in decisions
+    station = f"{float(__import__('numpy').median(f['station_spread'])):.2f}"
+    assert f"the stations differ by {station}" in decisions
+    assert f"up to {100 * f['noise']:.0f} percent" in decisions
+    follows = f["follows"]
+    assert (f"{follows[0.0]:.2f} with the sun overhead, {follows[30.0]:.2f} "
+            f"at 30 degrees and {follows[60.0]:.2f} at 60") in decisions
+    assert (f"{follows[0.0]:.2f} with the sun overhead and "
+            f"{follows[60.0]:.2f} with the sun at 60") in oq

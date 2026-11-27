@@ -9048,3 +9048,81 @@ tests/test_kd_below_pure_water.py as the others are.
 **Documents.** examples/README.md and the site's list of examples where
 they describe the example; CHANGELOG; the Zenodo description. An example
 and a record, no change to the package's behaviour: 1.32.1.
+
+## 134. The black-bottom miss with Fournier-Forand phase functions: the shape apart from bb/b (1.32.2): the plan
+
+Section 115 found that over a black bottom the shallow model's miss is
+not ordered by the particles' bb/b (OPEN_QUESTIONS.md question 5): with
+a, bb and pure water's part held, Petzold's three stations (NUC 2240,
+AUTEC 8, HAOCE 11) gave ratios that rise with bb/b in 5 of the 24 cells
+and fall in none. But the stations differ in bb/b and in shape at once,
+so the two could not be told apart. A Fournier-Forand can: at a given
+bb/b it is one smooth shape, and on Mobley et al.'s line it changes
+smoothly with bb/b. The user asked on 2026-11-27 for this to go on.
+
+**The runs.** `tools/shallow_rrs_mc.py --fournier-forand OUT.csv`: the
+same 24 black-bottom cells (a 0.05 and 0.2 1/m, bp/a 3 and 30 at NUC
+2240, depth 1 and 4 m, the sun at 0, 30 and 60 degrees), and for each of
+the three stations the Fournier-Forand on Mobley et al.'s line
+(`mobley2002_fournier_forand`) whose backscatter share equals the
+station's sampler's, with the same bp, so a, b, bb and pure water's part
+are the station's run's and only the shape beyond bb/b differs. 72 runs,
+the same photons, batches and seed, and the same cut at 1 degree, taken
+from the Fournier-Forand's own closed-form cumulative share. The stations'
+runs are the ones kept (monte_carlo.csv, black_bottom.csv). The sampler
+is rebuilt from `FournierForand.cumulative` and `phase_function`; a
+check: its backscatter share equals the station's within 1e-6, and a
+station's run is reproduced bit for bit by the tool (it is not changed).
+
+**Questions, with the measures set now.**
+
+1. Does bb/b fix the rrs? For each of the 72 pairs, the Fournier-Forand's
+   rrs over the station's. bb/b is said to fix it if at least 54 of the
+   72 (three quarters) are within 5 percent or within three combined
+   standard errors.
+2. Within one smooth family, does bb/b order the miss? Model over Monte
+   Carlo for the three Fournier-Forands, in order of bb/b: monotonic in
+   at least 20 of the 24 cells.
+3. What does order it? Seen while planning, in the cell a 0.05, bp/a 3,
+   1 m, sun overhead: the Fournier-Forand's rrs is 0.96, 0.69 and 0.51
+   of NUC 2240's, AUTEC 8's and HAOCE 11's, and its phase function at
+   180 degrees is 0.97, 0.50 and 0.41 of theirs. So the measure: for
+   each cell, the six phase functions (three stations, three
+   Fournier-Forands) are ranked by the phase function per steradian at
+   the angle of single scattering from the refracted sun to straight up
+   (180 degrees less the sun's refracted angle), and by the Monte
+   Carlo's rrs; the backward phase function is said to order the
+   black-bottom rrs if Spearman's rank correlation is at least 0.9 in at
+   least 20 of the 24 cells.
+
+Every answer is recorded as found, whichever way.
+
+**Documents.** OPEN_QUESTIONS.md question 5 (what was done, found, not
+known); DATA.md section 50; a fifth part of
+`examples/shallow_water_closure.py`, reading the runs from
+`examples/data/shallow_rrs_mc/fournier_forand.csv`; tests that recompute
+every quoted figure and reproduce a stored run. No value or code of the
+package changes: 1.32.2.
+
+**Result.** The 72 runs took about a minute. The check holds: each
+Fournier-Forand's backscatter share is the station's to the digits
+stored, and the station's run is the stored one. None of the three
+measures is met.
+
+1. 43 of the 72 pairs are within 5 percent or 3 standard errors (54
+   needed): bb/b does not fix the rrs over a black bottom. The
+   Fournier-Forand's rrs is 0.49 to 1.09 of the station's.
+2. Within the Fournier-Forands, model over Monte Carlo rises with bb/b in
+   8 cells and falls in 4 (20 needed).
+3. A rank correlation of at least 0.9 in 1 of the 24 cells (20 needed).
+
+Seen after the runs, recorded as such and not as measures: the three
+Fournier-Forands in a cell differ by a factor of 1.11 in the median cell
+(1.20 at most), about the size of their standard errors (up to 10
+percent), so measure 2 cannot be read either way; the stations differ by
+1.21. In the 12 cells with bp/a 3, the station's rrs over the
+Fournier-Forand's follows the ratio of their phase functions at the angle
+of single scattering, in logarithms, with a correlation of 0.96 with the
+sun overhead, 0.91 at 30 degrees and 0.44 at 60. That fits the cell seen
+while planning, and is a lead for the second group, not a finding: the
+measure set for it (3) was not met over all 24 cells.

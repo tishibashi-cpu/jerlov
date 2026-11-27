@@ -4,6 +4,24 @@ Every release is archived on Zenodo under the concept DOI
 [10.5281/zenodo.22321312](https://doi.org/10.5281/zenodo.22321312), which
 always resolves to the latest version.
 
+## 1.32.2 — 2026-11-27
+
+An open question taken further; the package behaves as before
+(DECISIONS.md section 134).
+
+**Open questions.** Question 5, why the shallow-water model misses over a
+black bottom: section 115 could not tell bb/b from the shape of the
+phase function, since Petzold's stations differ in both. 72 new Monte
+Carlo runs (`tools/shallow_rrs_mc.py --fournier-forand`, kept in
+`examples/data/shallow_rrs_mc/fournier_forand.csv`) hold a, b, bb and
+pure water's part and change only the shape, with a Fournier-Forand of
+each station's bb/b. The rrs moves by 0.49 to 1.09 times: bb/b does not
+fix it (43 of 72 pairs within 5 percent or 3 standard errors, where 54
+were set beforehand). The two other measures set beforehand, an order
+by bb/b within the Fournier-Forands and by the phase function at the
+angle of single scattering, are not met either. `shallow_water_closure.py`
+gains part 5.
+
 ## 1.32.1 — 2026-11-27
 
 An example and a record; the package behaves as before (DECISIONS.md

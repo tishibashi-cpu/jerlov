@@ -13,7 +13,9 @@ few metres down in turbid water (DATA.md section 50). HydroLight, which
 the model was fitted to, is not available here. This example rebuilds the
 waters of the paper's own runs, then reads further Monte Carlo runs, each
 changing one thing, and works out which change moves each group and by
-how much (DECISIONS.md section 114). The runs are in
+how much (DECISIONS.md section 114). Part 5 holds bb/b and changes only
+the shape, with Fournier-Forand phase functions (section 134). The runs
+are in
 examples/data/shallow_rrs_mc/, written by tools/shallow_rrs_mc.py and
 tools/lee1998_runs.py; the example needs the repository for them, but
 nothing beyond the package and NumPy.
@@ -415,6 +417,146 @@ one station by a factor of {worst:.3f} at most, with standard errors up to
     return out
 
 
+def ranks(values):
+    order = np.argsort(values)
+    out = np.empty(len(values))
+    out[order] = np.arange(len(values))
+    return out
+
+
+def spearman(x, y):
+    """Spearman's rank correlation, for values without ties."""
+    rx, ry = ranks(np.asarray(x)), ranks(np.asarray(y))
+    n = len(rx)
+    return 1 - 6 * float(np.sum((rx - ry) ** 2)) / (n * (n * n - 1))
+
+
+#: The measures set in DECISIONS.md section 134 before the runs.
+SAME_WITHIN = 0.05
+SAME_SE = 3.0
+FIX_NEEDED = 54
+ORDER_NEEDED = 20
+RHO_NEEDED = 0.9
+
+
+def fournier_part():
+    rule("5. The shape apart from bb/b: Fournier-Forand phase functions")
+    ff = read("fournier_forand.csv")
+    grid = read("monte_carlo.csv")
+    changed = read("black_bottom.csv")
+
+    def key(a, r, h, s):
+        return (round(float(a), 4), round(float(r)), float(h), float(s))
+
+    station_mc = {}
+    ratio = grid["bp"] / grid["a"]
+    for i in np.flatnonzero(grid["albedo"] == 0.0):
+        station_mc[key(grid["a"][i], ratio[i], grid["depth_m"][i],
+                       grid["sun_deg"][i]) + ("NUC 2240",)] = (
+            grid["monte_carlo"][i], grid["standard_error"][i])
+    for j in range(len(changed["a"])):
+        if changed["change"][j] in STATIONS:
+            station_mc[key(changed["a"][j], changed["bp_over_a"][j],
+                           changed["depth_m"][j], changed["sun_deg"][j])
+                       + (changed["change"][j],)] = (
+                changed["monte_carlo"][j], changed["standard_error"][j])
+    cells = {}
+    for j in range(len(ff["a"])):
+        k = key(ff["a"][j], ff["bp_over_a"][j], ff["depth_m"][j],
+                ff["sun_deg"][j])
+        st = ff["station"][j]
+        mc_s, se_s = station_mc[k + (st,)]
+        cells.setdefault(k, {})[st] = dict(
+            back=ff["backscatter_share"][j], model=ff["model"][j],
+            ff=ff["monte_carlo"][j], ff_se=ff["standard_error"][j],
+            station=mc_s, station_se=se_s,
+            p_ff=ff["p_back_ff"][j], p_station=ff["p_back_station"][j])
+    # 1. Does bb/b fix the rrs?
+    pairs = [(r["ff"] / r["station"],
+              abs(r["ff"] - r["station"])
+              / math.hypot(r["ff_se"], r["station_se"]))
+             for c in cells.values() for r in c.values()]
+    same = sum(abs(q - 1) <= SAME_WITHIN or z <= SAME_SE for q, z in pairs)
+    by_station = {st: [c[st]["ff"] / c[st]["station"] for c in cells.values()]
+                  for st in STATIONS}
+    # 2. Within the Fournier-Forands, model over Monte Carlo against bb/b.
+    order = sorted(STATIONS, key=lambda s: next(iter(cells.values()))[s]
+                   ["back"])
+    rising = falling = 0
+    for c in cells.values():
+        steps = np.diff([c[s]["model"] / c[s]["ff"] for s in order])
+        rising += int(np.all(steps > 0))
+        falling += int(np.all(steps < 0))
+    # 3. The phase function at the angle of single scattering.
+    rho = {}
+    for k, c in cells.items():
+        p = [c[s]["p_station"] for s in STATIONS] + [c[s]["p_ff"]
+                                                     for s in STATIONS]
+        mc = [c[s]["station"] for s in STATIONS] + [c[s]["ff"]
+                                                    for s in STATIONS]
+        rho[k] = spearman(p, mc)
+    ordered = sum(v >= RHO_NEEDED for v in rho.values())
+    by_sun = {s: [v for k, v in rho.items() if k[3] == s]
+              for s in sorted({k[3] for k in rho})}
+    print(f"""Petzold's stations differ in bb/b and in shape at once. A Fournier-Forand
+on Mobley et al.'s line with each station's backscatter share, and the
+station's bp, keeps a, b, bb and pure water's part and changes only the
+shape beyond bb/b ({len(pairs)} runs, the {len(cells)} black-bottom cells of part 3;
+DECISIONS.md section 134, its measures set before the runs).
+
+  Fournier-Forand rrs over the station's, over the {len(cells)} cells:""")
+    for st in order:
+        v = by_station[st]
+        print(f"    {st:<9} bb/b {next(iter(cells.values()))[st]['back']:.4f}:"
+              f"  {min(v):.2f} to {max(v):.2f}, median {float(np.median(v)):.2f}")
+    print(f"""
+1. Same bb/b, same rrs? {same} of the {len(pairs)} pairs are within {100 * SAME_WITHIN:g} percent or
+   {SAME_SE:g} standard errors ({FIX_NEEDED} needed): bb/b {'fixes' if same >= FIX_NEEDED else 'does not fix'} the rrs over a black bottom.
+2. Within the Fournier-Forands, model over Monte Carlo rises with bb/b in
+   {rising} cells and falls in {falling} ({ORDER_NEEDED} needed either way): {'one smooth family is ordered by bb/b' if max(rising, falling) >= ORDER_NEEDED else 'the measure is not met'}.
+3. Ranked over the six phase functions in each cell, the phase function at
+   the angle of single scattering from the refracted sun to straight up
+   and the Monte Carlo's rrs have a rank correlation of at least {RHO_NEEDED:g} in
+   {ordered} of the {len(rho)} cells ({ORDER_NEEDED} needed); its median by sun is """ + ", ".join(
+        f"{float(np.median(v)):.2f} at {s:g} degrees" for s, v in by_sun.items()) + f""".
+   {'The backward phase function orders' if ordered >= ORDER_NEEDED else 'The backward phase function does not by itself order'} the black-bottom rrs.""")
+    # Seen after the runs, not measures set before them.
+    ff_spread = [max(c[s]["ff"] for s in order) / min(c[s]["ff"] for s in order)
+                 for c in cells.values()]
+    station_spread = [max(c[s]["station"] for s in order)
+                      / min(c[s]["station"] for s in order)
+                      for c in cells.values()]
+    noise = max(c[s]["ff_se"] / c[s]["ff"] for c in cells.values()
+                for s in order)
+    follows = {}
+    for sun in sorted({k[3] for k in cells}):
+        x, y = [], []
+        for k, c in cells.items():
+            if k[1] == 3 and k[3] == sun:
+                for s in order:
+                    x.append(math.log(c[s]["p_station"] / c[s]["p_ff"]))
+                    y.append(math.log(c[s]["station"] / c[s]["ff"]))
+        follows[sun] = float(np.corrcoef(x, y)[0, 1])
+    print(f"""
+Seen after the runs, not measures set before them. The three
+Fournier-Forands in a cell differ by a factor of {float(np.median(ff_spread)):.2f} in the median cell
+({max(ff_spread):.2f} at most; standard errors up to {100 * noise:.0f} percent), the three stations
+by {float(np.median(station_spread)):.2f}: at a and bb held, bb/b moves the rrs little within one
+smooth family, and the noise is of the same size, so question 2 cannot
+be read either way. In the cells with less scattering (bp/a 3)
+the station's rrs over the Fournier-Forand's follows their phase
+functions' ratio at the angle of single scattering, in logarithms, with
+a correlation of """ + ", ".join(f"{v:.2f} with the sun at {s:g} degrees"
+                               for s, v in follows.items()) + """: the
+stations' larger rrs overhead comes with their larger backward peak, and
+the relation fades as the sun goes down.""")
+    return dict(cells=cells, same=same, pairs=len(pairs),
+                by_station=by_station, order=order, rising=rising,
+                falling=falling, rho=rho, ordered=ordered, by_sun=by_sun,
+                ff_spread=ff_spread, station_spread=station_spread,
+                noise=noise, follows=follows)
+
+
 def main():
     _banner()
     with warnings.catch_warnings():
@@ -423,6 +565,7 @@ def main():
         share = share_part(paper["missed"], paper["water_shares"])
         dark = dark_part()
         separated = separated_part()
+        fournier = fournier_part()
     rule("Before you use any of this")
     print("""  - The Monte Carlo is not HydroLight: a flat surface, no Raman scattering,
     Petzold's NUC 2240 for the particles where the paper used his average
@@ -435,8 +578,11 @@ def main():
   - Part 4 takes Lee et al.'s (2011) Rrs below the surface by Lee et al.'s
     (2002) Eq. (8), fitted for deep water seen from above; no coefficient
     is fitted here to the Monte Carlo.
+  - Part 5's Fournier-Forands are on Mobley et al.'s line, one n and mu
+    for each bb/b; another pair with the same bb/b is another shape.
 """)
-    return dict(paper=paper, share=share, dark=dark, separated=separated)
+    return dict(paper=paper, share=share, dark=dark, separated=separated,
+                fournier=fournier)
 
 
 if __name__ == "__main__":
