@@ -16,7 +16,10 @@ few degrees of the forward direction (DECISIONS.md section 83). Part 3
 asks what rests on the report's power-law extension below 0.1 degree,
 which nobody measured: the mean cosine, the backscatter ratio and g, from
 the package, and Kd, from Monte Carlo runs kept in
-examples/data/below_0_1/ (DECISIONS.md section 96).
+examples/data/below_0_1/ (DECISIONS.md section 96). Part 4 sets a
+Fournier-Forand, the particles' phase function alone, against each
+station's particles, Petzold's measurement less pure water's
+(DECISIONS.md section 133).
 """
 
 import csv
@@ -54,6 +57,11 @@ CONES_DEG = (1.0, 10.0, 90.0)
 SUN_IN_AIR_DEG = 40.0
 N_WATER = 1.34
 METHODS = ("backscatter_ratio", "mean_cosine")
+#: Salinity of the pure sea water taken out of each station in part 4, the
+#: open ocean's; part 4 prints what fresh water and 37 would change.
+SALINITY_PSU = 35.0
+#: Morel's depolarisation ratio, the shape of jerlov.pure_water_vsf.
+DEPOLARISATION = 0.09
 
 
 def hg(g, angle_deg):
@@ -260,6 +268,124 @@ as scattering at all, and with it B/S.""")
                 dbs=(min(dbs), max(dbs)), dhg=(min(dhg), max(dhg)))
 
 
+def pure_water_share_within(angle_deg):
+    """The share of pure water's scattering within ``angle_deg`` of
+    forward, for the shape of ``jerlov.pure_water_vsf``, in closed form
+    (DECISIONS.md section 128)."""
+    r = (1 - DEPOLARISATION) / (1 + DEPOLARISATION)
+    mu = np.cos(np.radians(angle_deg))
+    return ((1 - mu) + r * (1 - mu ** 3) / 3) / (2 * (1 + r / 3))
+
+
+def particles(f, salinity_psu=SALINITY_PSU):
+    """The station's particles: b and B/S less pure water's, at the
+    station's wavelength."""
+    bw = float(jerlov.pure_water_scattering(f.wavelength_nm,
+                                            salinity_psu=salinity_psu))
+    b = f.b - bw
+    return dict(bw=bw, b=b, ratio=(f.backscatter_ratio * f.b - bw / 2) / b)
+
+
+def particle_phase(f, angle_deg, salinity_psu=SALINITY_PSU):
+    """The particles' phase function: the station's vsf less pure water's,
+    over the particles' b, 1/sr."""
+    angle = np.asarray(angle_deg, dtype=float)
+    beta = np.asarray(f.vsf_at(list(angle))) - np.asarray(
+        jerlov.pure_water_vsf(angle, f.wavelength_nm,
+                              salinity_psu=salinity_psu))
+    return beta / particles(f, salinity_psu)["b"]
+
+
+def particle_share_within(f, angle_deg):
+    """The share of the particles' scattering within ``angle_deg`` of
+    forward: the station's less pure water's."""
+    p = particles(f)
+    return ((measured_share_within(f, angle_deg) * f.b
+             - p["bw"] * pure_water_share_within(angle_deg)) / p["b"])
+
+
+def fournier_part(stations, caught):
+    rule("4. A Fournier-Forand against the stations' particles")
+    print(f"""A Fournier-Forand is the phase function of particles alone; a station
+is water and particles. So each station's particles are compared here:
+its vsf less pure water's (salinity {SALINITY_PSU:g}), over b less pure water's, with a
+backscatter ratio Bp = (B/S b - bw/2) / (b - bw). The Fournier-Forand is
+the one on Mobley et al.'s (2002) line at that Bp, as HydroLight makes it,
+and HG has g matched to the same Bp. Each cell is the ratio to the
+particles' phase function at that angle.
+""")
+    head = "".join(f"{a:>8g}" for a in ANGLES_DEG)
+    print(f"  {'station':<10}{'Bp':>7}{'':>4}{head}")
+    out = {}
+    angles = np.array(ANGLES_DEG)
+    with warnings.catch_warnings(record=True) as seen:
+        warnings.simplefilter("always", jerlov.ProvenanceWarning)
+        for station, (f, _) in stations.items():
+            ratio = particles(f)["ratio"]
+            ff = jerlov.mobley2002_fournier_forand(ratio)
+            g = jerlov.henyey_greenstein_fit(
+                ff, method="backscatter_ratio").g
+            measured = particle_phase(f, angles)
+            out[station] = dict(
+                ratio=ratio, ff=ff, g=g,
+                ff_ratio=np.asarray(ff.phase_function(angles)) / measured,
+                hg_ratio=hg(g, angles) / measured,
+                share=dict(
+                    particles=[particle_share_within(f, c)
+                               for c in CONES_DEG],
+                    ff=[float(ff.cumulative(c)) for c in CONES_DEG],
+                    hg=[float(hg_share_within(g, c)) for c in CONES_DEG]),
+                water_back=float(
+                    jerlov.pure_water_vsf(180.0, f.wavelength_nm,
+                                          salinity_psu=SALINITY_PSU)
+                    / f.vsf_at(180.0)),
+                fresh=particles(f, 0.0)["ratio"],
+                saltier=particles(f, 37.0)["ratio"])
+            for k, label in enumerate(("FF", "HG")):
+                row = out[station]["ff_ratio" if k == 0 else "hg_ratio"]
+                print(f"  {station if k == 0 else '':<10}"
+                      f"{f'{ratio:.4f}' if k == 0 else '':>7}{label:>4}"
+                      + "".join(f"{v:>8.2f}" for v in row))
+    caught.update(f"{w.category.__name__}: {str(w.message).split(':')[0]}"
+                  for w in seen)
+    print(f"""
+The share of the particles' scattering within {", ".join(f"{c:g}" for c in CONES_DEG[:-1])} and {CONES_DEG[-1]:g} degrees of
+forward:
+
+  {'station':<10}{'':>11}""" + "".join(f"{f'<{c:g} deg':>10}" for c in CONES_DEG))
+    for station, r in out.items():
+        for k, (key, label) in enumerate((("particles", "particles"),
+                                          ("ff", "FF"), ("hg", "HG"))):
+            print(f"  {station if k == 0 else '':<10}{label:>11}"
+                  + "".join(f"{v:>10.3f}" for v in r["share"][key]))
+    i1, i180 = ANGLES_DEG.index(1.0), ANGLES_DEG.index(180.0)
+    summary = dict(
+        ff1=[r["ff_ratio"][i1] for r in out.values()],
+        hg1=[r["hg_ratio"][i1] for r in out.values()],
+        ff180=[r["ff_ratio"][i180] for r in out.values()],
+        within1=[(r["share"]["particles"][0], r["share"]["ff"][0],
+                  r["share"]["hg"][0]) for r in out.values()],
+        bp=[r["ratio"] for r in out.values()],
+        water_back=[r["water_back"] for r in out.values()],
+        fresh=[r["fresh"] / r["ratio"] - 1 for r in out.values()],
+        saltier=[r["saltier"] / r["ratio"] - 1 for r in out.values()])
+    w = summary["within1"]
+    print(f"""
+At 1 degree the Fournier-Forand gives {min(summary['ff1']):.2f} to {max(summary['ff1']):.2f} of the particles' phase
+function, and HG {min(summary['hg1']):.2f} to {max(summary['hg1']):.2f}. Within 1 degree of forward the particles
+scatter {min(p for p, _, _ in w):.2f} to {max(p for p, _, _ in w):.2f} of their light, the Fournier-Forand {min(f for _, f, _ in w):.2f} to {max(f for _, f, _ in w):.2f}
+and HG {min(h for _, _, h in w):.3f} to {max(h for _, _, h in w):.3f}: with one number, Bp, the Fournier-Forand keeps
+the glow around the sun that HG moves out. Straight back it gives {min(summary['ff180']):.2f}
+to {max(summary['ff180']):.2f} of the particles' phase function, least at the clear stations,
+where pure water is up to {max(summary['water_back']):.2f} of the measured vsf at 180 degrees and
+the particles' part rests on it (its amplitude carries about 15 percent
+uncertainty, as jerlov.pure_water_vsf says).
+Bp rests on the pure water taken out: fresh water instead of salinity {SALINITY_PSU:g}
+raises it by {100 * min(summary['fresh']):.1f} to {100 * max(summary['fresh']):.1f} percent, and 37 lowers it by at most
+{-100 * min(summary['saltier']):.1f} percent.""")
+    return dict(rows=out, **summary)
+
+
 def main():
     _banner()
     caught = set()
@@ -267,6 +393,7 @@ def main():
     ratios, small, side, back = ratio_part(stations, caught)
     shares, within1 = glow_part(stations)
     extension = extension_part(stations)
+    fournier = fournier_part(stations, caught)
     if caught:
         rule("Warnings")
         print("Raised along the way, and caught by type:")
@@ -282,12 +409,15 @@ def main():
     nobody measured; the warnings above say so.
   - Single scattering of a sun's beam only; light scattered more than
     once is not followed here.
-  - The sun's position and the water's refractive index are this
-    example's choices, stated at the top.
+  - The sun's position, the water's refractive index and, in part 4,
+    the salinity of the pure water taken out are this example's
+    choices, stated at the top.
+  - Part 4's Fournier-Forand is one pair of n and mu for each Bp,
+    Mobley et al.'s line; Bp alone does not fix them.
 """)
     return dict(stations=stations, ratios=ratios, small=small, side=side,
                 back=back, shares=shares, within1=within1,
-                extension=extension, caught=caught)
+                extension=extension, fournier=fournier, caught=caught)
 
 
 if __name__ == "__main__":

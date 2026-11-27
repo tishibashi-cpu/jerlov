@@ -157,7 +157,7 @@ python examples/snells_window.py               the sky seen from under water
 python examples/rendering_export.py            water for Mitsuba, pbrt and Blender
 python examples/rgb_versus_spectral.py         what RGB rendering does to colours
 python examples/water_lookup_tables.py         tables for games and real-time shaders
-python examples/phase_function_choice.py       Henyey-Greenstein against Petzold
+python examples/phase_function_choice.py       Henyey-Greenstein and Fournier-Forand against Petzold
 python examples/reference_images.py            measured materials through three types
 python examples/radiative_transfer_inputs.py   files for OSOAA and HydroLight
 python examples/closure_with_jerlov_kd.py      an open question: IOPs against Jerlov's Kd

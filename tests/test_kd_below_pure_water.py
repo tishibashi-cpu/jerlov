@@ -187,3 +187,26 @@ def test_the_exciting_wavelengths_follow_the_shift(result):
            for c in (600.0, 675.0, 700.0)}
     assert got == {600.0: 498.3, 675.0: 549.0, 700.0: 565.4}
     assert "excited at 549 and 565 nm" in _q7()
+
+
+def test_data_section_3_records_the_whole_question(result):
+    """DATA.md section 3 says what question 7 found (DECISIONS.md section
+    133), with the example's figures."""
+    text = _flat("DATA.md")
+    section = text[text.index("## 3. Jerlov's Kd"):text.index("## 4. ")]
+    r = result["raman"]
+    lo, hi = r["deficits"]
+    row = r["rows"][("smith1981", 700.0)]
+    for quoted in (
+            f"at most {100 * (1 - r['worst']):.2f} percent at 675 and 700 nm",
+            f"deficits are {100 * lo:.1f} to {100 * hi:.1f} percent",
+            f"({100 * (1 - row['to20']):.1f} percent at 700 nm over 0-20 m)",
+            "Nothing here accounts for 675 nm in either edition, nor for "
+            "600 nm in 1968 against Smith & Baker"):
+        assert quoted in section, quoted
+    reach = result["filters"]["reach"]
+    assert reach[("smith1981", "jerlov1976", 700.0)][1] is not None
+    assert reach[("smith1981", "jerlov1976", 600.0)][1] is not None
+    for edition in ("jerlov1968", "jerlov1976"):
+        assert reach[("smith1981", edition, 675.0)][1] is None
+    assert reach[("smith1981", "jerlov1968", 600.0)][1] is None

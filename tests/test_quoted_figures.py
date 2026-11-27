@@ -2021,6 +2021,67 @@ def test_the_shares_reach_one_and_hg_has_its_closed_form(phase_example):
 
 
 @source_tree
+def test_examples_README_figures_for_the_fournier_forand_part(phase_example):
+    """Part 4 (DECISIONS.md section 133): every figure examples/README.md
+    quotes is the example's own."""
+    text = " ".join((ROOT / "examples" / "README.md").read_text().split())
+    ff = phase_example[1]["fournier"]
+    w = ff["within1"]
+    figures = {
+        "ff1": f"{min(ff['ff1']):.2f} to {max(ff['ff1']):.2f}",
+        "hg1": f"{min(ff['hg1']):.2f} to {max(ff['hg1']):.2f}",
+        "particles": f"{min(p for p, _, _ in w):.2f} to "
+                     f"{max(p for p, _, _ in w):.2f}",
+        "ff": f"{min(f for _, f, _ in w):.2f} to {max(f for _, f, _ in w):.2f}",
+        "hg": f"{min(h for _, _, h in w):.3f} to {max(h for _, _, h in w):.3f}",
+    }
+    assert figures == {"ff1": "0.95 to 1.13", "hg1": "0.27 to 1.10",
+                       "particles": "0.21 to 0.38", "ff": "0.24 to 0.40",
+                       "hg": "0.019 to 0.093"}
+    for quoted in ("**0.95 to 1.13**", "HG 0.27 to 1.10", "0.21 to 0.38",
+                   "the Fournier-Forand 0.24 to 0.40", "HG 0.019 to 0.093",
+                   f"{100 * max(ff['fresh']):.0f} percent"):
+        assert quoted in text, quoted
+
+
+@source_tree
+def test_the_fournier_forand_part_is_what_it_says(phase_example):
+    module, out = phase_example
+    ff = out["fournier"]
+    for station, r in ff["rows"].items():
+        f, _ = out["stations"][station]
+        # The Fournier-Forand carries the particles' Bp, and HG's g gives
+        # it back.
+        assert r["ff"].backscatter_ratio == pytest.approx(r["ratio"],
+                                                          rel=1e-9)
+        assert module["hg_backscatter"](r["g"]) == pytest.approx(
+            r["ratio"], rel=1e-6)
+        # The particles' share, all the way round, is one.
+        assert module["particle_share_within"](f, 180.0) == pytest.approx(
+            1.0, abs=0.003)
+        # Bp from the particles' own phase function, integrated beyond 90
+        # degrees, agrees with the formula from the printed B/S, within
+        # half its last printed digit (0.001).
+        theta = np.linspace(90.0, 180.0, 20001)
+        y = module["particle_phase"](f, theta) * np.sin(np.radians(theta))
+        bp = 2 * np.pi * float(jerlov._data.trapezoid(y, np.radians(theta)))
+        half_step = 0.0005 * f.b / module["particles"](f)["b"]
+        assert abs(bp - r["ratio"]) <= half_step
+    # Pure water's share in closed form, against a numerical integral of
+    # pure_water_vsf.
+    theta = np.linspace(0.0, 180.0, 180001)
+    y = np.asarray(jerlov.pure_water_vsf(theta, 530.0, salinity_psu=35.0)) \
+        * np.sin(np.radians(theta))
+    total = float(jerlov._data.trapezoid(y, np.radians(theta)))
+    for cone in (1.0, 10.0, 90.0):
+        k = np.searchsorted(theta, cone)
+        part = float(jerlov._data.trapezoid(y[:k + 1],
+                                            np.radians(theta[:k + 1])))
+        assert module["pure_water_share_within"](cone) == pytest.approx(
+            part / total, abs=1e-8)
+
+
+@source_tree
 def test_the_new_examples_report_only_provenance(rgb_example, tables_example,
                                                  phase_example):
     for _, out in (rgb_example, tables_example, phase_example):

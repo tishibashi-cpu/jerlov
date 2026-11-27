@@ -4,6 +4,26 @@ Every release is archived on Zenodo under the concept DOI
 [10.5281/zenodo.22321312](https://doi.org/10.5281/zenodo.22321312), which
 always resolves to the latest version.
 
+## 1.32.1 — 2026-11-27
+
+An example and a record; the package behaves as before (DECISIONS.md
+section 133).
+
+**Examples.** `phase_function_choice.py` gains part 4: a Fournier-Forand
+against each of Petzold's stations' particles, the measured vsf less pure
+water's. On Mobley et al.'s (2002) line at the particles' backscatter
+ratio it gives 0.95 to 1.13 of their phase function at 1 degree, where
+HG with the same ratio gives 0.27 to 1.10; within 1 degree of forward the
+particles scatter 0.21 to 0.38 of their light, the Fournier-Forand 0.24
+to 0.40 and HG 0.019 to 0.093. The ratio rests on the salinity of the
+pure water taken out, which the example states and varies.
+
+**Documentation.** DATA.md section 3, on Jerlov's Kd below pure water's
+absorption, now records the whole of open question 7: Raman scattering
+(1.31.3) beside rounding and broad filters, and the deficits that none of
+them accounts for here, at 675 nm in both editions and at 600 nm in 1968
+against Smith & Baker.
+
 ## 1.32.0 — 2026-11-27
 
 The last two functions that took Petzold's stations only now take a
