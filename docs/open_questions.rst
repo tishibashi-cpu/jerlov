@@ -54,7 +54,8 @@ line each:
    same bb/b give rrs 0.49 to 1.09 times apart, so bb/b alone does not
    fix it; with the sun high and little scattering, the backward half of
    the phase function carries most of that difference. HydroLight's own
-   phase function, Petzold's average particle, does not close the gap.
+   phase function, Petzold's average particle, does not close the gap,
+   nor do its angular quads or waves at Lee et al.'s 5 m/s.
    The example
    `shallow_water_closure.py <https://github.com/tishibashi-cpu/jerlov/blob/main/examples/shallow_water_closure.py>`_
    prints every figure.

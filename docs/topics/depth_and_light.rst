@@ -131,7 +131,8 @@ section 138.
        station_salinity_psu=35.0, cut_deg=1.0, refractive_index=1.34,
        sun_zenith_deg=30.0, depth_m=math.inf, bottom_albedo=None,
        depths_m=[2.0, 5.0, 10.0], slab_m=1.0, zenith_step_deg=10.0,
-       azimuth_step_deg=45.0, photons=20_000, batches=4, seed=0)
+       azimuth_step_deg=45.0, photons=20_000, batches=4, seed=0,
+       wind="flat")    # or the wind speed in m/s, since 1.34.0
    f.kd, f.kd_se    # Kd from 2 to 5 m and from 5 to 10 m, and their errors
 
 Under a wavy surface the light flickers. Two field studies that give it only

@@ -335,4 +335,4 @@ __all__ = [
 # number is meant (DECISIONS.md section 126).
 _data.check_public(globals(), __all__)
 
-__version__ = "1.33.0"
+__version__ = "1.34.0"

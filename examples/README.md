@@ -468,7 +468,9 @@ times, so bb/b does not fix it; with the sun high and little scattering
 the backward half of the phase function carries most of it. Part 6 runs
 Petzold's average-particle phase function, HydroLight's own, built from
 three of his stations: it brings **1** of the black-bottom group's 13
-runs within 10 percent, and with HydroLight's angular quads 4.
+runs within 10 percent, and with HydroLight's angular quads 4. Part 7
+adds waves at Lee et al.'s 5 m/s, from `monte_carlo_light_field`: 1 of
+the 13.
 
 **`fq_at_45_degrees.py`** — a sixth open question (`OPEN_QUESTIONS.md`,
 question 6), for those who correct water-leaving radiance with Morel et

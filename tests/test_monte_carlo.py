@@ -35,7 +35,7 @@ def _call(**changes):
         refractive_index=1.34, sun_zenith_deg=30.0, depth_m=math.inf,
         bottom_albedo=None, depths_m=[1.0, 3.0], slab_m=1.0,
         zenith_step_deg=10.0, azimuth_step_deg=45.0, photons=2000,
-        batches=2, seed=0)
+        batches=2, seed=0, wind="flat")
     a = changes.pop("a", 0.1)
     b = changes.pop("b", 0.3)
     wavelength = changes.pop("wavelength_nm", 500.0)
@@ -221,7 +221,7 @@ def test_the_result_holds_its_batches_and_says_what_it_leaves_out():
     assert 0 < f.inputs["straight_share"] < 1
     assert any("waves" in s for s in f.left_out)
     d = f.as_dict()
-    assert d["inputs"]["seed"] == 0 and d["method"].endswith("section 138")
+    assert d["inputs"]["seed"] == 0 and d["method"].endswith("138 and 139")
     assert f == _call()                    # the same seed, the same field
     assert f != _call(seed=1)
 
@@ -252,7 +252,7 @@ def test_the_sun_the_bottom_and_the_station_salinity_are_required():
         phase_function=station, station_salinity_psu=35.0, cut_deg=1.0,
         refractive_index=1.34, sun_zenith_deg=30.0, depth_m=math.inf,
         bottom_albedo=None, depths_m=[1.0], slab_m=1.0, zenith_step_deg=10.0,
-        azimuth_step_deg=45.0, photons=100, batches=2, seed=0)
+        azimuth_step_deg=45.0, photons=100, batches=2, seed=0, wind="flat")
     for name in ("sun_zenith_deg", "bottom_albedo"):
         kwargs = {k: v for k, v in base.items() if k != name}
         with pytest.raises(jerlov.MissingQuantityError):
@@ -286,3 +286,165 @@ def test_a_bool_or_text_is_refused(name):
     for bad in (True, "1"):
         with pytest.raises((ValueError, TypeError)):
             _call(**{name: bad})
+
+
+# -- waves (DECISIONS.md section 139) ----------------------------------------
+
+def test_wind_left_out_is_flat_with_a_future_warning():
+    import warnings
+    station = jerlov.petzold_scattering("NUC 2240")
+    kwargs = dict(
+        pure_water_b=0.003, salinity_psu=35.0, phase_function=station,
+        station_salinity_psu=35.0, cut_deg=1.0, refractive_index=1.34,
+        sun_zenith_deg=30.0, depth_m=math.inf, bottom_albedo=None,
+        depths_m=[1.0, 3.0], slab_m=1.0, zenith_step_deg=10.0,
+        azimuth_step_deg=45.0, photons=2000, batches=2, seed=0)
+    with pytest.warns(FutureWarning, match="wind"):
+        old = jerlov.monte_carlo_light_field(0.1, 0.3, 500.0, **kwargs)
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        flat = jerlov.monte_carlo_light_field(0.1, 0.3, 500.0, wind="flat",
+                                              **kwargs)
+    assert old == flat
+    assert flat.inputs["wind"] == "flat"
+    assert any("the surface is flat" in s for s in flat.left_out)
+
+
+def test_the_slopes_are_cox_and_munk_s():
+    rng = np.random.default_rng(0)
+    s2 = mc.COX_MUNK_MEAN_SQUARE_SLOPE[0] \
+        + mc.COX_MUNK_MEAN_SQUARE_SLOPE[1] * 7.0
+    # straight down onto the surface every facet faces the light, so the
+    # drawn normals are the distribution's own
+    d = np.tile([[0.0], [0.0], [1.0]], 1_000_000)
+    normal, _, w = mc._facets(d, s2, rng)
+    slopes = (normal[0] / normal[2]) ** 2 + (normal[1] / normal[2]) ** 2
+    assert float(np.mean(slopes)) == pytest.approx(s2, rel=0.01)
+    assert float(np.mean(w)) == pytest.approx(1.0, rel=1e-3)
+
+
+def _transparent(sun, wind, photons=200_000):
+    ff = jerlov.mobley2002_fournier_forand(0.0183)
+    return _call(a=1e-3, b=1e-9, pure_water_b=1e-9, phase_function=ff,
+                 station_salinity_psu=None, sun_zenith_deg=sun,
+                 depths_m=[1.0], photons=photons, batches=4, wind=wind)
+
+
+@pytest.mark.parametrize("sun, tolerance", [(30.0, 0.005), (60.0, 0.01)])
+def test_energy_is_kept_at_a_wavy_surface(sun, tolerance):
+    """Chami et al. (2015), section 3.2, Eq. (31): with transparent water,
+    the sun at 30 degrees and wind 7 m/s, Ed(0-) + Eu(0+) = Ed(0+)."""
+    f = _transparent(sun, 7.0)
+    total = f.transmitted_at_surface + f.reflected_at_surface
+    assert abs(total - 1) <= tolerance
+
+
+def _reflectance_by_quadrature(sun, wind, n=1.34):
+    s2 = mc.COX_MUNK_MEAN_SQUARE_SLOPE[0] \
+        + mc.COX_MUNK_MEAN_SQUARE_SLOPE[1] * wind
+    sd = math.sqrt(s2 / 2)
+    g = np.linspace(-7 * sd, 7 * sd, 1201)
+    zx, zy = np.meshgrid(g, g)
+    p = np.exp(-(zx ** 2 + zy ** 2) / (2 * sd * sd))
+    mu = math.cos(math.radians(sun))
+    d = np.array([math.sqrt(1 - mu * mu), 0.0, mu])
+    norm = np.sqrt(1 + zx ** 2 + zy ** 2)
+    nx, ny, nz = zx / norm, zy / norm, -1 / norm
+    dn = d[0] * nx + d[1] * ny + d[2] * nz
+    front = dn < 0
+    cos_i = np.where(front, -dn, 1.0)
+    w = cos_i / (np.abs(nz) * abs(d[2]))
+    r, _ = mc._fresnel_cos(cos_i, 1.0, n)
+    return float(np.sum(p * front * w * r) / np.sum(p * front))
+
+
+@pytest.mark.parametrize("sun", [30.0, 60.0])
+@pytest.mark.parametrize("wind", [2.0, 7.0, 14.0])
+def test_the_sun_s_reflectance_is_the_slopes_integral(sun, wind):
+    f = _transparent(sun, wind)
+    want = _reflectance_by_quadrature(sun, wind)
+    assert abs(f.reflected_at_surface - want) \
+        <= 3 * f.reflected_at_surface_se + 1e-6
+    assert any("whitecaps" in s for s in f.left_out)
+    assert f.inputs["wind"] == wind
+
+
+def test_waves_against_a_flat_surface_in_the_limit():
+    """With almost no slope the wavy surface reflects the sun as a flat
+    one does."""
+    flat = _transparent(30.0, "flat", photons=20_000)
+    calm = mc._facets(np.tile([[0.5], [0.0], [math.sqrt(0.75)]], 10),
+                      1e-12, np.random.default_rng(0))
+    assert np.allclose(calm[2], 1.0)
+    r, _ = mc._fresnel_cos(np.array([math.sqrt(0.75)]), 1.0, 1.34)
+    assert flat.reflected_at_surface == pytest.approx(float(r[0]), rel=1e-9)
+
+
+@pytest.mark.parametrize("bad", ["windy", -1.0, float("nan"), True])
+def test_a_bad_wind_is_refused(bad):
+    with pytest.raises((ValueError, TypeError)):
+        _call(wind=bad)
+
+
+@source_tree
+def test_section_139_figures_are_quoted_as_computed():
+    decisions = " ".join((ROOT / "DECISIONS.md").read_text().split())
+    section = decisions.split("## 139. ")[1]
+    total = {(s, w): (lambda f: f.reflected_at_surface
+                      + f.transmitted_at_surface - 1)(_transparent(s, w))
+             for s, w in ((30.0, 7.0), (60.0, 7.0), (60.0, 14.0))}
+    assert (f"exceeds 1 by {100 * total[30.0, 7.0]:.3f} percent at a sun of "
+            f"30 degrees and {100 * total[60.0, 7.0]:.3f} percent") in section
+    assert f"rises to {100 * total[60.0, 14.0]:.3f} percent" in section
+    for sun in (30.0, 60.0):
+        r = [_transparent(sun, w).reflected_at_surface
+             for w in (2.0, 7.0, 14.0)]
+        flat = _transparent(sun, "flat", photons=20_000).reflected_at_surface
+        assert f"{min(r):.4f} to {max(r):.4f} at {sun:.0f}" in section
+        assert f"{flat:.4f}" in section
+    changelog = " ".join((ROOT / "CHANGELOG.md").read_text().split())
+    log = changelog.split("## 1.34.0")[1].split("## 1.33.0")[0]
+    assert f"within {100 * total[60.0, 7.0]:.3f} percent at a sun of 60" in log
+
+
+@source_tree
+def test_question_5_with_waves_is_quoted_as_computed():
+    import contextlib
+    import io
+    import runpy
+    with contextlib.redirect_stdout(io.StringIO()):
+        module = runpy.run_path(str(ROOT / "examples" /
+                                    "shallow_water_closure.py"), run_name="q")
+        w = module["main"]()["waves"]
+    assert (w["group"], w["within_flat"], w["within_wind"]) == (13, 0, 1)
+    flat = lambda name: " ".join((ROOT / name).read_text().split())  # noqa
+    ratio = f"{w['ratio'][0]:.3f} to {w['ratio'][1]:.3f} times"
+    for name in ("OPEN_QUESTIONS.md", "DATA.md", "DECISIONS.md"):
+        assert ratio in flat(name), name
+    assert "in 1 of the group's 13 runs with waves" in \
+        flat("DECISIONS.md")
+    assert "bring 1 of the black-bottom group's 13 runs" in \
+        flat("CHANGELOG.md")
+    assert "`monte_carlo_light_field`: 1 of the 13" in \
+        flat("examples/README.md")
+
+
+@source_tree
+def test_a_stored_waves_run_is_reproduced():
+    import sys
+    sys.path.insert(0, str(ROOT / "tools"))
+    try:
+        import monte_carlo_check as check
+    finally:
+        sys.path.pop(0)
+    path = ROOT / "examples" / "data" / "monte_carlo" / \
+        "waves_black_bottom.csv"
+    with path.open() as handle:
+        rows = list(csv.DictReader(handle))
+    assert len(rows) == 13
+    row = rows[0]
+    station = jerlov.petzold_scattering("NUC 2240")
+    value, error = check.run(row | {"albedo": "0.0"}, station,
+                             float(row["wind_m_s"]))
+    assert f"{value:.6e}" == row["wind"]
+    assert f"{error:.2e}" == row["wind_se"]

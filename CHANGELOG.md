@@ -4,6 +4,27 @@ Every release is archived on Zenodo under the concept DOI
 [10.5281/zenodo.22321312](https://doi.org/10.5281/zenodo.22321312), which
 always resolves to the latest version.
 
+## 1.34.0 — 2026-11-27
+
+Waves in the Monte Carlo light field (DECISIONS.md section 139).
+
+**New.** `monte_carlo_light_field` takes `wind`: `"flat"`, or the wind
+speed in m/s at 12.5 m for a surface of Cox and Munk's (1954) isotropic
+slopes, the form OSOAA uses. Each crossing of the surface meets one
+facet, weighted by the share of the beam it intercepts, with Fresnel's
+laws at the local angle. The result gains `reflected_at_surface` and
+`transmitted_at_surface`. Checked against Chami et al.'s (2015) energy
+balance at a wavy surface (within 0.025 percent at a sun of 60 degrees
+and 7 m/s) and against the slopes' integral for the sun's reflectance.
+
+**Changed.** Leaving `wind` out takes the surface as flat, as 1.33.0 did,
+with a `FutureWarning`; a later release will require it.
+
+**Open questions.** Question 5: waves at Lee et al.'s 5 m/s bring 1 of
+the black-bottom group's 13 runs within 10 percent. Every difference the
+records named between the Monte Carlo and Lee et al.'s HydroLight runs
+has now been tried; `shallow_water_closure.py` gains part 7.
+
 ## 1.33.0 — 2026-11-27
 
 The package computes a light field by Monte Carlo (DECISIONS.md section
