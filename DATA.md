@@ -268,6 +268,13 @@ Jerlov also records that the 600 nm region is not settled:
 values fall below pure sea water at 9 of 15 wavelengths in the 1968 edition,
 which is why Austin & Petzold replaced them.
 
+**Why, as far as it can be said (1.31.2).** OPEN_QUESTIONS.md question 7
+sets the values against Smith & Baker's and Pope & Fry's absorption of pure
+water and against one mechanism Marshall & Smith (1990) name, broad
+filters, computed by their Eq. (37); `examples/jerlov_kd_below_pure_water.py`
+prints the figures. Jerlov's filters' widths are not known, so it shows
+what such filters can do, not what his did.
+
 ## 4. Table 3 parameters for the clearest types (confirmed)
 
 Putting the Bs and Bl of Solonenko & Mobley Table 3 into their Eq. (8) does

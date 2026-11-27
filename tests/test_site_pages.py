@@ -311,6 +311,16 @@ QUOTED = [
      "OPEN_QUESTIONS.md"),
     ("Its symbols hold all 60 of the archive's values",
      "hold all 60 of the archive's values", "OPEN_QUESTIONS.md"),
+    ("type I is as low as 0.666 of it at 600 nm in 1968 and 0.862 at 700 nm "
+     "in 1976", "least 0.666 of it at 600 nm in 1968 and 0.862 at 700 nm in "
+     "1976", "OPEN_QUESTIONS.md"),
+    ("moves Kd by at most 3.6 percent", "3.6 percent in 1968",
+     "OPEN_QUESTIONS.md"),
+    ("a 40 nm filter at 700 nm sees 0.853 of it, which reaches the 1976 value "
+     "there", "0.974, 0.922, 0.853 and 0.799 of its absorption at 700 nm",
+     "OPEN_QUESTIONS.md"),
+    ("At 675 nm no filter up to 60 nm does", "At 675 nm no filter up to 60 nm "
+     "reaches", "OPEN_QUESTIONS.md"),
     ('it seems that the last word is not said about the behaviour of the '
      'irradiance attenuation in the "slope" region of 600 nm',
      'it seems that the last word is not said about the behaviour of the > '
@@ -805,3 +815,27 @@ def test_the_first_page_embeds_pope_and_frys_absorption():
     tool = _tool()
     want = jerlov.pure_water_absorption_table(tool.DIVE_WL, source="pope1997")
     _close(np.round(want, 6).tolist(), data["aw"], "aw")
+
+
+def test_the_second_pages_question_7_is_the_examples():
+    """DECISIONS.md section 130: the page draws what the example computes."""
+    import contextlib
+    import io
+    import runpy
+    data = _data(_page("disagree.html"))["below"]
+    with contextlib.redirect_stdout(io.StringIO()):
+        module = runpy.run_path(
+            str(ROOT / "examples" / "jerlov_kd_below_pure_water.py"),
+            run_name="q7")
+        out = module["main"]()
+    table = out["filters"]["table"]
+    for line in data["lines"]:
+        row = table[("smith1981", line["wl"])]
+        assert line["ratio"] == [round(row[w], 4) for w in data["widths"]]
+    marks = {(m["wl"], m["edition"]): m["ratio"] for m in data["marks"]}
+    below = out["where"]["below"]
+    assert marks[(600.0, "1968")] == round(
+        below[("smith1981", "jerlov1968", "I")][600.0], 4)
+    assert marks[(700.0, "1976")] == round(
+        below[("smith1981", "jerlov1976", "I")][700.0], 4)
+    assert len(marks) == 6

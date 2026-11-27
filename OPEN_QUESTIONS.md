@@ -450,3 +450,64 @@ tables give it apart, so that is not tested.
 
 **Where.** DATA.md section 48; DECISIONS.md sections 105, 116, 117, 118 and 122;
 `examples/fq_at_45_degrees.py`; `jerlov.morel2002_fq_tables`.
+
+## 7. Why does Jerlov's Kd lie below the absorption of pure water in places?
+
+**The question.** A diffuse attenuation coefficient cannot be smaller
+than the absorption of the water alone, yet some of Jerlov's Kd for the
+clearest types are. Austin & Petzold (1986) pointed it out for type I and
+recommended replacing his values (DATA.md section 3). Where does it
+happen, by how much, and what could make a careful measurement come out
+that low?
+
+**What was done.** Jerlov's Kd for types I to II, in both editions, at
+the 13 wavelengths he printed from 400 to 700 nm, over the two pure water
+absorptions the package carries that reach the red, Smith & Baker (1981)
+and Pope & Fry (1997). Marshall & Smith (1990, Appl. Opt. 29, 71-84)
+name two mechanisms: Raman scattering "along with excessive filter
+bandwidths in irradiance measurements accounts for observations of
+anomalous diffuse attenuation coefficients" (p. 71). The second was
+computed by their Eq. (37) (p. 79): the attenuation a detector sees
+through a filter, here Gaussian filters of 2 to 60 nm, with pure water's
+own absorption as K, a flat source, averaged over the 0-10 m layer
+Jerlov's types describe (Jerlov 1976, p. 133). What would follow from
+each result was written down first (DECISIONS.md section 130).
+`examples/jerlov_kd_below_pure_water.py` prints every figure.
+
+**What was found.**
+
+- Type I lies below Smith & Baker's absorption at 7 of the 13 printed
+  wavelengths in both editions, least 0.666 of it at 600 nm in 1968 and
+  0.862 at 700 nm in 1976. Against Pope & Fry, the 1968 edition is below
+  at 4 and the 1976 edition at 2 (675 and 700 nm), least 0.731 and 0.897.
+  Jerlov's 1976 revision raised the 600 nm values of types I to II, which
+  removed the largest deficit.
+- Rounding cannot do it: half a printed step moves Kd by at most 1.1
+  percent from 600 to 700 nm in 1976 (Kd in steps of 0.005 per metre) and
+  3.6 percent in 1968 (transmittance in whole percent per metre).
+- A broad filter can, at some wavelengths. Through Gaussian filters of
+  10, 20, 40 and 60 nm the apparent attenuation of pure water over 0-10 m
+  is 0.974, 0.922, 0.853 and 0.799 of its absorption at 700 nm (Smith &
+  Baker), and 0.954 to 0.706 at 600 nm; through 2 nm, within 0.7 percent.
+  A 40 nm filter reaches the 1976 deficit at 700 nm, and 10 nm the one at
+  600 nm. At 675 nm no filter up to 60 nm reaches either edition's value
+  with Smith & Baker's absorption (with Pope & Fry's, whose table ends at
+  727.5 nm, none up to 40 nm does), and none reaches the 1968 value at
+  600 nm with Smith & Baker's (with Pope & Fry's, 60 nm does). Jerlov wrote that "most data result from
+  sporadic observations with one to three colour filters having a broad
+  band width" (1976, p. 128), without the widths.
+
+**What is not known.** The widths, shapes and tails of the filters behind
+each of Jerlov's values; the result moves with where a filter's
+short-wavelength tail ends, and "real filters have longer tails than
+predicted by the Gaussian" (Marshall & Smith, p. 78). How much Raman
+scattering adds in the top 10 m: Marshall & Smith find it has
+"relatively little effect on K" near the surface (p. 77) and put near
+surface effects "at most ~20%" (p. 83); computing it needs the light
+field at the exciting wavelengths, which is not done here. So the deficit
+at 675 nm, and the 1968 one at 600 nm against Smith & Baker, have no
+account here.
+
+**Where.** DATA.md section 3; DECISIONS.md sections 129 and 130;
+`examples/jerlov_kd_below_pure_water.py`; the sources `jerlov1968`,
+`jerlov1976` and `austin1986`.

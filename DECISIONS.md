@@ -8710,3 +8710,120 @@ DATA.md section 3; the test that finds the figures also finds their
 sentence in DATA.md (block quote markers taken out) and the DOI on the
 page. The merged description of PR #110 cannot be changed; this section
 and CHANGELOG 1.31.1 are the correction of record.
+
+## 130. Why Jerlov's Kd lies below pure water's absorption: a seventh open question (1.31.2): the plan
+
+DATA.md section 3 records, after Austin & Petzold (1986), that Jerlov's
+type I Kd falls below the attenuation of pure sea water at several
+wavelengths; section 129 corrected 1.31.0, which had taken it for new.
+What DATA.md does not record is why. The user chose (2026-11-27) to make
+it the seventh open question, and obtained Marshall & Smith (1990), the
+paper that names the mechanisms.
+
+**The sources, read for this.**
+
+- Marshall, B. R. and Smith, R. C. (1990), "Raman scattering and in-water
+  ocean optical properties", Appl. Opt. 29(1), 71-84,
+  doi:10.1364/AO.29.000071 (the user's copy, not shipped). Raman
+  scattering "along with excessive filter bandwidths in irradiance
+  measurements accounts for observations of anomalous diffuse attenuation
+  coefficients" (p. 71). Of Raman scattering: "deep in the water column
+  Raman scattering causes the effective attenuation coefficient to
+  decrease significantly below the value expected without Raman
+  scattering, while near the surface, Raman scattering has relatively
+  little effect on K" (p. 77), and "near surface effects on reflectance
+  and attenuation coefficients, at most ~20%" (p. 83). Of filters: their
+  Eq. (37) (p. 79), the attenuation a detector sees through a filter of
+  transmission h,
+
+      Ks(z) = integral K h exp(-K z) dl / integral h exp(-K z) dl,
+
+  and "finite filter width can contribute a large portion of the decrease
+  in attenuation coefficient which is observed at this wavelength"
+  (589 nm, p. 79); their own Kd(589) lies below Smith & Baker's "due to
+  the 10-nm filters used" (p. 81). They name "attenuation coefficients
+  less than those of pure water" among the anomalies (p. 82). They do not
+  discuss Jerlov's tables.
+- Jerlov (1976), *Marine Optics*, chapter 10 (read for 1.15.8): "Most
+  data result from sporadic observations with one to three colour
+  filters having a broad band width" (p. 128); the types describe "the
+  upper layers, 0-10 m" (p. 133); Table XXVII is Kd (0-10 m). His filters'
+  widths are not given.
+
+**What will be done.** An example, `examples/jerlov_kd_below_pure_water.py`,
+prints every figure; no package code changes.
+
+1. Where, and by how much: Jerlov's Kd (both editions, types I to II,
+   at the 13 printed wavelengths from 400 to 700 nm) over the two pure
+   water absorptions the package carries that reach the red, Smith &
+   Baker (1981) and Pope & Fry (1997). Seen while planning, for type I:
+   against Smith & Baker the 1968 edition's least ratio is 0.666 (600
+   nm), the 1976 edition's 0.862 (700 nm); against Pope & Fry, 0.731 and
+   0.897.
+2. Whether rounding could do it: Kd is -ln of a transmittance per metre
+   printed to two or three figures (57 percent at 700 nm for type I);
+   the interval half a printed unit gives.
+3. How much a broad filter alone can do: Eq. (37) as printed (no source
+   spectrum, i.e. a flat one), with K = Smith & Baker's pure water
+   absorption (to 800 nm, so a wide filter at 700 nm stays inside its
+   table; Pope & Fry stops at 727.5), averaged over 0-10 m (the mean of
+   Ks over the layer, which is -ln[E(10)/E(0)]/10), for Gaussian filters
+   of 2, 10, 20, 40 and 60 nm full width at half maximum, at 600, 675 and
+   700 nm. Seen while planning: at 700 nm 0.974, 0.921, 0.852, 0.798 of
+   the absorption for 10, 20, 40, 60 nm; at 600 nm 0.954 to 0.759; 2 nm
+   changes nothing.
+4. What would follow, written now. If filters of a few tens of nm bring
+   the apparent attenuation of pure water down by as much as Jerlov's
+   values lie below it, broad filters are enough to account for the size
+   of the deficit, which is all that can be said without his filters'
+   widths. Where even 60 nm does not reach a deficit (to be computed),
+   the filter alone cannot account for it there. Raman scattering is not
+   computed: it needs the light field at the exciting wavelengths, which
+   is a radiative transfer calculation with an inelastic source; its size
+   is quoted from Marshall & Smith only.
+
+**Documents.** OPEN_QUESTIONS.md gains question 7 (question, what was
+done, found, not known, where); docs/open_questions.rst its line; the
+page "Where the sources disagree" a figure (Jerlov's ratio and the
+filter's at each width, for the three wavelengths); DATA.md section 3 a
+paragraph pointing there; the example lists (thirty-two scripts).
+Every figure recomputed by a test from the example's output. A release
+with an example and no code change, 1.31.2.
+
+**Result.** As planned in what was computed. Type I lies below Smith &
+Baker's absorption at 7 of the 13 printed wavelengths in both editions,
+least 0.666 (600 nm, 1968) and 0.862 (700 nm, 1976); below Pope & Fry's
+at 4 and 2, least 0.731 and 0.897. Rounding moves Kd by at most 1.1
+percent (1976) and 3.6 percent (1968) from 600 to 700 nm. Through
+Gaussian filters, pure water over 0-10 m appears at 0.974, 0.922, 0.853
+and 0.799 of its absorption at 700 nm for 10, 20, 40 and 60 nm (Smith &
+Baker), and 0.954 to 0.706 at 600 nm. By the criterion written in the
+plan: filters of 10 and 40 nm reach the 1976 deficits at 600 and 700 nm;
+no filter up to 60 nm reaches either edition's value at 675 nm, nor the
+1968 value at 600 nm against Smith & Baker (against Pope & Fry, 60 nm
+does). The page "Where the sources disagree" draws it, from the example's
+own output.
+
+**Differences from the plan, noted after the code.**
+
+- The plan's figures at 600 nm (0.954 to 0.759) came from a table that
+  started at 560 nm, which cut a wide filter's short-wavelength tail. The
+  example cuts each Gaussian at three standard deviations, and 60 nm then
+  gives 0.706. The light that reaches 10 m through a filter comes mostly
+  from that tail, where water absorbs less, so where it is cut moves the
+  result; the example says so and quotes Marshall & Smith that real
+  filters' tails are longer than a Gaussian's (p. 78).
+- With Pope & Fry, whose table ends at 727.5 nm, filters wider than 40 nm
+  at 675 nm and 20 nm at 700 nm leave the table and are not computed; the
+  example says which widths were tried. At 675 nm their absorption makes
+  the narrow filters' apparent attenuation slightly larger than the
+  absorption (1.004 to 1.009), not smaller.
+- A wide filter at 700 nm reaches Smith & Baker's 710 nm value, which the
+  package marks suspect; the example catches that warning by type and
+  reports it.
+- The first draft of question 7 said the 2 nm filters stay "within 0.6
+  percent"; the largest departure is 0.64 percent, and the test found it.
+  It says 0.7. It also said that at 675 nm "the absorption of water
+  changes little with wavelength", which was not shown (Smith & Baker's
+  rises from 0.35 to 0.65 per metre between 650 and 700 nm); that clause
+  was taken out before the commit.

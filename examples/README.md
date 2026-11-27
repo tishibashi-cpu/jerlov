@@ -1,6 +1,6 @@
 # Examples
 
-Thirty-one scripts. Each runs against the installed package and needs nothing beyond
+Thirty-two scripts. Each runs against the installed package and needs nothing beyond
 NumPy, except `fq_at_45_degrees.py`, which reads your own copy of Morel et
 al.'s f/Q archive given as `--archive PATH` and without it only says so;
 `closure_with_jerlov_kd.py` and `shallow_water_closure.py` also read results kept beside them in
@@ -38,6 +38,7 @@ python examples/reference_images.py
 python examples/closure_with_jerlov_kd.py
 python examples/shallow_water_closure.py
 python examples/fq_at_45_degrees.py --archive PATH
+python examples/jerlov_kd_below_pure_water.py
 ```
 
 CI runs all of them on every push, so an example that has stopped working is a
@@ -470,6 +471,18 @@ have the dip; it shows that the paper's own Fig. 13, read by
 plots it; and with `--olci PATH` (EUMETSAT's auxiliary file
 `OL_2_OCP_AX`, and h5py) that the f/Q table of the OLCI processor does not
 have the dip either.
+
+**`jerlov_kd_below_pure_water.py`** — a seventh open question
+(`OPEN_QUESTIONS.md`, question 7), for those who use Jerlov's types in the
+red or measure Kd themselves: why does some of Jerlov's Kd lie below the
+absorption of pure water, as Austin & Petzold (1986) pointed out? It finds
+where and by how much in both editions, shows that rounding cannot do it,
+and works out by Marshall & Smith's (1990) Eq. (37) how far a broad
+filter alone lowers the attenuation a detector sees: through 40 nm,
+pure water over 0-10 m appears at **0.853** of its absorption at 700 nm,
+which reaches the 1976 deficit there; at 675 nm no filter up to 60 nm
+does. Raman scattering, the other mechanism Marshall & Smith name, is
+quoted, not computed.
 
 ## What they do not show
 

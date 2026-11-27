@@ -4,6 +4,27 @@ Every release is archived on Zenodo under the concept DOI
 [10.5281/zenodo.22321312](https://doi.org/10.5281/zenodo.22321312), which
 always resolves to the latest version.
 
+## 1.31.2 — 2026-11-27
+
+A seventh open question: why some of Jerlov's Kd lies below the absorption
+of pure water (DECISIONS.md section 130). No value and no code in the
+package changed.
+
+**Docs.** OPEN_QUESTIONS.md question 7, the site's open questions and the
+page "Where the sources disagree" set Jerlov's Kd for types I to II, both
+editions, against Smith & Baker's and Pope & Fry's absorption of pure
+water. Against Smith & Baker's, type I is as low as 0.666 of it at 600 nm
+in 1968 and 0.862 at 700 nm in 1976. Rounding the printed figures moves
+Kd by at most 3.6 percent. By Marshall & Smith's (1990) Eq. (37), a broad
+filter alone lowers the attenuation a detector sees in pure water over
+0-10 m to 0.853 of its absorption at 700 nm through 40 nm, which reaches
+the 1976 value there, but no filter up to 60 nm reaches the values at
+675 nm. Jerlov's filters' widths are not known, and Raman scattering, the
+other mechanism Marshall & Smith name, is quoted, not computed.
+
+**New.** `examples/jerlov_kd_below_pure_water.py`, the thirty-second
+example, prints every figure.
+
 ## 1.31.1 — 2026-11-27
 
 A correction to 1.31.0 (DECISIONS.md section 129). No value and no code

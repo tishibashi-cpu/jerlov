@@ -1,7 +1,7 @@
 Examples
 ========
 
-Thirty-one scripts, each for one kind of reader. Each runs against the
+Thirty-two scripts, each for one kind of reader. Each runs against the
 installed package, needs nothing beyond NumPy, and prints what it
 computes; ``closure_with_jerlov_kd.py`` and ``shallow_water_closure.py``
 also read results kept beside them, and so does part 3 of ``phase_function_choice.py``. CI runs every one of them, so an example that has stopped working is
@@ -68,7 +68,7 @@ examples below it print the numbers.
        `measured_scattering.py <https://github.com/tishibashi-cpu/jerlov/blob/main/examples/measured_scattering.py>`_,
        `phase_function_choice.py <https://github.com/tishibashi-cpu/jerlov/blob/main/examples/phase_function_choice.py>`_
 
-All thirty-one
+All thirty-two
 --------------
 
 
@@ -140,3 +140,5 @@ All thirty-one
      - `shallow_water_closure.py <https://github.com/tishibashi-cpu/jerlov/blob/main/examples/shallow_water_closure.py>`_
    * - see where Morel et al.'s f/Q archive dips at a 45-degree sun (needs your copy)
      - `fq_at_45_degrees.py <https://github.com/tishibashi-cpu/jerlov/blob/main/examples/fq_at_45_degrees.py>`_
+   * - see why some of Jerlov's Kd lies below the absorption of pure water
+     - `jerlov_kd_below_pure_water.py <https://github.com/tishibashi-cpu/jerlov/blob/main/examples/jerlov_kd_below_pure_water.py>`_
