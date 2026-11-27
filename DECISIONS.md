@@ -8827,3 +8827,56 @@ own output.
   changes little with wavelength", which was not shown (Smith & Baker's
   rises from 0.35 to 0.65 per metre between 650 and 700 nm); that clause
   was taken out before the commit.
+
+## 131. Raman scattering in question 7, by Marshall & Smith's own model (1.31.3): the plan
+
+Section 130 quoted Raman scattering as the second mechanism Marshall &
+Smith (1990) name for an anomalously low Kd, and did not compute it. The
+user asked (2026-11-27) whether it could be computed; it can, with the
+paper's own model, which needs no radiative transfer code.
+
+**The model, read from the page images (pp. 73-77).** A two-stream model
+with a Raman source, for a homogeneous water. The total downward
+irradiance at the emission wavelength l, Eq. (33) (the same as 21b):
+
+    Ed(z) = Ed_solar(0) exp(-K z)
+            + (b_r / 4) E0(l', 0) [ G- exp(-K' z) / (K_r + K')
+                                   + G+ (exp(-K' z) - exp(-K_r z)) / (K_r - K') ]
+
+with K and K' the diffuse attenuation at l and at the exciting wavelength
+l', E0(l', 0) the scalar irradiance at l' just below the surface, b_r the
+Raman scattering coefficient, a_r = 1.5 a (Table II, p. 74),
+G+- = 1/2 [(1 + 2 b_b / a_r)^(1/2) +- 1] and K_r / a_r = (1 + 2 b_b /
+a_r)^(1/2) (Eq. 17, p. 74). The shift is 3400 per cm (p. 72): 700 nm is
+excited from 565.4 nm, 675 from 549.0, 600 from 498.3. b_r = 2.6e-4 per
+m, from their cross section measured with excitation at 488 nm (Eq. 7,
+p. 73); a second method of theirs gave a cross section about 35 percent
+higher (p. 73). Their worked case at 589 nm (Eqs. 31-32 and 36, pp.
+76-77) uses B = 4 Ed_solar(l, 0) / (b_r E0(l', 0)) of about 1.3e4.
+
+**What will be computed,** in part 5 of
+`examples/jerlov_kd_below_pure_water.py`: the Kd over 0-10 m,
+-ln[Ed(10)/Ed(0)]/10, at 600, 675 and 700 nm, for pure water (K = a +
+b_b, Eq. 14's K ~ a + b_b, p. 74, the absorption Smith & Baker's or Pope
+& Fry's and b_b the package's pure water backscattering at 35), with the
+surface light from Gregg & Carder (the site's sky: sun 30 degrees,
+visibility 10 km) and E0(l', 0) = Ed(l', 0), as the paper takes the
+light as nearly collimated (D ~ 1, p. 74). Pure water at the exciting
+wavelength is the clearest case, so the most Raman light; any water
+attenuates more there. As a check, B at 589 nm against the paper's 1.3e4.
+The figures moved by: b_r 35 percent higher; a flat surface spectrum; the
+layer to 20 and 30 m.
+
+**What would follow, written now.** Seen while planning: over 0-10 m the
+Raman light lowers Kd by about 0.1 to 0.4 percent at 675 and 700 nm. If
+the computed reduction is under 1 percent at 675 and 700 nm with every
+variation above, Raman scattering, in this model, cannot account for
+deficits of 5 to 14 percent in Jerlov's 0-10 m values there; it would
+need a deeper layer than his. If it reaches the deficits, it can. The
+model's own assumptions (homogeneous water, isotropic Raman emission,
+a_r = 1.5 a, two streams, one exciting wavelength per emitted one, b_r at
+488 nm used at 498 to 565 nm) are listed, not tested.
+
+**Documents.** OPEN_QUESTIONS.md question 7's findings and what is not
+known; the site's line and the page "Where the sources disagree" (its
+prose); CHANGELOG. Every figure recomputed by a test. A patch, 1.31.3.
