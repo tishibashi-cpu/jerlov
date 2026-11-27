@@ -275,6 +275,18 @@ filters, computed by their Eq. (37); `examples/jerlov_kd_below_pure_water.py`
 prints the figures. Jerlov's filters' widths are not known, so it shows
 what such filters can do, not what his did.
 
+**Raman scattering, and what is left (1.31.3).** The other mechanism
+Marshall & Smith name, computed by their own two-stream model with a
+Raman source, lowers pure water's Kd over 0-10 m by at most 0.59 percent
+at 675 and 700 nm, where type I's deficits are 4.5 to 18.8 percent; it
+grows with depth (17.7 percent at 700 nm over 0-20 m). So, as far as can
+be said here: rounding cannot account for the deficits; broad filters
+can at 700 nm and at 600 nm in 1976; Raman scattering cannot over the
+top 10 m. Nothing here accounts for 675 nm in either edition, nor for
+600 nm in 1968 against Smith & Baker. What would settle it, the widths of
+Jerlov's filters and the depths of his red values, is not in the sources
+read; question 7 keeps the details.
+
 ## 4. Table 3 parameters for the clearest types (confirmed)
 
 Putting the Bs and Bl of Solonenko & Mobley Table 3 into their Eq. (8) does

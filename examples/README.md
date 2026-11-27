@@ -394,7 +394,15 @@ the eye, and at 90 degrees 1.08 to 1.80 times it. The stations scatter
 0.046, moving the tight glow around the sun out to wider angles. Part 3:
 without the report's power-law extension below 0.1 degree, the mean
 cosine falls by 0.004 to 0.015 and B/S rises by 3.5 to 17.0 percent, while
-Kd, by Monte Carlo, moves by **-0.63 to +0.13** percent.
+Kd, by Monte Carlo, moves by **-0.63 to +0.13** percent. Part 4 sets a
+Fournier-Forand, the particles' phase function alone, against each
+station's particles (Petzold's vsf less pure water's): on Mobley et al.'s
+line at the particles' backscatter ratio, it gives **0.95 to 1.13** of
+their phase function at 1 degree, against HG 0.27 to 1.10 with the same
+ratio. Within 1 degree of forward the particles scatter 0.21 to 0.38 of
+their light, the Fournier-Forand 0.24 to 0.40 and HG 0.019 to 0.093. The
+ratio rests on the pure water taken out: fresh water instead of salinity
+35 raises it by up to 46 percent at the clear Bahamas stations.
 
 **`reference_images.py`** — ten materials whose reflectance the USGS
 Spectral Library measured, from white PVC to cobalt violet, seen through
