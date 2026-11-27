@@ -214,7 +214,8 @@ def petzold_scattering(station: str) -> ScatteringFunction:
 # section 107) --------------------------------------------------------------
 
 
-@dataclass(frozen=True)
+@_data.compared_by_value             # NaN equal to NaN, on every Python
+@dataclass(frozen=True, eq=False)
 class ForwardScatter:
     """The share of a phase function's scattering within a half-angle, from
     :func:`forward_scatter`: one of Petzold's stations, or a
@@ -241,11 +242,6 @@ class ForwardScatter:
     :func:`attenuation_within` then asks for pure water's scattering apart.
     Its ``wavelength_nm``, ``c`` and ``c_within`` are NaN, since a phase
     function has no water and no c of its own."""
-
-
-#: One NaN object, so that two equal results compare equal (a tuple
-#: compares its items by identity first).
-_NAN = float("nan")
 
 
 def _printed_cumulative(station: str) -> np.ndarray:
@@ -306,7 +302,7 @@ def forward_scatter(scattering, half_angle_deg) -> ForwardScatter:
         theta0 = _data.finite_number(half_angle_deg, "half_angle_deg")
         if not 0.0 <= theta0 <= 180.0:
             raise ValueError("half_angle_deg must lie in 0 to 180 degrees")
-        nan = _NAN
+        nan = float("nan")
         return ForwardScatter(
             station=(f"Fournier-Forand, n = {scattering.refractive_index:g}"
                      f", mu = {scattering.junge_slope:g}"),

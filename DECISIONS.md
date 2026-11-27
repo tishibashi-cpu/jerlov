@@ -8664,6 +8664,10 @@ extension below 0.1 degree).
   absorbs.
 - The chart's lower limit is 0.003 /m, not 0.005, so that Pope & Fry's
   minimum (0.0044 /m at 417 nm) is drawn.
-- Two equal `ForwardScatter`s of a Fournier-Forand compare equal: their
-  NaN fields are one object, since a tuple compares its items by identity
-  first.
+- Two equal `ForwardScatter`s of a Fournier-Forand compare equal. The
+  first commit made their NaN fields one object, which works where a
+  dataclass compares its fields as a tuple (identity first), up to Python
+  3.12; from 3.13 it compares them one by one, NaN != NaN, and CI on 3.13
+  failed (PR #110). `ForwardScatter` now takes `_data.compared_by_value`
+  (section 81), which counts NaN equal to NaN on every version and gives
+  the station results the answer the generated `==` gave them.
