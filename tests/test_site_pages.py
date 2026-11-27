@@ -776,9 +776,19 @@ def test_where_jerlovs_kd_lies_below_pure_water_is_said():
             below[t] = (PRINTED[r < 1].tolist(), float(1 - r.min()))
     assert list(below) == ["I", "IA", "IB", "II"]
     worst = max(v[1] for v in below.values())
+    page = _flat(_page("dive.html"))
     assert (f"At 675 and 700 nm the Kd Jerlov printed for types I to II lies "
-            f"below it, by up to {100 * worst:.0f} %") in \
-        _flat(_page("dive.html"))
+            f"below it, by up to {100 * worst:.0f} %. Austin & Petzold (1986) "
+            "pointed this out") in page
+    assert "doi:10.1117/12.7973845" in page
+    # It was known before 1.31.0 (DECISIONS.md section 129).
+    data_md = " ".join(re.sub(r"^> ?", "", (ROOT / "DATA.md").read_text(),
+                              flags=re.M).split())
+    assert ("## 3. Jerlov's Kd falls below pure sea water (confirmed, "
+            "documented in 1986)") in data_md
+    assert ("at some wavelengths the values given by Jerlov for K are less "
+            "than the values of absorption alone published by Morel and "
+            "Prieur") in data_md
     assert sorted({w for v in below.values() for w in v[0]}) == [675.0, 700.0]
 
 

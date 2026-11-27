@@ -8704,3 +8704,9 @@ the heading's "falls below pure sea water" does not contain.
   release's work (OPEN_QUESTIONS.md, a seventh question), not this one.
 
 A patch release, 1.31.1.
+
+**Result.** As planned. The caption cites Austin & Petzold (1986) and
+DATA.md section 3; the test that finds the figures also finds their
+sentence in DATA.md (block quote markers taken out) and the DOI on the
+page. The merged description of PR #110 cannot be changed; this section
+and CHANGELOG 1.31.1 are the correction of record.
