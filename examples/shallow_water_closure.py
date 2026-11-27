@@ -631,7 +631,7 @@ pair ({max(interaction):.3f} at most).""")
                              max(interaction)))
 
 
-#: Transcribed from the Ocean Optics Web Book's Petzold_data.txt (C. D.
+#: Transcribed from the Ocean Optics Web Book's file of Petzold's data (C. D.
 #: Mobley, oceanopticsbook.info, CC BY 2.0), column "avg-part PF", 1/sr,
 #: "Data taken from Petzold (1972) and Light and Water, Table 3.10": twelve
 #: of its 55 angles, degrees, to check the reconstruction against.
