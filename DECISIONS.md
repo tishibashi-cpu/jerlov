@@ -9746,3 +9746,83 @@ still 1 of the 13 within 10 percent, the waves moving the rrs by 0.893
 to 1.028 times.
 
 Table 2's misprint at 0.50119 degree is DATA.md section 53.
+
+## 141. Light that meets the wavy surface more than once (1.35.0): the plan
+
+Section 140 left problem 5 of Mobley et al. (1993), the sun at 80
+degrees over a surface of slope variance 0.04, with Ed 0.962, 0.970 and
+0.976 of the models' mean at optical depths 1, 5 and 10, and named the
+likely cause without testing it: the engine meets one facet per crossing
+of the surface, and light that a facet sends the wrong way is dropped
+(section 139 chose this, as OSOAA does, Chami et al. 2015, section 3.2).
+The 1993 Monte Carlo codes followed repeated interactions (p. 7490). The
+user chose on 2026-11-28 to test it next and, asked, to make it a choice
+the caller states rather than a change of behaviour.
+
+### Seen before the plan
+
+A probe of the surface alone (`_facets` and `_fresnel_cos`, 400 000
+beams, not kept): of the sun's beam at 80 degrees and slope variance
+0.04, facets reflect 0.253, of which 0.031 travels downwards after the
+reflection, towards the sea, and is now counted as reflected to the sky;
+at 60 degrees 0.0039, at 30 degrees none. Light that a facet refracts
+into the water upwards was none in the probe. If most of the 0.031
+enters the water at a second facet, Ed below the surface rises by about
+0.031 / 0.746, 4 percent, the size of problem 5's shortfall. That is
+why this is expected to work; it is not yet a result.
+
+### The surface, followed
+
+At a crossing, a facet is drawn as now (section 139, with section 140's
+shadowing). Each branch, reflected and refracted, either leaves the
+surface (into the water travelling down, or into the air travelling up)
+or meets the surface again (reflected light from the air still
+travelling down; refracted light from the air travelling up; reflected
+light from below still travelling up; refracted light from below
+travelling down). When one branch leaves to the air and the other stays,
+the weight is multiplied by the staying branch's share, as now; when
+both stay (or both enter the water), one is chosen with its Fresnel
+share as the probability and the weight is kept. A branch that meets the
+surface again draws a new facet, independently of the last, for its own
+direction. This repeats until the light leaves; after 50 interactions
+what is left is dropped (it is not expected to happen).
+
+What is still left out: the surface's shape between one facet and the
+next (the facets are independent), so a ray's path along a real wave is
+not traced.
+
+### The argument
+
+`surface_facets`: `"one"` (section 139's surface, as OSOAA: light that
+would meet a second facet is dropped) or `"all"` (followed as above).
+With `wind="flat"` it must be None (a flat surface sends nothing the
+wrong way). With a wind, it will be required; as section 139 did for
+`wind`, leaving it out with a wind takes `"one"`, as 1.34 did, with a
+`FutureWarning` naming the argument, and a later release requires it.
+`inputs` gain `surface_facets`; `left_out` says, for `"one"`, that light
+meeting a second facet is dropped, and for `"all"`, that the facets are
+independent. A new argument: 1.35.0.
+
+### Checks, set now
+
+1. `"one"` gives 1.34.1's numbers bit for bit: the stored waves runs and
+   problem 5 in `examples/data/mobley1993/runs.csv` are reproduced, and
+   an omitted `surface_facets` with a wind gives the same as `"one"`,
+   with the warning. Flat is untouched.
+2. Energy, transparent water: with `"all"`, transmitted plus reflected
+   within 0.5 percent of 1 at the sun at 30, 60 and 80 degrees and winds
+   7 and 14 m/s.
+3. Problem 5 with `"all"`: the measure of section 140 met in all nine of
+   its entries (Ed, Eou, Lu at optical depths 1, 5 and 10). Recorded with
+   it: each ratio to the mean, beside `"one"`'s, and the count over the
+   51 entries.
+4. Recorded, not a measure: the share of the weight that met a second
+   facet, entering and from below, at 30, 60 and 80 degrees; and question
+   5's waves runs (section 139, wind 5 m/s, sun 0 to 60 degrees) again
+   with `"all"`, the count within 10 percent and the ratio to `"one"`.
+
+### Documents
+
+API reference; the topic page; CHANGELOG; the Zenodo description; DATA.md
+section 53 (problem 5's result); NEXT_STEPS. `tools/mobley1993_benchmark.py`
+gains the choice, and its `"all"` run is kept beside the 1.34.1 run.
