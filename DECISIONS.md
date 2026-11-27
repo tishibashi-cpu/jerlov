@@ -9299,3 +9299,58 @@ A0 = 1 and A1 = 1/pi would need a negative D1 or a more complicated
 form, pp. 6334-6335), or the Monte Carlo differs from those runs in what
 it leaves out (waves at 5 m/s; a sky, which section 114 added at 30
 percent without closing the group; scattering below 1 degree).
+
+## 137. HydroLight's angular quads in the Monte Carlo: the nadir cap and the sun's quad (1.32.4): the plan
+
+Section 136 left two candidates for the black-bottom group that cannot
+be told apart here: the model missing HydroLight in those cells, or the
+Monte Carlo leaving out something HydroLight's runs had. The user
+obtained two documents on HydroLight, the Ocean Optics Web Book's page
+and J. Hedley's IOCCG summer class lecture (2022), and asked on
+2026-11-27 for one such difference to be tried in the same release.
+
+**What the lecture says.** "HydroLight standard discretisation:
+Resolution is 10 x 15 [degrees]. Full sphere of directions 18 x 24 quads
+plus end-caps = 434 entries. Work with quad averaged radiances"; one band
+is centred at 87.5 degrees; "The solar disc is smaller than one quad. So
+one consequence is that the direct solar radiance is spread over the
+quad." Eighteen bands of polar angle with an end-cap at each pole and a
+band centred at 87.5 degrees fit polar caps of half-angle 5 degrees,
+bands 10 degrees wide from 5 to 85, and 85 to 90 (inferred, not printed
+in these documents). So HydroLight's radiance "straight up" is the mean
+over the polar cap within 5 degrees of the nadir, and its sun is spread
+over the quad that holds it. The Monte Carlo scores one direction and
+starts every photon along one.
+
+Section 135 found the black-bottom rrs with a high sun follows the phase
+function near the angle of single scattering; averaging over a cap and a
+quad smooths exactly that.
+
+**What changes.** `rrs()` in `tools/shallow_rrs_mc.py` gains two options,
+off by default, and off it draws exactly the same random numbers (stored
+runs reproduced bit for bit):
+
+- `cap_deg`: each score is for one direction drawn uniformly in solid
+  angle within `cap_deg` of straight up (an unbiased estimate of the
+  cap's mean radiance): the scattering angle to it, and the path to the
+  surface z / mu along it; the bottom's term likewise exp(-c H / mu).
+- `sun_quad`: each photon's direction in air is drawn uniformly in solid
+  angle over HydroLight's quad holding the sun (the cap within 5 degrees
+  for a sun at 0; 10 degrees of polar angle and 15 of azimuth centred on
+  it for 30 and 60), then refracted.
+
+**The runs.** `--quads OUT.csv`: the 24 black-bottom cells with the
+average particle of section 136, both options on (cap 5 degrees), else
+as in `average_particle.csv`. 24 runs.
+
+**Measure, set now.** Section 114's: the model within 10 percent in at
+least 10 of the group's 13 runs. Recorded beside it: the quad runs' rrs
+over the point runs' in each cell.
+
+**Checks.** With the options on and no scattering, the bottom term
+against its closed form averaged over the cap and the sun's quad
+(computed by quadrature) within three standard errors; with them off, a
+stored run reproduced bit for bit.
+
+**Documents.** As section 136's, in the same release (part 6 of the
+example, question 5, DATA.md section 50, CHANGELOG).
