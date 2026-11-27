@@ -4,6 +4,24 @@ Every release is archived on Zenodo under the concept DOI
 [10.5281/zenodo.22321312](https://doi.org/10.5281/zenodo.22321312), which
 always resolves to the latest version.
 
+## 1.32.3 — 2026-11-27
+
+Open question 5 taken one step further; the package behaves as before
+(DECISIONS.md section 135).
+
+**Open questions.** 1.32.2 found, after its runs, a lead: where the sun is
+high and scattering is low, two phase functions with the same bb/b give
+different rrs over a black bottom in step with their values at the angle
+of single scattering. A Fournier-Forand of another n and mu cannot test
+it, since at a fixed bb/b its backward shape hardly moves. Instead each
+of Petzold's stations and its Fournier-Forand exchange their halves
+below and above 90 degrees (144 new runs, `tools/shallow_rrs_mc.py
+--halves`, kept in `examples/data/shallow_rrs_mc/halves.csv`). Of the two
+measures set beforehand, the lead's is met (a correlation of 0.977 in
+the 8 cells with bp/a 3 and the sun at 0 or 30 degrees); the other, the
+backward half's effect the larger in 54 of 72 pairs, is not (49).
+`shallow_water_closure.py` extends part 5.
+
 ## 1.32.2 — 2026-11-27
 
 An open question taken further; the package behaves as before

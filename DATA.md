@@ -3211,6 +3211,12 @@ table is shipped; the constants are in `jerlov/ocean_colour.py`.
   for bb/b fixing the rrs. Neither bb/b within the Fournier-Forands nor
   the phase function at the angle of single scattering ranks the runs
   in 20 of the 24 cells (`fournier_forand.csv`).
+- **The halves apart (1.32.3, DECISIONS.md section 135).** Each station
+  and its Fournier-Forand exchange their halves below and above 90
+  degrees (`halves.csv`, 144 runs). With the sun at 0 or 30 degrees and
+  bp/a 3, the backward half's effect follows the two phase functions'
+  ratio at the angle of single scattering (a correlation of 0.977); over
+  all 72 pairs it is the larger in 49, short of the 54 set beforehand.
 
 ## 51. The refractive index of sea water: Quan & Fry (1995) (note)
 

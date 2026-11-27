@@ -365,6 +365,17 @@ an explanation was written down before the runs (DECISIONS.md section
   follows the ratio of their phase functions at that angle, with a
   correlation of 0.96 with the sun overhead and 0.44 with the sun at 60
   degrees.
+- That lead, tested on new runs (DECISIONS.md section 135). Each
+  station's phase function and its Fournier-Forand exchange their halves
+  below and above 90 degrees, bb/b unchanged (144 runs). In the 8 cells
+  with bp/a 3 and the sun at 0 or 30 degrees, the backward half's effect
+  on ln rrs follows ln of the two phase functions' ratio at the angle of
+  single scattering with a correlation of 0.977, the measure (0.9) met.
+  Over all 72 pairs the backward half's effect is the larger in 49, short
+  of the 54 set; after the runs, without NUC 2240, whose backward half is
+  close to its Fournier-Forand's, in 41 of 48. For AUTEC 8 and HAOCE 11
+  the backward half raises the rrs by a median factor of 1.53 with the
+  sun overhead and 1.06 with the sun at 60 degrees.
 
 **What is not known.** Which phase function HydroLight's runs are nearest
 to (Petzold's average particle, whose table this package has not
@@ -375,11 +386,13 @@ known for deep water only; no shallow-water form with water and particles
 apart is in this package. For the second, neither bb/b nor the mean
 cosine orders the miss, and two phase functions with the same bb/b give
 different rrs, so a form taking one of them would not by itself close
-it; what does order it is not found. The backward part of the phase
-function goes with it where the sun is high and scattering is low, but
-was not set as a measure beforehand.
+it; what does order it is not found. Where the sun is high and
+scattering is low, the backward half of the phase function, near the
+angle of single scattering, carries most of the difference between two
+phase functions with the same bb/b; elsewhere neither half alone does.
+Which backward shape HydroLight's runs had is not known.
 
-**Where.** DATA.md section 50; DECISIONS.md sections 113 to 115 and 134;
+**Where.** DATA.md section 50; DECISIONS.md sections 113 to 115, 134 and 135;
 `examples/shallow_water_closure.py`; `tools/shallow_rrs_mc.py` and
 `tools/lee1998_runs.py`, with their results in
 `examples/data/shallow_rrs_mc/`.
