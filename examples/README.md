@@ -457,7 +457,7 @@ above their own Kd.
 reflectance of shallow water: why does `lee1999_shallow_rrs` miss a Monte
 Carlo where pure water carries most of the backscattering, and over a
 black bottom in shallow, turbid water? It rebuilds the waters of Lee et
-al.'s own runs and reads 387 more Monte Carlo runs in
+al.'s own runs and reads 411 more Monte Carlo runs in
 `examples/data/shallow_rrs_mc/`. The model over the Monte Carlo falls
 from **1.023-1.157** with particles alone to 0.783-0.902 with pure water
 nearly alone. Over a black bottom no single change closes the gap; the
@@ -465,7 +465,10 @@ particles' phase function alone moves the ratio by a factor of up to
 **1.92**. Part 5 holds bb/b and changes only the shape, with
 Fournier-Forand phase functions: the rrs changes by **0.49 to 1.09**
 times, so bb/b does not fix it; with the sun high and little scattering
-the backward half of the phase function carries most of it.
+the backward half of the phase function carries most of it. Part 6 runs
+Petzold's average-particle phase function, HydroLight's own, built from
+three of his stations: it brings **1** of the black-bottom group's 13
+runs within 10 percent.
 
 **`fq_at_45_degrees.py`** — a sixth open question (`OPEN_QUESTIONS.md`,
 question 6), for those who correct water-leaving radiance with Morel et

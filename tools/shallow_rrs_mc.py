@@ -30,12 +30,13 @@ irradiance is the photons' number plus the weight reflected down.
     python tools/shallow_rrs_mc.py --cut-check OUT.csv
     python tools/shallow_rrs_mc.py --fournier-forand OUT.csv
     python tools/shallow_rrs_mc.py --halves OUT.csv
+    python tools/shallow_rrs_mc.py --average-particle OUT.csv
 
 The first runs the check of section 113 (no scattering, no reflection at
 the surface: rrs = (rho/pi) exp(-a H / cos theta_w) exp(-a H)) and prints
 it; the second writes one row per run of section 113's grid; the last two
 write the runs of section 114's steps 2 and 3; --cut-check those of
-section 115; --fournier-forand those of section 134; --halves those of section 135. This is a tool for
+section 115; --fournier-forand those of section 134; --halves those of section 135; --average-particle those of section 136. This is a tool for
 the comparison, not part of the package.
 """
 
@@ -123,6 +124,75 @@ def petzold_table(station: str):
     total = cumulative[-1]
     cumulative /= total
     return radians, log_vsf, cumulative, total
+
+
+#: DECISIONS.md section 136: the three San Diego Harbor stations behind
+#: Petzold's "average particle" phase function (Mobley et al. 2002, p.
+#: 1037; the Ocean Optics Web Book), the wavelength the Web Book subtracts
+#: pure sea water at, and the salinity chosen here (the sources give none).
+AVERAGE_STATIONS = ("NUC 2040", "NUC 2200", "NUC 2240")
+AVERAGE_WAVELENGTH_NM = 514.0
+AVERAGE_SALINITY_PSU = 35.0
+
+
+def average_particle_table():
+    """The average-particle phase function at Petzold's 55 angles, 1/sr,
+    built as the Web Book describes: each station's vsf less pure sea
+    water's at 514 nm, over its b less pure sea water's, averaged at each
+    angle. Returns (angles in degrees, phase function)."""
+    angles = None
+    phases = []
+    bw = float(jerlov.pure_water_scattering(
+        AVERAGE_WAVELENGTH_NM, salinity_psu=AVERAGE_SALINITY_PSU))
+    for station in AVERAGE_STATIONS:
+        s = jerlov.petzold_scattering(station)
+        here = np.asarray(s.angles_deg, dtype=float)
+        if angles is None:
+            angles = here
+        elif not np.array_equal(angles, here):
+            raise ValueError(f"{station}: other angles")
+        water = np.asarray(jerlov.pure_water_vsf(
+            here, AVERAGE_WAVELENGTH_NM, salinity_psu=AVERAGE_SALINITY_PSU))
+        phases.append((np.asarray(s.vsf, dtype=float) - water) / (s.b - bw))
+    return angles, np.mean(phases, axis=0)
+
+
+def average_particle_phase(cut_deg: float = CUT_DEG):
+    """The same four things as petzold_phase, for the average-particle
+    phase function of average_particle_table: the power law of its two
+    smallest angles below 0.1 degree, log-log interpolation between the
+    angles, normalised by its own integral over the sphere."""
+    angles, pf = average_particle_table()
+    slope = ((math.log(pf[1]) - math.log(pf[0]))
+             / (math.log(angles[1]) - math.log(angles[0])))
+    theta = np.concatenate([
+        np.logspace(-3.0, math.log10(angles[0]), 400, endpoint=False),
+        np.logspace(math.log10(angles[0]), math.log10(180.0), 6000)])
+    log_p = np.where(
+        theta < angles[0],
+        math.log(pf[0]) + slope * (np.log(theta) - math.log(angles[0])),
+        np.interp(np.log(theta), np.log(angles), np.log(pf)))
+    radians = np.radians(theta)
+    density = np.exp(log_p) * np.sin(radians)
+    steps = 0.5 * (density[1:] + density[:-1]) * np.diff(radians)
+    cumulative = np.concatenate([[0.0], np.cumsum(steps)])
+    total = cumulative[-1]
+    cumulative /= total
+    back = 1.0 - float(np.interp(math.pi / 2, radians, cumulative))
+    cut = math.radians(cut_deg)
+    below = float(np.interp(cut, radians, cumulative))
+    per_sr = np.exp(log_p) / (2.0 * math.pi * total * (1.0 - below))
+
+    def sample(u: np.ndarray) -> np.ndarray:
+        return np.interp(below + u * (1.0 - below), cumulative, radians)
+
+    def pdf(angle: np.ndarray) -> np.ndarray:
+        angle = np.clip(angle, radians[0], radians[-1])
+        value = np.exp(np.interp(np.log(angle), np.log(radians),
+                                 np.log(per_sr)))
+        return np.where(angle < cut, 0.0, value)
+
+    return sample, pdf, below, back
 
 
 def hybrid_phase(station: str, ff, forward: str, cut_deg: float = CUT_DEG):
@@ -565,6 +635,32 @@ def halves(path: str) -> None:
     _write(path, rows)
 
 
+def average_particle(path: str) -> None:
+    """Section 136: the black-bottom cells with the average-particle phase
+    function, a, bb and pure water's part held."""
+    base = petzold_phase(STATION)
+    phase = average_particle_phase()
+    rows = []
+    for a, ratio, depth, sun in itertools.product(DARK_A, DARK_BP_OVER_A,
+                                                  DARK_DEPTHS, SUNS):
+        bb = 0.5 * BW + base[3] * ratio * a
+        bp = (bb - 0.5 * BW) / phase[3]
+        angle = np.array([single_scattering_angle(sun)])
+        value, error = rrs(a, bp, BW, depth, 0.0, sun, phase)
+        rows.append({
+            "a": a, "bp_over_a": ratio, "depth_m": depth, "sun_deg": sun,
+            "backscatter_share": f"{phase[3]:.6g}",
+            "share_below_cut": f"{phase[2]:.6g}",
+            "bp": f"{bp:.6g}", "bw": BW, "bb": f"{bb:.6g}",
+            "p_back_average": f"{float(phase[1](angle)[0]):.6g}",
+            "p_back_nuc2240": f"{float(base[1](angle)[0]):.6g}",
+            "monte_carlo": f"{value:.6e}", "standard_error": f"{error:.2e}",
+            "model": f"{_model(a, bb, depth, 0.0, sun):.6e}",
+        })
+        print(rows[-1], flush=True)
+    _write(path, rows)
+
+
 if __name__ == "__main__":
     if len(sys.argv) == 3 and sys.argv[1] == "--water-share":
         water_share(sys.argv[2])
@@ -573,6 +669,8 @@ if __name__ == "__main__":
                     a_values=(0.05,))
     elif len(sys.argv) == 3 and sys.argv[1] == "--cut-check":
         cut_check(sys.argv[2])
+    elif len(sys.argv) == 3 and sys.argv[1] == "--average-particle":
+        average_particle(sys.argv[2])
     elif len(sys.argv) == 3 and sys.argv[1] == "--halves":
         halves(sys.argv[2])
     elif len(sys.argv) == 3 and sys.argv[1] == "--fournier-forand":

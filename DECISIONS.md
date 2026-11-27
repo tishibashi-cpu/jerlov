@@ -9277,3 +9277,19 @@ reproduced bit for bit.
 (what the average particle is, and where it was checked); a part 6 of
 `examples/shallow_water_closure.py`; CHANGELOG. No value or code of the
 package changes: 1.32.4.
+
+**Result.** The 24 runs took about 20 seconds. The checks hold: the
+reconstruction is the Web Book's table within 0.42 percent at the twelve
+angles transcribed in the example; the sampler's backscatter share is
+0.01825, the paper's 0.0183 to three figures (the function is
+normalised by its own integral, which takes out the 0.9937 the file's
+values gave over the sphere). The measure is not met: the
+model is within 10 percent of the Monte Carlo in 1 of the group's 13
+runs (0 with NUC 2240), and in 11 of the 24 cells; model over Monte
+Carlo 0.895 to 1.593. The average particle's phase function at the angle
+of single scattering is 0.96 to 1.06 times NUC 2240's, and its rrs 0.94
+to 1.24 times. So NUC 2240 was a close stand-in for HydroLight's phase
+function in the black-bottom cells, and the second group is not the
+Monte Carlo's choice of phase function. What remains is between the
+Monte Carlo and HydroLight themselves (the surface, Raman scattering,
+the fit judged on all runs together), which this package cannot run.

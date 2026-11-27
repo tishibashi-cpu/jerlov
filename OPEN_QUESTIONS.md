@@ -376,11 +376,17 @@ an explanation was written down before the runs (DECISIONS.md section
   close to its Fournier-Forand's, in 41 of 48. For AUTEC 8 and HAOCE 11
   the backward half raises the rrs by a median factor of 1.53 with the
   sun overhead and 1.06 with the sun at 60 degrees.
+- HydroLight's own phase function does not account for the second group
+  (DECISIONS.md section 136). Petzold's "average particle" phase
+  function, built here from the three San Diego Harbor stations (NUC
+  2040, 2200 and 2240) as the Ocean Optics Web Book describes and within
+  0.42 percent of its table, brings 1 of the group's 13 runs within 10
+  percent, where 10 were set as the measure. At the angle of single
+  scattering it is 0.96 to 1.06 times NUC 2240's, the stand-in used
+  until now, and its rrs 0.94 to 1.24 times.
 
-**What is not known.** Which phase function HydroLight's runs are nearest
-to (Petzold's average particle, whose table this package has not
-obtained), and how much of the second group the paper's own runs would
-show: its fits were judged on all runs together, and the 1999 refit's
+**What is not known.** How much of the second group the paper's own runs
+would show: its fits were judged on all runs together, and the 1999 refit's
 runs are not described. For the first group, a separated form is
 known for deep water only; no shallow-water form with water and particles
 apart is in this package. For the second, neither bb/b nor the mean
@@ -390,9 +396,11 @@ it; what does order it is not found. Where the sun is high and
 scattering is low, the backward half of the phase function, near the
 angle of single scattering, carries most of the difference between two
 phase functions with the same bb/b; elsewhere neither half alone does.
-Which backward shape HydroLight's runs had is not known.
+HydroLight's runs had the average-particle phase function, whose
+backward half is close to NUC 2240's, so the phase function the Monte
+Carlo was given is not what sets the second group apart from the model.
 
-**Where.** DATA.md section 50; DECISIONS.md sections 113 to 115, 134 and 135;
+**Where.** DATA.md section 50; DECISIONS.md sections 113 to 115 and 134 to 136;
 `examples/shallow_water_closure.py`; `tools/shallow_rrs_mc.py` and
 `tools/lee1998_runs.py`, with their results in
 `examples/data/shallow_rrs_mc/`.

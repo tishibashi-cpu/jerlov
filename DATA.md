@@ -1128,6 +1128,17 @@ The phase function Solonenko & Mobley (2015) used with HydroLight (section
 phase functions. That average is not in this report, which stations and
 what processing went into it is not stated there, and it is not shipped.
 
+Checked in 1.32.4 (DECISIONS.md section 136): Mobley et al. (2002, p.
+1037) say it "is derived from three measurements of the VSF in San Diego
+Harbor", and the Ocean Optics Web Book gives the processing (pure sea
+water at 514 nm taken out of each, divided by the particles' b, averaged
+at each angle) and a table, "taken from Petzold (1972) and Light and
+Water, Table 3.10". This report's NUC 2040, 2200 and 2240, so processed
+with salinity 35, give that table within 0.43 percent at all 55 angles
+(read while planning; the example checks twelve of them, within 0.42
+percent). So the average is three of these stations; the stations are what is
+shipped, and `tools/shallow_rrs_mc.py` builds the average from them.
+
 ## 22. Jerlov's measured quanta irradiance, and the package against it (confirmed)
 
 `jerlov1977_quanta.csv` is transcribed from Jerlov, N. G. (1977),
@@ -3217,6 +3228,12 @@ table is shipped; the constants are in `jerlov/ocean_colour.py`.
   bp/a 3, the backward half's effect follows the two phase functions'
   ratio at the angle of single scattering (a correlation of 0.977); over
   all 72 pairs it is the larger in 49, short of the 54 set beforehand.
+- **HydroLight's own phase function (1.32.4, DECISIONS.md section 136).**
+  Petzold's average particle, built from NUC 2040, 2200 and 2240 (section
+  21), in the 24 black-bottom cells (`average_particle.csv`): the model is
+  within 10 percent of the Monte Carlo in 1 of the second group's 13
+  runs, where 10 were set. Its phase function at the angle of single
+  scattering is 0.96 to 1.06 times NUC 2240's.
 
 ## 51. The refractive index of sea water: Quan & Fry (1995) (note)
 
