@@ -8986,3 +8986,65 @@ over 0-10 m 0.15594 against 0.15697 per metre, 0.66 percent lower
 left to OSOAA's spline, is 6.83 percent. Recorded, not judged; the runs
 are not kept in the repository, so CHANGELOG does not quote their
 figures.
+
+## 133. A Fournier-Forand in the example on choosing a phase function, and the record of question 7 in DATA.md (1.32.1): the plan
+
+Two pieces, one release, as the user asked on 2026-11-27.
+
+### A. `phase_function_choice.py` gains part 4: a Fournier-Forand
+
+The example shows what Henyey-Greenstein does against Petzold's eight
+stations. Since 1.30.0 the package has a second analytic choice, the
+Fournier-Forand, and since 1.32.0 every function that takes a phase
+function takes it. Part 4 sets it beside the stations.
+
+**Against what.** A Fournier-Forand is the particles' phase function
+alone (sections 127 and 128); a station is water and particles. So part
+4 compares it with each station's particles: Petzold's vsf less pure
+water's (`pure_water_vsf`), over b less pure water's
+(`pure_water_scattering`), as `painted_sphere.py` already does. The
+particles' backscatter ratio is
+
+    Bp = (B/S b - bw / 2) / (b - bw),
+
+B/S and b as printed (the extension below 0.1 degree counted, as in
+parts 1 and 2), bw at 530 nm. Pure water's salinity is the example's
+choice, 35, stated at the top; part 4 also prints how much Bp moves
+between 0 and 37 (at the two clear Bahamas stations it is large: seen
+while planning, Bp is 0.0152 at 35 and 0.0219 fresh at AUTEC 8).
+
+**What is compared.** For each station, the Fournier-Forand on Mobley et
+al.'s line at that Bp (`mobley2002_fournier_forand`, the HydroLight
+choice), and, for the same Bp, the HG of `henyey_greenstein_fit(...,
+method="backscatter_ratio")` on that Fournier-Forand:
+
+1. the ratio to the particles' phase function at the angles of part 1;
+2. the share within 1, 10 and 90 degrees of forward (the particles'
+   share is the station's less pure water's, by the closed form section
+   128 uses).
+
+Seen while planning: within 1 degree the Fournier-Forand gives 0.95 to
+1.13 of the particles' phase function and HG 0.27 to 1.10; within 1
+degree of forward the particles scatter 0.21 to 0.38 of their light, the
+Fournier-Forand 0.25 to 0.40 and HG 0.02 to 0.09; straight back the
+Fournier-Forand gives 0.31 to 1.02 of it, least at the clear stations.
+Every figure the documents quote is the example's own result, recomputed
+by the tests.
+
+**Not done.** No new public name; the example's own helpers. No fit of n
+and mu to each station (one Bp does not fix them; the line is one choice,
+as the docstring of `mobley2002_fournier_forand` says).
+
+### B. DATA.md section 3 records the whole of question 7
+
+NEXT_STEPS listed "why Jerlov's Kd lies below pure water's absorption" as
+open in DATA.md's list. Question 7 (1.31.2, 1.31.3) is the record of it,
+but DATA.md section 3's paragraph "Why, as far as it can be said" still
+reads as of 1.31.2: broad filters only. It gains Raman scattering (1.31.3)
+and what remains unexplained (675 nm in both editions, and 600 nm in 1968
+against Smith & Baker), each figure the example's, checked by
+tests/test_kd_below_pure_water.py as the others are.
+
+**Documents.** examples/README.md and the site's list of examples where
+they describe the example; CHANGELOG; the Zenodo description. An example
+and a record, no change to the package's behaviour: 1.32.1.
