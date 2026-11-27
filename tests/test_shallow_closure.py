@@ -334,15 +334,15 @@ def test_section_134_figures_are_quoted_as_computed(result):
     for text in (oq, data, decisions, log, site):
         assert span in text
     assert f"**{span}**" in readme
-    assert "reads 411 more Monte Carlo runs" in readme
+    assert "reads 435 more Monte Carlo runs" in readme
     counted = 0
     for name in ("water_share.csv", "black_bottom.csv",
                  "water_share_nadir.csv", "cut_check.csv",
                  "fournier_forand.csv", "halves.csv",
-                 "average_particle.csv"):
+                 "average_particle.csv", "quads.csv"):
         with (DATA / name).open() as handle:
             counted += len(list(csv.DictReader(handle)))
-    assert counted == 411
+    assert counted == 435
     assert (f["rising"], f["falling"]) == (8, 4)
     assert f"rises with bb/b in {f['rising']} cells and falls in " \
         f"{f['falling']}" in decisions
@@ -523,7 +523,7 @@ def test_section_136_figures_are_quoted_as_computed(result):
     assert f"{v['within']} of the second group's {v['group']}" in data50
     assert f"{v['within']} of the second group's {v['group']}" in log
     assert f"brings **{v['within']}** of the black-bottom group's" in readme
-    assert "reads 411 more Monte Carlo runs" in readme
+    assert "reads 435 more Monte Carlo runs" in readme
     p = f"{v['p_over'][0]:.2f} to {v['p_over'][1]:.2f}"
     for text in (oq, data50, decisions):
         assert p in text
@@ -533,3 +533,63 @@ def test_section_136_figures_are_quoted_as_computed(result):
     assert f"{v['every']} of the {v['cells']} cells" in decisions
     assert f"{v['q'][0]:.3f} to {v['q'][1]:.3f}" in decisions
     assert f"{v['back']:.5f}"[:7] in decisions      # 0.01825
+
+
+# -- Section 137: HydroLight's angular quads --------------------------------
+
+def test_the_quads_meet_their_closed_form_and_stay_off_by_default():
+    import numpy as np
+    mc = _tool("shallow_rrs_mc")
+    phase = mc.petzold_phase(mc.STATION)
+    for a, depth, rho, sun in ((0.1, 3.0, 0.5, 30.0), (0.5, 1.0, 1.0, 0.0),
+                               (0.05, 10.0, 0.3, 60.0)):
+        value, error = mc.rrs(a, 0.0, 1e-12, depth, rho, sun, phase,
+                              surface=False, cap_deg=5.0, sun_quad=True)
+        lo, hi, _ = mc.sun_quad_bounds(sun)
+        cos_air = np.linspace(math.cos(math.radians(hi)),
+                              math.cos(math.radians(lo)), 4001)
+        mu_w = np.sqrt(1 - (1 - cos_air ** 2) / mc.N_WATER ** 2)
+        mu_v = np.linspace(math.cos(math.radians(5.0)), 1.0, 4001)
+        exact = (rho / math.pi * float(np.mean(np.exp(-a * depth / mu_w)))
+                 * float(np.mean(np.exp(-a * depth / mu_v))))
+        assert abs(value - exact) <= 3 * error
+    assert mc.sun_quad_bounds(0.0) == (0.0, 5.0, None)
+    assert mc.sun_quad_bounds(30.0) == (25.0, 35.0, 7.5)
+    assert mc.sun_quad_bounds(60.0) == (55.0, 65.0, 7.5)
+
+
+def test_a_stored_quad_run_is_reproduced():
+    mc = _tool("shallow_rrs_mc")
+    with (DATA / "quads.csv").open() as f:
+        rows = list(csv.DictReader(f))
+    assert len(rows) == 24
+    r = rows[7]
+    phase = mc.average_particle_phase()
+    a = float(r["a"])
+    bb = 0.5 * mc.BW + mc.petzold_phase(mc.STATION)[3] * float(
+        r["bp_over_a"]) * a
+    value, error = mc.rrs(a, (bb - 0.5 * mc.BW) / phase[3], mc.BW,
+                          float(r["depth_m"]), 0.0, float(r["sun_deg"]), phase,
+                          cap_deg=float(r["cap_deg"]), sun_quad=True)
+    assert f"{value:.6e}" == r["monte_carlo"]
+    assert f"{error:.2e}" == r["standard_error"]
+
+
+def test_section_137_figures_are_quoted_as_computed(result):
+    v = result["average"]
+    oq = _flat("OPEN_QUESTIONS.md").split("## 5. ")[1].split("## 6. ")[0]
+    data50 = _flat("DATA.md").split("## 50. ")[1].split("## 51. ")[0]
+    decisions = _flat("DECISIONS.md").split("## 137. ")[1]
+    log = _flat("CHANGELOG.md").split("## 1.32.4")[1].split("## 1.32.3")[0]
+    readme = _flat("examples/README.md")
+    assert v["quad_within"] == 4 and v["quad_within"] < 10
+    moves = f"{v['quad_over'][0]:.2f} to {v['quad_over'][1]:.2f} times"
+    assert moves in oq and moves in decisions
+    assert f"brings {v['quad_within']} of the 13 within 10 percent" in oq
+    assert f"in {v['quad_within']} of the group's 13 runs (1" in decisions
+    assert f"{v['quad_within']} of the 13." in data50
+    assert f"bring {v['quad_within']} of the 13" in log
+    assert f"and with HydroLight's angular quads {v['quad_within']}." in readme
+    assert f"{v['quad_every']} of the 24 cells" in decisions
+    assert f"{v['q_quad'][0]:.3f} to {v['q_quad'][1]:.3f}" in decisions
+    assert f"up to {100 * v['quad_noise']:.1f} percent" in decisions

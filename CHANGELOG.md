@@ -18,7 +18,10 @@ describes; at the twelve angles checked it is the Web Book's table within
 `examples/data/shallow_rrs_mc/average_particle.csv`) it brings 1 of the
 second group's 13 runs within 10 percent, where 10 were set beforehand:
 the phase function the Monte Carlo was given is not what sets that group
-apart. `shallow_water_closure.py` gains part 6. Nothing is shipped under
+apart. Nor do HydroLight's angular quads, tried in the same cells
+(`--quads`, `quads.csv`; DECISIONS.md section 137): the radiance averaged
+over the 5-degree cap around the nadir and the sun spread over its quad
+bring 4 of the 13. `shallow_water_closure.py` gains part 6. Nothing is shipped under
 Petzold's name (DECISIONS.md section 27); DATA.md section 21 records what
 the average is made of.
 

@@ -702,7 +702,36 @@ The measure set beforehand (10 of 13) is {'met' if within >= 10 else 'not met'}:
 function {'accounts' if within >= 10 else 'does not by itself account'} for the group.
 Its rrs is {min(over_nuc.values()):.2f} to {max(over_nuc.values()):.2f} of NUC 2240's, and its phase function at
 the angle of single scattering {min(p_over.values()):.2f} to {max(p_over.values()):.2f} of NUC 2240's.""")
+    quads = read("quads.csv")
+    point = {}
+    for j in range(len(runs["a"])):
+        point[(round(float(runs["a"][j]), 4),
+               round(float(runs["bp_over_a"][j])), float(runs["depth_m"][j]),
+               float(runs["sun_deg"][j]))] = runs["monte_carlo"][j]
+    q_quad, quad_over = {}, {}
+    for j in range(len(quads["a"])):
+        k = (round(float(quads["a"][j]), 4),
+             round(float(quads["bp_over_a"][j])), float(quads["depth_m"][j]),
+             float(quads["sun_deg"][j]))
+        q_quad[k] = quads["model"][j] / quads["monte_carlo"][j]
+        quad_over[k] = quads["monte_carlo"][j] / point[k]
+    quad_within = sum(abs(q_quad[k] - 1) <= MISS for k in in_group)
+    quad_every = sum(abs(v - 1) <= MISS for v in q_quad.values())
+    noise = float(np.max(quads["standard_error"] / quads["monte_carlo"]))
+    print(f"""
+HydroLight reports quad-averaged radiances: its "straight up" is the mean
+over the cap within {float(quads['cap_deg'][0]):g} degrees of the nadir, and its sun is spread over
+the quad that holds it (DECISIONS.md section 137). With both in the Monte
+Carlo, and the average particle as above, the rrs is {min(quad_over.values()):.2f} to {max(quad_over.values()):.2f} of the
+single direction's (standard errors up to {100 * noise:.1f} percent), and the model is within
+{100 * MISS:g} percent in {quad_within} of the group's {len(in_group)} ({quad_every} of the {len(q_quad)} cells; model over Monte
+Carlo {min(q_quad.values()):.3f} to {max(q_quad.values()):.3f}). The measure set beforehand (10 of 13) is
+{'met' if quad_within >= 10 else 'not met'}: the quads {'account' if quad_within >= 10 else 'do not account'} for the group.""")
     return dict(rebuilt=rebuilt, within=within, group=len(in_group),
+                quad_within=quad_within, quad_every=quad_every,
+                quad_over=(min(quad_over.values()), max(quad_over.values())),
+                q_quad=(min(q_quad.values()), max(q_quad.values())),
+                quad_noise=noise,
                 before=before, every=every, cells=len(q_avg),
                 q=(min(q_avg.values()), max(q_avg.values())),
                 over_nuc=(min(over_nuc.values()), max(over_nuc.values())),

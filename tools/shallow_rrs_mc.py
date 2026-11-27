@@ -31,12 +31,13 @@ irradiance is the photons' number plus the weight reflected down.
     python tools/shallow_rrs_mc.py --fournier-forand OUT.csv
     python tools/shallow_rrs_mc.py --halves OUT.csv
     python tools/shallow_rrs_mc.py --average-particle OUT.csv
+    python tools/shallow_rrs_mc.py --quads OUT.csv
 
 The first runs the check of section 113 (no scattering, no reflection at
 the surface: rrs = (rho/pi) exp(-a H / cos theta_w) exp(-a H)) and prints
 it; the second writes one row per run of section 113's grid; the last two
 write the runs of section 114's steps 2 and 3; --cut-check those of
-section 115; --fournier-forand those of section 134; --halves those of section 135; --average-particle those of section 136. This is a tool for
+section 115; --fournier-forand those of section 134; --halves those of section 135; --average-particle those of section 136; --quads those of section 137. This is a tool for
 the comparison, not part of the package.
 """
 
@@ -286,14 +287,22 @@ def fresnel_from_below(mu: np.ndarray) -> np.ndarray:
 
 def rrs(a: float, bp: float, bw: float, depth: float, rho: float,
         sun_deg: float, phase, photons: int = PHOTONS, seed: int = SEED,
-        surface: bool = True, sky_share: float = 0.0):
+        surface: bool = True, sky_share: float = 0.0,
+        cap_deg: float = 0.0, sun_quad: bool = False):
     """rrs straight up just below the surface, and its standard error
     from BATCHES batches. ``surface`` False lets light leave through the
     surface instead of being partly reflected (the check). ``sky_share``
     of the irradiance just below the surface enters as diffuse light,
     uniform in radiance in the air (kd_monte_carlo.sky_cosines); at 0, the
     default, no random number is drawn for it, so earlier runs repeat bit
-    for bit (DECISIONS.md section 114)."""
+    for bit (DECISIONS.md section 114).
+
+    ``cap_deg`` above 0 scores the mean radiance over the cap within that
+    many degrees of straight up, each score for one direction drawn
+    uniformly in solid angle in it; ``sun_quad`` starts each photon from a
+    direction drawn uniformly in solid angle over HydroLight's quad that
+    holds the sun, in air, then refracted (DECISIONS.md section 137). Off,
+    the default, neither draws a random number."""
     sample, pdf, below, _ = phase
     water = kd_monte_carlo.water_sampler()
     bp = bp * (1.0 - below)
@@ -311,6 +320,28 @@ def rrs(a: float, bp: float, bw: float, depth: float, rho: float,
     uz = np.full(photons, mu0)
     weight = np.ones(photons)
     alive = np.ones(photons, dtype=bool)
+    if sun_quad:
+        lo, hi, half = sun_quad_bounds(sun_deg)
+        cos_air = rng.uniform(math.cos(math.radians(hi)),
+                              math.cos(math.radians(lo)), photons)
+        phi_air = (2.0 * math.pi * rng.random(photons) if half is None
+                   else math.radians(half) * (2.0 * rng.random(photons)
+                                              - 1.0))
+        sin_w = np.sqrt(1.0 - cos_air ** 2) / N_WATER
+        ux = sin_w * np.cos(phi_air)
+        uy = sin_w * np.sin(phi_air)
+        uz = np.sqrt(1.0 - sin_w ** 2)
+    cap_cos = math.cos(math.radians(cap_deg))
+
+    def view(n: int):
+        """n directions to score: straight up, or drawn in the cap."""
+        if cap_deg <= 0.0:
+            return np.zeros(n), np.zeros(n), np.ones(n)
+        mu = rng.uniform(cap_cos, 1.0, n)
+        phi = 2.0 * math.pi * rng.random(n)
+        s = np.sqrt(1.0 - mu * mu)
+        return s * np.cos(phi), s * np.sin(phi), mu
+
     if sky_share > 0.0:
         diffuse = rng.random(photons) < sky_share
         n_sky = int(diffuse.sum())
@@ -330,8 +361,14 @@ def rrs(a: float, bp: float, bw: float, depth: float, rho: float,
         # The bottom: score, then reflect or end.
         hit = idx[bottom]
         if hit.size:
-            np.add.at(radiance, batch[hit],
-                      weight[hit] * rho / math.pi * math.exp(-c * depth))
+            if cap_deg > 0.0:
+                _, _, mu_v = view(hit.size)
+                np.add.at(radiance, batch[hit],
+                          weight[hit] * rho / math.pi
+                          * np.exp(-c * depth / mu_v))
+            else:
+                np.add.at(radiance, batch[hit],
+                          weight[hit] * rho / math.pi * math.exp(-c * depth))
             z[hit] = depth
             if rho > 0.0:
                 weight[hit] *= rho
@@ -365,10 +402,17 @@ def rrs(a: float, bp: float, bw: float, depth: float, rho: float,
                 weight[low[survive]] /= kd_monte_carlo.ROULETTE
                 alive[low[~survive]] = False
             hit = hit[alive[hit]]
-            angle = np.arccos(np.clip(-uz[hit], -1.0, 1.0))
+            if cap_deg > 0.0:
+                vx, vy, mu_v = view(hit.size)
+                cos_angle = ux[hit] * vx + uy[hit] * vy - uz[hit] * mu_v
+                angle = np.arccos(np.clip(cos_angle, -1.0, 1.0))
+                path = z[hit] / mu_v
+            else:
+                angle = np.arccos(np.clip(-uz[hit], -1.0, 1.0))
+                path = z[hit]
             p = (bw * water_pdf(angle) + bp * pdf(angle)) / b
             np.add.at(radiance, batch[hit],
-                      weight[hit] * p * np.exp(-c * z[hit]))
+                      weight[hit] * p * np.exp(-c * path))
             theta = sample(rng.random(hit.size))
             by_water = rng.random(hit.size) < bw / b
             theta[by_water] = water(rng.random(int(by_water.sum())))
@@ -389,6 +433,16 @@ def rrs(a: float, bp: float, bw: float, depth: float, rho: float,
     per_batch = radiance / irradiance
     total = float(radiance.sum() / irradiance.sum())
     return total, float(per_batch.std(ddof=1) / math.sqrt(BATCHES))
+
+
+def sun_quad_bounds(sun_deg: float):
+    """HydroLight's quad holding a sun at ``sun_deg`` from the zenith, in
+    air (DECISIONS.md section 137): polar angles lo to hi, degrees, and
+    the azimuth half-width, degrees, or None for the polar cap."""
+    if sun_deg < 5.0:
+        return 0.0, 5.0, None
+    centre = 10.0 * round(sun_deg / 10.0)
+    return centre - 5.0, centre + 5.0, 7.5
 
 
 def check() -> dict:
@@ -601,6 +655,33 @@ def fournier_forand(path: str) -> None:
     _write(path, rows)
 
 
+#: DECISIONS.md section 137: HydroLight's polar cap, degrees.
+QUAD_CAP_DEG = 5.0
+
+
+def quads(path: str) -> None:
+    """Section 137: the cells of average_particle with the radiance
+    averaged over the nadir cap and the sun spread over its quad."""
+    base = petzold_phase(STATION)
+    phase = average_particle_phase()
+    rows = []
+    for a, ratio, depth, sun in itertools.product(DARK_A, DARK_BP_OVER_A,
+                                                  DARK_DEPTHS, SUNS):
+        bb = 0.5 * BW + base[3] * ratio * a
+        bp = (bb - 0.5 * BW) / phase[3]
+        value, error = rrs(a, bp, BW, depth, 0.0, sun, phase,
+                           cap_deg=QUAD_CAP_DEG, sun_quad=True)
+        rows.append({
+            "a": a, "bp_over_a": ratio, "depth_m": depth, "sun_deg": sun,
+            "cap_deg": QUAD_CAP_DEG, "bp": f"{bp:.6g}", "bw": BW,
+            "bb": f"{bb:.6g}", "monte_carlo": f"{value:.6e}",
+            "standard_error": f"{error:.2e}",
+            "model": f"{_model(a, bb, depth, 0.0, sun):.6e}",
+        })
+        print(rows[-1], flush=True)
+    _write(path, rows)
+
+
 def halves(path: str) -> None:
     """Section 135: the cells of fournier_forand with the two hybrids of
     each station and its Fournier-Forand."""
@@ -669,6 +750,8 @@ if __name__ == "__main__":
                     a_values=(0.05,))
     elif len(sys.argv) == 3 and sys.argv[1] == "--cut-check":
         cut_check(sys.argv[2])
+    elif len(sys.argv) == 3 and sys.argv[1] == "--quads":
+        quads(sys.argv[2])
     elif len(sys.argv) == 3 and sys.argv[1] == "--average-particle":
         average_particle(sys.argv[2])
     elif len(sys.argv) == 3 and sys.argv[1] == "--halves":

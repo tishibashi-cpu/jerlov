@@ -3233,7 +3233,9 @@ table is shipped; the constants are in `jerlov/ocean_colour.py`.
   21), in the 24 black-bottom cells (`average_particle.csv`): the model is
   within 10 percent of the Monte Carlo in 1 of the second group's 13
   runs, where 10 were set. Its phase function at the angle of single
-  scattering is 0.96 to 1.06 times NUC 2240's.
+  scattering is 0.96 to 1.06 times NUC 2240's. With HydroLight's quads
+  (the radiance over the 5-degree nadir cap, the sun over its quad;
+  section 137, `quads.csv`), 4 of the 13.
 
 ## 51. The refractive index of sea water: Quan & Fry (1995) (note)
 

@@ -384,6 +384,10 @@ an explanation was written down before the runs (DECISIONS.md section
   percent, where 10 were set as the measure. At the angle of single
   scattering it is 0.96 to 1.06 times NUC 2240's, the stand-in used
   until now, and its rrs 0.94 to 1.24 times.
+- Nor do HydroLight's angular quads (DECISIONS.md section 137): scoring
+  the mean radiance over the cap within 5 degrees of the nadir and
+  spreading the sun over its quad, as HydroLight does, moves the rrs by
+  0.91 to 1.11 times and brings 4 of the 13 within 10 percent.
 
 **What is not known.** How much of the second group the paper's own runs
 would show: its fits were judged on all runs together, and the 1999 refit's

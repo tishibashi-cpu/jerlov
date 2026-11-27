@@ -9354,3 +9354,15 @@ stored run reproduced bit for bit.
 
 **Documents.** As section 136's, in the same release (part 6 of the
 example, question 5, DATA.md section 50, CHANGELOG).
+
+**Result.** The 24 runs took about half a minute. The check holds: with
+no scattering, the bottom term over the cap and the sun's quad is the
+quadrature's within 0.9 standard errors in each of three cases; with the
+options off the stored runs are reproduced bit for bit. The measure is
+not met: the model is within 10 percent in 4 of the group's 13 runs (1
+with a single direction), and in 14 of the 24 cells; model over Monte
+Carlo 0.981 to 1.680. The quads move the rrs by 0.91 to 1.11 times, with
+standard errors up to 9.2 percent. So the way HydroLight averages over
+directions is not what sets the group apart either. Of the differences
+named in section 136, waves remain untried; the model's own fit to
+HydroLight in these cells cannot be tried without HydroLight's output.
