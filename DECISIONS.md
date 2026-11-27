@@ -9366,3 +9366,99 @@ standard errors up to 9.2 percent. So the way HydroLight averages over
 directions is not what sets the group apart either. Of the differences
 named in section 136, waves remain untried; the model's own fit to
 HydroLight in these cells cannot be tried without HydroLight's output.
+
+## 138. A Monte Carlo light field in the package: the scope amended, and the plan (1.33.0)
+
+Section 12 put solving the radiative transfer equation out of scope, and
+section 38 rejected moving the example's Monte Carlo into the package:
+"It would make every figure it returns rest on choices the Jerlov type
+does not fix, the phase function above all, and would answer them with a
+default." Since then the inputs such a solver needs have all become
+public objects (Petzold's stations, a `FournierForand`, pure water's
+scattering), and `examples/radiance_distribution.py`'s Monte Carlo has
+been checked against the exact isotropic solution (section 40), Gershun's
+law, Jerlov's Kd and Tyler's lake. The user asked on 2026-11-27 to make
+it a public function, before an adjoint solver (planned after this), and
+settled the name, the cut and the example.
+
+### The scope, amended
+
+Section 12 is amended, not dropped: the package may compute a light field
+by this one method, where **every choice that sets the result is a
+required argument**: the phase function, the scattering below which a
+particle is taken to go straight on, the pure water inside b and its
+salinity, the refractive index, the sun or an overcast sky, the depth and
+the bottom, where and how finely the field is reported, the photons, the
+batches and the seed. Nothing is defaulted; `MissingQuantityError` for a
+choice left out. That meets section 38's objection rather than overruling
+it. Out still: an atmosphere, waves, polarisation, inelastic scattering,
+water that varies with depth; the result lists them.
+
+### The function
+
+    jerlov.monte_carlo_light_field(
+        a, b, /, *, wavelength_nm, pure_water_b, salinity_psu,
+        phase_function, cut_deg, refractive_index, sun_zenith_deg,
+        depth_m, bottom_albedo, depths_m, slab_m,
+        zenith_step_deg, azimuth_step_deg, photons, batches, seed)
+
+- `a`, `b`: 1/m at `wavelength_nm`, b including `pure_water_b`.
+- `phase_function`: a Petzold `ScatteringFunction` (water and particles:
+  its vsf less `pure_water_vsf` at its own wavelength and `salinity_psu`
+  is the particles', as the example does) or a `FournierForand` (the
+  particles' alone). Pure water turns light by the shape of
+  `pure_water_vsf`.
+- `cut_deg`: the particles' scattering below it goes straight on. For a
+  station it may not be below its first measured angle (below lies the
+  report's extension, DATA.md section 21).
+- `sun_zenith_deg`: in air, or None for an overcast sky of uniform
+  radiance.
+- `depth_m`: `math.inf` for no bottom, with `bottom_albedo` None; or a
+  Lambertian bottom of `bottom_albedo` at that depth.
+- `depths_m`, `slab_m`: where Ed, Eu, Eo and the radiance are reported,
+  each over a slab of that thickness; `zenith_step_deg`,
+  `azimuth_step_deg`: the radiance's cells.
+- `photons` per batch, `batches`, `seed` (batch i uses seed + i).
+
+It returns a `MonteCarloLightField` (frozen, compared by value): per
+batch, Ed, Eu, Eo and the radiance at `depths_m`, and rrs straight up just
+below the surface (a collision estimator, as tools/shallow_rrs_mc.py);
+their means and standard errors, Kd between consecutive depths, the mean
+cosine, Eu / Ed and Eo / Ed; every input; and what the method leaves out.
+Everything is per unit planar irradiance just above the surface.
+
+### What it is built from
+
+`examples/radiance_distribution.py`'s `simulate` (sections 38 to 40),
+moved, with two additions that draw no random number unless used: a
+Lambertian bottom (reflection drawn only when the depth is finite) and
+the rrs collision estimator (no draws). So with no bottom the package
+gives the example's numbers bit for bit, and the example is rewritten to
+call the package (the user's choice), keeping every figure it prints and
+the tests hold. `painted_sphere.py` keeps its own copy, so that it stands
+alone; the test that held the copies' sources equal now holds the copy's
+results equal to the package's.
+
+### Checks, set before writing it
+
+1. The example's figures, unchanged: its tests pass as they are.
+2. The exact isotropic solution (section 40's test), now on the package.
+3. No scattering: Ed by Beer's law within three standard errors; with a
+   bottom, rrs against the bottom term's closed form (section 113's
+   check) within three standard errors.
+4. With a bottom, rrs against `tools/shallow_rrs_mc.py`'s stored runs with
+   the same water, phase function and sun, within the two standard
+   errors combined (the transports differ in Fresnel thinning at entry
+   and in the cut, said where they differ).
+5. Every refusal: a required argument missing, NaN, a bool, text, out of
+   range; a phase function of the wrong kind; a cut below a station's
+   first measured angle; `bottom_albedo` with no bottom or without one.
+6. CI time: the docstring's example runs in seconds.
+
+### Documents
+
+API reference; a section in the topic page on seeing through water (what
+it computes, what it leaves out, and that OSOAA or HydroLight are the
+codes for more); the map; `examples/radiance_distribution.py` rewritten;
+CHANGELOG; the Zenodo description. A new public function and an amended
+scope: 1.33.0.
