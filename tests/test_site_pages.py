@@ -713,10 +713,11 @@ PRINTED = np.arange(400.0, 701.0, 25.0)
 def test_the_printed_wavelengths_are_jerlovs():
     """The window is looked for among the wavelengths Table XXVII prints."""
     import csv
-    path = ROOT / "jerlov" / "data" / "jerlov1976_kd.csv"
-    with path.open() as f:
-        ok = {float(r["wavelength_nm"]) for r in csv.DictReader(f)
-              if r["status"] == "ok"}
+    import importlib.resources
+    text = (importlib.resources.files("jerlov.data") / "jerlov1976_kd.csv"
+            ).read_text()
+    ok = {float(r["wavelength_nm"]) for r in csv.DictReader(text.splitlines())
+          if r["status"] == "ok"}
     assert sorted(w for w in ok if 380 <= w <= 700) == PRINTED.tolist()
     assert np.array_equal(_tool().PRINTED_WL, PRINTED)
 
