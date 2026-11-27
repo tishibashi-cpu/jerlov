@@ -129,7 +129,7 @@ def simulate(a, b, bw, particles, wavelength, salinity, sun_zenith,
     degrees, or None for an overcast sky of uniform radiance. Everything is
     per unit planar irradiance just above the surface."""
     f = jerlov.monte_carlo_light_field(
-        a, b, wavelength_nm=wavelength, pure_water_b=bw,
+        a, b, wavelength, pure_water_b=bw,
         salinity_psu=salinity,
         phase_function=jerlov.petzold_scattering(particles["station"]),
         station_salinity_psu=SALINITY_PSU, cut_deg=particles["first_deg"],

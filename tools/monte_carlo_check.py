@@ -39,7 +39,7 @@ CUT_DEG = 1.0
 def run(row: dict, phase) -> tuple[float, float]:
     a, bp, bw = float(row["a"]), float(row["bp"]), float(row["bw"])
     out = jerlov.monte_carlo_light_field(
-        a, bp + bw, wavelength_nm=phase.wavelength_nm, pure_water_b=bw,
+        a, bp + bw, phase.wavelength_nm, pure_water_b=bw,
         salinity_psu=SALINITY_PSU, phase_function=phase,
         station_salinity_psu=SALINITY_PSU, cut_deg=CUT_DEG,
         refractive_index=1.34, sun_zenith_deg=float(row["sun_deg"]),

@@ -362,7 +362,7 @@ def _required(name, value):
     return value
 
 
-def monte_carlo_light_field(a, b, /, *, wavelength_nm=None,
+def monte_carlo_light_field(a, b, wavelength_nm, /, *,
                             pure_water_b=None, salinity_psu=None,
                             phase_function=None,
                             station_salinity_psu=None, cut_deg=None,
@@ -395,7 +395,7 @@ def monte_carlo_light_field(a, b, /, *, wavelength_nm=None,
         Absorption and scattering coefficients, 1/m, at ``wavelength_nm``;
         ``b`` includes ``pure_water_b``.
     wavelength_nm:
-        For pure water's phase function.
+        The wavelength they are for; it sets pure water's phase function.
     pure_water_b:
         The pure water scattering inside ``b``, 1/m, for example
         :func:`pure_water_scattering`; the rest of ``b`` is the particles'.

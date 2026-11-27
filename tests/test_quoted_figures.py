@@ -996,7 +996,7 @@ def test_the_sphere_example_carries_the_same_monte_carlo(sphere_module):
         mine = m["simulate"](a, b, bw, particles, m["water_phase"](500.0),
                              light, seed=3, photons=5000, depths=depths)
         f = jerlov.monte_carlo_light_field(
-            a, b, wavelength_nm=500.0, pure_water_b=bw,
+            a, b, 500.0, pure_water_b=bw,
             salinity_psu=m["SALINITY_PSU"],
             phase_function=jerlov.petzold_scattering(station),
             station_salinity_psu=m["SALINITY_PSU"],
@@ -1119,27 +1119,28 @@ def waves_module():
 
 @source_tree
 def test_the_waves_example_carries_the_same_monte_carlo(waves_module):
-    """wave_focusing.py copies part of the engine of
-    radiance_distribution.py; the copies must not drift apart."""
-    import ast
-    names = ("inverse_cdf", "particle_phase", "water_phase", "fresnel",
-             "turn", "simulate")
-    sources = {}
-    for name in ("radiance_distribution.py", "wave_focusing.py"):
-        text = (ROOT / "examples" / name).read_text()
-        sources[name] = {node.name: ast.get_source_segment(text, node)
-                         for node in ast.parse(text).body
-                         if isinstance(node, ast.FunctionDef)
-                         and node.name in names}
-    assert set(sources["wave_focusing.py"]) == set(names)
-    assert all(sources["wave_focusing.py"][n]
-               == sources["radiance_distribution.py"][n] for n in names)
-    import runpy
-    other = runpy.run_path(str(ROOT / "examples" / "radiance_distribution.py"),
-                           run_name="radiance_distribution")
-    for constant in ("N_WATER", "D_ZENITH", "D_AZIMUTH", "BATCHES",
-                     "PHOTONS"):
-        assert waves_module[constant] == other[constant]
+    """wave_focusing.py keeps its own copy of the engine; since 1.33.0 the
+    package carries it (jerlov.monte_carlo_light_field, DECISIONS.md
+    section 138), and the copy must give the package's numbers."""
+    import math
+    m = waves_module
+    station = "HAOCE 5"
+    particles = m["particle_phase"](station)
+    a, b, bw = 0.05, 0.2, float(jerlov.pure_water_scattering(
+        500.0, salinity_psu=m["SALINITY_PSU"]))
+    depths = np.array([2.0, 5.0])
+    mine = m["simulate"](a, b, bw, particles, m["water_phase"](500.0), 30.0,
+                         seed=2, photons=5000, depths=depths)
+    f = jerlov.monte_carlo_light_field(
+        a, b, 500.0, pure_water_b=bw, salinity_psu=m["SALINITY_PSU"],
+        phase_function=jerlov.petzold_scattering(station),
+        station_salinity_psu=m["SALINITY_PSU"],
+        cut_deg=particles["first_deg"], refractive_index=m["N_WATER"],
+        sun_zenith_deg=30.0, depth_m=math.inf, bottom_albedo=None,
+        depths_m=depths, slab_m=1.0, zenith_step_deg=m["D_ZENITH"],
+        azimuth_step_deg=m["D_AZIMUTH"], photons=5000, batches=2, seed=2)
+    for key in ("ed", "eu", "e0", "radiance"):
+        assert np.array_equal(mine[key], getattr(f, "batch_" + key)[0])
 
 
 @source_tree

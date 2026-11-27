@@ -124,7 +124,7 @@ section 138.
    import math
    iii = jerlov.water("III")
    f = jerlov.monte_carlo_light_field(
-       float(iii.a(500.0)), float(iii.b(500.0)), wavelength_nm=500.0,
+       float(iii.a(500.0)), float(iii.b(500.0)), 500.0,
        pure_water_b=float(jerlov.pure_water_scattering(500.0, salinity_psu=35.0)),
        salinity_psu=35.0,
        phase_function=jerlov.petzold_scattering("NUC 2240"),

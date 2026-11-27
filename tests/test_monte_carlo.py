@@ -30,7 +30,7 @@ def _trapezoid(y, x):
 def _call(**changes):
     station = jerlov.petzold_scattering("NUC 2240")
     kwargs = dict(
-        wavelength_nm=500.0, pure_water_b=0.003, salinity_psu=35.0,
+        pure_water_b=0.003, salinity_psu=35.0,
         phase_function=station, station_salinity_psu=35.0, cut_deg=1.0,
         refractive_index=1.34, sun_zenith_deg=30.0, depth_m=math.inf,
         bottom_albedo=None, depths_m=[1.0, 3.0], slab_m=1.0,
@@ -38,8 +38,9 @@ def _call(**changes):
         batches=2, seed=0)
     a = changes.pop("a", 0.1)
     b = changes.pop("b", 0.3)
+    wavelength = changes.pop("wavelength_nm", 500.0)
     kwargs.update(changes)
-    return jerlov.monte_carlo_light_field(a, b, **kwargs)
+    return jerlov.monte_carlo_light_field(a, b, wavelength, **kwargs)
 
 
 # -- the engine (DECISIONS.md section 40) ------------------------------------
@@ -236,7 +237,7 @@ def test_a_fournier_forand_is_the_particles_alone():
 # -- refusals (check 5) ------------------------------------------------------
 
 @pytest.mark.parametrize("name", [
-    "wavelength_nm", "pure_water_b", "salinity_psu", "phase_function",
+    "pure_water_b", "salinity_psu", "phase_function",
     "cut_deg", "refractive_index", "depths_m", "slab_m", "zenith_step_deg",
     "azimuth_step_deg", "photons", "batches", "seed", "depth_m"])
 def test_every_choice_is_required(name):
@@ -247,7 +248,7 @@ def test_every_choice_is_required(name):
 def test_the_sun_the_bottom_and_the_station_salinity_are_required():
     station = jerlov.petzold_scattering("NUC 2240")
     base = dict(
-        wavelength_nm=500.0, pure_water_b=0.003, salinity_psu=35.0,
+        pure_water_b=0.003, salinity_psu=35.0,
         phase_function=station, station_salinity_psu=35.0, cut_deg=1.0,
         refractive_index=1.34, sun_zenith_deg=30.0, depth_m=math.inf,
         bottom_albedo=None, depths_m=[1.0], slab_m=1.0, zenith_step_deg=10.0,
@@ -255,7 +256,7 @@ def test_the_sun_the_bottom_and_the_station_salinity_are_required():
     for name in ("sun_zenith_deg", "bottom_albedo"):
         kwargs = {k: v for k, v in base.items() if k != name}
         with pytest.raises(jerlov.MissingQuantityError):
-            jerlov.monte_carlo_light_field(0.1, 0.3, **kwargs)
+            jerlov.monte_carlo_light_field(0.1, 0.3, 500.0, **kwargs)
     with pytest.raises(jerlov.MissingQuantityError):
         _call(station_salinity_psu=None)
     with pytest.raises(jerlov.MissingQuantityError):

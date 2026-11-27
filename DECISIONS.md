@@ -9469,7 +9469,11 @@ scope: 1.33.0.
 water out of Petzold's station at salinity 37 and give the lake's own
 water salinity 0, so one salinity could not serve both: the function
 gained `station_salinity_psu`, required with a Petzold station and
-refused with a Fournier-Forand. The topic page that gained the section
+refused with a Fournier-Forand. The wavelength is the third positional
+argument, `monte_carlo_light_field(a, b, wavelength_nm, /, ...)`, as the
+package's other functions take wavelengths, not a keyword (a test keeps
+`wavelength_nm=` out of the topic pages, where it was once an old way of
+calling another function). The topic page that gained the section
 is the one on depth and light, where Tyler's tables are, not the one on
 seeing through water.
 
