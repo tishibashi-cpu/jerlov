@@ -261,6 +261,7 @@ def test_the_zenodo_record_names_every_shipped_module():
         ("water.py", "scattering coefficients"),
         ("par.py", "photosynthetically available radiation"),
         ("vision.py", "visual pigment"),
+        ("monte_carlo.py", "monte carlo method"),
     ):
         assert (ROOT / "jerlov" / module).exists()
         assert phrase in described, (

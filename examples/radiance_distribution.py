@@ -2,9 +2,9 @@
 
 For work that needs more of the light field than the irradiance: the
 radiance distribution at depth, the mean cosine and the ratio of scalar to
-planar irradiance, upwelling against downwelling light. The package itself
-does not solve the radiative transfer equation (DECISIONS.md sections 12
-and 38). This example does, in about 150 lines of NumPy, from the
+planar irradiance, upwelling against downwelling light. It calls
+jerlov.monte_carlo_light_field, which carries the engine this example
+held until 1.32.4 (DECISIONS.md sections 38 to 40 and 138), with the
 coefficients the package carries:
 
     a and b         jerlov.water("II"), Williamson & Hollins (2022)
@@ -33,6 +33,7 @@ section 39), and part 7 changes one thing at a time to look for the cause
 of the difference (section 40).
 """
 
+import math
 from types import SimpleNamespace
 
 import numpy as np
@@ -95,14 +96,7 @@ def particle_phase(station):
     b_particles = p.b - float(jerlov.pure_water_scattering(
         p.wavelength_nm, salinity_psu=SALINITY_PSU))
     return dict(cdf=cdf, cos=cos_angle, straight=1 - measured / b_particles,
-                first_deg=float(first), b=p.b)
-
-
-def water_phase(wavelength, salinity=SALINITY_PSU):
-    grid = np.linspace(0.0, 180.0, 1801)
-    cdf, cos_angle, _ = inverse_cdf(
-        grid, jerlov.pure_water_vsf(grid, wavelength, salinity_psu=salinity))
-    return dict(cdf=cdf, cos=cos_angle)
+                first_deg=float(first), b=p.b, station=station)
 
 
 def coefficients(water_type, wavelength):
@@ -110,8 +104,6 @@ def coefficients(water_type, wavelength):
     return (float(w.a(wavelength)), float(w.b(wavelength)),
             float(jerlov.pure_water_scattering(wavelength, salinity_psu=SALINITY_PSU)))
 
-
-# -- the photons -------------------------------------------------------------
 
 def fresnel(mu, n1, n2):
     """Reflectance of a flat surface for unpolarised light; 1 beyond the
@@ -127,115 +119,35 @@ def fresnel(mu, n1, n2):
     return out
 
 
-def turn(ux, uy, uz, cos_t, rng):
-    """Turn each direction by its scattering angle, at a random azimuth."""
-    phi = 2 * np.pi * rng.random(ux.size)
-    sin_t = np.sqrt(np.maximum(0.0, 1 - cos_t ** 2))
-    cp, sp = np.cos(phi), np.sin(phi)
-    perp = np.sqrt(np.maximum(1e-12, 1 - uz * uz))
-    pole = np.abs(uz) > 1 - 1e-12
-    nx = np.where(pole, sin_t * cp,
-                  sin_t * (ux * uz * cp - uy * sp) / perp + ux * cos_t)
-    ny = np.where(pole, sin_t * sp,
-                  sin_t * (uy * uz * cp + ux * sp) / perp + uy * cos_t)
-    nz = np.where(pole, np.sign(uz) * cos_t, -sin_t * cp * perp + uz * cos_t)
-    norm = np.sqrt(nx * nx + ny * ny + nz * nz)
-    return nx / norm, ny / norm, nz / norm
+# -- the photons -------------------------------------------------------------
 
-
-def simulate(a, b, bw, particles, water, sun_zenith, seed,
-             photons=PHOTONS, depths=DEPTHS, half_slab=0.5,
-             n_water=N_WATER):
-    """One batch. ``sun_zenith`` in degrees, or None for an overcast sky of
-    uniform radiance. z is positive downwards; the sun's light travels
-    towards +x, so azimuth 0 is the direction away from the sun.
-
-    Everything is per unit planar irradiance just above the surface.
-    """
-    rng = np.random.default_rng(seed)
-    c = a + b
-    if sun_zenith is None:
-        mu_air = np.sqrt(rng.random(photons))     # cosine-weighted
-        azimuth = np.pi * rng.random(photons)     # symmetric: fold to 0-180
-    else:
-        mu_air = np.full(photons, np.cos(np.radians(sun_zenith)))
-        azimuth = np.zeros(photons)
-    weight = 1 - fresnel(mu_air, 1.0, n_water)
-    sin_w = np.sqrt(1 - mu_air ** 2) / n_water
-    ux, uy = sin_w * np.cos(azimuth), sin_w * np.sin(azimuth)
-    uz = np.sqrt(1 - sin_w ** 2)
-    z = np.zeros(photons)
-    scattered = np.zeros(photons, bool)
-    n_th, n_ph = int(180 / D_ZENITH), int(180 / D_AZIMUTH)
-    radiance = np.zeros((depths.size, n_th, n_ph))
-    e0, ed, eu = (np.zeros(depths.size) for _ in range(3))
-
-    alive = np.arange(photons)
-    while alive.size:
-        i = alive
-        mu = uz[i]
-        step = -np.log(1.0 - rng.random(i.size)) / c
-        z0 = z[i]
-        z1 = z0 + step * mu
-        surfaced = z1 < 0
-        z1 = np.where(surfaced, 0.0, z1)
-        step = np.where(surfaced, z0 / np.maximum(-mu, 1e-12), step)
-        lo, hi = np.minimum(z0, z1), np.maximum(z0, z1)
-        th = np.minimum((np.degrees(np.arccos(np.clip(mu, -1, 1)))
-                         / D_ZENITH).astype(int), n_th - 1)
-        ph = np.minimum((np.abs(np.degrees(np.arctan2(uy[i], ux[i])))
-                         / D_AZIMUTH).astype(int), n_ph - 1)
-        for k, zk in enumerate(depths):
-            dz = np.clip(np.minimum(hi, zk + half_slab)
-                         - np.maximum(lo, zk - half_slab), 0.0, None)
-            path = np.minimum(np.where(np.abs(mu) > 1e-9,
-                                       dz / np.maximum(np.abs(mu), 1e-9),
-                                       step * (dz > 0)), step)
-            e0[k] += np.sum(weight[i] * path) / (2 * half_slab)
-            seen = (path > 0) & scattered[i]
-            np.add.at(radiance[k], (th[seen], ph[seen]),
-                      weight[i][seen] * path[seen] / (2 * half_slab))
-            cross = (z0 - zk) * (z1 - zk) < 0
-            ed[k] += np.sum(weight[i][cross & (mu > 0)])
-            eu[k] += np.sum(weight[i][cross & (mu < 0)])
-        z[i] = z1
-
-        up = i[surfaced]
-        weight[up] *= fresnel(uz[up], n_water, 1.0)
-        uz[up] = -uz[up]
-
-        hit = i[~surfaced]
-        weight[hit] *= b / c
-        by_water = rng.random(hit.size) < bw / b
-        cos_t = np.empty(hit.size)
-        cos_t[by_water] = np.interp(rng.random(by_water.sum()),
-                                    water["cdf"], water["cos"])
-        n_part = int((~by_water).sum())
-        straight = rng.random(n_part) < particles["straight"]
-        cos_t[~by_water] = np.where(
-            straight, 1.0,
-            np.interp(rng.random(n_part), particles["cdf"], particles["cos"]))
-        ux[hit], uy[hit], uz[hit] = turn(ux[hit], uy[hit], uz[hit], cos_t, rng)
-        scattered[hit] = True
-
-        weak = alive[weight[alive] < 1e-4]
-        keep = rng.random(weak.size) < 0.1
-        weight[weak[keep]] *= 10.0
-        weight[weak[~keep]] = 0.0
-        alive = alive[weight[alive] > 0]
-
-    edges = np.radians(np.arange(n_th + 1) * D_ZENITH)
-    d_omega = ((np.cos(edges[:-1]) - np.cos(edges[1:]))
-               * np.radians(D_AZIMUTH) * 2)          # both folded halves
-    return dict(radiance=radiance / photons / d_omega[None, :, None],
-                e0=e0 / photons, ed=ed / photons, eu=eu / photons)
+def simulate(a, b, bw, particles, wavelength, salinity, sun_zenith,
+             photons=PHOTONS, depths=DEPTHS, half_slab=0.5, n_water=N_WATER):
+    """BATCHES batches of jerlov.monte_carlo_light_field, the engine this
+    example carried until 1.32.4 (DECISIONS.md section 138), each batch as
+    a dict. ``particles`` is a particle_phase(); ``sun_zenith`` in
+    degrees, or None for an overcast sky of uniform radiance. Everything is
+    per unit planar irradiance just above the surface."""
+    f = jerlov.monte_carlo_light_field(
+        a, b, wavelength, pure_water_b=bw,
+        salinity_psu=salinity,
+        phase_function=jerlov.petzold_scattering(particles["station"]),
+        station_salinity_psu=SALINITY_PSU, cut_deg=particles["first_deg"],
+        refractive_index=n_water, sun_zenith_deg=sun_zenith,
+        depth_m=math.inf, bottom_albedo=None, depths_m=depths,
+        slab_m=2 * half_slab, zenith_step_deg=D_ZENITH,
+        azimuth_step_deg=D_AZIMUTH, photons=photons, batches=BATCHES,
+        seed=0)
+    return [dict(radiance=f.batch_radiance[k], e0=f.batch_e0[k],
+                 ed=f.batch_ed[k], eu=f.batch_eu[k])
+            for k in range(BATCHES)]
 
 
 def light_field(water_type, wavelength, particles, sun_zenith):
     """Several batches; their mean, and the spread of the batch means."""
     a, b, bw = coefficients(water_type, wavelength)
-    batches = [simulate(a, b, bw, particles, water_phase(wavelength),
-                        sun_zenith, seed=seed) for seed in range(BATCHES)]
+    batches = simulate(a, b, bw, particles, wavelength, SALINITY_PSU,
+                       sun_zenith)
     out = {key: np.mean([r[key] for r in batches], axis=0)
            for key in batches[0]}
     kd = [np.log(r["ed"][0] / r["ed"][2]) / (DEPTHS[2] - DEPTHS[0])
@@ -499,15 +411,13 @@ function. What the model is given, all fixed before it was run
 
     depths = np.array(LAKE_DEPTHS)
     bw = float(jerlov.pure_water_scattering(LAKE_WAVELENGTH, salinity_psu=0.0))
-    fresh = water_phase(LAKE_WAVELENGTH, 0.0)
     lake = {}
     for station, light in ((near, sun_zenith), (near, None),
                            (second, sun_zenith)):
         phase = (PARTICLES[station] if station in PARTICLES
                  else particle_phase(station))
-        runs = [simulate(a_lake, b_lake, bw, phase, fresh, light, seed=seed,
-                         photons=LAKE_PHOTONS, depths=depths, n_water=LAKE_N)
-                for seed in range(BATCHES)]
+        runs = simulate(a_lake, b_lake, bw, phase, LAKE_WAVELENGTH, 0.0, light,
+                        photons=LAKE_PHOTONS, depths=depths, n_water=LAKE_N)
         lake[station, light] = summary(runs, depths)
     tyler = {"mu": [], "R": [], "ratio": []}
     for d in LAKE_DEPTHS:
@@ -613,15 +523,14 @@ shows giving the same light field as the overcast at these depths; each
 run is {BATCHES} batches of {SWEEP_PHOTONS:,} photons. All three were set down before they
 were run (DECISIONS.md section 40). Before them the engine was checked
 against the exact solution for isotropic scattering, and passed; the
-check is in tests/test_quoted_figures.py.""")
+check is in tests/test_monte_carlo.py.""")
 
     cells = {d: measured_cells(tables[d]) for d in LAKE_DEPTHS}
     low = [int(v // D_ZENITH) for v in VIEWS if v >= 60]
 
     def sweep(b, phase):
-        runs = [simulate(a_lake, b, bw, phase, fresh, sun_zenith, seed=seed,
-                         photons=SWEEP_PHOTONS, depths=depths,
-                         n_water=LAKE_N) for seed in range(BATCHES)]
+        runs = simulate(a_lake, b, bw, phase, LAKE_WAVELENGTH, 0.0, sun_zenith,
+                        photons=SWEEP_PHOTONS, depths=depths, n_water=LAKE_N)
         f = summary(runs, depths)
         side = [f["radiance"][k, i, col] / f["radiance"][k, 0, :].mean()
                 / (cells[d][i, col] / cells[d][0, :].mean())

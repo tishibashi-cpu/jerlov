@@ -289,6 +289,10 @@ For other software
    * - a, b and c for a spectral renderer
      - :func:`~jerlov.spectral_coefficients`
      -
+   * - A light field (Ed, Eu, Eo, Kd, radiance, rrs) for one water, a sun
+       or overcast sky and a bottom you choose, by Monte Carlo
+     - :func:`~jerlov.monte_carlo_light_field`
+     -
    * - Input files for OSOAA or HydroLight
      - :func:`~jerlov.osoaa_user_profile`,
        :func:`~jerlov.osoaa_phase_function`,

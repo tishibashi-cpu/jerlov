@@ -4,6 +4,33 @@ Every release is archived on Zenodo under the concept DOI
 [10.5281/zenodo.22321312](https://doi.org/10.5281/zenodo.22321312), which
 always resolves to the latest version.
 
+## 1.33.0 — 2026-11-27
+
+The package computes a light field by Monte Carlo (DECISIONS.md section
+138, which amends section 12).
+
+**New.** `monte_carlo_light_field(a, b, ...)` and `MonteCarloLightField`:
+one homogeneous water under a flat surface, the sun's beam or an overcast
+sky above, no bottom or a Lambertian one below. It gives Ed, Eu and Eo
+and the radiance in cells of zenith and azimuth at the depths asked, Kd
+between them, the mean cosine, Eu / Ed, Eo / Ed and rrs straight up just
+below the surface, each with its standard error over batches, every
+input, and what it leaves out (an atmosphere, waves, polarisation,
+inelastic scattering, layers). Every choice that sets the result is a
+required argument, the phase function (a Petzold station, pure water
+taken out, or a Fournier-Forand), the scattering below which particles
+go straight on, the salinities, the refractive index, the sun, the
+depth and bottom, the photons, batches and seed among them; nothing is
+defaulted. The engine is the one `examples/radiance_distribution.py`
+carried since 0.14.4, checked against the exact isotropic solution;
+with no bottom it gives that example's numbers bit for bit, and the
+example now calls it.
+
+**Checks.** Against `tools/shallow_rrs_mc.py`'s 243 runs with a bottom,
+the rrs is 0.977 of the tool's in the median run, because the tool counts
+pure water's scattering twice in the particles' phase function; with the
+tool's convention in the same engine, 0.999 (DECISIONS.md section 138).
+
 ## 1.32.4 — 2026-11-27
 
 Open question 5 with HydroLight's own phase function; the package behaves
