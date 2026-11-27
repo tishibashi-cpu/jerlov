@@ -9126,3 +9126,66 @@ of single scattering, in logarithms, with a correlation of 0.96 with the
 sun overhead, 0.91 at 30 degrees and 0.44 at 60. That fits the cell seen
 while planning, and is a lead for the second group, not a finding: the
 measure set for it (3) was not met over all 24 cells.
+
+## 135. The black-bottom miss: the backward and forward halves of the phase function apart (1.32.3): the plan
+
+Section 134 found, after its runs and not as a measure, a lead: in the
+cells with less scattering the station's rrs over the Fournier-Forand's
+followed the ratio of their phase functions at the angle of single
+scattering. NEXT_STEPS proposed testing it with Fournier-Forands off
+Mobley et al.'s line, the same bb/b with another backward shape. The
+user asked on 2026-11-27 for this to go on.
+
+**Why not that.** Seen while planning: at a fixed backscatter ratio a
+Fournier-Forand's backward shape hardly moves with n and mu. For the
+three stations' ratios, over every mu from 3.05 to 4.6 that has an n
+(1 < n < 2.155), the phase function at 180 degrees spans a factor of
+1.25 at most (0.0021 to 0.0026 per sr at 0.0136), where the stations'
+own are 2.0 and 2.4 times the Fournier-Forand's at AUTEC 8 and HAOCE 11.
+Another Fournier-Forand cannot make the stations' backward peak, so it
+cannot test the lead.
+
+**What instead: the halves exchanged.** For each station and its
+Fournier-Forand of section 134 (the same backscatter share B), two
+hybrids, each a proper phase function with the same B:
+
+- H1: the station's phase function below 90 degrees, the
+  Fournier-Forand's above. Its cumulative share is the station's up to
+  90 degrees and the Fournier-Forand's beyond; both are 1 - B there.
+- H2: the Fournier-Forand's below 90 degrees, the station's above.
+
+The Monte Carlo's cut at 1 degree is taken from the forward half's
+owner. With the station (S) and the Fournier-Forand (F) already run,
+the four make a two-by-two design: the forward half from S or F, the
+backward half from S or F. In each of the 72 (cell, station) pairs:
+
+    backward effect = [ln(S / H1) + ln(H2 / F)] / 2
+    forward effect  = [ln(S / H2) + ln(H1 / F)] / 2
+
+144 new runs (`tools/shallow_rrs_mc.py --halves OUT.csv`), the same
+cells, photons, batches and seed; a, b, bb and pure water's part as in
+section 134.
+
+**Measures, set now.**
+
+1. The backward half is said to carry the difference if |backward
+   effect| exceeds |forward effect| in at least 54 of the 72 pairs.
+2. The lead itself, on these new runs: in the cells with bp/a 3 and the
+   sun at 0 or 30 degrees (8 cells, 24 pairs), the backward effect
+   against ln(p_S / p_F) at the angle of single scattering (above 90
+   degrees, so in the backward half) has a correlation of at least 0.9.
+
+Recorded, not judged: the interaction, ln S - ln H1 - ln H2 + ln F, which
+is 0 where the two halves act separately; the effects by sun and bp/a.
+
+**Checks.** Each hybrid's sampled share beyond 90 degrees is B within
+0.002 (400 000 draws); its tabulated phase function integrates to 1
+within 1e-3; the tool's station and Fournier-Forand runs still reproduce
+their stored values bit for bit (the station's table is built by a
+function shared with `petzold_phase`, which must not change it).
+
+**Documents.** OPEN_QUESTIONS.md question 5; DATA.md section 50; part 5
+of `examples/shallow_water_closure.py` extended; the runs in
+`examples/data/shallow_rrs_mc/halves.csv`; tests that recompute every
+quoted figure and reproduce a stored run. No value or code of the
+package changes: 1.32.3.
