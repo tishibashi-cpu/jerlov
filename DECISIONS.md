@@ -9514,3 +9514,82 @@ docstring says so.
    one the example used, and the one the particles are.
 5. Refusals: met (tests/test_monte_carlo.py).
 6. CI time: the topic page's call takes under two seconds.
+
+## 139. Waves in the Monte Carlo light field: Cox and Munk's isotropic slopes (1.34.0): the plan
+
+1.33.0's `monte_carlo_light_field` has a flat surface. Waves are the one
+condition of Lee et al.'s HydroLight runs (wind 5 m/s) that question 5
+has not tried for the black-bottom group (sections 114 to 137), and a
+wind-blown surface is what OSOAA (Chami et al. 2015, Opt. Express 23,
+27829, the user's copy, not shipped) and HydroLight both model. The user
+asked on 2026-11-27 for this next.
+
+### The surface
+
+Cox and Munk (1954), the isotropic, clean-surface form, as OSOAA uses it
+(Chami et al. 2015, section 2.2.1) and as `examples/wave_focusing.py`
+already cites: the facets' slopes are Gaussian in each direction with a
+mean square slope (both directions together)
+
+    sigma^2 = 0.003 + 5.12e-3 W,   W in m/s at 12.5 m (41 ft),
+
+Cox & Munk's equation (42), p. 221, as transcribed in wave_focusing.py.
+
+At each crossing of the surface (the sun's or sky's light entering, and
+light from below reaching it), a facet is drawn from the slope
+distribution and weighted by the share of the beam it intercepts,
+|d . n| / (n_z |d_z|), facets facing away rejected and redrawn; Fresnel's
+reflectance at the local angle decides the weight reflected and
+transmitted, and the direction is reflected or refracted about the
+facet's normal. Light reflected at the surface that still travels the
+wrong way (from below: upward after reflection) is taken as having left;
+a second interaction with another facet is not followed, as in OSOAA
+(Chami et al. 2015, section 3.2, which puts the loss below 1 percent).
+Light reflected away from the sea is lost, as now.
+
+### The argument, and what it does to existing calls
+
+`wind`: `"flat"`, or the wind speed in m/s at 12.5 m. It will have no
+default, as every other choice; but 1.33.0 was released without it, so,
+as section 33 did for the face irradiance ratio, leaving it out takes the
+surface as flat, as 1.33.0 did, with a `FutureWarning` naming the
+argument, and a later release makes it required (section 34). With
+`"flat"` the transport is 1.33.0's, the same random numbers, bit for bit.
+The result's `inputs` gain `wind`, and `left_out` says which wave effects
+are not modelled (wind direction, whitecaps and foam, multiple facet
+interactions).
+
+### Checks, set now
+
+1. `wind="flat"` and an omitted `wind` (with its warning) give 1.33.0's
+   numbers bit for bit (the example's figures and the stored check runs).
+2. The slopes: the sampled facets' mean square slope, over a million
+   draws without the projection weight, within 1 percent of sigma^2.
+3. Energy at the surface, Chami et al.'s check (section 3.2, Eq. 31):
+   transparent water (b and a tiny), no bottom, the sun at 30 degrees,
+   wind 7 m/s: Ed(0-) + Eu(0+) = Ed(0+) within 0.5 percent (OSOAA: 0.01
+   percent); at 60 degrees within 1 percent (OSOAA: "less than 1%"). The
+   result gains Eu(0+), the light reflected at the surface, to make it.
+4. The surface's reflectance of the sun's beam, Eu(0+) / Ed(0+), against
+   the same integral over the slope distribution by quadrature, within
+   three standard errors, at 30 and 60 degrees and winds 2, 7 and 14 m/s.
+5. Against OSOAA with wind, if a build of OSOAA (section 86) is at hand
+   in the session; if not, recorded as not done.
+
+### Question 5
+
+The 13 runs of the black-bottom group (section 114) with the package's
+function, NUC 2240 (the stand-in that section 136 found close to
+HydroLight's average particle), flat and with wind 5 m/s, a, bb and pure
+water's part as in section 114. Measure, as before: the model within 10
+percent in at least 10 of the 13 with wind. Recorded beside it: the
+count with the flat surface in the same function (its convention, water
+taken out, differs from the tool's, section 138), and the ratio wind over
+flat in each run.
+
+### Documents
+
+API reference (the new argument); the topic page; CHANGELOG; the Zenodo
+description; question 5 and DATA.md section 50; an example part or a
+tool for the question 5 runs, kept in examples/data/. A new argument and
+a new field: 1.34.0.
