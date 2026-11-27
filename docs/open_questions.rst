@@ -70,7 +70,9 @@ line each:
    1968 and 0.862 at 700 nm in 1976. Rounding cannot do it. By Marshall &
    Smith's (1990) Eq. (37), a broad filter can lower the attenuation a
    detector sees by that much at 600 and 700 nm, but not at 675 nm;
-   Jerlov's filters' widths are not known, and Raman scattering is quoted,
-   not computed. The example
+   Jerlov's filters' widths are not known. Raman scattering, by Marshall &
+   Smith's own model, lowers Kd over Jerlov's 0-10 m by at most 0.59
+   percent at 675 and 700 nm, too little to account for it; it matters
+   only deeper. The example
    `jerlov_kd_below_pure_water.py <https://github.com/tishibashi-cpu/jerlov/blob/main/examples/jerlov_kd_below_pure_water.py>`_
    prints every figure.

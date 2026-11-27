@@ -470,8 +470,10 @@ anomalous diffuse attenuation coefficients" (p. 71). The second was
 computed by their Eq. (37) (p. 79): the attenuation a detector sees
 through a filter, here Gaussian filters of 2 to 60 nm, with pure water's
 own absorption as K, a flat source, averaged over the 0-10 m layer
-Jerlov's types describe (Jerlov 1976, p. 133). What would follow from
-each result was written down first (DECISIONS.md section 130).
+Jerlov's types describe (Jerlov 1976, p. 133). The first was computed by
+their own two-stream model with a Raman source (Eq. 33, p. 77), for pure
+water, which gives the most Raman light (1.31.3). What would follow from
+each result was written down first (DECISIONS.md sections 130 and 131).
 `examples/jerlov_kd_below_pure_water.py` prints every figure.
 
 **What was found.**
@@ -496,18 +498,29 @@ each result was written down first (DECISIONS.md section 130).
   600 nm with Smith & Baker's (with Pope & Fry's, 60 nm does). Jerlov wrote that "most data result from
   sporadic observations with one to three colour filters having a broad
   band width" (1976, p. 128), without the widths.
+- Raman scattering cannot do it over 0-10 m, in Marshall & Smith's
+  model. Their Raman light, excited at 549 and 565 nm, lowers the Kd of
+  pure water over 0-10 m by at most 0.59 percent at 675 and 700 nm, with
+  their coefficient 35 percent higher or a flat sun, where type I's
+  deficits are 4.5 to 18.8 percent; their own case at
+  589 nm is reproduced (B = 1.38e4 here, about 1.3e4 there). That agrees
+  with their own words: near the surface Raman scattering "has relatively
+  little effect on K" (p. 77), and they put near surface effects on
+  reflectance and attenuation together "at most ~20%" (p. 83). It grows
+  with depth: over 0-20 m it lowers Kd at 700 nm by 17.7 percent, and
+  over 0-30 m by 40.7 percent (with Smith & Baker's absorption).
 
 **What is not known.** The widths, shapes and tails of the filters behind
 each of Jerlov's values; the result moves with where a filter's
 short-wavelength tail ends, and "real filters have longer tails than
-predicted by the Gaussian" (Marshall & Smith, p. 78). How much Raman
-scattering adds in the top 10 m: Marshall & Smith find it has
-"relatively little effect on K" near the surface (p. 77) and put near
-surface effects "at most ~20%" (p. 83); computing it needs the light
-field at the exciting wavelengths, which is not done here. So the deficit
-at 675 nm, and the 1968 one at 600 nm against Smith & Baker, have no
-account here.
+predicted by the Gaussian" (Marshall & Smith, p. 78). Whether Jerlov's red
+values all come from the top 10 m, where Raman light is small, or some
+from deeper, where it is not. How far Marshall & Smith's model, with its
+two streams, isotropic Raman emission, a_r = 1.5 a and a coefficient
+measured at 488 nm, holds at 549 and 565 nm; it is not checked against a
+radiative transfer code here. So the deficit at 675 nm, and the 1968 one
+at 600 nm against Smith & Baker, have no account here.
 
-**Where.** DATA.md section 3; DECISIONS.md sections 129 and 130;
+**Where.** DATA.md section 3; DECISIONS.md sections 129, 130 and 131;
 `examples/jerlov_kd_below_pure_water.py`; the sources `jerlov1968`,
 `jerlov1976` and `austin1986`.

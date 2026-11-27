@@ -141,3 +141,49 @@ def test_only_the_suspect_smith_and_baker_value_warns(result):
     assert result["caught"] == [
         "Smith & Baker (1981), Appl. Opt. 20, 177-184, Table I: suspect at "
         "710 nm"]
+
+
+# -- Raman scattering by Marshall & Smith's model (DECISIONS.md section 131) --
+
+def test_the_papers_own_case_at_589_nm(result):
+    # B = 4 Ed(589, 0) / (b_r E0(491, 0)), about 1.3e4 in the paper (p. 77).
+    assert 1.2e4 < result["raman"]["check_b"] < 1.45e4
+    assert "B = 1.38e4 here, about 1.3e4 there" in _q7()
+    assert f"{result['raman']['check_b']:.3g}" == "1.38e+04"
+
+
+def test_raman_light_is_small_over_ten_metres(result):
+    r = result["raman"]
+    q7 = _q7()
+    assert f"by at most {100 * (1 - r['worst']):.2f} percent at 675 and 700 nm" \
+        in q7
+    assert 1 - r["worst"] < 0.01                     # the plan's criterion
+    lo, hi = r["deficits"]
+    assert f"deficits are {100 * lo:.1f} to {100 * hi:.1f} percent" in q7
+    changelog = " ".join((ROOT / "CHANGELOG.md").read_text().split())
+    assert f"at most {100 * (1 - r['worst']):.2f} percent" in changelog
+    assert f"{100 * lo:.1f} to {100 * hi:.1f} percent in either edition" \
+        in changelog
+    for name in ("docs/open_questions.rst", "examples/README.md"):
+        assert f"{100 * (1 - r['worst']):.2f}" in _flat(name), name
+
+
+def test_raman_light_grows_with_depth(result):
+    row = result["raman"]["rows"][("smith1981", 700.0)]
+    q7 = _q7()
+    assert (f"over 0-20 m it lowers Kd at 700 nm by {100 * (1 - row['to20']):.1f} "
+            f"percent, and over 0-30 m by {100 * (1 - row['to30']):.1f} "
+            "percent") in q7
+    changelog = " ".join((ROOT / "CHANGELOG.md").read_text().split())
+    assert (f"to {100 * (1 - row['to20']):.1f} percent over 0-20 m and "
+            f"{100 * (1 - row['to30']):.1f} percent over 0-30 m") in changelog
+    for (source, centre), r in result["raman"]["rows"].items():
+        assert r["to30"] < r["to20"] < r["base"] < 1, (source, centre)
+
+
+def test_the_exciting_wavelengths_follow_the_shift(result):
+    rows = result["raman"]["rows"]
+    got = {c: round(rows[("smith1981", c)]["exciting"], 1)
+           for c in (600.0, 675.0, 700.0)}
+    assert got == {600.0: 498.3, 675.0: 549.0, 700.0: 565.4}
+    assert "excited at 549 and 565 nm" in _q7()

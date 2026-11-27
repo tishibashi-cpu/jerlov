@@ -4,6 +4,24 @@ Every release is archived on Zenodo under the concept DOI
 [10.5281/zenodo.22321312](https://doi.org/10.5281/zenodo.22321312), which
 always resolves to the latest version.
 
+## 1.31.3 — 2026-11-27
+
+Raman scattering in the seventh open question, computed (DECISIONS.md
+section 131). No value and no code in the package changed.
+
+**Docs.** OPEN_QUESTIONS.md question 7 now computes the second mechanism
+Marshall & Smith (1990) name for an anomalously low Kd, Raman scattering,
+by their own two-stream model with a Raman source (their Eq. 33). For pure
+water, which gives the most Raman light, it lowers Kd over Jerlov's 0-10 m
+layer by at most 0.59 percent at 675 and 700 nm, with their Raman
+coefficient 35 percent higher or a flat sun: too little to account for
+type I's deficits there, 4.5 to 18.8 percent in either edition against
+either pure water. It grows with depth, to 17.7 percent
+over 0-20 m and 40.7 percent over 0-30 m at 700 nm. Their own case at
+589 nm is reproduced. The site's open questions and the page "Where the
+sources disagree" say the same. `examples/jerlov_kd_below_pure_water.py`
+gains part 5.
+
 ## 1.31.2 — 2026-11-27
 
 A seventh open question: why some of Jerlov's Kd lies below the absorption
