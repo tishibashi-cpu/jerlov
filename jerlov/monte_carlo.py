@@ -29,7 +29,9 @@ The engine is the one examples/radiance_distribution.py carried from
 scattering, Gershun's law, Jerlov's Kd and Tyler's lake; DECISIONS.md
 sections 38 to 40), moved here with a bottom and the rrs estimator, which
 draw no random number when not used: with no bottom it gives that
-example's numbers bit for bit.
+example's numbers bit for bit. Against Mobley et al.'s (1993) canonical
+problems, solved by seven codes with HydroLight among them, it agrees in
+46 of 51 published values (DECISIONS.md section 140).
 
 Every choice that sets the result is a required argument; nothing is
 defaulted (DECISIONS.md section 138, which amends section 12). Left out:
@@ -40,6 +42,7 @@ whitecaps and light meeting a second facet.
 
 from __future__ import annotations
 
+import functools
 import math
 import warnings
 from dataclasses import dataclass
@@ -168,6 +171,30 @@ def _turn(ux, uy, uz, cos_t, rng):
     return nx / norm, ny / norm, nz / norm
 
 
+@functools.lru_cache(maxsize=16)
+def _front_share_table(slope_variance):
+    """For light meeting the surface at cosine mu (to the vertical), the
+    mean over the facets that face it, slopes Gaussian, of the share of
+    the beam each intercepts over a flat surface's: by quadrature, on a
+    grid of mu. Facets turned away from the light are in shadow; dividing
+    by this mean keeps the light that reaches the surface equal to what
+    crosses a horizontal plane (DECISIONS.md section 140)."""
+    sd = math.sqrt(slope_variance / 2)
+    g = np.linspace(-8 * sd, 8 * sd, 401)
+    zx, zy = np.meshgrid(g, g)
+    p = np.exp(-(zx * zx + zy * zy) / (2 * sd * sd))
+    norm = np.sqrt(1 + zx * zx + zy * zy)
+    nx, nz = zx / norm, -1 / norm
+    mus = np.concatenate([np.geomspace(1e-3, 0.2, 80, endpoint=False),
+                          np.linspace(0.2, 1.0, 81)])
+    share = np.empty(mus.size)
+    for k, mu in enumerate(mus):
+        dn = math.sqrt(1 - mu * mu) * nx + mu * nz
+        front = dn < 0
+        share[k] = np.sum(p * front * (-dn) / (-nz * mu)) / np.sum(p * front)
+    return mus, share
+
+
 def _facets(d, slope_variance, rng):
     """Facet normals for directions ``d`` (3 x n, unit) meeting a surface
     whose slopes are Gaussian, each direction with variance
@@ -194,6 +221,8 @@ def _facets(d, slope_variance, rng):
         todo = todo[~ok]
     cos_i = -np.sum(normal * d, axis=0)
     w = cos_i / (np.abs(normal[2]) * np.abs(d[2]))
+    mus, share = _front_share_table(slope_variance)
+    w = w / np.interp(np.abs(d[2]), mus, share)
     return normal, cos_i, w
 
 
@@ -259,7 +288,8 @@ def _simulate(a, b, bw, particles, water, sun_zenith, seed, *, photons,
     scattered = np.zeros(photons, bool)
     n_th, n_ph = int(180 / d_zenith), int(180 / d_azimuth)
     radiance = np.zeros((depths.size, n_th, n_ph))
-    e0, ed, eu = (np.zeros(depths.size) for _ in range(3))
+    e0, ed, eu, e0u = (np.zeros(depths.size) for _ in range(4))
+    ed_bottom = 0.0
     lu = 0.0
     bottom = math.isfinite(depth)
     # Scattering by less than the cut goes straight on and so does not turn
@@ -296,6 +326,7 @@ def _simulate(a, b, bw, particles, water, sun_zenith, seed, *, photons,
                                        dz / np.maximum(np.abs(mu), 1e-9),
                                        step * (dz > 0)), step)
             e0[k] += np.sum(weight[i] * path) / (2 * half_slab)
+            e0u[k] += np.sum((weight[i] * path)[mu < 0]) / (2 * half_slab)
             seen = (path > 0) & scattered[i]
             np.add.at(radiance[k], (th[seen], ph[seen]),
                       weight[i][seen] * path[seen] / (2 * half_slab))
@@ -321,6 +352,7 @@ def _simulate(a, b, bw, particles, water, sun_zenith, seed, *, photons,
 
         if bottom:
             down = i[floored]
+            ed_bottom += float(np.sum(weight[down]))
             lu += float(np.sum(weight[down])) * albedo / math.pi \
                 * math.exp(-c_sight * depth)
             weight[down] *= albedo
@@ -362,6 +394,7 @@ def _simulate(a, b, bw, particles, water, sun_zenith, seed, *, photons,
                * np.radians(d_azimuth) * 2)          # both folded halves
     return dict(radiance=radiance / photons / d_omega[None, :, None],
                 e0=e0 / photons, ed=ed / photons, eu=eu / photons,
+                e0u=e0u / photons, ed_bottom=ed_bottom / photons,
                 rrs=lu / ed_surface, transmitted=transmitted / photons,
                 reflected=reflected_above / photons)
 

@@ -391,7 +391,8 @@ an explanation was written down before the runs (DECISIONS.md section
 - Nor do waves (DECISIONS.md section 139): with
   `monte_carlo_light_field`'s Cox and Munk slopes at 5 m/s, Lee et al.'s
   wind, the model is within 10 percent in 1 of the 13 (0 with the same
-  function's flat surface); waves move the rrs by 0.900 to 1.029 times.
+  function's flat surface); waves move the rrs by 0.893 to 1.028 times
+  (1.34.1, after a correction to the waves, DECISIONS.md section 140).
   Every difference the records named between this Monte Carlo and Lee
   et al.'s runs has now been tried.
 

@@ -4,6 +4,33 @@ Every release is archived on Zenodo under the concept DOI
 [10.5281/zenodo.22321312](https://doi.org/10.5281/zenodo.22321312), which
 always resolves to the latest version.
 
+## 1.34.1 — 2026-11-27
+
+The Monte Carlo against Mobley et al.'s (1993) canonical problems, and a
+fault in 1.34.0's waves corrected (DECISIONS.md section 140).
+
+**Fixed.** With waves and a low sun, 1.34.0's surface created light: it
+weighted each facet by the share of the beam it intercepts without
+allowing for the facets in shadow, which with the sun 80 degrees from the
+zenith made 16 percent more light reach the surface than fell on it.
+The weight is now divided by its mean over the facets in light; below 60
+degrees the change is under 0.2 percent. Question 5's runs with waves
+were made again (still 1 of the black-bottom group's 13 runs within 10
+percent).
+
+**Checked.** Problems 1, 2, 5 and 6 of Mobley et al. (1993), whose Table
+5 gives the mean of seven codes, HydroLight among them
+(`tools/mobley1993_benchmark.py`, `examples/data/mobley1993/runs.csv`):
+46 of 51 values agree within the codes' spread and the engine's error,
+the measure set beforehand. Those that do not are the radiance at
+optical depth 10 in absorbing water (too few photons, as for three of the
+1993 Monte Carlo codes) and Ed under waves with the sun at 80 degrees,
+3 to 4 percent low.
+
+**Data.** DATA.md section 53: a misprint in Mobley et al.'s (1993) Table
+2, the particle phase function at 0.50119 degree, 2.18839+2 where the
+rest of the table and Light and Water's give about 2.01+2.
+
 ## 1.34.0 — 2026-11-27
 
 Waves in the Monte Carlo light field (DECISIONS.md section 139).

@@ -9627,3 +9627,122 @@ Waves move the rrs by 0.900 to 1.029 times. Every difference between
 this Monte Carlo and Lee et al.'s runs that sections 114 to 137 named has
 now been tried; what is left is the model's own fit to HydroLight in
 those cells, which needs HydroLight's output.
+
+## 140. The Monte Carlo against Mobley et al.'s (1993) canonical problems (1.34.1): the plan
+
+The user obtained Mobley, Gentili, Gordon, Jin, Kattawar, Morel,
+Reinersman, Stamnes and Stavn (1993), "Comparison of numerical models for
+computing underwater light fields", Appl. Opt. 32, 7484-7504,
+doi:10.1364/AO.32.007484 (not shipped), in which seven codes, HydroLight
+("II", invariant imbedding) among them, solved the same canonical
+problems; and Tynes et al. (2001), Appl. Opt. 40, 400-412, the same
+comparison with polarisation, kept for later. Section 139's notes asked
+for a comparison with published HydroLight results whose inputs are
+complete; these are, and Table 5 gives each quantity's mean over the
+models and their spread. The user asked on 2026-11-27 for this.
+
+### What is compared
+
+Table 5 (p. 7496, read from the page image): the mean over the models
+(N = 3 to 7) of Ed, Eou and Lu (the radiance seen looking straight
+down) at optical depths 1, 5 and 10, and s/x, the models' sample standard
+deviation over their mean, for problems 1 to 6. Problems this engine can
+pose exactly:
+
+- 1: a Rayleigh phase function, 3 (1 + cos^2 psi) / (16 pi), Eq. (3);
+  omega0 = 0.9 and 0.2.
+- 2: Table 2's particle phase function; omega0 = 0.9 and 0.2.
+- 5: problem 2 with omega0 = 0.9 under a wind-blown surface of slope
+  standard deviation 0.2 (sigma^2 = 0.04), the sun at 80 degrees.
+- 6: problem 2 with omega0 = 0.2 over a Lambertian bottom of irradiance
+  reflectance 0.5 at optical depth 5 (Ed, Eou, Lu at 1 and 5).
+
+Common to all: flat surface (except 5), n = 1.340, no sky, the sun at 60
+degrees (except 5), E = 1 W m-2 nm-1 on a plane normal to the sun, so
+Ed(0+) = cos(sun). With c = 1 per metre, optical depth is metres.
+
+Not posed: problem 3 (stratified water; the engine has one layer),
+problem 4 (an atmosphere, "a more detailed specification ... is not
+made"), problem 7 (Raman scattering).
+
+### The phase function of problem 2, and a misprint
+
+Table 2 (p. 7491, read from the page image) gives the particle phase
+function at 55 angles. Against the Ocean Optics Web Book's table of the
+same function (section 136), 54 of the 55 stand in one ratio, 0.9969 to
+0.9972; at 0.50119 degree Table 2 prints 2.18839+2, 1.084 times the Web
+Book's 2.018+2 and above the line through its neighbours, so it is taken
+as a misprint, and the value used is the log-log interpolation between
+its neighbours (recorded in DATA.md as a new entry, with the evidence).
+Between the angles the paper prescribes linear interpolation, and below
+0.12589 degree beta ~ psi^-1.346; the table is so used here, normalised
+by its own integral.
+
+### How
+
+`tools/mobley1993_benchmark.py`, on the package's engine
+(`jerlov.monte_carlo._simulate`, which takes a tabulated phase function;
+the public function takes only Petzold's stations and Fournier-Forands),
+writing `examples/data/mobley1993/runs.csv` with each quantity, its
+standard error and Table 5's mean and s/x. Eou is the engine's scalar
+irradiance of upward-travelling light, which `_simulate` gains (no new
+random number, so every stored run repeats); Lu the mean radiance within
+5 degrees of straight up (HydroLight's polar cap, section 137). The
+values are scaled by cos(sun) for E on a plane normal to the beam.
+
+### The measure, set now
+
+An entry agrees if |x - mean| <= 2 s + 3 SE + 0.005 mean, s from Table
+5's s/x, SE the engine's standard error, 0.005 for Table 5's three
+figures. The engine is said to reproduce the published solutions if at
+least 90 percent of the entries posed agree. Every entry is recorded,
+agreeing or not.
+
+### Documents
+
+DATA.md (the misprint, and the result); OPEN_QUESTIONS.md is not
+involved; a test that every quoted figure is the run's; the topic page
+and `monte_carlo_light_field`'s docstring may say what it was checked
+against; CHANGELOG. No public behaviour changes: 1.34.1.
+
+### Result
+
+**The measure is met: 46 of the 51 entries posed agree** (90.2 percent,
+46 needed). Problems 1 and 2 with omega0 = 0.9 and problem 6 agree in
+every entry. The five that do not:
+
+- Lu at optical depth 10 in problems 1 and 2 with omega0 = 0.2: 0.044 and
+  0.126 of the mean, with standard errors above 90 percent. Too few
+  photons come back from there, even with 10 million per problem for
+  the absorbing cases (`PHOTONS_ABSORBING`, a choice made after the first
+  run gave none); three of the 1993 Monte Carlo codes had none either
+  (p. 7495). The engine has no variance reduction for depth.
+- Ed in problem 5 at optical depths 1, 5 and 10: 0.962, 0.970 and 0.976
+  of the mean (Eou and Lu agree). The engine meets one facet per
+  crossing, and light that a facet reflects the wrong way is dropped;
+  the 1993 Monte Carlo codes followed repeated interactions with the
+  surface (p. 7490). With the sun 80 degrees from the zenith that is the
+  likely cause; it is not tested here.
+
+**A fault in 1.34.0, found by problem 5 and corrected.** The first run
+put problem 5's Ed 13 to 14 percent above the mean. 1.34.0 drew facets
+from the slope distribution, redrew those facing away from the light,
+and weighted each by the share of the beam it intercepts; the mean of
+that weight over the facets facing the light exceeds 1 when the light
+is low (1.164 at 80 degrees and sigma^2 = 0.04, by quadrature), so light
+was created at the surface. Facets turned away are in shadow, and the
+light that reaches the surface must equal what crosses a horizontal
+plane; the weight is now divided by that mean, tabulated against the
+cosine of the light's direction for each slope variance
+(`_front_share_table`). Below 60 degrees the mean is within 0.002 of 1,
+so section 139's checks at 30 and 60 degrees hardly move: transmitted
+plus reflected now exceeds 1 by 0.008 percent at 30 degrees, 0.023 at 60
+and 0.028 at 60 degrees and 14 m/s, and falls short of it by 0.345
+percent at 80 degrees and 7 m/s; the sun's reflectance is 0.0224 to
+0.0238 at 30 degrees and 0.0633 to 0.0706 at 60 against the slopes'
+integral with each facet weighted by the share it intercepts, within
+three standard errors. Question 5's runs with waves were made again:
+still 1 of the 13 within 10 percent, the waves moving the rrs by 0.893
+to 1.028 times.
+
+Table 2's misprint at 0.50119 degree is DATA.md section 53.

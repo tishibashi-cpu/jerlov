@@ -3,7 +3,7 @@
 What every shipped table is, where it came from, what was verified, and what
 is known to be wrong with it.
 
-Fifty-two entries are recorded below. Thirteen are confirmed defects, three were
+Fifty-three entries are recorded below. Fourteen are confirmed defects, three were
 open questions that the first edition of Jerlov settled, and the rest are
 notes rather than defects. None of them is repaired silently: values that
 could be recovered carry `status = reconstructed` and say how, values that
@@ -3238,8 +3238,9 @@ table is shipped; the constants are in `jerlov/ocean_colour.py`.
   section 137, `quads.csv`), 4 of the 13.
 - **Waves (1.34.0, DECISIONS.md section 139).** With
   `monte_carlo_light_field` and Cox and Munk's slopes at 5 m/s, 1 of the
-  13 (0 flat in the same function); waves move the rrs by 0.900 to 1.029
-  times (`examples/data/monte_carlo/waves_black_bottom.csv`).
+  13 (0 flat in the same function); waves move the rrs by 0.893 to 1.028
+  times (`examples/data/monte_carlo/waves_black_bottom.csv`; 1.34.1,
+  after a correction to the waves, DECISIONS.md section 140).
 
 ## 51. The refractive index of sea water: Quan & Fry (1995) (note)
 
@@ -3304,3 +3305,38 @@ Eqs. (7)-(8), p. 1042 (DECISIONS.md section 127). No table is shipped.
   ratio of 0.5 at any n; at mu = 3 it is 0/0. On the line, ratios from
   0.0001 to 0.5 (HydroLight's library, HydroLight 5.1 Technical
   Documentation, p. 22) take n from 1.021 to 1.318.
+
+## 53. A misprint in Mobley et al.'s (1993) Table 2, and the canonical problems (confirmed)
+
+C. D. Mobley et al. (1993), "Comparison of numerical models for computing
+underwater light fields", Appl. Opt. 32(36), 7484-7504,
+doi:10.1364/AO.32.007484, read from the page images (the user's copy, not
+shipped). Table 2 (p. 7491) gives the particle phase function of its
+canonical problems at 55 angles: Petzold's average particle (section 21),
+less pure water, renormalised (they divide by 1.006449).
+
+**The misprint.** Against the Ocean Optics Web Book's table of the same
+function (section 21; "Data taken from Petzold (1972) and Light and
+Water, Table 3.10"), 54 of the 55 values stand in one ratio, 0.9969 to
+0.9972. At 0.50119 degree Table 2 prints **2.18839+2**, 1.084 times the
+Web Book's 2.018+2, and above the straight line in log-log through its
+neighbours (2.76318+2 at 0.39811, 1.44369+2 at 0.63096), which gives
+1.9973+2. So it is a misprint, probably for a value near 2.01+2; the
+constant ratio of the rest (not the 0.9936 their renormalisation alone
+would give) is recorded, not explained. The angle lies in the forward
+peak, where the error moves the phase function's integral by little;
+`tools/mobley1993_benchmark.py` uses the interpolated value and says so.
+
+**The canonical problems (1.34.1, DECISIONS.md section 140).** Table 5
+(p. 7496) gives the mean over the seven codes (HydroLight among them) of
+Ed, Eou and Lu at optical depths 1, 5 and 10, with their spread. The
+package's Monte Carlo engine, posed problems 1, 2, 5 and 6
+(`examples/data/mobley1993/runs.csv`), agrees in 46 of 51 entries by the
+measure set beforehand (|x - mean| <= 2 s + 3 SE + 0.005 mean), where 46
+were needed. The five that do not: Lu at optical depth 10 in the two
+absorbing problems, where too few photons come back (as for three of
+the 1993 Monte Carlo codes), and Ed in problem 5 (the sun at 80
+degrees, waves), 0.962 to 0.976 of the mean; the engine follows one
+facet per crossing, where the 1993 Monte Carlo codes followed repeated
+interactions with the surface.
+
