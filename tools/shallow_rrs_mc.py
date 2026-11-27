@@ -29,12 +29,13 @@ irradiance is the photons' number plus the weight reflected down.
     python tools/shallow_rrs_mc.py --black-bottom OUT.csv
     python tools/shallow_rrs_mc.py --cut-check OUT.csv
     python tools/shallow_rrs_mc.py --fournier-forand OUT.csv
+    python tools/shallow_rrs_mc.py --halves OUT.csv
 
 The first runs the check of section 113 (no scattering, no reflection at
 the surface: rrs = (rho/pi) exp(-a H / cos theta_w) exp(-a H)) and prints
 it; the second writes one row per run of section 113's grid; the last two
 write the runs of section 114's steps 2 and 3; --cut-check those of
-section 115; --fournier-forand those of section 134. This is a tool for
+section 115; --fournier-forand those of section 134; --halves those of section 135. This is a tool for
 the comparison, not part of the package.
 """
 
@@ -81,6 +82,28 @@ def petzold_phase(station: str, cut_deg: float = CUT_DEG):
     nearly as before, so treating that share f as unscattered (b becomes
     (1 - f) b, p is renormalised over the rest) bounds the estimator and
     changes the upwelling light very little."""
+    radians, log_vsf, cumulative, total = petzold_table(station)
+    back = 1.0 - float(np.interp(math.pi / 2, radians, cumulative))
+    cut = math.radians(cut_deg)
+    below = float(np.interp(cut, radians, cumulative))
+    per_sr = np.exp(log_vsf) / (2.0 * math.pi * total * (1.0 - below))
+
+    def sample(u: np.ndarray) -> np.ndarray:
+        return np.interp(below + u * (1.0 - below), cumulative, radians)
+
+    def pdf(angle: np.ndarray) -> np.ndarray:
+        angle = np.clip(angle, radians[0], radians[-1])
+        value = np.exp(np.interp(np.log(angle), np.log(radians),
+                                 np.log(per_sr)))
+        return np.where(angle < cut, 0.0, value)
+
+    return sample, pdf, below, back
+
+
+def petzold_table(station: str):
+    """The grid petzold_phase samples on: angles in radians, the log of
+    the vsf there (the report's power law below 0.1 degree), the
+    cumulative share and the vsf's integral (DECISIONS.md section 135)."""
     s = jerlov.petzold_scattering(station)
     angles = np.asarray(s.angles_deg, dtype=float)
     vsf = np.asarray(s.vsf, dtype=float)
@@ -99,13 +122,40 @@ def petzold_phase(station: str, cut_deg: float = CUT_DEG):
     cumulative = np.concatenate([[0.0], np.cumsum(steps)])
     total = cumulative[-1]
     cumulative /= total
-    back = 1.0 - float(np.interp(math.pi / 2, radians, cumulative))
+    return radians, log_vsf, cumulative, total
+
+
+def hybrid_phase(station: str, ff, forward: str, cut_deg: float = CUT_DEG):
+    """A phase function with one half from the station and the other from
+    the Fournier-Forand ``ff`` of the same backscatter share (DECISIONS.md
+    section 135): ``forward`` "station" takes the station's below 90
+    degrees and the Fournier-Forand's above (H1), "ff" the other way (H2).
+    Both are tabulated on the station's grid; the cumulative share is the
+    forward owner's up to 90 degrees and the backward owner's beyond,
+    both 1 - B there."""
+    radians, log_vsf, cumulative, total = petzold_table(station)
+    theta = np.degrees(radians)
+    p_station = np.exp(log_vsf) / (2.0 * math.pi * total)
+    p_ff = np.asarray(ff.phase_function(theta), dtype=float)
+    c_ff = np.asarray(ff.cumulative(theta), dtype=float)
+    ahead = radians <= math.pi / 2
+    if forward == "station":
+        per_sr_full = np.where(ahead, p_station, p_ff)
+        cum = np.where(ahead, cumulative, c_ff)
+    elif forward == "ff":
+        per_sr_full = np.where(ahead, p_ff, p_station)
+        cum = np.where(ahead, c_ff, cumulative)
+    else:
+        raise ValueError(forward)
+    cum = np.maximum.accumulate(cum)
+    cum[-1] = 1.0
     cut = math.radians(cut_deg)
-    below = float(np.interp(cut, radians, cumulative))
-    per_sr = np.exp(log_vsf) / (2.0 * math.pi * total * (1.0 - below))
+    below = float(np.interp(cut, radians, cum))
+    back = 1.0 - float(np.interp(math.pi / 2, radians, cum))
+    per_sr = per_sr_full / (1.0 - below)
 
     def sample(u: np.ndarray) -> np.ndarray:
-        return np.interp(below + u * (1.0 - below), cumulative, radians)
+        return np.interp(below + u * (1.0 - below), cum, radians)
 
     def pdf(angle: np.ndarray) -> np.ndarray:
         angle = np.clip(angle, radians[0], radians[-1])
@@ -481,6 +531,40 @@ def fournier_forand(path: str) -> None:
     _write(path, rows)
 
 
+def halves(path: str) -> None:
+    """Section 135: the cells of fournier_forand with the two hybrids of
+    each station and its Fournier-Forand."""
+    base = petzold_phase(STATION)
+    stations = (STATION,) + OTHER_STATIONS
+    shares = {s: (base if s == STATION else petzold_phase(s))[3]
+              for s in stations}
+    rows = []
+    for a, ratio, depth, sun in itertools.product(DARK_A, DARK_BP_OVER_A,
+                                                  DARK_DEPTHS, SUNS):
+        bb = 0.5 * BW + base[3] * ratio * a
+        for station in stations:
+            ff = jerlov.mobley2002_fournier_forand(shares[station])
+            bp = (bb - 0.5 * BW) / shares[station]
+            for forward in ("station", "ff"):
+                phase = hybrid_phase(station, ff, forward)
+                value, error = rrs(a, bp, BW, depth, 0.0, sun, phase)
+                rows.append({
+                    "a": a, "bp_over_a": ratio, "depth_m": depth,
+                    "sun_deg": sun, "station": station,
+                    "forward_from": forward,
+                    "backward_from": "ff" if forward == "station"
+                    else "station",
+                    "backscatter_share": f"{phase[3]:.6g}",
+                    "share_below_cut": f"{phase[2]:.6g}",
+                    "bp": f"{bp:.6g}", "bw": BW, "bb": f"{bb:.6g}",
+                    "monte_carlo": f"{value:.6e}",
+                    "standard_error": f"{error:.2e}",
+                    "model": f"{_model(a, bb, depth, 0.0, sun):.6e}",
+                })
+                print(rows[-1], flush=True)
+    _write(path, rows)
+
+
 if __name__ == "__main__":
     if len(sys.argv) == 3 and sys.argv[1] == "--water-share":
         water_share(sys.argv[2])
@@ -489,6 +573,8 @@ if __name__ == "__main__":
                     a_values=(0.05,))
     elif len(sys.argv) == 3 and sys.argv[1] == "--cut-check":
         cut_check(sys.argv[2])
+    elif len(sys.argv) == 3 and sys.argv[1] == "--halves":
+        halves(sys.argv[2])
     elif len(sys.argv) == 3 and sys.argv[1] == "--fournier-forand":
         fournier_forand(sys.argv[2])
     elif len(sys.argv) == 3 and sys.argv[1] == "--black-bottom":

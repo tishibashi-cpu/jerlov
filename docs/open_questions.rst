@@ -52,7 +52,8 @@ line each:
    Carlo closes the gap, and the particles' phase function alone moves
    the ratio by a factor of up to 1.92. Two phase functions with the
    same bb/b give rrs 0.49 to 1.09 times apart, so bb/b alone does not
-   fix it. The example
+   fix it; with the sun high and little scattering, the backward half of
+   the phase function carries most of that difference. The example
    `shallow_water_closure.py <https://github.com/tishibashi-cpu/jerlov/blob/main/examples/shallow_water_closure.py>`_
    prints every figure.
 6. **Why does Morel et al.'s f/Q archive dip at a sun of 45 degrees?**

@@ -334,14 +334,14 @@ def test_section_134_figures_are_quoted_as_computed(result):
     for text in (oq, data, decisions, log, site):
         assert span in text
     assert f"**{span}**" in readme
-    assert "reads 243 more Monte Carlo runs" in readme
+    assert "reads 387 more Monte Carlo runs" in readme
     counted = 0
     for name in ("water_share.csv", "black_bottom.csv",
                  "water_share_nadir.csv", "cut_check.csv",
-                 "fournier_forand.csv"):
+                 "fournier_forand.csv", "halves.csv"):
         with (DATA / name).open() as handle:
             counted += len(list(csv.DictReader(handle)))
-    assert counted == 243
+    assert counted == 387
     assert (f["rising"], f["falling"]) == (8, 4)
     assert f"rises with bb/b in {f['rising']} cells and falls in " \
         f"{f['falling']}" in decisions
@@ -361,3 +361,96 @@ def test_section_134_figures_are_quoted_as_computed(result):
             f"at 30 degrees and {follows[60.0]:.2f} at 60") in decisions
     assert (f"{follows[0.0]:.2f} with the sun overhead and "
             f"{follows[60.0]:.2f} with the sun at 60") in oq
+
+
+# -- Section 135: the halves apart ------------------------------------------
+
+def test_the_hybrids_are_proper_phase_functions_with_the_station_s_b():
+    import numpy as np
+    mc = _tool("shallow_rrs_mc")
+    for station in ("NUC 2240", "AUTEC 8", "HAOCE 11"):
+        back = mc.petzold_phase(station)[3]
+        ff = jerlov.mobley2002_fournier_forand(back)
+        for forward in ("station", "ff"):
+            sample, pdf, below, b = mc.hybrid_phase(station, ff, forward)
+            assert b == pytest.approx(back, abs=1e-5)
+            theta = np.linspace(math.radians(1.0), math.pi, 200001)
+            y = pdf(theta) * 2 * math.pi * np.sin(theta)
+            assert float(jerlov._data.trapezoid(y, theta)) == pytest.approx(
+                1.0, abs=1e-4)
+            draws = sample(np.random.default_rng(1).random(400_000))
+            assert float(np.mean(draws > math.pi / 2)) == pytest.approx(
+                back / (1 - below), abs=0.002)
+            # Each half is its owner's.
+            ahead, behind = np.radians([30.0]), np.radians([150.0])
+            station_pdf = mc.petzold_phase(station)[1]
+            ff_pdf = mc.fournier_forand_phase(ff)[1]
+            owner_ahead = station_pdf if forward == "station" else ff_pdf
+            owner_behind = ff_pdf if forward == "station" else station_pdf
+            own_below = (mc.petzold_phase(station)[2] if forward == "station"
+                         else mc.fournier_forand_phase(ff)[2])
+            assert below == pytest.approx(own_below, abs=1e-3)
+            assert float(pdf(ahead)[0]) == pytest.approx(
+                float(owner_ahead(ahead)[0]), rel=2e-3)
+            # The backward owner's pdf is normalised over its own cut; the
+            # hybrid's over the forward owner's.
+            other_below = (mc.fournier_forand_phase(ff)[2]
+                           if forward == "station"
+                           else mc.petzold_phase(station)[2])
+            assert float(pdf(behind)[0]) * (1 - below) == pytest.approx(
+                float(owner_behind(behind)[0]) * (1 - other_below), rel=2e-3)
+
+
+def test_a_stored_hybrid_run_is_reproduced():
+    mc = _tool("shallow_rrs_mc")
+    with (DATA / "halves.csv").open() as f:
+        rows = list(csv.DictReader(f))
+    assert len(rows) == 144
+    r = next(x for x in rows if x["station"] == "HAOCE 11"
+             and x["forward_from"] == "ff")
+    back = mc.petzold_phase("HAOCE 11")[3]
+    a = float(r["a"])
+    bb = 0.5 * mc.BW + mc.petzold_phase(mc.STATION)[3] * float(
+        r["bp_over_a"]) * a
+    phase = mc.hybrid_phase("HAOCE 11",
+                            jerlov.mobley2002_fournier_forand(back), "ff")
+    value, error = mc.rrs(a, (bb - 0.5 * mc.BW) / back, mc.BW,
+                          float(r["depth_m"]), 0.0, float(r["sun_deg"]), phase)
+    assert f"{value:.6e}" == r["monte_carlo"]
+    assert f"{error:.2e}" == r["standard_error"]
+
+
+def test_section_135_figures_are_quoted_as_computed(result):
+    import numpy as np
+    h = result["fournier"]["halves"]
+    oq = _flat("OPEN_QUESTIONS.md").split("## 5. ")[1].split("## 6. ")[0]
+    data = _flat("DATA.md").split("## 50. ")[1].split("## 51. ")[0]
+    decisions = _flat("DECISIONS.md").split("## 135. ")[1]
+    log = _flat("CHANGELOG.md").split("## 1.32.3")[1].split("## 1.32.2")[0]
+    assert (h["dominant"], len(h["rows"])) == (49, 72) and h["dominant"] < 54
+    assert h["lead_corr"] >= 0.9 and h["lead_pairs"] == 24
+    corr = f"{h['lead_corr']:.3f}"
+    for text in (oq, data, decisions, log):
+        assert corr in text
+    assert f"larger in {h['dominant']}, short of the 54" in oq
+    assert f"larger in {h['dominant']}, short of the 54" in data
+    assert f"larger in {h['dominant']} of the 72 pairs (54" in decisions
+    assert f"is not ({h['dominant']})" in log
+    missing = 72 - h["dominant"]
+    nuc_missing = 24 - (h["dominant"] - h["others_dominant"])
+    assert nuc_missing > missing / 2      # "mostly NUC 2240's"
+    assert f"the {missing} pairs that miss measure 1 are mostly NUC 2240's" \
+        in decisions
+    assert (f"is {h['nuc'][0]:.2f} to {h['nuc'][1]:.2f})") in decisions
+    assert f"in {h['others_dominant']} of {h['others']}" in oq
+    assert f"in {h['others_dominant']} of {h['others']} pairs" in decisions
+    factors = [f"{math.exp(b):.2f}" for b, _ in h["by_sun"].values()]
+    assert (f"median factor of {factors[0]} with the sun overhead, "
+            f"{factors[1]} at 30 degrees and {factors[2]} at 60") in decisions
+    assert (f"median factor of {factors[0]} with the sun overhead and "
+            f"{factors[2]} with the sun at 60 degrees") in oq
+    forward = ", ".join(f"{fw:.3f}" for _, fw in h["by_sun"].values())
+    assert forward.replace(", 0.054", " and 0.054") in decisions
+    assert (f"{h['interaction'][0]:.3f} in the median pair "
+            f"({h['interaction'][1]:.3f} at most)") in decisions
+    assert np.isfinite(h["lead_corr"])

@@ -550,11 +550,85 @@ a correlation of """ + ", ".join(f"{v:.2f} with the sun at {s:g} degrees"
                                for s, v in follows.items()) + """: the
 stations' larger rrs overhead comes with their larger backward peak, and
 the relation fades as the sun goes down.""")
+    halves = halves_part(cells)
     return dict(cells=cells, same=same, pairs=len(pairs),
                 by_station=by_station, order=order, rising=rising,
                 falling=falling, rho=rho, ordered=ordered, by_sun=by_sun,
                 ff_spread=ff_spread, station_spread=station_spread,
-                noise=noise, follows=follows)
+                noise=noise, follows=follows, halves=halves)
+
+
+#: The measures set in DECISIONS.md section 135 before the runs.
+HALVES_NEEDED = 54
+LEAD_NEEDED = 0.9
+
+
+def halves_part(cells):
+    """DECISIONS.md section 135: each station's phase function and its
+    Fournier-Forand with the halves below and above 90 degrees exchanged."""
+    h = read("halves.csv")
+    runs = {}
+    for j in range(len(h["a"])):
+        k = (round(float(h["a"][j]), 4), round(float(h["bp_over_a"][j])),
+             float(h["depth_m"][j]), float(h["sun_deg"][j]))
+        runs[k + (h["station"][j], h["forward_from"][j])] = h["monte_carlo"][j]
+    rows = []
+    for k, c in cells.items():
+        for st, v in c.items():
+            s, f = v["station"], v["ff"]
+            h1, h2 = runs[k + (st, "station")], runs[k + (st, "ff")]
+            rows.append(dict(
+                cell=k, station=st,
+                backward=(math.log(s / h1) + math.log(h2 / f)) / 2,
+                forward=(math.log(s / h2) + math.log(h1 / f)) / 2,
+                interaction=math.log(s) - math.log(h1) - math.log(h2)
+                + math.log(f),
+                p_ratio=math.log(v["p_station"] / v["p_ff"])))
+    dominant = sum(abs(r["backward"]) > abs(r["forward"]) for r in rows)
+    lead = [r for r in rows if r["cell"][1] == 3 and r["cell"][3] in (0.0,
+                                                                     30.0)]
+    lead_corr = float(np.corrcoef([r["p_ratio"] for r in lead],
+                                  [r["backward"] for r in lead])[0, 1])
+    others = [r for r in rows if r["station"] != "NUC 2240"]
+    others_dominant = sum(abs(r["backward"]) > abs(r["forward"])
+                          for r in others)
+    by_sun = {sun: (float(np.median([r["backward"] for r in others
+                                     if r["cell"][3] == sun])),
+                    float(np.median([abs(r["forward"]) for r in others
+                                     if r["cell"][3] == sun])))
+              for sun in sorted({r["cell"][3] for r in rows})}
+    interaction = [abs(r["interaction"]) for r in rows]
+    nuc = [math.exp(r["p_ratio"]) for r in rows if r["station"] == "NUC 2240"]
+    print(f"""
+The halves apart (DECISIONS.md section 135, its measures set before the
+runs). Each station's phase function and its Fournier-Forand, with the
+same bb/b, exchange their halves below and above 90 degrees; {len(h['a'])} more runs.
+With the four, the backward half's effect on ln rrs and the forward
+half's are each the mean of two differences.
+
+1. The backward half's effect is the larger in {dominant} of the {len(rows)} pairs
+   ({HALVES_NEEDED} needed): the measure is {'met' if dominant >= HALVES_NEEDED else 'not met'}.
+2. In the {len(lead) // 3} cells with bp/a 3 and the sun at 0 or 30 degrees, the
+   backward half's effect against ln of the two phase functions' ratio at
+   the angle of single scattering: a correlation of {lead_corr:.3f} ({LEAD_NEEDED:g} needed),
+   {'met' if lead_corr >= LEAD_NEEDED else 'not met'}.
+
+Seen after the runs, not measures set before them. Without NUC 2240,
+whose backward half is close to its Fournier-Forand's (at the angle of
+single scattering their ratio is {min(nuc):.2f} to {max(nuc):.2f}), the backward half's
+effect is the larger in {others_dominant} of {len(others)} pairs. For AUTEC 8 and HAOCE 11 its
+median effect is a factor of """ + ", ".join(
+        f"{math.exp(b):.2f} with the sun at {s:g} degrees" for s, (b, _) in by_sun.items()) + """;
+the forward half's moves ln rrs by a median of """ + ", ".join(
+        f"{fw:.3f}" for _, fw in by_sun.values()) + f""".
+The interaction, 0 where the halves act apart, is {float(np.median(interaction)):.3f} in the median
+pair ({max(interaction):.3f} at most).""")
+    return dict(rows=rows, dominant=dominant, lead_corr=lead_corr,
+                lead_pairs=len(lead), others_dominant=others_dominant,
+                nuc=(min(nuc), max(nuc)),
+                others=len(others), by_sun=by_sun,
+                interaction=(float(np.median(interaction)),
+                             max(interaction)))
 
 
 def main():

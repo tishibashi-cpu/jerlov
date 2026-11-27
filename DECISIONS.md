@@ -9189,3 +9189,28 @@ of `examples/shallow_water_closure.py` extended; the runs in
 `examples/data/shallow_rrs_mc/halves.csv`; tests that recompute every
 quoted figure and reproduce a stored run. No value or code of the
 package changes: 1.32.3.
+
+**Result.** The 144 runs took about two minutes. The checks hold: each
+hybrid integrates to 1 within 1e-5 and its share beyond 90 degrees is
+B; the stored station and Fournier-Forand runs are reproduced bit for
+bit with `petzold_phase` built on the shared table. One difference from
+the plan's wording: the sampler draws only beyond the 1 degree cut, so
+the sampled share beyond 90 degrees is B / (1 - f), f the share below
+the cut, and the check is made against that.
+
+1. The backward half's effect is the larger in 49 of the 72 pairs (54
+   needed): not met.
+2. In the 8 cells with bp/a 3 and the sun at 0 or 30 degrees, the
+   backward half's effect against ln(p_S / p_F) at the angle of single
+   scattering has a correlation of 0.977 (0.9 needed): met. The lead of
+   section 134 holds on new runs, made to test it.
+
+Seen after the runs, recorded as such: the 23 pairs that miss measure 1
+are mostly NUC 2240's, whose backward half is close to its
+Fournier-Forand's (their ratio at the angle of single scattering is 0.89
+to 1.03), so neither half moves its rrs beyond the noise. Without it the
+backward half's effect is the larger in 41 of 48 pairs. For AUTEC 8 and
+HAOCE 11 the backward half raises the rrs by a median factor of 1.53
+with the sun overhead, 1.21 at 30 degrees and 1.06 at 60; the forward
+half moves ln rrs by a median of 0.043, 0.033 and 0.054. The interaction
+is 0.035 in the median pair (0.171 at most).
