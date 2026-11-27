@@ -281,9 +281,11 @@ For other software
      - :func:`~jerlov.fournier_forand`,
        :func:`~jerlov.mobley2002_fournier_forand`
      - Mobley et al. (2002), after Fournier & Jonasz (1999)
-   * - A Henyey-Greenstein g
-     - :func:`~jerlov.henyey_greenstein_fit`
-     - Petzold (1972)
+   * - A Henyey-Greenstein g, for a measured water or for particles
+       of a backscatter ratio you choose
+     - :func:`~jerlov.henyey_greenstein_fit`, from a Petzold station or
+       a :class:`~jerlov.FournierForand`
+     - Petzold (1972); Mobley et al. (2002)
    * - a, b and c for a spectral renderer
      - :func:`~jerlov.spectral_coefficients`
      -

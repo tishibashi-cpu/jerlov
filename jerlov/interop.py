@@ -37,7 +37,7 @@ from dataclasses import dataclass
 import numpy as np
 
 from . import _data
-from .petzold import ScatteringFunction
+from .petzold import PETZOLD_STATIONS, ScatteringFunction, petzold_scattering
 from .water import ProvenanceWarning, Water, _require_number
 
 #: OSOAA's limit on the lines of a user profile, CTE_NZ_MAX_USER_PROFILE
@@ -204,7 +204,8 @@ def osoaa_user_profile(water, wavelength_nm, /, *, depths_m,
 @_data.positional_only()
 def osoaa_phase_function(scattering, /, *, minus_f12_over_f11,
                          f22_over_f11, f33_over_f11) -> str:
-    """OSOAA's ``-HYD.ExtData`` file from one of Petzold's stations.
+    """OSOAA's ``-HYD.ExtData`` file from one of Petzold's stations, or
+    from a :class:`FournierForand` (since 1.32.0).
 
     F11 is 4 pi times the station's vsf / b at Petzold's 55 angles, from
     180 degrees down, as the OSOAA User Manual V2.0 orders its example
@@ -217,10 +218,21 @@ def osoaa_phase_function(scattering, /, *, minus_f12_over_f11,
     not in the file, so F11's integral over the sphere is 4 pi times one
     less that share.
 
+    A Fournier-Forand is written at the same 55 angles, F11 = 4 pi times
+    its phase function; its share below 0.1 degree, which the file leaves
+    to OSOAA's spline as for a station, is known exactly,
+    :meth:`FournierForand.cumulative` at 0.1. It is the particles' phase
+    function alone, which is what OSOAA's hydrosols under ``-HYD.Model 3``
+    are (OSOAA adds its own pure water), where a station's includes pure
+    water. It has no c or b: the two cross-section lines are written as 1
+    and 1, placeholders that ``-HYD.Model 3`` does not read, and the
+    comment line says so. DECISIONS.md section 132.
+
     Parameters
     ----------
     scattering:
-        A :class:`ScatteringFunction`, from :func:`petzold_scattering`.
+        A :class:`ScatteringFunction`, from :func:`petzold_scattering`, or
+        a :class:`FournierForand`.
     minus_f12_over_f11, f22_over_f11, f33_over_f11:
         The polarization ratios -F12/F11, F22/F11 and F33/F11 of the
         Mueller matrix, each a number for every angle or one value per
@@ -242,11 +254,18 @@ def osoaa_phase_function(scattering, /, *, minus_f12_over_f11,
     then treated 96.5 to 97.8 percent of the hydrosols' scattering as
     unscattered and its Kd came out too low (DATA.md section 38).
     """
-    if not isinstance(scattering, ScatteringFunction):
+    from .fournier_forand import FournierForand
+    particles = isinstance(scattering, FournierForand)
+    if not particles and not isinstance(scattering, ScatteringFunction):
         raise TypeError(
             "scattering must be a jerlov.ScatteringFunction, from "
-            f"jerlov.petzold_scattering, not {type(scattering).__name__}")
-    angles = np.asarray(scattering.angles_deg, dtype=float)
+            "jerlov.petzold_scattering, or a jerlov.FournierForand, not "
+            f"{type(scattering).__name__}")
+    if particles:
+        angles = np.asarray(
+            petzold_scattering(PETZOLD_STATIONS[0]).angles_deg, dtype=float)
+    else:
+        angles = np.asarray(scattering.angles_deg, dtype=float)
     n = angles.size
     if n > _OSOAA_MAX_ANGLES:      # pragma: no cover - Petzold has 55
         raise ValueError(f"OSOAA takes at most {_OSOAA_MAX_ANGLES} angles")
@@ -274,8 +293,9 @@ def osoaa_phase_function(scattering, /, *, minus_f12_over_f11,
                 "degrees: no element of a Mueller matrix of scattering "
                 "exceeds F11 in magnitude, so the ratio lies in [-1, 1]")
         ratios.append(v)
-    flagged = [f"{a:g}" for a, s in zip(angles, scattering.statuses)
-               if s in _data.QUESTIONABLE]
+    flagged = [] if particles else [
+        f"{a:g}" for a, s in zip(angles, scattering.statuses)
+        if s in _data.QUESTIONABLE]
     if flagged:
         warnings.warn(
             f"the vsf of {scattering.station} at {', '.join(flagged)} "
@@ -285,15 +305,28 @@ def osoaa_phase_function(scattering, /, *, minus_f12_over_f11,
             stacklevel=_data.caller_stacklevel(),
         )
     # OSOAA's normalisation: the integral over the sphere is 4 pi.
-    f11 = 4 * np.pi * scattering.phase_function()
-    lines = [
-        f"EXTINCTION_COEF : {scattering.c:.9g}",
-        f"SCATTERING_COEF : {scattering.b:.9g}",
-        f"NB_LINES : {n}",
-        f"Angle F11 -F12/F11 F22/F11 F33/F11 | jerlov: Petzold (1972) "
-        f"{scattering.station}, F11 = 4 pi vsf/b; the two lines above are "
-        "c and b (1/m), not cross-sections, for -HYD.Model 3 only",
-    ]
+    if particles:
+        f11 = 4 * np.pi * np.asarray(scattering.phase_function(angles))
+        lines = [
+            "EXTINCTION_COEF : 1",
+            "SCATTERING_COEF : 1",
+            f"NB_LINES : {n}",
+            f"Angle F11 -F12/F11 F22/F11 F33/F11 | jerlov: Fournier-Forand "
+            f"n = {scattering.refractive_index:.9g}, mu = "
+            f"{scattering.junge_slope:.9g} (Mobley et al. 2002), particles "
+            "only, F11 = 4 pi p; the two lines above are placeholders, not "
+            "read under -HYD.Model 3, for which alone this file is",
+        ]
+    else:
+        f11 = 4 * np.pi * scattering.phase_function()
+        lines = [
+            f"EXTINCTION_COEF : {scattering.c:.9g}",
+            f"SCATTERING_COEF : {scattering.b:.9g}",
+            f"NB_LINES : {n}",
+            f"Angle F11 -F12/F11 F22/F11 F33/F11 | jerlov: Petzold (1972) "
+            f"{scattering.station}, F11 = 4 pi vsf/b; the two lines above "
+            "are c and b (1/m), not cross-sections, for -HYD.Model 3 only",
+        ]
     for k in range(n - 1, -1, -1):
         lines.append(f"{angles[k]:.6g} {f11[k]:.9g} {ratios[0][k]:.9g} "
                      f"{ratios[1][k]:.9g} {ratios[2][k]:.9g}")

@@ -32,7 +32,7 @@ import numpy as np
 
 from . import _data
 from .colour import _rgb_matrix, cie_1931_cmf, integrate_response
-from .petzold import ScatteringFunction
+from .petzold import PETZOLD_STATIONS, ScatteringFunction, petzold_scattering
 from .water import Water, _require_number
 
 #: The linear RGB spaces :func:`rgb_attenuation` works in. Each is its
@@ -606,7 +606,8 @@ def _hg(g: float, angle_deg: np.ndarray) -> np.ndarray:
 @_data.compared_by_value
 @dataclass(frozen=True, eq=False)
 class HenyeyGreensteinFit:
-    """A Henyey-Greenstein g for one of Petzold's stations, and its error.
+    """A Henyey-Greenstein g for one of Petzold's stations, or for a
+    :class:`FournierForand` (since 1.32.0), and its error.
 
     The phase function is p(theta) = (1 - g^2) / (4 pi (1 + g^2 -
     2 g cos theta)^(3/2)). It fits ocean water badly at small angles, and
@@ -614,9 +615,11 @@ class HenyeyGreensteinFit:
     """
 
     station: str
+    """The Petzold station, or the Fournier-Forand's n and mu."""
     wavelength_nm: float
-    """530 nm, the wavelength of Petzold's c. One g serves every
-    wavelength in a renderer; nothing here varies it."""
+    """530 nm, the wavelength of Petzold's c; NaN for a Fournier-Forand,
+    which has none. One g serves every wavelength in a renderer; nothing
+    here varies it."""
     method: str
     """What g was made to match, ``"backscatter_ratio"`` or
     ``"mean_cosine"``."""
@@ -624,12 +627,15 @@ class HenyeyGreensteinFit:
     backscatter_ratio: float
     """The HG's share beyond 90 degrees."""
     measured_backscatter_ratio: float
-    """The station's B/S, as printed."""
+    """The station's B/S, as printed, or the Fournier-Forand's own."""
     angles_deg: np.ndarray
-    """Petzold's 55 angles."""
+    """Petzold's 55 angles (used for a Fournier-Forand as well)."""
     log_ratio: np.ndarray
-    """ln(p_HG / p) at each angle, p the measured phase function, vsf / b.
-    Negative where HG falls short of the measurement."""
+    """ln(p_HG / p) at each angle, p the measured phase function, vsf / b,
+    or the Fournier-Forand's. Negative where HG falls short of it."""
+    particles_only: bool = False
+    """True for a Fournier-Forand: its g is the particles', with no pure
+    water in it."""
 
     def as_dict(self) -> dict[str, Any]:
         """Plain numbers, lists and strings, for :func:`json.dump`."""
@@ -637,7 +643,8 @@ class HenyeyGreensteinFit:
             "kind": "jerlov.henyey_greenstein_fit",
             "phase_function": "Henyey-Greenstein",
             "station": self.station,
-            "source": _PETZOLD,
+            "source": _FF if self.particles_only else _PETZOLD,
+            "particles_only": self.particles_only,
             "wavelength_nm": self.wavelength_nm,
             "method": self.method,
             "g": self.g,
@@ -659,14 +666,25 @@ _PETZOLD = (
     "Visibility Laboratory, San Diego")
 
 
+_FF = ("Mobley, C. D., Sundman, L. K. and Boss, E. (2002), 'Phase function "
+       "effects on oceanic light fields', Appl. Opt. 41(6), 1035-1050, "
+       "Eqs. (1)-(3): the Fournier-Forand phase function")
+
+
 @_data.positional_only()
 def henyey_greenstein_fit(scattering, /, *, method) -> HenyeyGreensteinFit:
-    """The g of a Henyey-Greenstein phase function for a Petzold station.
+    """The g of a Henyey-Greenstein phase function for a Petzold station,
+    or for a Fournier-Forand.
 
     Parameters
     ----------
     scattering:
-        A :class:`ScatteringFunction`, from :func:`petzold_scattering`.
+        A :class:`ScatteringFunction`, from :func:`petzold_scattering`, or
+        a :class:`FournierForand` (since 1.32.0). For a Fournier-Forand the
+        g is the particles': pure water's scattering is not in it, and a
+        renderer that wants it adds it as a medium of its own. Its fit is
+        compared at Petzold's 55 angles, and it has no wavelength
+        (``wavelength_nm`` is NaN). DECISIONS.md section 132.
     method:
         What g is made to match. No default:
 
@@ -676,7 +694,8 @@ def henyey_greenstein_fit(scattering, /, *, method) -> HenyeyGreensteinFit:
         - ``"mean_cosine"``: g is the station's mean cosine,
           :meth:`ScatteringFunction.mean_cosine`. It rests at full weight
           on the report's extension below 0.1 degree and warns with
-          :class:`ProvenanceWarning`.
+          :class:`ProvenanceWarning`. A Fournier-Forand's,
+          :meth:`FournierForand.mean_cosine`, does not warn.
 
     Notes
     -----
@@ -689,10 +708,13 @@ def henyey_greenstein_fit(scattering, /, *, method) -> HenyeyGreensteinFit:
     scattering of water and particles; a renderer will apply the one g at
     every wavelength.
     """
-    if not isinstance(scattering, ScatteringFunction):
+    from .fournier_forand import FournierForand
+    particles = isinstance(scattering, FournierForand)
+    if not particles and not isinstance(scattering, ScatteringFunction):
         raise TypeError(
             "scattering must be a jerlov.ScatteringFunction, from "
-            f"jerlov.petzold_scattering, not {type(scattering).__name__}")
+            "jerlov.petzold_scattering, or a jerlov.FournierForand, not "
+            f"{type(scattering).__name__}")
     if method is None:
         raise ValueError(
             "method has no default: a Henyey-Greenstein function cannot "
@@ -717,19 +739,31 @@ def henyey_greenstein_fit(scattering, /, *, method) -> HenyeyGreensteinFit:
             else:
                 hi = mid
         g = 0.5 * (lo + hi)
-    angles = np.array(scattering.angles_deg, dtype=float)
-    log_ratio = np.log(_hg(g, angles) / scattering.phase_function())
+    if particles:
+        angles = np.array(petzold_scattering(PETZOLD_STATIONS[0]).angles_deg,
+                          dtype=float)
+        reference = np.asarray(scattering.phase_function(angles))
+        station = (f"Fournier-Forand, n = {scattering.refractive_index:g}, "
+                   f"mu = {scattering.junge_slope:g}")
+        wavelength = float("nan")
+    else:
+        angles = np.array(scattering.angles_deg, dtype=float)
+        reference = scattering.phase_function()
+        station = scattering.station
+        wavelength = float(scattering.wavelength_nm)
+    log_ratio = np.log(_hg(g, angles) / reference)
     for array in (angles, log_ratio):
         array.setflags(write=False)
     return HenyeyGreensteinFit(
-        station=scattering.station,
-        wavelength_nm=float(scattering.wavelength_nm),
+        station=station,
+        wavelength_nm=wavelength,
         method=method,
         g=float(g),
         backscatter_ratio=_hg_backscatter(float(g)),
         measured_backscatter_ratio=measured,
         angles_deg=angles,
         log_ratio=log_ratio,
+        particles_only=particles,
     )
 
 

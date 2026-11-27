@@ -4,6 +4,28 @@ Every release is archived on Zenodo under the concept DOI
 [10.5281/zenodo.22321312](https://doi.org/10.5281/zenodo.22321312), which
 always resolves to the latest version.
 
+## 1.32.0 — 2026-11-27
+
+The last two functions that took Petzold's stations only now take a
+Fournier-Forand too (DECISIONS.md section 132). A station gives the same
+results as before, byte for byte.
+
+**New.** `henyey_greenstein_fit` takes a `FournierForand`: g matched to
+its backscatter ratio or to its mean cosine, with no warning, its misfit
+given at Petzold's 55 angles. The g is the particles' alone. For the
+Fournier-Forand on Mobley et al.'s (2002) line with a ratio of 0.0183 it
+is 0.9186, where the paper gives 0.9185. `HenyeyGreensteinFit` gains the
+field `particles_only`, and `as_dict` gives it and the Fournier-Forand's
+citation.
+
+**New.** `osoaa_phase_function` takes a `FournierForand`: F11 = 4 pi
+times its phase function at the same 55 angles. It is the particles'
+phase function alone, which is what OSOAA's hydrosols are; it has no c or
+b, so the file's two cross-section lines are 1 and 1, placeholders that
+OSOAA's `-HYD.Model 3` does not read, and its comment line says so. It
+was run in OSOAA by hand, which read it and ran to the end (DECISIONS.md
+section 132).
+
 ## 1.31.3 — 2026-11-27
 
 Raman scattering in the seventh open question, computed (DECISIONS.md

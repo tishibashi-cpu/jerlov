@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import json
 import math
+import pathlib
 import warnings
 
 import numpy as np
@@ -537,3 +538,58 @@ def test_a_long_table_stays_small():
         tracemalloc.stop()
     # 20,000 x 471 x 3 doubles is 226 MB; in blocks, far less.
     assert peak < 100e6, peak
+
+
+# -- a Fournier-Forand (DECISIONS.md section 132) -----------------------------
+
+def test_a_fournier_forand_gets_a_henyey_greenstein_g():
+    import warnings as _w
+    ff = jerlov.fournier_forand(refractive_index=1.10, junge_slope=3.5835)
+    with _w.catch_warnings():
+        _w.simplefilter("error")              # no warning for a closed form
+        by_b = jerlov.henyey_greenstein_fit(ff, method="backscatter_ratio")
+        by_g = jerlov.henyey_greenstein_fit(ff, method="mean_cosine")
+    assert by_b.backscatter_ratio == pytest.approx(ff.backscatter_ratio,
+                                                   abs=1e-9)
+    assert by_b.measured_backscatter_ratio == ff.backscatter_ratio
+    assert by_g.g == ff.mean_cosine()
+    for fit in (by_b, by_g):
+        assert fit.particles_only and np.isnan(fit.wavelength_nm)
+        assert "Fournier-Forand" in fit.station
+        p = jerlov.petzold_scattering("AUTEC 8")
+        assert np.array_equal(fit.angles_deg, p.angles_deg)
+        mu = np.cos(np.radians(fit.angles_deg))
+        hg = (1 - fit.g ** 2) / (4 * np.pi * (1 + fit.g ** 2
+                                              - 2 * fit.g * mu) ** 1.5)
+        assert np.allclose(fit.log_ratio,
+                           np.log(hg / ff.phase_function(fit.angles_deg)),
+                           rtol=0, atol=1e-12)
+        d = fit.as_dict()
+        assert d["particles_only"] is True
+        assert d["source"].startswith("Mobley, C. D.")
+    assert by_b == jerlov.henyey_greenstein_fit(ff, method="backscatter_ratio")
+
+
+def test_mobley_et_als_hg_for_petzolds_backscatter_ratio():
+    # p. 1038: "A value of g = 0.9185 gives Bp = 0.0183."
+    fit = jerlov.henyey_greenstein_fit(
+        jerlov.mobley2002_fournier_forand(0.0183), method="backscatter_ratio")
+    assert abs(fit.g - 0.9185) < 1e-4
+    changelog = (pathlib.Path(__file__).resolve().parent.parent
+                 / "CHANGELOG.md")
+    if changelog.exists():
+        text = " ".join(changelog.read_text().split())
+        assert f"it is {fit.g:.4f}, where the paper gives 0.9185" in text
+    from jerlov.rendering import _hg_backscatter
+    assert round(_hg_backscatter(0.9185), 4) == 0.0183
+
+
+def test_a_station_is_still_not_particles_only():
+    import warnings as _w
+    with _w.catch_warnings():
+        _w.simplefilter("ignore", jerlov.ProvenanceWarning)
+        fit = jerlov.henyey_greenstein_fit(jerlov.petzold_scattering(
+            "NUC 2240"), method="backscatter_ratio")
+    assert not fit.particles_only
+    assert fit.as_dict()["source"].startswith("Petzold")
+    assert fit.as_dict()["particles_only"] is False

@@ -481,3 +481,27 @@ def test_polarization_ratios_lie_in_minus_one_to_one(name):
             jerlov.osoaa_phase_function(scattering, **{**kwargs, name: bad})
     for good in (1.0, -1.0):
         jerlov.osoaa_phase_function(scattering, **{**kwargs, name: good})
+
+
+# -- a Fournier-Forand (DECISIONS.md section 132) -----------------------------
+
+def test_a_fournier_forand_makes_an_osoaa_file():
+    import warnings as _w
+    ff = jerlov.fournier_forand(refractive_index=1.10, junge_slope=3.5835)
+    with _w.catch_warnings():
+        _w.simplefilter("error")
+        text = jerlov.osoaa_phase_function(
+            ff, minus_f12_over_f11=0.0, f22_over_f11=1.0, f33_over_f11=1.0)
+    lines = text.splitlines()
+    assert lines[:3] == ["EXTINCTION_COEF : 1", "SCATTERING_COEF : 1",
+                         "NB_LINES : 55"]
+    assert "placeholders, not read under -HYD.Model 3" in lines[3]
+    assert "particles only" in lines[3]
+    rows = np.array([[float(v) for v in line.split()] for line in lines[4:]])
+    assert rows.shape == (55, 5)
+    angles = jerlov.petzold_scattering("AUTEC 8").angles_deg
+    assert np.array_equal(rows[:, 0], angles[::-1].round(6)) or np.allclose(
+        rows[:, 0], angles[::-1], rtol=1e-6)
+    want = 4 * np.pi * ff.phase_function(rows[:, 0])
+    assert np.allclose(rows[:, 1], want, rtol=1e-8)
+    assert text.endswith("\n")

@@ -8971,3 +8971,18 @@ f22_over_f11, f33_over_f11)`.**
 seeing_through_water.rst where they name these functions, CHANGELOG, the
 Zenodo description. A release with new behaviour of public functions,
 1.32.0.
+
+**Result.** As planned. Checks 1 to 4 hold (a station's files and fits
+are byte-identical to 1.31.3's, `as_dict` aside, which gains
+`particles_only`). For the Fournier-Forand on Mobley et al.'s line at a
+backscatter ratio of 0.0183, the HG g is 0.91858; the paper (p. 1038)
+says "a value of g = 0.9185 gives Bp = 0.0183", and a test holds both.
+Check 5, OSOAA by hand (the build of section 86; one run each, Jerlov III
+at 440 nm, the base conditions of tools/osoaa_closure.py): the
+Fournier-Forand file was read and the run went to the end. Its
+truncation coefficient was 1.40009 against 1.30648 with NUC 2240, and Kd
+over 0-10 m 0.15594 against 0.15697 per metre, 0.66 percent lower
+(Jerlov's own, 0.145). The share of the Fournier-Forand below 0.1 degree,
+left to OSOAA's spline, is 6.83 percent. Recorded, not judged; the runs
+are not kept in the repository, so CHANGELOG does not quote their
+figures.
