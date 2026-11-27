@@ -8630,3 +8630,40 @@ against Petzold's stations with a similar B/S.
 **Documents.** The topic page on seeing through water and the map gain
 the Fournier-Forand path; CHANGELOG; the Zenodo description. A release
 with a new keyword and a new page section, 1.31.0.
+
+**Result.** As planned, for both parts.
+
+A. The panel is on the page, between the readouts and the materials, and
+follows the chosen type; it was looked at in Chromium at 1280 and 390 px
+wide, in both themes, with no script error and no sideways scroll. Its
+figures are the planned ones (windows 475, 500, 550 and 575 nm; 0.34 /m
+of pure water at 650 nm against Kd 0.36 to 0.76; 86 and 2.1 times; 5.4
+and 4.3 times), each recomputed by a test.
+
+B. `forward_scatter` and `attenuation_within` take a Fournier-Forand as
+planned; the Petzold path's tests pass unchanged. Pure water's share
+within the half-angle meets a numerical integral of `pure_water_vsf`
+within 1e-8. For the record, the share within 1, 5 and 20 degrees: 25, 56
+and 84 percent for the Fournier-Forand of Mobley et al.'s Petzold fit (n
+= 1.10, mu = 3.5835, particles alone), and 23, 51 and 82 percent for
+NUC 2240 (B/S 0.018, water and particles together, with the report's
+extension below 0.1 degree).
+
+**Differences from the plan, noted after the code.**
+
+- The panel's caption first called pure water's absorption the floor "no
+  water can go below". Computed before the commit, that is not true of
+  Jerlov's table: at 675 and 700 nm the Kd he printed for types I to II
+  lies below Pope & Fry's absorption of pure water, by up to 10 percent
+  (type I at 700 nm). The caption now says so and does not reconcile the
+  two; a test finds the types and wavelengths. Why is not looked into
+  here (NEXT_STEPS records it as a question).
+- The red-end sentence first said "almost all the red that is lost is
+  lost to the water"; Kd is not an absorption, so it now says that in the
+  clearest water Kd at 650 nm is little more than what the water alone
+  absorbs.
+- The chart's lower limit is 0.003 /m, not 0.005, so that Pope & Fry's
+  minimum (0.0044 /m at 417 nm) is drawn.
+- Two equal `ForwardScatter`s of a Fournier-Forand compare equal: their
+  NaN fields are one object, since a tuple compares its items by identity
+  first.

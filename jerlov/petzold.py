@@ -25,8 +25,8 @@ from dataclasses import dataclass
 import numpy as np
 
 from . import _data
-from .water import (ProvenanceWarning, _as_array, _like_input,
-                    _require_number, _support)
+from .water import (MissingQuantityError, ProvenanceWarning, _as_array,
+                    _like_input, _require_number, _support)
 
 CITATION = (
     "Petzold, T. J. (1972), 'Volume scattering functions for selected ocean "
@@ -216,10 +216,12 @@ def petzold_scattering(station: str) -> ScatteringFunction:
 
 @dataclass(frozen=True)
 class ForwardScatter:
-    """The share of a Petzold station's scattering within a half-angle,
-    from :func:`forward_scatter`."""
+    """The share of a phase function's scattering within a half-angle, from
+    :func:`forward_scatter`: one of Petzold's stations, or a
+    :class:`FournierForand` (since 1.31.0)."""
 
     station: str
+    """The Petzold station, or the Fournier-Forand's n and mu."""
     half_angle_deg: float
     """theta0, degrees: light turned by less than this is counted as kept."""
     fraction: float
@@ -234,6 +236,16 @@ class ForwardScatter:
     c_within: float
     """c - b(< theta0), 1/m: the attenuation of the light that stays
     within theta0 of its direction, for the station itself at 530 nm."""
+    particles_only: bool = False
+    """True for a Fournier-Forand, which describes the particles alone:
+    :func:`attenuation_within` then asks for pure water's scattering apart.
+    Its ``wavelength_nm``, ``c`` and ``c_within`` are NaN, since a phase
+    function has no water and no c of its own."""
+
+
+#: One NaN object, so that two equal results compare equal (a tuple
+#: compares its items by identity first).
+_NAN = float("nan")
 
 
 def _printed_cumulative(station: str) -> np.ndarray:
@@ -243,8 +255,7 @@ def _printed_cumulative(station: str) -> np.ndarray:
     return np.array([float(r["normalized_integral"]) for r in rows])
 
 
-def forward_scatter(scattering: ScatteringFunction,
-                    half_angle_deg) -> ForwardScatter:
+def forward_scatter(scattering, half_angle_deg) -> ForwardScatter:
     """The share of a measured water's scattering within a half-angle, and
     the attenuation of the light that stays within it.
 
@@ -262,11 +273,13 @@ def forward_scatter(scattering: ScatteringFunction,
     Parameters
     ----------
     scattering:
-        One of Petzold's stations, from :func:`petzold_scattering`. No
-        default: which measured water yours resembles is your choice.
+        One of Petzold's stations, from :func:`petzold_scattering`, or a
+        :class:`FournierForand` (since 1.31.0). No default: which water,
+        or which particles, yours resemble is your choice.
     half_angle_deg:
-        theta0, one number from 0.1 to 180 degrees. Below 0.1 degree
-        nothing was measured, and it is refused.
+        theta0, one number from 0.1 to 180 degrees for a station (below 0.1
+        degree nothing was measured, and it is refused), from 0 to 180 for
+        a Fournier-Forand.
 
     Returns
     -------
@@ -277,14 +290,34 @@ def forward_scatter(scattering: ScatteringFunction,
 
     Notes
     -----
-    Every share includes the report's power-law extension below 0.1
-    degree, 3.4 to 14.5 percent of b, and at AUTEC 7-9 and HAOCE 5 and
-    11 its extrapolated angles to 0.159 degree; a
+    For a station, every share includes the report's power-law extension
+    below 0.1 degree, 3.4 to 14.5 percent of b, and at AUTEC 7-9 and
+    HAOCE 5 and 11 its extrapolated angles to 0.159 degree; a
     :class:`ProvenanceWarning` says so. DATA.md section 49.
+
+    For a Fournier-Forand the share is its closed-form
+    :meth:`FournierForand.cumulative`, with no warning. It is the
+    particles' share alone, and the result has ``particles_only`` set, no
+    c, and NaN for ``wavelength_nm``, ``c`` and ``c_within``. DECISIONS.md
+    section 128.
     """
+    from .fournier_forand import FournierForand
+    if isinstance(scattering, FournierForand):
+        theta0 = _data.finite_number(half_angle_deg, "half_angle_deg")
+        if not 0.0 <= theta0 <= 180.0:
+            raise ValueError("half_angle_deg must lie in 0 to 180 degrees")
+        nan = _NAN
+        return ForwardScatter(
+            station=(f"Fournier-Forand, n = {scattering.refractive_index:g}"
+                     f", mu = {scattering.junge_slope:g}"),
+            half_angle_deg=theta0,
+            fraction=float(scattering.cumulative(theta0)),
+            extension_fraction=0.0, wavelength_nm=nan, c=nan, c_within=nan,
+            particles_only=True)
     if not isinstance(scattering, ScatteringFunction):
         raise TypeError("scattering must be a ScatteringFunction, from "
-                        "petzold_scattering(); there is no default")
+                        "petzold_scattering(), or a FournierForand; there "
+                        "is no default")
     theta0 = _data.finite_number(half_angle_deg, "half_angle_deg")
     angles = scattering.angles_deg
     if not angles[0] <= theta0 <= angles[-1]:
@@ -331,17 +364,37 @@ def forward_scatter(scattering: ScatteringFunction,
     )
 
 
+def _pure_water_share(theta0_deg: float) -> float:
+    """Pure water's share of scattering within theta0, for the shape of
+    :func:`pure_water_vsf`, 1 + r cos^2: 2 pi integral of (1 + r cos^2)
+    sin from 0 to theta0, over the same from 0 to 180 degrees."""
+    from .backscattering import _ratio
+    r = _ratio()
+    c = np.cos(np.radians(theta0_deg))
+    return float(((1.0 - c) + r * (1.0 - c ** 3) / 3.0)
+                 / (2.0 * (1.0 + r / 3.0)))
+
+
 @_data.positional_only()
-def attenuation_within(water, wavelengths, /, *, forward: ForwardScatter):
+def attenuation_within(water, wavelengths, /, *, forward: ForwardScatter,
+                       pure_water_b=None):
     """A water's attenuation of the light that stays within a half-angle,
     with the forward scattering of one of Petzold's stations::
 
         c_within(lambda) = c(lambda) - f b(lambda),  f = forward.fraction
 
-    Between the water's c and its a. It assumes that the station's phase
-    function holds for this water and does not change with wavelength;
-    neither is known, which is why ``forward`` has no default.
-    DECISIONS.md section 107.
+    or, since 1.31.0, of a Fournier-Forand, which describes the particles
+    alone, so that pure water's scattering is taken apart::
+
+        c_within = c - f (b - b_w) - f_w b_w
+
+    with f_w pure water's own share within the same half-angle, from the
+    shape of :func:`pure_water_vsf` (Morel's, depolarisation ratio 0.09).
+
+    Between the water's c and its a. It assumes that the phase function
+    holds for this water and does not change with wavelength; neither is
+    known, which is why ``forward`` has no default. DECISIONS.md sections
+    107 and 128.
 
     Parameters
     ----------
@@ -350,7 +403,14 @@ def attenuation_within(water, wavelengths, /, *, forward: ForwardScatter):
     wavelengths:
         nm, a number or an array, within the water's range.
     forward:
-        From :func:`forward_scatter`: the station and the half-angle.
+        From :func:`forward_scatter`: the station or Fournier-Forand, and
+        the half-angle.
+    pure_water_b:
+        Only with a Fournier-Forand, and then required: the scattering of
+        pure water that the water's b includes, 1/m, one number or one per
+        wavelength; for example :func:`pure_water_scattering` at the
+        water's salinity. With a station it must be left out: the station
+        is the whole water.
 
     Returns
     -------
@@ -360,8 +420,35 @@ def attenuation_within(water, wavelengths, /, *, forward: ForwardScatter):
     if not isinstance(forward, ForwardScatter):
         raise TypeError("forward must be a ForwardScatter, from "
                         "forward_scatter(); there is no default")
-    c = water.c(wavelengths)
-    b = water.b(wavelengths)
-    out = (np.atleast_1d(np.asarray(c, dtype=float))
-           - forward.fraction * np.atleast_1d(np.asarray(b, dtype=float)))
+    c = np.atleast_1d(np.asarray(water.c(wavelengths), dtype=float))
+    b = np.atleast_1d(np.asarray(water.b(wavelengths), dtype=float))
+    if not forward.particles_only:
+        if pure_water_b is not None:
+            raise ValueError(
+                f"pure_water_b is for a Fournier-Forand only: "
+                f"{forward.station} is the whole water, pure water "
+                "included")
+        return _like_input(c - forward.fraction * b, wavelengths)
+    if pure_water_b is None:
+        raise MissingQuantityError(
+            "a Fournier-Forand describes the particles alone, so "
+            "attenuation_within needs pure_water_b, the pure water "
+            "scattering in the water's b (for example "
+            "pure_water_scattering(wavelengths, salinity_psu=...)); there "
+            "is no default")
+    bw = np.array(pure_water_b, dtype=float)       # a copy
+    if bw.ndim > 1 or (bw.ndim == 1 and bw.shape != b.shape):
+        raise ValueError(
+            "pure_water_b must be one number or one per wavelength, not "
+            f"an array of shape {bw.shape}")
+    if not np.all(np.isfinite(bw)) or np.any(bw < 0):
+        raise ValueError("pure_water_b must be finite and not negative")
+    bw = np.broadcast_to(bw, b.shape)
+    if np.any(bw > b):
+        raise ValueError(
+            "pure_water_b exceeds the water's b at "
+            f"{np.atleast_1d(wavelengths)[bw > b][:3].tolist()} nm; it must "
+            "be the pure water that b includes")
+    share_w = _pure_water_share(forward.half_angle_deg)
+    out = c - forward.fraction * (b - bw) - share_w * bw
     return _like_input(out, wavelengths)

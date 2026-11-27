@@ -218,3 +218,110 @@ def test_the_result_is_a_value():
     assert a == b and hash(a) == hash(b)
     assert a != _fs("AUTEC 8", 6.0)
     assert re.search(r"fraction=0\.45", repr(a))
+
+
+# -- a Fournier-Forand (DECISIONS.md section 128) -----------------------------
+
+FF = jerlov.fournier_forand(refractive_index=1.10, junge_slope=3.5835)
+WL = np.array([412.0, 450.0, 550.0, 650.0])
+
+
+def _bw(wl=WL):
+    return jerlov.pure_water_scattering(wl, salinity_psu=35.0)
+
+
+def test_a_fournier_forand_gives_its_own_cumulative_share():
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")          # no warning for a closed form
+        for theta0 in (0.0, 1.0, 5.0, 20.0, 90.0, 180.0):
+            fs = jerlov.forward_scatter(FF, theta0)
+            assert fs.fraction == float(FF.cumulative(theta0))
+            assert fs.particles_only and fs.extension_fraction == 0.0
+            assert np.isnan(fs.c) and np.isnan(fs.c_within)
+            assert np.isnan(fs.wavelength_nm)
+    assert jerlov.forward_scatter(FF, 5.0) == jerlov.forward_scatter(FF, 5.0)
+    assert "1.1" in jerlov.forward_scatter(FF, 5.0).station
+
+
+def test_a_station_is_still_the_whole_water():
+    assert not _fs("NUC 2240", 5.0).particles_only
+
+
+@pytest.mark.parametrize("bad", [-0.1, 180.5, np.nan, np.inf])
+def test_a_fournier_forands_half_angle_is_checked(bad):
+    with pytest.raises(ValueError):
+        jerlov.forward_scatter(FF, bad)
+
+
+@pytest.mark.parametrize("theta0", [1.0, 5.0, 20.0, 90.0, 180.0])
+def test_pure_waters_share_is_the_integral_of_its_vsf(theta0):
+    from jerlov.petzold import _pure_water_share
+    x = np.radians(np.linspace(0.0, theta0, 200001))
+    vsf = jerlov.pure_water_vsf(np.degrees(x), 500.0, salinity_psu=35.0)
+    share = 2 * np.pi * float(_data.trapezoid(vsf * np.sin(x), x)) / \
+        jerlov.pure_water_scattering(500.0, salinity_psu=35.0)
+    assert _pure_water_share(theta0) == pytest.approx(share, abs=1e-8)
+
+
+def test_the_fournier_forand_path_takes_pure_water_apart():
+    from jerlov.petzold import _pure_water_share
+    water = jerlov.water("II")
+    fs = jerlov.forward_scatter(FF, 5.0)
+    bw = _bw()
+    got = jerlov.attenuation_within(water, WL, forward=fs, pure_water_b=bw)
+    c, b = water.c(WL), water.b(WL)
+    want = c - fs.fraction * (b - bw) - _pure_water_share(5.0) * bw
+    assert np.allclose(got, want, rtol=0, atol=1e-15)
+    assert np.all((got < c) & (got > water.a(WL)))
+    # One number for every wavelength is taken too.
+    one = jerlov.attenuation_within(water, 550.0, forward=fs,
+                                    pure_water_b=float(bw[2]))
+    assert one == pytest.approx(got[2], abs=1e-15)
+
+
+def test_the_fournier_forand_path_ends_at_a():
+    water = jerlov.water("II")
+    fs = jerlov.forward_scatter(FF, 180.0)
+    got = jerlov.attenuation_within(water, WL, forward=fs, pure_water_b=_bw())
+    assert np.allclose(got, water.a(WL), rtol=0, atol=1e-12)
+    fs0 = jerlov.forward_scatter(FF, 0.0)
+    got0 = jerlov.attenuation_within(water, WL, forward=fs0,
+                                     pure_water_b=_bw())
+    assert np.allclose(got0, water.c(WL), rtol=0, atol=1e-15)
+
+
+def test_pure_water_b_is_required_for_a_fournier_forand_only():
+    water = jerlov.water("II")
+    fs = jerlov.forward_scatter(FF, 5.0)
+    with pytest.raises(jerlov.MissingQuantityError, match="pure_water_b"):
+        jerlov.attenuation_within(water, WL, forward=fs)
+    with pytest.raises(ValueError, match="whole water"):
+        jerlov.attenuation_within(water, WL, forward=_fs("NUC 2240", 5.0),
+                                  pure_water_b=_bw())
+    for bad in (np.ones(4), np.ones(3) * 0.001, np.ones((2, 2)) * 0.001,
+                -0.001, np.nan):
+        with pytest.raises(ValueError):
+            jerlov.attenuation_within(water, WL, forward=fs, pure_water_b=bad)
+    for bad in (True, "0.001"):
+        with pytest.raises(ValueError):
+            jerlov.attenuation_within(water, WL, forward=fs, pure_water_b=bad)
+
+
+def test_the_callers_pure_water_is_not_modified():
+    bw = _bw()
+    kept = bw.copy()
+    jerlov.attenuation_within(jerlov.water("II"), WL,
+                              forward=jerlov.forward_scatter(FF, 5.0),
+                              pure_water_b=bw)
+    assert np.array_equal(bw, kept)
+
+
+def test_the_figures_quoted_for_1_31_0():
+    """CHANGELOG 1.31.0 and DECISIONS.md section 128."""
+    from jerlov.petzold import _pure_water_share
+    assert f"{100 * _pure_water_share(5.0):.2f}" == "0.27"
+    assert f"{100 * _pure_water_share(20.0):.1f}" == "4.2"
+    shares = [float(FF.cumulative(t)) for t in (1.0, 5.0, 20.0)]
+    assert [f"{100 * s:.0f}" for s in shares] == ["25", "56", "84"]
+    nuc = [_fs("NUC 2240", t).fraction for t in (1.0, 5.0, 20.0)]
+    assert [f"{100 * s:.0f}" for s in nuc] == ["23", "51", "82"]

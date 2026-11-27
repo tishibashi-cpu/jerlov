@@ -122,6 +122,22 @@ single scattering, checked against a Monte Carlo; reading it as the
 light that forms an image is an assumption, and a blurred image itself
 is not computed (DATA.md section 49).
 
+A Fournier-Forand phase function can stand in for a station (since
+1.31.0). It describes the particles alone, so the pure water scattering in
+the type's b has to be named, and is given pure water's own, nearly
+symmetric, share:
+
+.. code-block:: python
+
+   p = jerlov.mobley2002_fournier_forand(0.0183)   # particles' bb/b
+   f = jerlov.forward_scatter(p, 5.0)              # f.fraction: closed form
+   bw = jerlov.pure_water_scattering(wl, salinity_psu=35.0)
+   jerlov.attenuation_within(jerlov.water("III"), wl, forward=f,
+                             pure_water_b=bw)
+
+which is c - f (b - bw) - fw bw, with fw pure water's share within the
+same half-angle (DECISIONS.md section 128).
+
 What colour is that
 -------------------
 

@@ -121,8 +121,8 @@ Light below the surface
        light from a target blurred rather than lost
      - :func:`~jerlov.forward_scatter` for a measured water,
        :func:`~jerlov.attenuation_within` for a type, with a station you
-       name
-     - Petzold (1972)
+       name, or a Fournier-Forand and the pure water scattering in b
+     - Petzold (1972); Mobley et al. (2002)
    * - The irradiance at the surface under a clear sky
      - :func:`~jerlov.gregg1990_irradiance`
      - Gregg & Carder (1990)
