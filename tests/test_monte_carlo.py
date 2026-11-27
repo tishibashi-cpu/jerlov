@@ -323,11 +323,12 @@ def test_the_slopes_are_cox_and_munk_s():
     assert float(np.mean(w)) == pytest.approx(1.0, rel=1e-3)
 
 
-def _transparent(sun, wind, photons=200_000):
+def _transparent(sun, wind, photons=200_000, surface_facets="one"):
     ff = jerlov.mobley2002_fournier_forand(0.0183)
     return _call(a=1e-3, b=1e-9, pure_water_b=1e-9, phase_function=ff,
                  station_salinity_psu=None, sun_zenith_deg=sun,
-                 depths_m=[1.0], photons=photons, batches=4, wind=wind)
+                 depths_m=[1.0], photons=photons, batches=4, wind=wind,
+                 surface_facets=None if wind == "flat" else surface_facets)
 
 
 @pytest.mark.parametrize("sun, tolerance", [(30.0, 0.005), (60.0, 0.01)])
@@ -547,3 +548,280 @@ def test_the_canonical_problems_are_quoted_as_run():
     assert "agrees in 46 of 51 entries" in data
     assert (f"{ratio['5', '1', 'Ed', '0.9']:.3f} to "
             f"{ratio['5', '10', 'Ed', '0.9']:.3f} of the mean") in data
+
+
+# -- light meeting the wavy surface more than once (DECISIONS.md section 141)
+
+def test_surface_facets_left_out_with_a_wind_is_one_with_a_future_warning():
+    import warnings
+    with pytest.warns(FutureWarning, match="surface_facets") as caught:
+        old = _call(wind=5.0)
+    # both warnings point at the caller's line, not into the package
+    assert caught[0].filename == __file__
+    with pytest.warns(FutureWarning, match="wind") as caught:
+        jerlov.monte_carlo_light_field(
+            0.1, 0.3, 500.0, pure_water_b=0.003, salinity_psu=35.0,
+            phase_function=jerlov.mobley2002_fournier_forand(0.0183),
+            cut_deg=1.0, refractive_index=1.34, sun_zenith_deg=30.0,
+            depth_m=math.inf, bottom_albedo=None, depths_m=[1.0],
+            slab_m=1.0, zenith_step_deg=10.0, azimuth_step_deg=45.0,
+            photons=100, batches=2, seed=0)
+    assert caught[0].filename == __file__
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        one = _call(wind=5.0, surface_facets="one")
+        flat = _call(wind="flat")
+        also_flat = _call(wind="flat", surface_facets=None)
+    assert old == one
+    assert one.inputs["surface_facets"] == "one"
+    assert flat == also_flat and flat.inputs["surface_facets"] is None
+    assert any("light meeting a second facet" in s for s in one.left_out)
+    every = _call(wind=5.0, surface_facets="all")
+    assert every.inputs["surface_facets"] == "all"
+    assert any("drawn independently" in s for s in every.left_out)
+    assert not any("second facet" in s for s in every.left_out)
+
+
+@pytest.mark.parametrize("wind, bad", [
+    ("flat", "one"), ("flat", "all"), (5.0, None), (5.0, "two"),
+    (5.0, True), (5.0, 1)])
+def test_a_bad_surface_facets_is_refused(wind, bad):
+    with pytest.raises((ValueError, TypeError)):
+        _call(wind=wind, surface_facets=bad)
+
+
+def test_light_followed_over_the_facets_is_light_kept():
+    """Every branch at every facet: what stays in the water and what goes
+    to the air add to what arrived, in the mean over the facets."""
+    rng = np.random.default_rng(3)
+    s2 = mc.COX_MUNK_MEAN_SQUARE_SLOPE[0] \
+        + mc.COX_MUNK_MEAN_SQUARE_SLOPE[1] * 7.0
+    for from_air, mu in ((True, math.cos(math.radians(60.0))),
+                         (False, -math.cos(math.radians(40.0)))):
+        n = 200_000
+        d = np.tile([[math.sqrt(1 - mu * mu)], [0.0], [mu]], n)
+        out, stay, gone, second = mc._follow_surface(
+            d, np.full(n, from_air), s2, 1.34, rng)
+        assert np.all(out[2] > 0)        # what stays travels down
+        assert np.all((stay >= 0) & (gone >= 0) & (second >= 0))
+        total = float(np.mean(stay + gone))
+        assert total == pytest.approx(1.0, abs=0.01)
+
+
+def test_all_facets_and_one_differ_only_where_light_meets_another():
+    """At the sun at 30 degrees no facet sends sunlight back towards the
+    sea, so what enters is the same; at 80 degrees more enters."""
+    one, every = (_transparent(30.0, 7.0, 20_000, f) for f in ("one", "all"))
+    assert every.transmitted_at_surface == pytest.approx(
+        one.transmitted_at_surface, rel=1e-3)
+    one, every = (_transparent(80.0, 7.0, 20_000, f) for f in ("one", "all"))
+    ratio = every.transmitted_at_surface / one.transmitted_at_surface
+    assert 1.02 < ratio < 1.04      # "about 3 percent", the docstring
+
+
+def _section_141():
+    decisions = " ".join((ROOT / "DECISIONS.md").read_text().split())
+    return decisions.split("## 141. ")[1]
+
+
+@source_tree
+def test_section_141_s_energy_figures_are_quoted_as_computed():
+    section = _section_141()
+    total, entering = {}, {}
+    for w in (7.0, 14.0):
+        for s in (30.0, 60.0, 80.0):
+            for f in ("one", "all"):
+                r = _transparent(s, w, surface_facets=f)
+                total[w, s, f] = 100 * (r.transmitted_at_surface
+                                        + r.reflected_at_surface - 1)
+                entering[w, s, f] = r.transmitted_at_surface
+
+    def pair(w, s):
+        return total[w, s, "all"], total[w, s, "one"]
+    assert ("at 7 m/s {:+.3f} percent at 30 degrees ({:+.3f}), {:+.3f} at 60 "
+            "({:+.3f}), {:+.3f} at 80 ({:+.3f})").format(
+        *pair(7.0, 30.0), *pair(7.0, 60.0), *pair(7.0, 80.0)) in section
+    assert ("14 m/s {:+.3f} ({:+.3f}), {:+.3f} ({:+.3f}), and {:+.3f} at 80 "
+            "({:+.3f}), above the 0.5 set").format(
+        *pair(14.0, 30.0), *pair(14.0, 60.0), *pair(14.0, 80.0)) in section
+    met = [abs(total[w, s, "all"]) <= 0.5 for w in (7.0, 14.0)
+           for s in (30.0, 60.0, 80.0)]
+    assert met.count(False) == 1 and not met[-1]
+    ratio = {k: entering[k[0], k[1], "all"] / entering[k[0], k[1], "one"]
+             for k in [(7.0, 80.0), (14.0, 80.0), (7.0, 60.0), (14.0, 60.0),
+                       (7.0, 30.0), (14.0, 30.0)]}
+    assert (f"{ratio[7.0, 80.0]:.4f} and {ratio[14.0, 80.0]:.4f} times "
+            f"`\"one\"`'s at 80 degrees and 7 and 14 m/s, "
+            f"{ratio[7.0, 60.0]:.4f} and {ratio[14.0, 60.0]:.4f} at 60") \
+        in section
+    assert abs(ratio[7.0, 30.0] - 1) < 2e-4 and abs(ratio[14.0, 30.0] - 1) < 2e-4
+
+
+def _share_by_quadrature(mu, slope_variance, points):
+    sd = math.sqrt(slope_variance / 2)
+    g = np.linspace(-8 * sd, 8 * sd, points)
+    zx, zy = np.meshgrid(g, g)
+    p = np.exp(-(zx * zx + zy * zy) / (2 * sd * sd))
+    norm = np.sqrt(1 + zx * zx + zy * zy)
+    nx, nz = zx / norm, -1 / norm
+    dn = math.sqrt(1 - mu * mu) * nx + mu * nz
+    front = dn < 0
+    return float(np.sum(p * front * (-dn) / (-nz * mu)) / np.sum(p * front))
+
+
+@source_tree
+def test_section_141_s_finding_on_the_shadowing_table():
+    section = _section_141()
+    mu = math.cos(math.radians(80.0))
+    d = np.tile([[math.sqrt(1 - mu * mu)], [0.0], [mu]], 500_000)
+    means, table, here, fine = [], [], [], []
+    for wind in (7.0, 14.0):
+        s2 = mc.COX_MUNK_MEAN_SQUARE_SLOPE[0] \
+            + mc.COX_MUNK_MEAN_SQUARE_SLOPE[1] * wind
+        m = np.array([float(np.mean(mc._facets(
+            d, s2, np.random.default_rng(100 + k))[2])) for k in range(8)])
+        means.append((100 * (m.mean() - 1),
+                      100 * m.std(ddof=1) / math.sqrt(8)))
+        mus, share = mc._front_share_table(s2)
+        table.append(float(np.interp(mu, mus, share)))
+        here.append(_share_by_quadrature(mu, s2, 401))
+        fine.append(_share_by_quadrature(mu, s2, 1601))
+    assert (f"1 - {-means[0][0]:.3f} percent at 7 m/s and 1 + "
+            f"{means[1][0]:.3f} percent at 14 m/s") in section
+    assert max(se for _, se in means) < 0.05
+    log = " ".join((ROOT / "CHANGELOG.md").read_text().split())
+    log = log.split("## 1.35.0 ")[1].split("## 1.34.1 ")[0]
+    assert (f"{-means[0][0]:.2f} percent short of what falls on it at 7 m/s "
+            f"and {means[1][0]:.2f} percent over at 14 m/s") in log
+    assert (f"gives {table[0]:.4f} and {table[1]:.4f} at cos(80 degrees); "
+            f"the same quadrature at that cosine itself gives {here[0]:.4f} "
+            f"and {here[1]:.4f}, and on a grid four times finer "
+            f"{fine[0]:.4f} and {fine[1]:.4f}") in section
+    # the sampled mean is the finer quadrature's over the table's
+    for (m, se), t, f in zip(means, table, fine):
+        assert abs(100 * (f / t - 1) - m) < 4 * se + 0.05
+    for wind in (2.0, 5.0, 7.0, 14.0):
+        s2 = mc.COX_MUNK_MEAN_SQUARE_SLOPE[0] \
+            + mc.COX_MUNK_MEAN_SQUARE_SLOPE[1] * wind
+        mus, share = mc._front_share_table(s2)
+        for deg in np.arange(0.0, 60.01, 2.5):
+            c = math.cos(math.radians(deg))
+            assert abs(float(np.interp(c, mus, share))
+                       / _share_by_quadrature(c, s2, 1601) - 1) < 1e-4
+    assert "within 0.01 percent of the finer grid" in section
+
+
+def _rows(name):
+    path = ROOT / "examples" / "data" / "mobley1993" / name
+    with path.open() as handle:
+        return list(csv.DictReader(handle))
+
+
+@source_tree
+def test_problem_5_with_every_facet_is_quoted_as_run():
+    tool = _benchmark_tool()
+    one, every = _rows("runs.csv"), _rows("runs_all_facets.csv")
+    assert len(every) == 51
+    for a, b in zip(one, every):
+        assert [a[k] for k in ("problem", "omega0", "tau", "quantity")] == \
+            [b[k] for k in ("problem", "omega0", "tau", "quantity")]
+        if a["problem"] != "5":
+            assert a == b
+
+    def agree(r):
+        means, spreads = tool.TABLE5[(int(r["problem"]),
+                                      float(r["omega0"]))][int(r["tau"])]
+        q = ("Ed", "Eou", "Lu").index(r["quantity"])
+        x, se = float(r["jerlov"]), float(r["jerlov_se"])
+        m, s = means[q], spreads[q] * means[q]
+        return abs(x - m) <= 2 * s + 3 * se + 0.005 * m
+    assert sum(map(agree, every)) == 49
+    assert all(agree(r) for r in every if r["problem"] == "5")
+    assert {(r["problem"], r["omega0"], r["tau"], r["quantity"])
+            for r in every if not agree(r)} == {("1", "0.2", "10", "Lu"),
+                                               ("2", "0.2", "10", "Lu")}
+    section = _section_141()
+
+    def ratios(rows, quantity):
+        return [float(r["jerlov"]) / float(r["table5"]) for r in rows
+                if r["problem"] == "5" and r["quantity"] == quantity]
+    for q in ("Ed", "Eou", "Lu"):
+        a, b = ratios(every, q), ratios(one, q)
+        assert (f"{q} {a[0]:.3f}, {a[1]:.3f} and {a[2]:.3f}"
+                f"{' of the models' if q == 'Ed' else ''}") in section \
+            or (f"{q} is {a[0]:.3f}, {a[1]:.3f} and {a[2]:.3f}") in section
+        assert (f"{b[0]:.3f}, {b[1]:.3f}" in section)
+    assert "49 of the 51 entries agree" in section
+    ed, ed_one = ratios(every, "Ed"), ratios(one, "Ed")
+    log = " ".join((ROOT / "CHANGELOG.md").read_text().split())
+    log = log.split("## 1.35.0 ")[1].split("## 1.34.1 ")[0]
+    assert (f"Ed is {min(ed):.3f} to {max(ed):.3f} of the 1993 codes' mean, "
+            f"where one facet gave {min(ed_one):.3f} to {max(ed_one):.3f}") \
+        in log
+    assert "in 49 of 51 values" in log
+    data = " ".join((ROOT / "DATA.md").read_text().split())
+    assert (f"Ed {ed[0]:.3f}, {ed[1]:.3f} and {ed[2]:.3f} of the mean") in data
+    assert "agrees in 49 of 51 entries" in data
+
+
+@source_tree
+def test_the_second_facet_shares_are_quoted_as_computed():
+    tool = _benchmark_tool()
+    ray, table = tool.rayleigh(), tool.table2()
+    section = _section_141()
+    entering, below = [], []
+    for sun in (30.0, 60.0, 80.0):
+        runs = [mc._simulate(0.1, 0.9, 0.0, table, ray, sun, 141 + k,
+                             photons=100_000, depths=np.array([1.0]),
+                             half_slab=0.1, n_water=1.34, d_zenith=5.0,
+                             d_azimuth=45.0, slope_variance=0.04,
+                             surface_facets="all") for k in range(4)]
+        entering.append(np.mean([r["second_facet_entering"] for r in runs]))
+        below.append(np.mean([r["second_facet_below"] for r in runs]))
+    assert entering[0] == 0.0
+    assert (f"none at 30 degrees, {entering[1]:.4f} at 60 and "
+            f"{entering[2]:.4f} at 80") in section
+    assert f"{below[0]:.4f}, {below[1]:.4f} and {below[2]:.4f}" in section
+
+
+@source_tree
+def test_question_5_with_every_facet_is_quoted_as_computed():
+    path = ROOT / "examples" / "data" / "monte_carlo" / \
+        "waves_black_bottom.csv"
+    with path.open() as handle:
+        rows = list(csv.DictReader(handle))
+    model = np.array([float(r["model"]) for r in rows])
+    one = np.array([float(r["wind"]) for r in rows])
+    every = np.array([float(r["all_facets"]) for r in rows])
+    z = [(float(r["all_facets"]) - float(r["wind"]))
+         / math.hypot(float(r["wind_se"]), float(r["all_facets_se"]))
+         for r in rows]
+    within = int(np.sum(np.abs(model / every - 1) <= 0.1))
+    assert within == int(np.sum(np.abs(model / one - 1) <= 0.1)) == 1
+    section = _section_141()
+    assert f"within 10 percent in {within} of the 13" in section
+    log = " ".join((ROOT / "CHANGELOG.md").read_text().split())
+    assert f"still {within} of the 13 within 10 percent" in log
+    ratio = every / one
+    assert (f"is {ratio.min():.3f} to {ratio.max():.3f}, each within "
+            f"{math.ceil(10 * max(map(abs, z))) / 10:.1f} combined standard "
+            "errors of 1") in section
+
+
+@source_tree
+def test_a_stored_every_facet_waves_run_is_reproduced():
+    import sys
+    sys.path.insert(0, str(ROOT / "tools"))
+    try:
+        import monte_carlo_check as check
+    finally:
+        sys.path.pop(0)
+    path = ROOT / "examples" / "data" / "monte_carlo" / \
+        "waves_black_bottom.csv"
+    with path.open() as handle:
+        row = next(csv.DictReader(handle))
+    station = jerlov.petzold_scattering("NUC 2240")
+    value, error = check.run(row | {"albedo": "0.0"}, station,
+                             float(row["wind_m_s"]), "all")
+    assert f"{value:.6e}" == row["all_facets"]
+    assert f"{error:.2e}" == row["all_facets_se"]

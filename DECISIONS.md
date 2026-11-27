@@ -9826,3 +9826,66 @@ independent. A new argument: 1.35.0.
 API reference; the topic page; CHANGELOG; the Zenodo description; DATA.md
 section 53 (problem 5's result); NEXT_STEPS. `tools/mobley1993_benchmark.py`
 gains the choice, and its `"all"` run is kept beside the 1.34.1 run.
+
+### Result
+
+Differences from the plan: the share of the light that met a second
+facet (check 4) is weighted by the light, not counted by photons; the
+first version of the code counted photons, which at 80 degrees gives
+0.139 (many facets that send the sun's light back down intercept little
+of it), and was changed before any figure was recorded.
+
+1. Met: with `"one"` problem 5's nine entries are those of 1.34.1's
+   `runs.csv` digit for digit, the stored waves runs of question 5 are
+   unchanged in every column they had, and an omitted `surface_facets`
+   with a wind gives `"one"`'s field, with the warning (a test). A flat
+   surface does not reach the new code.
+2. Not met at one of the six points. Transmitted plus reflected, less 1,
+   with `"all"` (with `"one"` beside it): at 7 m/s +0.008 percent at 30
+   degrees (+0.008), +0.028 at 60 (+0.023), -0.086 at 80 (-0.345); at
+   14 m/s +0.011 (+0.011), +0.043 (+0.028), and +0.689 at 80 (+0.469),
+   above the 0.5 set. The light that enters with `"all"` is 1.0293 and
+   1.0261 times `"one"`'s at 80 degrees and 7 and 14 m/s, 1.0027 and
+   1.0093 at 60, and the same at 30.
+
+   **Found: the cause is 1.34.1's shadowing table, not the following of
+   the facets.** `"one"` misses by as much at 80 degrees, and facets
+   alone show it: the mean weight of the facets drawn for the sun at 80
+   degrees is 1 - 0.356 percent at 7 m/s and 1 + 0.475 percent at 14
+   m/s (eight batches of 500 000, standard errors 0.04 percent), where
+   section 140 meant it to be 1. `_front_share_table` gives 1.1620 and
+   1.3454 at cos(80 degrees); the same quadrature at that cosine itself
+   gives 1.1591 and 1.3574, and on a grid four times finer 1.1579 and
+   1.3508. Both the interpolation between the table's cosines and the
+   grid of slopes, which the edge between facets in light and in shadow
+   crosses, are too coarse when the light is low. Up to 60 degrees the
+   table is within 0.01 percent of the finer grid (winds 2 to 14 m/s,
+   every 2.5 degrees). It is not corrected here: that changes
+   every run with waves, and this release keeps `"one"` as 1.34.1 had
+   it. It is the next item in NEXT_STEPS.
+3. **Met: with `"all"` all nine of problem 5's entries agree.** Ed is
+   0.992, 0.998 and 1.003 of the models' mean at optical depths 1, 5 and
+   10 (with `"one"` 0.962, 0.970 and 0.976), Eou 0.985, 0.991 and 0.989
+   (0.943, 0.963, 0.958), Lu 0.964, 0.896 and 0.941 (0.863, 0.955,
+   0.970). With problem 5 so posed, 49 of the 51 entries agree; the two
+   left are the radiance at optical depth 10 in absorbing water.
+   (`examples/data/mobley1993/runs_all_facets.csv`; the other problems
+   have a flat surface and their rows are 1.34.1's.) Section 140's
+   likely cause is so confirmed as the cause of Ed's shortfall, within
+   the models' spread.
+4. Recorded. The share of the light that met a second facet, in problem
+   5's water (omega0 = 0.9, Table 2, slope variance 0.04; four batches
+   of 100 000): entering, none at 30 degrees, 0.0039 at 60 and 0.0310 at
+   80; of the light reaching the surface from below, 0.0163, 0.0175 and
+   0.0191. Question 5's waves runs with `"all"`
+   (`examples/data/monte_carlo/waves_black_bottom.csv`, columns
+   `all_facets`): the model is within 10 percent in 1 of the 13, as with
+   `"one"`; `"all"` over `"one"` is 0.957 to 1.165, each within 2.7
+   combined standard errors of 1. The waves still do not close question
+   5.
+
+Also fixed, found while writing the new warning: 1.34.0's
+`FutureWarning` for a left-out `wind` was raised with `stacklevel=2`,
+which through `_data.checked` pointed into `_data.py`; both warnings now
+use `_data.caller_stacklevel()`, and a test checks that they name the
+caller's file.

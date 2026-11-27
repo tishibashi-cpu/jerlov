@@ -10,7 +10,9 @@ b / c. Scattering is by pure water or by particles in proportion to their
 share of b, at an angle drawn from that one's phase function and an
 azimuth drawn uniformly. Light reaching the surface from below is
 reflected back by the Fresnel reflectance (at a facet, if there are
-waves) and the rest leaves; light
+waves) and the rest leaves; with waves, light that a facet sends towards
+the surface again meets another facet, if the caller asks for it (since
+1.35.0, DECISIONS.md section 141); light
 reaching a bottom, if there is one, is reflected by its albedo into a
 cosine-weighted direction. A photon whose weight falls below 1e-4
 survives with probability 1/10 and ten times the weight.
@@ -37,7 +39,8 @@ Every choice that sets the result is a required argument; nothing is
 defaulted (DECISIONS.md section 138, which amends section 12). Left out:
 an atmosphere, polarisation, inelastic scattering (Raman, fluorescence),
 water that varies with depth, and of the waves the wind's direction,
-whitecaps and light meeting a second facet.
+whitecaps, and either light meeting a second facet or the surface's shape
+between one facet and the next.
 """
 
 from __future__ import annotations
@@ -69,6 +72,10 @@ LEFT_OUT = (
 _LEFT_OUT_WAVES = (
     "of the waves: the wind's direction (Cox and Munk's isotropic slopes), "
     "whitecaps and foam, and light meeting a second facet")
+_LEFT_OUT_ALL_FACETS = (
+    "of the waves: the wind's direction (Cox and Munk's isotropic slopes), "
+    "whitecaps and foam, and the surface's shape between one facet and the "
+    "next: each facet light meets is drawn independently")
 
 #: Cox and Munk (1954), J. Opt. Soc. Am. 44, 838-850, eq. (42), p. 221,
 #: clean surface, converted from cm/s: the mean square slope is
@@ -242,9 +249,76 @@ def _fresnel_cos(cos_i, n1, n2):
     return out, cos_t
 
 
+#: With ``surface_facets="all"``, light still at the surface after this many
+#: facets is dropped (DECISIONS.md section 141; not expected to happen).
+_MAX_FACETS = 50
+
+
+def _follow_surface(d, from_air, slope_variance, n_water, rng):
+    """Light at a wavy surface followed from facet to facet until it
+    leaves (DECISIONS.md section 141).
+
+    ``d`` (3 x n, unit) are the directions arriving, ``from_air`` whether
+    each arrives from the air. Returns the directions it leaves in, the
+    factor on each weight that stays in the water (0 for light that left
+    to the air), the factor that left to the air, and the factor that
+    reached a second facet. At each facet a branch that leaves to the air
+    takes its Fresnel share of the weight; when neither does, one branch
+    is chosen with its share as the probability and the weight is kept.
+    """
+    d = d.copy()
+    n = d.shape[1]
+    air = np.asarray(from_air, bool).copy()
+    stay = np.ones(n)
+    gone = np.zeros(n)
+    second = np.zeros(n)
+    todo = np.arange(n)
+    for k in range(_MAX_FACETS):
+        if not todo.size:
+            break
+        if k == 1:
+            second[todo] = stay[todo]
+        dk, ak = d[:, todo], air[todo]
+        normal, cos_i, w = _facets(dk, slope_variance, rng)
+        r = np.empty(todo.size)
+        cos_t = np.empty(todo.size)
+        for side, n1, n2 in ((ak, 1.0, n_water), (~ak, n_water, 1.0)):
+            r[side], cos_t[side] = _fresnel_cos(cos_i[side], n1, n2)
+        eta = np.where(ak, 1.0 / n_water, n_water)
+        refl = dk + 2 * cos_i * normal
+        refl /= np.linalg.norm(refl, axis=0)
+        trans = eta * dk + (eta * cos_i - cos_t) * normal
+        trans /= np.maximum(np.linalg.norm(trans, axis=0), 1e-300)
+        stay[todo] *= w
+        # from the air, reflected light travelling up leaves; from below,
+        # refracted light travelling up leaves (none if all is reflected)
+        refl_leaves = ak & (refl[2] < 0)
+        trans_leaves = ~ak & (trans[2] < 0) & (r < 1)
+        share_left = np.where(refl_leaves, r, np.where(trans_leaves, 1 - r,
+                                                       0.0))
+        gone[todo] += stay[todo] * share_left
+        stay[todo] *= 1 - share_left
+        pick = rng.random(todo.size) < r
+        reflect = np.where(refl_leaves, False,
+                           np.where(trans_leaves, True, pick))
+        out = np.where(reflect, refl, trans)
+        # a reflection keeps the side; a refraction crosses it
+        side_now = np.where(reflect, ak, ~ak)
+        d[:, todo] = out
+        air[todo] = side_now
+        # in the water travelling down it is done; anything else meets the
+        # surface again (in the air travelling down, below travelling up)
+        again = np.where(side_now, out[2] > 0, out[2] <= 0)
+        todo = todo[again]
+    stay[todo] = 0.0
+    d[2] = np.maximum(d[2], 1e-12)
+    return d, stay, gone, second
+
+
 def _simulate(a, b, bw, particles, water, sun_zenith, seed, *, photons,
               depths, half_slab, n_water, d_zenith, d_azimuth,
-              depth=math.inf, albedo=None, slope_variance=None):
+              depth=math.inf, albedo=None, slope_variance=None,
+              surface_facets="one"):
     """One batch. ``sun_zenith`` in degrees, or None for an overcast sky of
     uniform radiance. z is positive downwards; the sun's light travels
     towards +x, so azimuth 0 is the direction away from the sun.
@@ -266,6 +340,15 @@ def _simulate(a, b, bw, particles, water, sun_zenith, seed, *, photons,
         sin_w = np.sqrt(1 - mu_air ** 2) / n_water
         ux, uy = sin_w * np.cos(azimuth), sin_w * np.sin(azimuth)
         uz = np.sqrt(1 - sin_w ** 2)
+    elif surface_facets == "all":
+        s_air = np.sqrt(1 - mu_air ** 2)
+        d = np.array([s_air * np.cos(azimuth), s_air * np.sin(azimuth),
+                      mu_air])
+        t, weight, gone, second = _follow_surface(
+            d, np.ones(photons, bool), slope_variance, n_water, rng)
+        reflected_above = float(np.sum(gone))
+        ux, uy, uz = t[0].copy(), t[1].copy(), t[2].copy()
+        again_in = float(np.sum(second))
     else:
         s_air = np.sqrt(1 - mu_air ** 2)
         d = np.array([s_air * np.cos(azimuth), s_air * np.sin(azimuth),
@@ -291,6 +374,7 @@ def _simulate(a, b, bw, particles, water, sun_zenith, seed, *, photons,
     e0, ed, eu, e0u = (np.zeros(depths.size) for _ in range(4))
     ed_bottom = 0.0
     lu = 0.0
+    arrived_below = again_below = 0.0
     bottom = math.isfinite(depth)
     # Scattering by less than the cut goes straight on and so does not turn
     # light out of the line of sight: towards the surface it attenuates by
@@ -339,6 +423,14 @@ def _simulate(a, b, bw, particles, water, sun_zenith, seed, *, photons,
         if not rough:
             weight[up] *= _fresnel(uz[up], n_water, 1.0)
             uz[up] = -uz[up]
+        elif up.size and surface_facets == "all":
+            d = np.array([ux[up], uy[up], uz[up]])
+            arrived_below += float(np.sum(weight[up]))
+            out, stay, _, second = _follow_surface(
+                d, np.zeros(up.size, bool), slope_variance, n_water, rng)
+            again_below += float(np.sum(weight[up] * second))
+            weight[up] *= stay
+            ux[up], uy[up], uz[up] = out[0], out[1], out[2]
         elif up.size:
             d = np.array([ux[up], uy[up], uz[up]])
             normal, cos_i, w = _facets(d, slope_variance, rng)
@@ -392,11 +484,17 @@ def _simulate(a, b, bw, particles, water, sun_zenith, seed, *, photons,
     edges = np.radians(np.arange(n_th + 1) * d_zenith)
     d_omega = ((np.cos(edges[:-1]) - np.cos(edges[1:]))
                * np.radians(d_azimuth) * 2)          # both folded halves
-    return dict(radiance=radiance / photons / d_omega[None, :, None],
-                e0=e0 / photons, ed=ed / photons, eu=eu / photons,
-                e0u=e0u / photons, ed_bottom=ed_bottom / photons,
-                rrs=lu / ed_surface, transmitted=transmitted / photons,
-                reflected=reflected_above / photons)
+    out = dict(radiance=radiance / photons / d_omega[None, :, None],
+               e0=e0 / photons, ed=ed / photons, eu=eu / photons,
+               e0u=e0u / photons, ed_bottom=ed_bottom / photons,
+               rrs=lu / ed_surface, transmitted=transmitted / photons,
+               reflected=reflected_above / photons)
+    if rough and surface_facets == "all":
+        # the share of the light that met more than one facet (section 141)
+        out.update(second_facet_entering=again_in / photons,
+                   second_facet_below=(again_below / arrived_below
+                                       if arrived_below else 0.0))
+    return out
 
 
 # -- the public function -----------------------------------------------------
@@ -503,7 +601,7 @@ def monte_carlo_light_field(a, b, wavelength_nm, /, *,
                             depths_m=None, slab_m=None,
                             zenith_step_deg=None, azimuth_step_deg=None,
                             photons=None, batches=None, seed=None,
-                            wind=...):
+                            wind=..., surface_facets=...):
     """The light field in one homogeneous water by Monte Carlo
     (DECISIONS.md section 138).
 
@@ -572,11 +670,21 @@ def monte_carlo_light_field(a, b, wavelength_nm, /, *,
     wind:
         ``"flat"``, or the wind speed in m/s at 12.5 m, for a surface of
         Cox and Munk's (1954) isotropic slopes, mean square slope 0.003 +
-        5.12e-3 wind (DECISIONS.md section 139). Each crossing of the
-        surface meets one facet; light that a facet reflects and that
-        still travels away from the water is taken as gone, as OSOAA does.
-        Since 1.34.0. Leaving it out takes the surface as flat, as 1.33.0
-        did, with a FutureWarning; a later release will require it.
+        5.12e-3 wind (DECISIONS.md section 139); ``surface_facets`` says
+        what becomes of light that a facet sends towards the surface
+        again. Since 1.34.0. Leaving it out takes the surface as flat, as
+        1.33.0 did, with a FutureWarning; a later release will require it.
+    surface_facets:
+        With a wind: ``"one"``, each crossing of the surface meets one
+        facet and light that it sends towards the surface again is taken
+        as gone, as OSOAA does and as 1.34 did; or ``"all"``, such light
+        meets another facet, drawn independently of the last, until it
+        leaves the surface, as the Monte Carlo codes of Mobley et al.
+        (1993) did (DECISIONS.md section 141). With the sun 80 degrees from
+        the zenith the two differ by about 3 percent in the light that
+        enters. ``None`` with ``wind="flat"``. Since 1.35.0. Leaving it out
+        with a wind takes ``"one"``, as 1.34 did, with a FutureWarning; a
+        later release will require it.
     photons, batches, seed:
         Photons per batch; at least 2 batches, for the standard errors;
         batch i uses the seed ``seed + i``.
@@ -677,7 +785,8 @@ def monte_carlo_light_field(a, b, wavelength_nm, /, *,
             "monte_carlo_light_field: wind was left out and the surface is "
             "taken as flat, as 1.33.0 did; pass wind='flat' or the wind "
             "speed in m/s at 12.5 m. A later release will require it "
-            "(DECISIONS.md section 139).", FutureWarning, stacklevel=2)
+            "(DECISIONS.md section 139).", FutureWarning,
+            stacklevel=_data.caller_stacklevel())
         wind = "flat"
     if isinstance(wind, str):
         if wind != "flat":
@@ -688,6 +797,24 @@ def monte_carlo_light_field(a, b, wavelength_nm, /, *,
         wind = _number("wind", wind, low=0.0)
         slope_variance = (COX_MUNK_MEAN_SQUARE_SLOPE[0]
                           + COX_MUNK_MEAN_SQUARE_SLOPE[1] * wind)
+    if slope_variance is None:
+        if surface_facets is ...:
+            surface_facets = None
+        elif surface_facets is not None:
+            raise ValueError("surface_facets is for a wavy surface; with "
+                             "wind='flat' it must be None")
+    else:
+        if surface_facets is ...:
+            warnings.warn(
+                "monte_carlo_light_field: surface_facets was left out and "
+                "each crossing of the wavy surface meets one facet, as 1.34 "
+                "did; pass surface_facets='one' or 'all'. A later release "
+                "will require it (DECISIONS.md section 141).", FutureWarning,
+                stacklevel=_data.caller_stacklevel())
+            surface_facets = "one"
+        if surface_facets not in ("one", "all"):
+            raise ValueError("with a wind, surface_facets must be 'one' or "
+                             f"'all', not {surface_facets!r}")
 
     particles = _particle_phase(phase_function, cut_deg,
                                 station_salinity_psu)
@@ -696,7 +823,8 @@ def monte_carlo_light_field(a, b, wavelength_nm, /, *,
                       seed + k, photons=photons, depths=depths,
                       half_slab=slab_m / 2, n_water=refractive_index,
                       d_zenith=steps[0], d_azimuth=steps[1], depth=depth_m,
-                      albedo=bottom_albedo, slope_variance=slope_variance)
+                      albedo=bottom_albedo, slope_variance=slope_variance,
+                      surface_facets=surface_facets or "one")
             for k in range(batches)]
 
     def frozen(x):
@@ -731,9 +859,12 @@ def monte_carlo_light_field(a, b, wavelength_nm, /, *,
                   sun_zenith_deg=sun_zenith_deg, depth_m=depth_m,
                   bottom_albedo=bottom_albedo, slab_m=slab_m,
                   zenith_step_deg=steps[0], azimuth_step_deg=steps[1],
-                  photons=photons, batches=batches, seed=seed, wind=wind)
+                  photons=photons, batches=batches, seed=seed, wind=wind,
+                  surface_facets=surface_facets)
+    waves = (_LEFT_OUT_ALL_FACETS if surface_facets == "all"
+             else _LEFT_OUT_WAVES)
     left_out = (LEFT_OUT if slope_variance is None
-                else LEFT_OUT[:1] + (_LEFT_OUT_WAVES,) + LEFT_OUT[2:])
+                else LEFT_OUT[:1] + (waves,) + LEFT_OUT[2:])
     return MonteCarloLightField(
         depths_m=frozen(depths),
         zenith_edges_deg=frozen(np.arange(0.0, 180.0 + steps[0] / 2,

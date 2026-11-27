@@ -3340,3 +3340,11 @@ degrees, waves), 0.962 to 0.976 of the mean; the engine follows one
 facet per crossing, where the 1993 Monte Carlo codes followed repeated
 interactions with the surface.
 
+**Problem 5 with every facet (1.35.0, DECISIONS.md section 141).** With
+light that a facet sends back towards the surface followed over further
+facets (`surface_facets="all"`), as the 1993 Monte Carlo codes did, all
+nine entries of problem 5 agree: Ed 0.992, 0.998 and 1.003 of the mean
+at optical depths 1, 5 and 10. The engine then agrees in 49 of 51
+entries (`examples/data/mobley1993/runs_all_facets.csv`); the two left
+are the radiance at optical depth 10 in absorbing water.
+
