@@ -9103,3 +9103,26 @@ known); DATA.md section 50; a fifth part of
 `examples/data/shallow_rrs_mc/fournier_forand.csv`; tests that recompute
 every quoted figure and reproduce a stored run. No value or code of the
 package changes: 1.32.2.
+
+**Result.** The 72 runs took about a minute. The check holds: each
+Fournier-Forand's backscatter share is the station's to the digits
+stored, and the station's run is the stored one. None of the three
+measures is met.
+
+1. 43 of the 72 pairs are within 5 percent or 3 standard errors (54
+   needed): bb/b does not fix the rrs over a black bottom. The
+   Fournier-Forand's rrs is 0.49 to 1.09 of the station's.
+2. Within the Fournier-Forands, model over Monte Carlo rises with bb/b in
+   8 cells and falls in 4 (20 needed).
+3. A rank correlation of at least 0.9 in 1 of the 24 cells (20 needed).
+
+Seen after the runs, recorded as such and not as measures: the three
+Fournier-Forands in a cell differ by a factor of 1.11 in the median cell
+(1.20 at most), about the size of their standard errors (up to 10
+percent), so measure 2 cannot be read either way; the stations differ by
+1.21. In the 12 cells with bp/a 3, the station's rrs over the
+Fournier-Forand's follows the ratio of their phase functions at the angle
+of single scattering, in logarithms, with a correlation of 0.96 with the
+sun overhead, 0.91 at 30 degrees and 0.44 at 60. That fits the cell seen
+while planning, and is a lead for the second group, not a finding: the
+measure set for it (3) was not met over all 24 cells.

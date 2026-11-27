@@ -350,6 +350,21 @@ an explanation was written down before the runs (DECISIONS.md section
   cosine. The Monte Carlo's cut at 1 degree does not set the stations
   apart: 0.5 or 2 degrees moves the ratio at any one station by a factor
   of 1.027 at most.
+- bb/b does not fix the rrs over a black bottom (DECISIONS.md section
+  134). With a, b, bb and pure water's part held, a Fournier-Forand on
+  Mobley et al.'s line with a station's bb/b gives 0.49 to 1.09 times
+  the station's rrs; 43 of the 72 pairs are within 5 percent or 3
+  standard errors, against the 54 set beforehand. Within the three
+  Fournier-Forands the miss is not ordered by bb/b either (rising in 8
+  cells, falling in 4, of 24), but they differ by a factor of only 1.11
+  in the median cell, about their noise. Ranking all six phase functions
+  by their value at the angle of single scattering from the sun to
+  straight up does not rank the rrs (a rank correlation of 0.9 or more
+  in 1 of 24 cells). Seen after the runs: in the cells with less
+  scattering (bp/a 3) the station's rrs over the Fournier-Forand's
+  follows the ratio of their phase functions at that angle, with a
+  correlation of 0.96 with the sun overhead and 0.44 with the sun at 60
+  degrees.
 
 **What is not known.** Which phase function HydroLight's runs are nearest
 to (Petzold's average particle, whose table this package has not
@@ -358,10 +373,13 @@ show: its fits were judged on all runs together, and the 1999 refit's
 runs are not described. For the first group, a separated form is
 known for deep water only; no shallow-water form with water and particles
 apart is in this package. For the second, neither bb/b nor the mean
-cosine orders the miss, so a form taking one of them would not by itself
-close it; what does order it is not found.
+cosine orders the miss, and two phase functions with the same bb/b give
+different rrs, so a form taking one of them would not by itself close
+it; what does order it is not found. The backward part of the phase
+function goes with it where the sun is high and scattering is low, but
+was not set as a measure beforehand.
 
-**Where.** DATA.md section 50; DECISIONS.md sections 113 to 115;
+**Where.** DATA.md section 50; DECISIONS.md sections 113 to 115 and 134;
 `examples/shallow_water_closure.py`; `tools/shallow_rrs_mc.py` and
 `tools/lee1998_runs.py`, with their results in
 `examples/data/shallow_rrs_mc/`.

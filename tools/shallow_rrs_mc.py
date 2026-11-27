@@ -28,12 +28,14 @@ irradiance is the photons' number plus the weight reflected down.
     python tools/shallow_rrs_mc.py --water-share-nadir OUT.csv
     python tools/shallow_rrs_mc.py --black-bottom OUT.csv
     python tools/shallow_rrs_mc.py --cut-check OUT.csv
+    python tools/shallow_rrs_mc.py --fournier-forand OUT.csv
 
 The first runs the check of section 113 (no scattering, no reflection at
 the surface: rrs = (rho/pi) exp(-a H / cos theta_w) exp(-a H)) and prints
 it; the second writes one row per run of section 113's grid; the last two
-write the runs of section 114's steps 2 and 3. This is a tool for the
-comparison, not part of the package.
+write the runs of section 114's steps 2 and 3; --cut-check those of
+section 115; --fournier-forand those of section 134. This is a tool for
+the comparison, not part of the package.
 """
 
 from __future__ import annotations
@@ -101,6 +103,33 @@ def petzold_phase(station: str, cut_deg: float = CUT_DEG):
     cut = math.radians(cut_deg)
     below = float(np.interp(cut, radians, cumulative))
     per_sr = np.exp(log_vsf) / (2.0 * math.pi * total * (1.0 - below))
+
+    def sample(u: np.ndarray) -> np.ndarray:
+        return np.interp(below + u * (1.0 - below), cumulative, radians)
+
+    def pdf(angle: np.ndarray) -> np.ndarray:
+        angle = np.clip(angle, radians[0], radians[-1])
+        value = np.exp(np.interp(np.log(angle), np.log(radians),
+                                 np.log(per_sr)))
+        return np.where(angle < cut, 0.0, value)
+
+    return sample, pdf, below, back
+
+
+def fournier_forand_phase(ff, cut_deg: float = CUT_DEG):
+    """The same four things as petzold_phase, for a jerlov.FournierForand:
+    its closed-form cumulative share and phase function on the same kind
+    of grid, scattering by less than ``cut_deg`` taken as none
+    (DECISIONS.md section 134)."""
+    theta = np.concatenate([np.logspace(-3.0, -1.0, 400, endpoint=False),
+                            np.logspace(-1.0, math.log10(180.0), 6000)])
+    radians = np.radians(theta)
+    cumulative = np.asarray(ff.cumulative(theta), dtype=float)
+    cumulative[-1] = 1.0
+    below = float(ff.cumulative(cut_deg))
+    back = 1.0 - float(ff.cumulative(90.0))
+    per_sr = np.asarray(ff.phase_function(theta), dtype=float) / (1.0 - below)
+    cut = math.radians(cut_deg)
 
     def sample(u: np.ndarray) -> np.ndarray:
         return np.interp(below + u * (1.0 - below), cumulative, radians)
@@ -411,6 +440,47 @@ def cut_check(path: str) -> None:
     _write(path, rows)
 
 
+def single_scattering_angle(sun_deg: float) -> float:
+    """Radians between the refracted sun's beam and straight up."""
+    return math.pi - math.acos(kd_monte_carlo.refracted_cosine(sun_deg))
+
+
+def fournier_forand(path: str) -> None:
+    """Section 134: the black-bottom cells of black_bottom, with, for each
+    station, the Fournier-Forand on Mobley et al.'s line whose backscatter
+    share is the station's, and the station's bp."""
+    base = petzold_phase(STATION)
+    stations = (STATION,) + OTHER_STATIONS
+    phases = {s: (base if s == STATION else petzold_phase(s))
+              for s in stations}
+    rows = []
+    for a, ratio, depth, sun in itertools.product(DARK_A, DARK_BP_OVER_A,
+                                                  DARK_DEPTHS, SUNS):
+        bb = 0.5 * BW + base[3] * ratio * a
+        angle = np.array([single_scattering_angle(sun)])
+        for station in stations:
+            station_phase = phases[station]
+            ff = jerlov.mobley2002_fournier_forand(station_phase[3])
+            phase = fournier_forand_phase(ff)
+            bp = (bb - 0.5 * BW) / station_phase[3]
+            value, error = rrs(a, bp, BW, depth, 0.0, sun, phase)
+            rows.append({
+                "a": a, "bp_over_a": ratio, "depth_m": depth,
+                "sun_deg": sun, "station": station,
+                "refractive_index": f"{ff.refractive_index:.6g}",
+                "junge_slope": f"{ff.junge_slope:.6g}",
+                "backscatter_share": f"{station_phase[3]:.6g}",
+                "bp": f"{bp:.6g}", "bw": BW, "bb": f"{bb:.6g}",
+                "p_back_station": f"{float(station_phase[1](angle)[0]):.6g}",
+                "p_back_ff": f"{float(phase[1](angle)[0]):.6g}",
+                "monte_carlo": f"{value:.6e}",
+                "standard_error": f"{error:.2e}",
+                "model": f"{_model(a, bb, depth, 0.0, sun):.6e}",
+            })
+            print(rows[-1], flush=True)
+    _write(path, rows)
+
+
 if __name__ == "__main__":
     if len(sys.argv) == 3 and sys.argv[1] == "--water-share":
         water_share(sys.argv[2])
@@ -419,6 +489,8 @@ if __name__ == "__main__":
                     a_values=(0.05,))
     elif len(sys.argv) == 3 and sys.argv[1] == "--cut-check":
         cut_check(sys.argv[2])
+    elif len(sys.argv) == 3 and sys.argv[1] == "--fournier-forand":
+        fournier_forand(sys.argv[2])
     elif len(sys.argv) == 3 and sys.argv[1] == "--black-bottom":
         black_bottom(sys.argv[2])
     elif sys.argv[1:] == ["--check"]:

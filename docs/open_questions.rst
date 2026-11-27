@@ -50,7 +50,9 @@ line each:
    more so the larger pure water's share. Over a black bottom in shallow,
    turbid water it comes out high; there no single change to the Monte
    Carlo closes the gap, and the particles' phase function alone moves
-   the ratio by a factor of up to 1.92. The example
+   the ratio by a factor of up to 1.92. Two phase functions with the
+   same bb/b give rrs 0.49 to 1.09 times apart, so bb/b alone does not
+   fix it. The example
    `shallow_water_closure.py <https://github.com/tishibashi-cpu/jerlov/blob/main/examples/shallow_water_closure.py>`_
    prints every figure.
 6. **Why does Morel et al.'s f/Q archive dip at a sun of 45 degrees?**

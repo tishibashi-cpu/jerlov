@@ -3203,6 +3203,14 @@ table is shipped; the constants are in `jerlov/ocean_colour.py`.
   particles' bb/b in 5 of 24 cells and falls in none. A cut of 0.5, 1 or
   2 degrees moves the ratio at any one station by a factor of 1.027 at
   most (`cut_check.csv`).
+- **The shape apart from bb/b (1.32.2, DECISIONS.md section 134).** In
+  the same 24 cells, a Fournier-Forand on Mobley et al.'s line with each
+  station's bb/b and bp, so that a, b, bb and pure water's part are held,
+  gives 0.49 to 1.09 times the station's rrs; 43 of the 72 pairs are
+  within 5 percent or 3 standard errors, where 54 were set as the mark
+  for bb/b fixing the rrs. Neither bb/b within the Fournier-Forands nor
+  the phase function at the angle of single scattering ranks the runs
+  in 20 of the 24 cells (`fournier_forand.csv`).
 
 ## 51. The refractive index of sea water: Quan & Fry (1995) (note)
 
