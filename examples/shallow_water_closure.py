@@ -631,6 +631,114 @@ pair ({max(interaction):.3f} at most).""")
                              max(interaction)))
 
 
+#: Transcribed from the Ocean Optics Web Book's file of Petzold's data (C. D.
+#: Mobley, oceanopticsbook.info, CC BY 2.0), column "avg-part PF", 1/sr,
+#: "Data taken from Petzold (1972) and Light and Water, Table 3.10": twelve
+#: of its 55 angles, degrees, to check the reconstruction against.
+WEB_BOOK_AVERAGE = {0.1: 1.772e3, 1.0: 7.181e1, 10.0: 1.156, 30.0: 8.633e-2,
+                    60.0: 1.316e-2, 90.0: 4.305e-3, 120.0: 2.693e-3,
+                    140.0: 2.336e-3, 150.0: 2.371e-3, 160.0: 2.669e-3,
+                    170.0: 3.039e-3, 180.0: 3.163e-3}
+
+
+def average_part(dark):
+    rule("6. Petzold's average-particle phase function, HydroLight's own")
+    import sys
+    sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent.parent
+                           / "tools"))
+    try:
+        import shallow_rrs_mc as mc
+    except ImportError:
+        mc = None
+    finally:
+        sys.path.pop(0)
+    rebuilt = None
+    if mc is not None:
+        angles, pf = mc.average_particle_table()
+        at = np.exp(np.interp(np.log(list(WEB_BOOK_AVERAGE)), np.log(angles),
+                              np.log(pf)))
+        rebuilt = float(np.max(np.abs(
+            at / np.array(list(WEB_BOOK_AVERAGE.values())) - 1)))
+    runs = read("average_particle.csv")
+    grid = read("monte_carlo.csv")
+    q, _, group = groups(grid)
+    ratio = grid["bp"] / grid["a"]
+    key = {}
+    for i in np.flatnonzero((grid["albedo"] == 0.0)
+                            & np.isin(grid["depth_m"], (1.0, 4.0))
+                            & np.isin(np.round(ratio), (3.0, 30.0))
+                            & np.isin(grid["a"], (0.05, 0.2))):
+        key[(round(float(grid["a"][i]), 4), round(float(ratio[i])),
+             float(grid["depth_m"][i]), float(grid["sun_deg"][i]))] = i
+    in_group = {k for k, i in key.items() if group[i]}
+    q_avg, over_nuc, p_over = {}, {}, {}
+    for j in range(len(runs["a"])):
+        k = (round(float(runs["a"][j]), 4), round(float(runs["bp_over_a"][j])),
+             float(runs["depth_m"][j]), float(runs["sun_deg"][j]))
+        q_avg[k] = runs["model"][j] / runs["monte_carlo"][j]
+        over_nuc[k] = runs["monte_carlo"][j] / grid["monte_carlo"][key[k]]
+        p_over[k] = runs["p_back_average"][j] / runs["p_back_nuc2240"][j]
+    within = sum(abs(q_avg[k] - 1) <= MISS for k in in_group)
+    every = sum(abs(v - 1) <= MISS for v in q_avg.values())
+    before = dark["counts"]["none"][0]
+    back = float(runs["backscatter_share"][0])
+    checked = ("" if rebuilt is None else
+               " At the twelve angles checked it is the\nWeb Book's table "
+               f"within {100 * rebuilt:.2f} percent.")
+    print(f"""HydroLight's runs used Petzold's "average particle" phase function, which
+Mobley et al. (2002, p. 1037) say "is derived from three measurements of
+the VSF in San Diego Harbor". Built here from the package's own NUC 2040,
+2200 and 2240 as the Ocean Optics Web Book describes (pure sea water at
+514 nm and salinity 35 taken out of each, divided by the particles' b,
+averaged at each angle).{checked} Its backscatter share in the
+Monte Carlo's sampler is {back:.4f} (the paper: 0.0183).
+In the {len(q_avg)} black-bottom cells, a, bb and pure water's part as in part 3:
+
+  model within {100 * MISS:g} percent of the Monte Carlo: {within} of the group's {len(in_group)}
+  ({before} with NUC 2240), {every} of the {len(q_avg)} cells; model over Monte Carlo
+  {min(q_avg.values()):.3f} to {max(q_avg.values()):.3f}.
+
+The measure set beforehand (10 of 13) is {'met' if within >= 10 else 'not met'}: HydroLight's own phase
+function {'accounts' if within >= 10 else 'does not by itself account'} for the group.
+Its rrs is {min(over_nuc.values()):.2f} to {max(over_nuc.values()):.2f} of NUC 2240's, and its phase function at
+the angle of single scattering {min(p_over.values()):.2f} to {max(p_over.values()):.2f} of NUC 2240's.""")
+    quads = read("quads.csv")
+    point = {}
+    for j in range(len(runs["a"])):
+        point[(round(float(runs["a"][j]), 4),
+               round(float(runs["bp_over_a"][j])), float(runs["depth_m"][j]),
+               float(runs["sun_deg"][j]))] = runs["monte_carlo"][j]
+    q_quad, quad_over = {}, {}
+    for j in range(len(quads["a"])):
+        k = (round(float(quads["a"][j]), 4),
+             round(float(quads["bp_over_a"][j])), float(quads["depth_m"][j]),
+             float(quads["sun_deg"][j]))
+        q_quad[k] = quads["model"][j] / quads["monte_carlo"][j]
+        quad_over[k] = quads["monte_carlo"][j] / point[k]
+    quad_within = sum(abs(q_quad[k] - 1) <= MISS for k in in_group)
+    quad_every = sum(abs(v - 1) <= MISS for v in q_quad.values())
+    noise = float(np.max(quads["standard_error"] / quads["monte_carlo"]))
+    print(f"""
+HydroLight reports quad-averaged radiances: its "straight up" is the mean
+over the cap within {float(quads['cap_deg'][0]):g} degrees of the nadir, and its sun is spread over
+the quad that holds it (DECISIONS.md section 137). With both in the Monte
+Carlo, and the average particle as above, the rrs is {min(quad_over.values()):.2f} to {max(quad_over.values()):.2f} of the
+single direction's (standard errors up to {100 * noise:.1f} percent), and the model is within
+{100 * MISS:g} percent in {quad_within} of the group's {len(in_group)} ({quad_every} of the {len(q_quad)} cells; model over Monte
+Carlo {min(q_quad.values()):.3f} to {max(q_quad.values()):.3f}). The measure set beforehand (10 of 13) is
+{'met' if quad_within >= 10 else 'not met'}: the quads {'account' if quad_within >= 10 else 'do not account'} for the group.""")
+    return dict(rebuilt=rebuilt, within=within, group=len(in_group),
+                quad_within=quad_within, quad_every=quad_every,
+                quad_over=(min(quad_over.values()), max(quad_over.values())),
+                q_quad=(min(q_quad.values()), max(q_quad.values())),
+                quad_noise=noise,
+                before=before, every=every, cells=len(q_avg),
+                q=(min(q_avg.values()), max(q_avg.values())),
+                over_nuc=(min(over_nuc.values()), max(over_nuc.values())),
+                p_over=(min(p_over.values()), max(p_over.values())),
+                back=back)
+
+
 def main():
     _banner()
     with warnings.catch_warnings():
@@ -640,6 +748,7 @@ def main():
         dark = dark_part()
         separated = separated_part()
         fournier = fournier_part()
+        average = average_part(dark)
     rule("Before you use any of this")
     print("""  - The Monte Carlo is not HydroLight: a flat surface, no Raman scattering,
     Petzold's NUC 2240 for the particles where the paper used his average
@@ -656,7 +765,7 @@ def main():
     for each bb/b; another pair with the same bb/b is another shape.
 """)
     return dict(paper=paper, share=share, dark=dark, separated=separated,
-                fournier=fournier)
+                fournier=fournier, average=average)
 
 
 if __name__ == "__main__":

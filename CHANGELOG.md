@@ -4,6 +4,27 @@ Every release is archived on Zenodo under the concept DOI
 [10.5281/zenodo.22321312](https://doi.org/10.5281/zenodo.22321312), which
 always resolves to the latest version.
 
+## 1.32.4 — 2026-11-27
+
+Open question 5 with HydroLight's own phase function; the package behaves
+as before (DECISIONS.md section 136).
+
+**Open questions.** Petzold's "average particle" phase function, which
+HydroLight uses and which Mobley et al. (2002) say is derived from three
+measurements in San Diego Harbor, is built by `tools/shallow_rrs_mc.py`
+from the package's NUC 2040, 2200 and 2240, as the Ocean Optics Web Book
+describes; at the twelve angles checked it is the Web Book's table within
+0.42 percent. In the 24 black-bottom cells (`--average-particle`, kept in
+`examples/data/shallow_rrs_mc/average_particle.csv`) it brings 1 of the
+second group's 13 runs within 10 percent, where 10 were set beforehand:
+the phase function the Monte Carlo was given is not what sets that group
+apart. Nor do HydroLight's angular quads, tried in the same cells
+(`--quads`, `quads.csv`; DECISIONS.md section 137): the radiance averaged
+over the 5-degree cap around the nadir and the sun spread over its quad
+bring 4 of the 13. `shallow_water_closure.py` gains part 6. Nothing is shipped under
+Petzold's name (DECISIONS.md section 27); DATA.md section 21 records what
+the average is made of.
+
 ## 1.32.3 — 2026-11-27
 
 Open question 5 taken one step further; the package behaves as before

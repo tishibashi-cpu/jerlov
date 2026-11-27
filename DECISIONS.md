@@ -9214,3 +9214,155 @@ HAOCE 11 the backward half raises the rrs by a median factor of 1.53
 with the sun overhead, 1.21 at 30 degrees and 1.06 at 60; the forward
 half moves ln rrs by a median of 0.043, 0.033 and 0.054. The interaction
 is 0.035 in the median pair (0.171 at most).
+
+## 136. Petzold's average-particle phase function, built from the three San Diego Harbor stations, in the shallow-water closure (1.32.4): the plan
+
+Question 5 is left at this: which backward shape HydroLight's runs had is
+not known, since the "average particle" phase function HydroLight uses
+was not in hand (sections 27, 113). The user obtained the Ocean Optics
+Web Book's page on Petzold's measurements, its data file
+`Petzold_data.txt` (CC BY, "Data taken from Petzold (1972) and Light and
+Water, Table 3.10"), and Mobley et al. (2002), and asked on 2026-11-27 to
+go on as follows.
+
+**What the sources say.** Mobley et al. (2002, p. 1037): the average
+particle phase function "is derived from three measurements of the VSF
+in San Diego Harbor; tabulated values are given in Mobley et al. [1993]
+and Mobley [1994]", and "When numerically integrated over 90 <= psi <=
+180 deg, this phase function gives a particle backscatter fraction of Bp
+= 0.0183". The Web Book: subtract the pure sea water VSF at 514 nm from
+each of the three, divide by each one's particle b, and average at each
+angle; it is normalised with psi^-m below 0.1 degree, m = 1.346 "from the
+two smallest measured scattering angles".
+
+**Seen while planning (the file read whole, 55 rows).** The three NUC
+stations shipped here (NUC 2040, 2200, 2240), each less `pure_water_vsf`
+at 514 nm with salinity 35 and divided by b less `pure_water_scattering`,
+averaged, give the file's `avg-part PF` within 0.43 percent at all 55
+angles (median 0.34 percent; fresh water 1.1 percent at most). The
+file's other columns are AUTEC 8, HAOCE 11 and NUC 2040 within 0.5
+percent. Integrated with log-log interpolation and the power law below
+0.1 degree, the file's function gives 0.9937 over the sphere and 0.01818
+beyond 90 degrees.
+
+**What is done.** Section 27 stands: nothing is shipped under Petzold's
+name, and the package does not change. The tool builds the function from
+the package's own stations, as the sources describe, so no table is
+copied: `tools/shallow_rrs_mc.py`, `average_particle_table()` (the
+salinity 35 a stated choice; the Web Book does not give one), and an
+`average_particle_phase()` sampler on the same grid as `petzold_phase`,
+normalised by its own integral, scattering below 1 degree counted as
+none as for the stations. The Web Book's file is not added to the
+repository; a test holds the reconstruction against twelve of its
+values, transcribed with the citation (CC BY 2.0 asks for attribution).
+
+**The runs.** `--average-particle OUT.csv`: the 24 black-bottom cells of
+section 114, a, bb and pure water's part held, bp = (bb - bw/2) / B with
+B the sampler's backscatter share. 24 runs, the same photons, batches
+and seed; `examples/data/shallow_rrs_mc/average_particle.csv`.
+
+**Measure, set now.** Section 114's: the model within 10 percent of the
+Monte Carlo in at least 10 of the 13 runs of the black-bottom group. If
+met, the second group is recorded as accounted for by HydroLight's own
+phase function; if not, as not. Recorded beside it, not judged: the
+average particle's rrs over NUC 2240's in each cell, and its phase
+function at the angle of single scattering over NUC 2240's.
+
+**Checks.** The reconstruction against the transcribed values within 0.5
+percent; the sampler's backscatter share against 0.0183 (reported, with
+the 0.6 percent the log-log integral of the file leaves); a stored run
+reproduced bit for bit.
+
+**Documents.** OPEN_QUESTIONS.md question 5; DATA.md sections 21 and 50
+(what the average particle is, and where it was checked); a part 6 of
+`examples/shallow_water_closure.py`; CHANGELOG. No value or code of the
+package changes: 1.32.4.
+
+**Result.** The 24 runs took about 20 seconds. The checks hold: the
+reconstruction is the Web Book's table within 0.42 percent at the twelve
+angles transcribed in the example; the sampler's backscatter share is
+0.01825, the paper's 0.0183 to three figures (the function is
+normalised by its own integral, which takes out the 0.9937 the file's
+values gave over the sphere). The measure is not met: the
+model is within 10 percent of the Monte Carlo in 1 of the group's 13
+runs (0 with NUC 2240), and in 11 of the 24 cells; model over Monte
+Carlo 0.895 to 1.593. The average particle's phase function at the angle
+of single scattering is 0.96 to 1.06 times NUC 2240's, and its rrs 0.94
+to 1.24 times. So NUC 2240 was a close stand-in for HydroLight's phase
+function in the black-bottom cells, and the second group is not the
+Monte Carlo's choice of phase function. No HydroLight output is in hand:
+the comparison is between the model, fitted to HydroLight runs that
+were not published, and this Monte Carlo. What remains cannot be told
+apart here: either the model misses HydroLight in these cells (its fit
+was judged on all runs together, and the 1998 paper wrote that fixing
+A0 = 1 and A1 = 1/pi would need a negative D1 or a more complicated
+form, pp. 6334-6335), or the Monte Carlo differs from those runs in what
+it leaves out (waves at 5 m/s; a sky, which section 114 added at 30
+percent without closing the group; scattering below 1 degree).
+
+## 137. HydroLight's angular quads in the Monte Carlo: the nadir cap and the sun's quad (1.32.4): the plan
+
+Section 136 left two candidates for the black-bottom group that cannot
+be told apart here: the model missing HydroLight in those cells, or the
+Monte Carlo leaving out something HydroLight's runs had. The user
+obtained two documents on HydroLight, the Ocean Optics Web Book's page
+and J. Hedley's IOCCG summer class lecture (2022), and asked on
+2026-11-27 for one such difference to be tried in the same release.
+
+**What the lecture says.** "HydroLight standard discretisation:
+Resolution is 10 x 15 [degrees]. Full sphere of directions 18 x 24 quads
+plus end-caps = 434 entries. Work with quad averaged radiances"; one band
+is centred at 87.5 degrees; "The solar disc is smaller than one quad. So
+one consequence is that the direct solar radiance is spread over the
+quad." Eighteen bands of polar angle with an end-cap at each pole and a
+band centred at 87.5 degrees fit polar caps of half-angle 5 degrees,
+bands 10 degrees wide from 5 to 85, and 85 to 90 (inferred, not printed
+in these documents). So HydroLight's radiance "straight up" is the mean
+over the polar cap within 5 degrees of the nadir, and its sun is spread
+over the quad that holds it. The Monte Carlo scores one direction and
+starts every photon along one.
+
+Section 135 found the black-bottom rrs with a high sun follows the phase
+function near the angle of single scattering; averaging over a cap and a
+quad smooths exactly that.
+
+**What changes.** `rrs()` in `tools/shallow_rrs_mc.py` gains two options,
+off by default, and off it draws exactly the same random numbers (stored
+runs reproduced bit for bit):
+
+- `cap_deg`: each score is for one direction drawn uniformly in solid
+  angle within `cap_deg` of straight up (an unbiased estimate of the
+  cap's mean radiance): the scattering angle to it, and the path to the
+  surface z / mu along it; the bottom's term likewise exp(-c H / mu).
+- `sun_quad`: each photon's direction in air is drawn uniformly in solid
+  angle over HydroLight's quad holding the sun (the cap within 5 degrees
+  for a sun at 0; 10 degrees of polar angle and 15 of azimuth centred on
+  it for 30 and 60), then refracted.
+
+**The runs.** `--quads OUT.csv`: the 24 black-bottom cells with the
+average particle of section 136, both options on (cap 5 degrees), else
+as in `average_particle.csv`. 24 runs.
+
+**Measure, set now.** Section 114's: the model within 10 percent in at
+least 10 of the group's 13 runs. Recorded beside it: the quad runs' rrs
+over the point runs' in each cell.
+
+**Checks.** With the options on and no scattering, the bottom term
+against its closed form averaged over the cap and the sun's quad
+(computed by quadrature) within three standard errors; with them off, a
+stored run reproduced bit for bit.
+
+**Documents.** As section 136's, in the same release (part 6 of the
+example, question 5, DATA.md section 50, CHANGELOG).
+
+**Result.** The 24 runs took about half a minute. The check holds: with
+no scattering, the bottom term over the cap and the sun's quad is the
+quadrature's within 0.9 standard errors in each of three cases; with the
+options off the stored runs are reproduced bit for bit. The measure is
+not met: the model is within 10 percent in 4 of the group's 13 runs (1
+with a single direction), and in 14 of the 24 cells; model over Monte
+Carlo 0.981 to 1.680. The quads move the rrs by 0.91 to 1.11 times, with
+standard errors up to 9.2 percent. So the way HydroLight averages over
+directions is not what sets the group apart either. Of the differences
+named in section 136, waves remain untried; the model's own fit to
+HydroLight in these cells cannot be tried without HydroLight's output.
