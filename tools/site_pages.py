@@ -54,6 +54,14 @@ ATMOSPHERE = dict(day_of_year=172, pressure_hpa=1013.25, air_mass_type=1,
                   wind_speed_24h=3.0, wind_speed=5.0, ozone_du=300.0)
 
 
+#: The wavelengths Jerlov's Table XXVII prints within the page's range
+#: (DATA.md: 16 wavelengths from 310 to 700 nm; the rest of the 1 nm
+#: dataset is interpolated). The window is looked for among these only.
+PRINTED_WL = np.arange(400.0, 701.0, 25.0)
+#: The pure water absorption the panel "Why the colour changes" draws.
+PURE_WATER_SOURCE = "pope1997"
+
+
 def _rounded(values, digits):
     return [None if not np.isfinite(v) else round(float(v), digits)
             for v in np.asarray(values, dtype=float)]
@@ -77,12 +85,80 @@ def dive_inputs() -> dict:
         sun_zenith=SUN_DEG,
         kd={t: _rounded(jerlov.water(t, source="jerlov1976").kd(DIVE_WL), 5)
             for t in TYPES},
+        aw=_rounded(jerlov.pure_water_absorption_table(
+            DIVE_WL, source=PURE_WATER_SOURCE), 6),
+        window={t: window_nm(t) for t in TYPES},
         cmf=[_rounded(np.interp(DIVE_WL, cmf_wl, cmf[:, k]), 7)
              for k in range(3)],
         refl=refl,
         xyz_to_srgb=np.asarray(XYZ_TO_LINEAR_SRGB).tolist(),
         srgb_white=[float(v) for v in SRGB_WHITEPOINT_XYZ],
     )
+
+
+def window_nm(water_type: str) -> float:
+    """Where among Jerlov's printed wavelengths a type's Kd is least."""
+    kd = np.asarray(jerlov.water(water_type, source="jerlov1976").kd(PRINTED_WL))
+    return float(PRINTED_WL[int(np.argmin(kd))])
+
+
+def _types_at(windows: dict, nm: float) -> str:
+    names = [t for t in TYPES if windows[t] == nm]
+    if len(names) == 1:
+        return names[0]
+    if len(names) == 2:
+        return f"{names[0]} and {names[1]}"
+    return f"{names[0]} to {names[-1]}"
+
+
+def why_figures() -> dict:
+    """The numbers of the panel "Why the colour changes" (DECISIONS.md
+    section 128)."""
+    windows = {t: window_nm(t) for t in TYPES}
+    order = sorted(set(windows.values()))
+    parts = [f"{nm:.0f} nm for {_types_at(windows, nm)}" for nm in order]
+    window = ", ".join(parts[:-1]) + f" and {parts[-1]}"
+    kd = {t: jerlov.water(t, source="jerlov1976") for t in TYPES}
+    kd650 = [float(kd[t].kd(650.0)) for t in TYPES]
+    aw650 = float(jerlov.pure_water_absorption_table(650.0,
+                                                     source=PURE_WATER_SOURCE))
+    blue = float(kd["9C"].kd(400.0)) / float(kd["I"].kd(400.0))
+    red = float(kd["9C"].kd(650.0)) / float(kd["I"].kd(650.0))
+    beyond = {}
+    for t in ("IB", "5C"):
+        w = jerlov.water(t, source="williamson2022")
+        extra = (np.asarray(w.a(np.array([412.0, 550.0])))
+                 - np.asarray(jerlov.pure_water_absorption(
+                     np.array([412.0, 550.0]), source="williamson2022")))
+        beyond[t] = f"{extra[0] / extra[1]:.1f}"
+    aw_printed = np.asarray(jerlov.pure_water_absorption_table(
+        PRINTED_WL, source=PURE_WATER_SOURCE))
+    below_types, below_wl, below_most = [], set(), 0.0
+    for t in TYPES:
+        ratio = np.asarray(kd[t].kd(PRINTED_WL)) / aw_printed
+        if np.any(ratio < 1):
+            below_types.append(t)
+            below_wl.update(float(w) for w in PRINTED_WL[ratio < 1])
+            below_most = max(below_most, float(1 - ratio.min()))
+    below_nm = sorted(below_wl)
+    return {
+        "BELOW_TYPES": (f"{below_types[0]} to {below_types[-1]}"
+                        if len(below_types) > 1 else below_types[0]),
+        "BELOW_NM": (", ".join(f"{w:.0f}" for w in below_nm[:-1])
+                     + f" and {below_nm[-1]:.0f}" if len(below_nm) > 1
+                     else f"{below_nm[0]:.0f}"),
+        "BELOW_PERCENT": f"{100 * below_most:.0f}",
+        "WINDOWS": window,
+        "AW650": f"{aw650:.2f}",
+        "KD650_LOW": f"{min(kd650):.2f}",
+        "KD650_HIGH": f"{max(kd650):.2f}",
+        "KD400_I": f"{float(kd['I'].kd(400.0)):.3f}",
+        "KD400_9C": f"{float(kd['9C'].kd(400.0)):.1f}",
+        "BLUE_RATIO": f"{blue:.0f}",
+        "RED_RATIO": f"{red:.1f}",
+        "BEYOND_IB": beyond["IB"],
+        "BEYOND_5C": beyond["5C"],
+    }
 
 
 def dive_figures(inputs: dict) -> dict:
@@ -95,6 +171,7 @@ def dive_figures(inputs: dict) -> dict:
     descent = jerlov.descend("I", jerlov.profile_depth("I"), wl)
     layered = jerlov.par_profile(es, wl, 0.0, kd=descent, unit="energy")
     return {
+        **why_figures(),
         "I_ONE_KD": f"{flat.depth_of_fraction():.0f}",
         "I_LAYERED": f"{layered.depth_of_fraction():.0f}",
         "SUN": f"{SUN_DEG:g}",

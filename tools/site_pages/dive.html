@@ -76,6 +76,13 @@ dl.stats dd { margin: 0; font-family: var(--mono); font-variant-numeric: tabular
 #spectrum text.ax { font-family: var(--mono); fill: var(--muted); }
 #spectrum text.pk { font-family: var(--mono); fill: var(--fg); paint-order: stroke; stroke: var(--surface); stroke-width: 3px; }
 #spectrum { width: 100%; height: 190px; display: block; margin-top: 8px; }
+#why text.ax { font-family: var(--mono); fill: var(--muted); }
+#why text.pk { font-family: var(--mono); fill: var(--fg); paint-order: stroke; stroke: var(--surface); stroke-width: 3px; }
+#why { width: 100%; height: 260px; display: block; }
+.why { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 28px; align-items: start; }
+@media (max-width: 860px) { .why { grid-template-columns: minmax(0, 1fr); } }
+.why p { margin: 0 0 10px; max-width: 66ch; }
+blockquote { margin: 0 0 10px; padding-left: 12px; border-left: 3px solid var(--line); color: var(--muted); }
 .objects { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 10px; }
 @media (max-width: 560px) { .objects { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 .obj { font-size: 12px; color: var(--muted); }
@@ -143,6 +150,24 @@ a { color: var(--accent); }
   </div>
 
   <div class="panel section">
+    <h2>Why the colour changes</h2>
+    <div class="why">
+      <div>
+        <svg id="why" role="img" aria-label="Kd against wavelength for the ten types, with pure water's absorption"></svg>
+        <p class="small">Kd of the ten types on a log scale; the chosen type is drawn heavily, with a dot where its printed Kd is least. Dashed: the absorption of pure water alone (Pope &amp; Fry 1997). At {{BELOW_NM}} nm the Kd Jerlov printed for types {{BELOW_TYPES}} lies below it, by up to {{BELOW_PERCENT}} %; this page does not reconcile the two.</p>
+      </div>
+      <div>
+        <p>The light that is left lies where Kd is least, so its colour follows that window. Among the wavelengths Jerlov printed, Kd is least at {{WINDOWS}}.</p>
+        <p><b>The red end is the water itself.</b> At 650 nm pure water alone absorbs {{AW650}} per metre, and Kd is {{KD650_LOW}} to {{KD650_HIGH}} per metre over the ten types: in the clearest water Kd at 650 nm is little more than what the water alone absorbs.</p>
+        <p><b>The blue end is what is in it.</b> At 400 nm Kd is {{KD400_I}} per metre in type I and {{KD400_9C}} in 9C, {{BLUE_RATIO}} times as much; at 650 nm only {{RED_RATIO}} times. Jerlov wrote of his coastal types (<i>Marine Optics</i>, 1976, p. 137):</p>
+        <blockquote>“These northern water masses are characterized by a relatively high amount of yellow substance.”</blockquote>
+        <p>In the model Williamson &amp; Hollins (2022) fitted to types IB to 5C, what absorbs beyond pure water does so {{BEYOND_IB}} times as strongly at 412 nm as at 550 nm in IB, and {{BEYOND_5C}} times in 5C. With the blue taken from one side and the red from the other, the window, and the colour, move to green and then yellow and orange. The narrower it gets, the nearer the light is to one wavelength, and the further outside sRGB its colour lies.</p>
+        <p class="small">Which part of each type's blue loss is dissolved matter, which phytoplankton and which other particles was not recorded with the types, and this page does not divide it.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel section">
     <h2>Ten materials, lit from above at this depth</h2>
     <p class="small" style="margin-top:0">Left half: under the surface sunlight. Right half: at the chosen depth, with the exposure raised until the white PVC is as bright as at the surface and the white balance left at the surface. The object is right in front of the viewer, so no water lies between them. Measured reflectances from the USGS Spectral Library 7.</p>
     <div class="objects" id="objects"></div>
@@ -165,6 +190,8 @@ a { color: var(--accent); }
       <ul>
         <li><b>Kd:</b> N. G. Jerlov, <i>Marine Optics</i> (Elsevier, 1976), Table XXVII, printed at 16 wavelengths from 310 to 700 nm and read at 1 nm from the dataset that interpolates it.</li>
         <li><b>Sunlight just below the surface:</b> Gregg &amp; Carder (1990), Limnol. Oceanogr. 35, 1657–1675, doi:10.4319/lo.1990.35.8.1657, clear sky, sun {{SUN}}° from the zenith, 21 June, visibility {{VISIBILITY}} km, and the standard atmosphere of their Table 5.</li>
+        <li><b>Pure water's absorption:</b> Pope &amp; Fry (1997), Appl. Opt. 36, 8710–8723, doi:10.1364/AO.36.008710.</li>
+        <li><b>Absorption beyond pure water:</b> the a of types IB to 5C and the pure water absorption it was built on, Williamson &amp; Hollins (2022), as jerlov ships them (its DATA.md section 20).</li>
         <li><b>Colour:</b> CIE 1931 2° observer, sRGB (IEC 61966-2-1).</li>
         <li><b>Materials:</b> USGS Spectral Library Version 7 (Kokaly et al. 2017), CC0.</li>
         <li>All inputs were taken from <a href="https://tishibashi-cpu.github.io/jerlov/" target="_blank" rel="noopener">jerlov</a> <span id="ver"></span>, the Python package that collects these sources. The page only multiplies and integrates; its colours and PAR values match jerlov's own <code>spectrum_to_srgb</code> and <code>par_profile</code> to within 0.00001, which a test in its repository checks.</li>
@@ -283,6 +310,37 @@ function drawSpectrum() {
   svg.innerHTML = g;
 }
 
+function drawWhy() {
+  const svg = document.getElementById("why");
+  const W = svg.clientWidth || 400, H = svg.clientHeight || 260;
+  svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
+  const p = { l: 40, r: 8, t: 22, b: 22 };
+  const lo = Math.log10(0.003), hi = Math.log10(5);
+  const x = (l) => p.l + ((l - 380) / 320) * (W - p.l - p.r);
+  const y = (v) => p.t + (hi - Math.log10(Math.max(v, 0.003))) / (hi - lo) * (H - p.t - p.b);
+  const path = (arr) => arr.map((v, i) => `${i ? "L" : "M"}${x(DATA.wl[i]).toFixed(1)},${y(v).toFixed(1)}`).join("");
+  let g = "";
+  for (const l of [400, 450, 500, 550, 600, 650, 700]) {
+    g += `<line x1="${x(l)}" x2="${x(l)}" y1="${p.t}" y2="${H - p.b}" style="stroke:var(--line)" stroke-width="1"/>`;
+    g += `<text x="${x(l)}" y="${H - 6}" font-size="10" text-anchor="middle" class="ax">${l}</text>`;
+  }
+  for (const v of [0.01, 0.1, 1]) {
+    g += `<line x1="${p.l}" x2="${W - p.r}" y1="${y(v)}" y2="${y(v)}" style="stroke:var(--line)" stroke-width="1"/>`;
+    g += `<text x="${p.l - 4}" y="${y(v) + 3}" font-size="10" text-anchor="end" class="ax">${v}</text>`;
+  }
+  g += `<text x="${p.l}" y="12" font-size="10" class="ax">per metre</text>`;
+  for (const t of TYPES) {
+    if (t !== state.type) g += `<path d="${path(DATA.kd[t])}" fill="none" style="stroke:var(--muted)" stroke-opacity="0.45" stroke-width="1"/>`;
+  }
+  g += `<path d="${path(DATA.aw)}" fill="none" style="stroke:var(--fg)" stroke-width="1.2" stroke-dasharray="4 3"/>`;
+  const sw = css(COLS[state.type][Math.round(state.z * 2)].hue);
+  g += `<path d="${path(DATA.kd[state.type])}" fill="none" style="stroke:var(--accent)" stroke-width="2.4"/>`;
+  const wn = DATA.window[state.type], i = DATA.wl.indexOf(wn);
+  g += `<circle cx="${x(wn)}" cy="${y(DATA.kd[state.type][i])}" r="5" fill="${sw}" style="stroke:var(--fg)" stroke-width="1.2"/>`;
+  g += `<text x="${W - p.r}" y="12" font-size="11" text-anchor="end" class="pk">${state.type}: least at ${wn} nm</text>`;
+  svg.innerHTML = g;
+}
+
 function drawObjects() {
   const box = document.getElementById("objects");
   box.innerHTML = "";
@@ -314,7 +372,7 @@ function update() {
   document.getElementById("mode-hint").textContent = state.mode === "hue"
     ? "Each band is shown at full brightness, so only the colour changes. Switch to “Colour and brightness” to see how dark it gets."
     : "Brightness relative to the surface, as one fixed camera exposure would record it. Below a few tens of metres almost everything is black.";
-  drawColumns(); drawSpectrum(); drawObjects(); save();
+  drawColumns(); drawSpectrum(); drawWhy(); drawObjects(); save();
 }
 
 function pick(ev) {
@@ -343,7 +401,7 @@ canvas.addEventListener("keydown", (e) => {
 document.getElementById("depth").addEventListener("input", (e) => { state.z = parseFloat(e.target.value); update(); });
 document.getElementById("mode-hue").addEventListener("click", () => { state.mode = "hue"; update(); });
 document.getElementById("mode-abs").addEventListener("click", () => { state.mode = "abs"; update(); });
-window.addEventListener("resize", () => { drawColumns(); drawSpectrum(); });
+window.addEventListener("resize", () => { drawColumns(); drawSpectrum(); drawWhy(); });
 window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => { drawColumns(); });
 new MutationObserver(() => drawColumns()).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
 if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => drawColumns());

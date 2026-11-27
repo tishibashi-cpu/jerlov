@@ -703,3 +703,95 @@ def test_the_fourth_page_agrees_with_the_example_on_when_the_bottom_fades():
 def _example_module(name):
     import runpy
     return runpy.run_path(str(ROOT / "examples" / f"{name}.py"), run_name=name)
+
+
+# -- the first page: why the colour changes (DECISIONS.md section 128) -------
+
+PRINTED = np.arange(400.0, 701.0, 25.0)
+
+
+def test_the_printed_wavelengths_are_jerlovs():
+    """The window is looked for among the wavelengths Table XXVII prints."""
+    import csv
+    import importlib.resources
+    text = (importlib.resources.files("jerlov.data") / "jerlov1976_kd.csv"
+            ).read_text()
+    ok = {float(r["wavelength_nm"]) for r in csv.DictReader(text.splitlines())
+          if r["status"] == "ok"}
+    assert sorted(w for w in ok if 380 <= w <= 700) == PRINTED.tolist()
+    assert np.array_equal(_tool().PRINTED_WL, PRINTED)
+
+
+def test_the_windows_on_the_first_page_are_jerlovs():
+    data = _data(_page("dive.html"))
+    windows = {}
+    for t in _tool().TYPES:
+        kd = np.asarray(jerlov.water(t, source="jerlov1976").kd(PRINTED))
+        windows[t] = float(PRINTED[np.argmin(kd)])
+    assert data["window"] == windows
+    assert windows["I"] == windows["II"] == 475.0
+    assert (windows["III"], windows["1C"], windows["7C"], windows["9C"]) == \
+        (500.0, 550.0, 550.0, 575.0)
+    assert ("Kd is least at 475 nm for I to II, 500 nm for III, 550 nm for "
+            "1C to 7C and 575 nm for 9C") in _flat(_page("dive.html"))
+
+
+def test_the_first_pages_red_and_blue_figures_are_jerlovs():
+    page = _flat(_page("dive.html"))
+    kd = {t: jerlov.water(t, source="jerlov1976") for t in ("I", "9C")}
+    all650 = [float(jerlov.water(t, source="jerlov1976").kd(650.0))
+              for t in _tool().TYPES]
+    aw = float(jerlov.pure_water_absorption_table(650.0, source="pope1997"))
+    assert (f"At 650 nm pure water alone absorbs {aw:.2f} per metre, and Kd "
+            f"is {min(all650):.2f} to {max(all650):.2f} per metre") in page
+    blue = float(kd["9C"].kd(400.0)) / float(kd["I"].kd(400.0))
+    red = float(kd["9C"].kd(650.0)) / float(kd["I"].kd(650.0))
+    assert (f"At 400 nm Kd is {float(kd['I'].kd(400.0)):.3f} per metre in "
+            f"type I and {float(kd['9C'].kd(400.0)):.1f} in 9C, {blue:.0f} "
+            f"times as much; at 650 nm only {red:.1f} times") in page
+    assert (aw, round(blue), round(red, 1)) == (0.34, 86, 2.1)
+
+
+def test_the_first_pages_absorption_beyond_pure_water_is_williamsons():
+    wl = np.array([412.0, 550.0])
+    ratios = []
+    for t in ("IB", "5C"):
+        extra = (np.asarray(jerlov.water(t, source="williamson2022").a(wl))
+                 - np.asarray(jerlov.pure_water_absorption(
+                     wl, source="williamson2022")))
+        ratios.append(extra[0] / extra[1])
+    assert (f"does so {ratios[0]:.1f} times as strongly at 412 nm as at 550 "
+            f"nm in IB, and {ratios[1]:.1f} times in 5C") in \
+        _flat(_page("dive.html"))
+    assert all(r > 1 for r in ratios)
+
+
+def test_where_jerlovs_kd_lies_below_pure_water_is_said():
+    aw = np.asarray(jerlov.pure_water_absorption_table(PRINTED,
+                                                       source="pope1997"))
+    below = {}
+    for t in _tool().TYPES:
+        r = np.asarray(jerlov.water(t, source="jerlov1976").kd(PRINTED)) / aw
+        if np.any(r < 1):
+            below[t] = (PRINTED[r < 1].tolist(), float(1 - r.min()))
+    assert list(below) == ["I", "IA", "IB", "II"]
+    worst = max(v[1] for v in below.values())
+    assert (f"At 675 and 700 nm the Kd Jerlov printed for types I to II lies "
+            f"below it, by up to {100 * worst:.0f} %") in \
+        _flat(_page("dive.html"))
+    assert sorted({w for v in below.values() for w in v[0]}) == [675.0, 700.0]
+
+
+def test_the_first_pages_quotation_is_in_data_md():
+    quote = ("These northern water masses are characterized by a relatively "
+             "high amount of yellow substance.")
+    assert quote in " ".join((ROOT / "DATA.md").read_text().split())
+    assert f"“{quote}”" in _flat(_page("dive.html"))
+    assert "Marine Optics, 1976, p. 137" in _flat(_page("dive.html"))
+
+
+def test_the_first_page_embeds_pope_and_frys_absorption():
+    data = _data(_page("dive.html"))
+    tool = _tool()
+    want = jerlov.pure_water_absorption_table(tool.DIVE_WL, source="pope1997")
+    _close(np.round(want, 6).tolist(), data["aw"], "aw")

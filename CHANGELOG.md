@@ -4,6 +4,40 @@ Every release is archived on Zenodo under the concept DOI
 [10.5281/zenodo.22321312](https://doi.org/10.5281/zenodo.22321312), which
 always resolves to the latest version.
 
+## 1.31.0 — 2026-11-27
+
+Forward scattering with a Fournier-Forand phase function, and a panel on
+the first site page that says why the colour of the light moves from blue
+to orange (DECISIONS.md section 128). No shipped value changed, and no
+existing call gives a different result.
+
+**New.** `forward_scatter` takes a `FournierForand` as well as one of
+Petzold's stations. Its share within the half-angle is the closed form
+of `FournierForand.cumulative`, from 0 to 180 degrees, with no warning.
+The `ForwardScatter` it returns has the new field `particles_only` set,
+and NaN for `wavelength_nm`, `c` and `c_within`, since a phase function
+has no water of its own.
+
+**New.** `attenuation_within(..., pure_water_b=)`. A Fournier-Forand
+describes the particles alone, so with one the pure water scattering in
+the water's b must be named (for example `pure_water_scattering` at the
+water's salinity), and the result is c - f (b - bw) - fw bw, with fw pure
+water's own share within the half-angle: 0.27 percent within 5 degrees,
+against 56 percent for the Fournier-Forand of Mobley et al.'s fit to
+Petzold's average. With a Petzold station, which is the whole water, the
+keyword must be left out and nothing changes.
+
+**Docs.** The site's page "Daylight on the way down" gains a panel, "Why
+the colour changes": the ten types' Kd against wavelength with pure
+water's absorption (Pope & Fry 1997), the wavelength where each type's
+printed Kd is least (475 nm for I to II, 500 nm for III, 550 nm for 1C to
+7C, 575 nm for 9C), what pure water does at the red end and what is in
+the water does at the blue end, with Jerlov's own words on the yellow
+substance of the waters his coastal types came from. Every figure in it
+is computed from the package and checked by a test. It also says that at
+675 and 700 nm the Kd Jerlov printed for types I to II lies below Pope &
+Fry's pure water absorption, by up to 10 percent.
+
 ## 1.30.0 — 2026-11-26
 
 The Fournier-Forand phase function (DECISIONS.md section 127). No shipped
