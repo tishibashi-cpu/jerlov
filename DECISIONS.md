@@ -9290,6 +9290,12 @@ Carlo 0.895 to 1.593. The average particle's phase function at the angle
 of single scattering is 0.96 to 1.06 times NUC 2240's, and its rrs 0.94
 to 1.24 times. So NUC 2240 was a close stand-in for HydroLight's phase
 function in the black-bottom cells, and the second group is not the
-Monte Carlo's choice of phase function. What remains is between the
-Monte Carlo and HydroLight themselves (the surface, Raman scattering,
-the fit judged on all runs together), which this package cannot run.
+Monte Carlo's choice of phase function. No HydroLight output is in hand:
+the comparison is between the model, fitted to HydroLight runs that
+were not published, and this Monte Carlo. What remains cannot be told
+apart here: either the model misses HydroLight in these cells (its fit
+was judged on all runs together, and the 1998 paper wrote that fixing
+A0 = 1 and A1 = 1/pi would need a negative D1 or a more complicated
+form, pp. 6334-6335), or the Monte Carlo differs from those runs in what
+it leaves out (waves at 5 m/s; a sky, which section 114 added at 30
+percent without closing the group; scattering below 1 degree).
