@@ -1004,7 +1004,7 @@ def test_the_sphere_example_carries_the_same_monte_carlo(sphere_module):
             sun_zenith_deg=light, depth_m=math.inf, bottom_albedo=None,
             depths_m=depths, slab_m=1.0, zenith_step_deg=m["D_ZENITH"],
             azimuth_step_deg=m["D_AZIMUTH"], photons=5000, batches=2,
-            seed=3)
+            seed=3, wind="flat")
         for key in ("ed", "eu", "e0", "radiance"):
             assert np.array_equal(mine[key], getattr(f, "batch_" + key)[0])
 
@@ -1138,7 +1138,8 @@ def test_the_waves_example_carries_the_same_monte_carlo(waves_module):
         cut_deg=particles["first_deg"], refractive_index=m["N_WATER"],
         sun_zenith_deg=30.0, depth_m=math.inf, bottom_albedo=None,
         depths_m=depths, slab_m=1.0, zenith_step_deg=m["D_ZENITH"],
-        azimuth_step_deg=m["D_AZIMUTH"], photons=5000, batches=2, seed=2)
+        azimuth_step_deg=m["D_AZIMUTH"], photons=5000, batches=2, seed=2,
+        wind="flat")
     for key in ("ed", "eu", "e0", "radiance"):
         assert np.array_equal(mine[key], getattr(f, "batch_" + key)[0])
 

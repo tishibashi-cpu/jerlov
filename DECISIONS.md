@@ -9593,3 +9593,37 @@ API reference (the new argument); the topic page; CHANGELOG; the Zenodo
 description; question 5 and DATA.md section 50; an example part or a
 tool for the question 5 runs, kept in examples/data/. A new argument and
 a new field: 1.34.0.
+
+### Result
+
+Differences from the plan: the result gained four fields, not one,
+`reflected_at_surface` and `transmitted_at_surface` with their standard
+errors, so that check 3 is Eq. (31) term by term and check 4 has a
+standard error; light that a facet refracts into the water upwards (a
+second facet would be needed) is dropped, as light reflected the wrong
+way is. Every call in the repository now passes `wind`.
+
+1. Met: `wind="flat"` and an omitted `wind` give the same field, and the
+   example's figures and the stored check runs are unchanged.
+2. Met: the mean square slope of a million facets drawn for light
+   straight down is sigma^2 within 1 percent, and their mean weight 1
+   within 0.1 percent.
+3. Met: transparent water, wind 7 m/s: transmitted plus reflected
+   exceeds 1 by 0.008 percent at a sun of 30 degrees and 0.025 percent
+   at 60 (200 000 photons in each of four batches, the test's runs). It
+   rises to 0.186 percent at 60 degrees and 14 m/s, where facets turned
+   away from the sun, which are drawn again, are no longer rare.
+4. Met: the sun's reflectance against the quadrature over the slopes, at
+   30 and 60 degrees and 2, 7 and 14 m/s, within three standard errors;
+   0.0224 to 0.0238 at 30 degrees, 0.0633 to 0.0707 at 60, where a flat
+   surface gives 0.0222 and 0.0610.
+5. Not done: no build of OSOAA is in this session.
+
+Question 5 (`tools/monte_carlo_check.py --waves`,
+`examples/data/monte_carlo/waves_black_bottom.csv`): the model is within
+10 percent of the Monte Carlo in 1 of the group's 13 runs with waves at
+5 m/s, 0 with the same function's flat surface; the measure is not met.
+Waves move the rrs by 0.900 to 1.029 times. Every difference between
+this Monte Carlo and Lee et al.'s runs that sections 114 to 137 named has
+now been tried; what is left is the model's own fit to HydroLight in
+those cells, which needs HydroLight's output.

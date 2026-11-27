@@ -137,7 +137,7 @@ def simulate(a, b, bw, particles, wavelength, salinity, sun_zenith,
         depth_m=math.inf, bottom_albedo=None, depths_m=depths,
         slab_m=2 * half_slab, zenith_step_deg=D_ZENITH,
         azimuth_step_deg=D_AZIMUTH, photons=photons, batches=BATCHES,
-        seed=0)
+        seed=0, wind="flat")
     return [dict(radiance=f.batch_radiance[k], e0=f.batch_e0[k],
                  ed=f.batch_ed[k], eu=f.batch_eu[k])
             for k in range(BATCHES)]

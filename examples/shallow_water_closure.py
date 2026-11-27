@@ -739,6 +739,42 @@ Carlo {min(q_quad.values()):.3f} to {max(q_quad.values()):.3f}). The measure set
                 back=back)
 
 
+def waves_part(dark):
+    rule("7. Waves: Cox and Munk's slopes at 5 m/s")
+    path = DATA.parent / "monte_carlo" / "waves_black_bottom.csv"
+    with open(path) as handle:
+        rows = list(csv.DictReader(handle))
+    model = np.array([float(r["model"]) for r in rows])
+    flat = np.array([float(r["flat"]) for r in rows])
+    wavy = np.array([float(r["wind"]) for r in rows])
+    within_flat = int(np.sum(np.abs(model / flat - 1) <= MISS))
+    within_wind = int(np.sum(np.abs(model / wavy - 1) <= MISS))
+    ratio = wavy / flat
+    noise = max(float(r["wind_se"]) / float(r["wind"]) for r in rows)
+    print(f"""Lee et al.'s HydroLight runs had a wind of 5 m/s; the Monte Carlo of
+parts 3 to 6 a flat surface. jerlov.monte_carlo_light_field (1.34.0) takes
+a wind, as Cox and Munk's (1954) isotropic slopes (DECISIONS.md section
+139). The group's {len(rows)} runs, NUC 2240's phase function, a, bb and pure
+water's part as before, flat and at 5 m/s:
+
+  model within {100 * MISS:g} percent: {within_flat} of {len(rows)} flat, {within_wind} of {len(rows)} with waves
+  rrs with waves over flat: {ratio.min():.3f} to {ratio.max():.3f} (standard errors up to {100 * noise:.1f} percent)
+  model over Monte Carlo with waves: {(model / wavy).min():.3f} to {(model / wavy).max():.3f}
+
+The measure set beforehand (10 of 13) is {'met' if within_wind >= 10 else 'not met'}: the waves {'account' if within_wind >= 10 else 'do not account'} for
+the group. Every difference between this Monte Carlo and Lee et al.'s
+runs that DECISIONS.md sections 114 to 137 named has now been tried (the
+phase function, the sky, the cut, the angular quads, the waves); what is
+left is the model's own fit to HydroLight in these cells, which needs
+HydroLight's output.""")
+    return dict(group=len(rows), within_flat=within_flat,
+                within_wind=within_wind,
+                ratio=(float(ratio.min()), float(ratio.max())),
+                q_wind=(float((model / wavy).min()),
+                        float((model / wavy).max())),
+                noise=noise)
+
+
 def main():
     _banner()
     with warnings.catch_warnings():
@@ -749,6 +785,7 @@ def main():
         separated = separated_part()
         fournier = fournier_part()
         average = average_part(dark)
+        waves = waves_part(dark)
     rule("Before you use any of this")
     print("""  - The Monte Carlo is not HydroLight: a flat surface, no Raman scattering,
     Petzold's NUC 2240 for the particles where the paper used his average
@@ -765,7 +802,7 @@ def main():
     for each bb/b; another pair with the same bb/b is another shape.
 """)
     return dict(paper=paper, share=share, dark=dark, separated=separated,
-                fournier=fournier, average=average)
+                fournier=fournier, average=average, waves=waves)
 
 
 if __name__ == "__main__":

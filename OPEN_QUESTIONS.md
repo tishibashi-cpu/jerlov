@@ -388,6 +388,12 @@ an explanation was written down before the runs (DECISIONS.md section
   the mean radiance over the cap within 5 degrees of the nadir and
   spreading the sun over its quad, as HydroLight does, moves the rrs by
   0.91 to 1.11 times and brings 4 of the 13 within 10 percent.
+- Nor do waves (DECISIONS.md section 139): with
+  `monte_carlo_light_field`'s Cox and Munk slopes at 5 m/s, Lee et al.'s
+  wind, the model is within 10 percent in 1 of the 13 (0 with the same
+  function's flat surface); waves move the rrs by 0.900 to 1.029 times.
+  Every difference the records named between this Monte Carlo and Lee
+  et al.'s runs has now been tried.
 
 **What is not known.** How much of the second group the paper's own runs
 would show: its fits were judged on all runs together, and the 1999 refit's
@@ -402,9 +408,11 @@ angle of single scattering, carries most of the difference between two
 phase functions with the same bb/b; elsewhere neither half alone does.
 HydroLight's runs had the average-particle phase function, whose
 backward half is close to NUC 2240's, so the phase function the Monte
-Carlo was given is not what sets the second group apart from the model.
+Carlo was given is not what sets the second group apart from the model;
+nor are the angular quads or the waves. What is left is the model's own
+fit to HydroLight in those cells, which needs HydroLight's output.
 
-**Where.** DATA.md section 50; DECISIONS.md sections 113 to 115 and 134 to 136;
+**Where.** DATA.md section 50; DECISIONS.md sections 113 to 115 and 134 to 139;
 `examples/shallow_water_closure.py`; `tools/shallow_rrs_mc.py` and
 `tools/lee1998_runs.py`, with their results in
 `examples/data/shallow_rrs_mc/`.

@@ -1,13 +1,16 @@
 """A light field under water by Monte Carlo. DECISIONS.md sections 38 to
 40 and 138.
 
-Photons enter through a flat surface, refracted and thinned by Fresnel
-transmission. Each travels a free path drawn from exp(-c s), and at its
-end is scattered, never absorbed: instead its weight is multiplied by
+Photons enter through the surface, refracted and thinned by Fresnel
+transmission: a flat surface, or, since 1.34.0, one facet of Cox and
+Munk's isotropic wave slopes at each crossing (DECISIONS.md section 139).
+Each travels a free path drawn from exp(-c s), and at its end is
+scattered, never absorbed: instead its weight is multiplied by
 b / c. Scattering is by pure water or by particles in proportion to their
 share of b, at an angle drawn from that one's phase function and an
 azimuth drawn uniformly. Light reaching the surface from below is
-reflected back by the Fresnel reflectance and the rest leaves; light
+reflected back by the Fresnel reflectance (at a facet, if there are
+waves) and the rest leaves; light
 reaching a bottom, if there is one, is reflected by its albedo into a
 cosine-weighted direction. A photon whose weight falls below 1e-4
 survives with probability 1/10 and ten times the weight.
@@ -30,13 +33,15 @@ example's numbers bit for bit.
 
 Every choice that sets the result is a required argument; nothing is
 defaulted (DECISIONS.md section 138, which amends section 12). Left out:
-an atmosphere, waves, polarisation, inelastic scattering (Raman,
-fluorescence) and water that varies with depth.
+an atmosphere, polarisation, inelastic scattering (Raman, fluorescence),
+water that varies with depth, and of the waves the wind's direction,
+whitecaps and light meeting a second facet.
 """
 
 from __future__ import annotations
 
 import math
+import warnings
 from dataclasses import dataclass
 from typing import Any
 
@@ -48,7 +53,8 @@ from .petzold import ScatteringFunction
 from .backscattering import pure_water_scattering, pure_water_vsf
 from .water import MissingQuantityError
 
-#: What the method does not include, said in every result.
+#: What the method does not include, said in every result; the second
+#: entry is for a flat surface, the third for waves.
 LEFT_OUT = (
     "an atmosphere: the sun's beam or a sky of uniform radiance is given "
     "just above the surface",
@@ -57,6 +63,15 @@ LEFT_OUT = (
     "inelastic scattering: no Raman scattering, no fluorescence",
     "water that varies with depth: one homogeneous layer",
 )
+_LEFT_OUT_WAVES = (
+    "of the waves: the wind's direction (Cox and Munk's isotropic slopes), "
+    "whitecaps and foam, and light meeting a second facet")
+
+#: Cox and Munk (1954), J. Opt. Soc. Am. 44, 838-850, eq. (42), p. 221,
+#: clean surface, converted from cm/s: the mean square slope is
+#: 0.003 + 5.12e-3 W, W the wind in m/s at 12.5 m (41 ft, p. 199); as
+#: transcribed in examples/wave_focusing.py (DECISIONS.md sections 44, 139).
+COX_MUNK_MEAN_SQUARE_SLOPE = (0.003, 5.12e-3)
 
 #: Below this weight a photon plays Russian roulette: it survives with
 #: probability 1/10 at ten times the weight.
@@ -153,9 +168,54 @@ def _turn(ux, uy, uz, cos_t, rng):
     return nx / norm, ny / norm, nz / norm
 
 
+def _facets(d, slope_variance, rng):
+    """Facet normals for directions ``d`` (3 x n, unit) meeting a surface
+    whose slopes are Gaussian, each direction with variance
+    ``slope_variance`` / 2 (Cox and Munk's isotropic form), and the weight
+    of each, the share of the beam it intercepts over a flat surface's.
+
+    The normal is the one on the side the light comes from (z is positive
+    downwards: upward for light from the air, downward for light from the
+    water). A facet that faces away from the light is drawn again.
+    """
+    n = d.shape[1]
+    from_air = d[2] > 0
+    normal = np.empty((3, n))
+    todo = np.arange(n)
+    sd = math.sqrt(slope_variance / 2)
+    while todo.size:
+        zx = rng.normal(0.0, sd, todo.size)
+        zy = rng.normal(0.0, sd, todo.size)
+        norm = np.sqrt(1 + zx * zx + zy * zy)
+        side = np.where(from_air[todo], -1.0, 1.0)
+        cand = np.array([-zx * side, -zy * side, side]) / norm
+        ok = np.sum(cand * d[:, todo], axis=0) < 0
+        normal[:, todo[ok]] = cand[:, ok]
+        todo = todo[~ok]
+    cos_i = -np.sum(normal * d, axis=0)
+    w = cos_i / (np.abs(normal[2]) * np.abs(d[2]))
+    return normal, cos_i, w
+
+
+def _fresnel_cos(cos_i, n1, n2):
+    """Fresnel's reflectance for unpolarised light at a local angle of
+    incidence, and the cosine of the refracted angle (0 where all is
+    reflected)."""
+    sin_t = n1 / n2 * np.sqrt(np.maximum(0.0, 1 - cos_i * cos_i))
+    out = np.ones_like(cos_i)
+    cos_t = np.zeros_like(cos_i)
+    ok = sin_t < 1
+    ct, ci = np.sqrt(1 - sin_t[ok] ** 2), cos_i[ok]
+    rs = (n1 * ci - n2 * ct) / (n1 * ci + n2 * ct)
+    rp = (n1 * ct - n2 * ci) / (n1 * ct + n2 * ci)
+    out[ok] = 0.5 * (rs * rs + rp * rp)
+    cos_t[ok] = ct
+    return out, cos_t
+
+
 def _simulate(a, b, bw, particles, water, sun_zenith, seed, *, photons,
               depths, half_slab, n_water, d_zenith, d_azimuth,
-              depth=math.inf, albedo=None):
+              depth=math.inf, albedo=None, slope_variance=None):
     """One batch. ``sun_zenith`` in degrees, or None for an overcast sky of
     uniform radiance. z is positive downwards; the sun's light travels
     towards +x, so azimuth 0 is the direction away from the sun.
@@ -170,11 +230,31 @@ def _simulate(a, b, bw, particles, water, sun_zenith, seed, *, photons,
     else:
         mu_air = np.full(photons, np.cos(np.radians(sun_zenith)))
         azimuth = np.zeros(photons)
-    weight = 1 - _fresnel(mu_air, 1.0, n_water)
-    ed_surface = float(np.sum(weight))
-    sin_w = np.sqrt(1 - mu_air ** 2) / n_water
-    ux, uy = sin_w * np.cos(azimuth), sin_w * np.sin(azimuth)
-    uz = np.sqrt(1 - sin_w ** 2)
+    rough = slope_variance is not None
+    if not rough:
+        weight = 1 - _fresnel(mu_air, 1.0, n_water)
+        reflected_above = float(np.sum(1 - weight))
+        sin_w = np.sqrt(1 - mu_air ** 2) / n_water
+        ux, uy = sin_w * np.cos(azimuth), sin_w * np.sin(azimuth)
+        uz = np.sqrt(1 - sin_w ** 2)
+    else:
+        s_air = np.sqrt(1 - mu_air ** 2)
+        d = np.array([s_air * np.cos(azimuth), s_air * np.sin(azimuth),
+                      mu_air])
+        normal, cos_i, w = _facets(d, slope_variance, rng)
+        r, cos_t = _fresnel_cos(cos_i, 1.0, n_water)
+        eta = 1.0 / n_water
+        t = eta * d + (eta * cos_i - cos_t) * normal
+        t /= np.linalg.norm(t, axis=0)
+        weight = w * (1 - r)
+        reflected_above = float(np.sum(w * r))
+        ux, uy, uz = t[0].copy(), t[1].copy(), t[2].copy()
+        # a refracted direction pointing up again would need a second facet
+        lost = uz <= 0
+        weight[lost] = 0.0
+        uz[lost] = 1.0
+    transmitted = float(np.sum(weight))
+    ed_surface = transmitted
     z = np.zeros(photons)
     scattered = np.zeros(photons, bool)
     n_th, n_ph = int(180 / d_zenith), int(180 / d_azimuth)
@@ -225,8 +305,18 @@ def _simulate(a, b, bw, particles, water, sun_zenith, seed, *, photons,
         z[i] = z1
 
         up = i[surfaced]
-        weight[up] *= _fresnel(uz[up], n_water, 1.0)
-        uz[up] = -uz[up]
+        if not rough:
+            weight[up] *= _fresnel(uz[up], n_water, 1.0)
+            uz[up] = -uz[up]
+        elif up.size:
+            d = np.array([ux[up], uy[up], uz[up]])
+            normal, cos_i, w = _facets(d, slope_variance, rng)
+            r, _ = _fresnel_cos(cos_i, n_water, 1.0)
+            out = d + 2 * cos_i * normal
+            out /= np.linalg.norm(out, axis=0)
+            # reflected light still travelling up meets no second facet
+            weight[up] *= np.where(out[2] > 0, w * r, 0.0)
+            ux[up], uy[up], uz[up] = out[0], out[1], np.maximum(out[2], 1e-12)
         ed_surface += float(np.sum(weight[up]))
 
         if bottom:
@@ -272,7 +362,8 @@ def _simulate(a, b, bw, particles, water, sun_zenith, seed, *, photons,
                * np.radians(d_azimuth) * 2)          # both folded halves
     return dict(radiance=radiance / photons / d_omega[None, :, None],
                 e0=e0 / photons, ed=ed / photons, eu=eu / photons,
-                rrs=lu / ed_surface)
+                rrs=lu / ed_surface, transmitted=transmitted / photons,
+                reflected=reflected_above / photons)
 
 
 # -- the public function -----------------------------------------------------
@@ -309,6 +400,10 @@ class MonteCarloLightField:
     e0_over_ed_se: np.ndarray
     rrs: float
     rrs_se: float
+    reflected_at_surface: float
+    reflected_at_surface_se: float
+    transmitted_at_surface: float
+    transmitted_at_surface_se: float
     inputs: dict
     left_out: tuple
 
@@ -321,8 +416,12 @@ class MonteCarloLightField:
                      "eu_over_ed_se", "e0_over_ed", "e0_over_ed_se"):
             out[name] = np.asarray(getattr(self, name)).tolist()
         out.update(rrs=self.rrs, rrs_se=self.rrs_se,
+                   reflected_at_surface=self.reflected_at_surface,
+                   reflected_at_surface_se=self.reflected_at_surface_se,
+                   transmitted_at_surface=self.transmitted_at_surface,
+                   transmitted_at_surface_se=self.transmitted_at_surface_se,
                    inputs=dict(self.inputs), left_out=list(self.left_out),
-                   method="Monte Carlo, DECISIONS.md section 138")
+                   method="Monte Carlo, DECISIONS.md sections 138 and 139")
         return out
 
 
@@ -370,7 +469,8 @@ def monte_carlo_light_field(a, b, wavelength_nm, /, *,
                             depth_m=None, bottom_albedo=...,
                             depths_m=None, slab_m=None,
                             zenith_step_deg=None, azimuth_step_deg=None,
-                            photons=None, batches=None, seed=None):
+                            photons=None, batches=None, seed=None,
+                            wind=...):
     """The light field in one homogeneous water by Monte Carlo
     (DECISIONS.md section 138).
 
@@ -436,6 +536,14 @@ def monte_carlo_light_field(a, b, wavelength_nm, /, *,
     zenith_step_deg, azimuth_step_deg:
         The radiance's cells; each must divide 180. Azimuth runs from 0,
         away from the sun, to 180, the two halves folded.
+    wind:
+        ``"flat"``, or the wind speed in m/s at 12.5 m, for a surface of
+        Cox and Munk's (1954) isotropic slopes, mean square slope 0.003 +
+        5.12e-3 wind (DECISIONS.md section 139). Each crossing of the
+        surface meets one facet; light that a facet reflects and that
+        still travels away from the water is taken as gone, as OSOAA does.
+        Since 1.34.0. Leaving it out takes the surface as flat, as 1.33.0
+        did, with a FutureWarning; a later release will require it.
     photons, batches, seed:
         Photons per batch; at least 2 batches, for the standard errors;
         batch i uses the seed ``seed + i``.
@@ -531,6 +639,22 @@ def monte_carlo_light_field(a, b, wavelength_nm, /, *,
     photons = _count("photons", photons, 1)
     batches = _count("batches", batches, 2)
     seed = _count("seed", seed, 0)
+    if wind is ...:
+        warnings.warn(
+            "monte_carlo_light_field: wind was left out and the surface is "
+            "taken as flat, as 1.33.0 did; pass wind='flat' or the wind "
+            "speed in m/s at 12.5 m. A later release will require it "
+            "(DECISIONS.md section 139).", FutureWarning, stacklevel=2)
+        wind = "flat"
+    if isinstance(wind, str):
+        if wind != "flat":
+            raise ValueError(f"wind must be 'flat' or a speed in m/s, not "
+                             f"{wind!r}")
+        slope_variance = None
+    else:
+        wind = _number("wind", wind, low=0.0)
+        slope_variance = (COX_MUNK_MEAN_SQUARE_SLOPE[0]
+                          + COX_MUNK_MEAN_SQUARE_SLOPE[1] * wind)
 
     particles = _particle_phase(phase_function, cut_deg,
                                 station_salinity_psu)
@@ -539,7 +663,7 @@ def monte_carlo_light_field(a, b, wavelength_nm, /, *,
                       seed + k, photons=photons, depths=depths,
                       half_slab=slab_m / 2, n_water=refractive_index,
                       d_zenith=steps[0], d_azimuth=steps[1], depth=depth_m,
-                      albedo=bottom_albedo)
+                      albedo=bottom_albedo, slope_variance=slope_variance)
             for k in range(batches)]
 
     def frozen(x):
@@ -559,6 +683,8 @@ def monte_carlo_light_field(a, b, wavelength_nm, /, *,
         ratio_u, ratio_u_se = mean_se([r["eu"] / r["ed"] for r in runs])
         ratio_0, ratio_0_se = mean_se([r["e0"] / r["ed"] for r in runs])
     rrs, rrs_se = mean_se(batch["rrs"])
+    reflected, reflected_se = mean_se([r["reflected"] for r in runs])
+    transmitted, transmitted_se = mean_se([r["transmitted"] for r in runs])
     name = (phase_function.station
             if isinstance(phase_function, ScatteringFunction)
             else f"Fournier-Forand, n = {phase_function.refractive_index:g},"
@@ -572,7 +698,9 @@ def monte_carlo_light_field(a, b, wavelength_nm, /, *,
                   sun_zenith_deg=sun_zenith_deg, depth_m=depth_m,
                   bottom_albedo=bottom_albedo, slab_m=slab_m,
                   zenith_step_deg=steps[0], azimuth_step_deg=steps[1],
-                  photons=photons, batches=batches, seed=seed)
+                  photons=photons, batches=batches, seed=seed, wind=wind)
+    left_out = (LEFT_OUT if slope_variance is None
+                else LEFT_OUT[:1] + (_LEFT_OUT_WAVES,) + LEFT_OUT[2:])
     return MonteCarloLightField(
         depths_m=frozen(depths),
         zenith_edges_deg=frozen(np.arange(0.0, 180.0 + steps[0] / 2,
@@ -591,4 +719,8 @@ def monte_carlo_light_field(a, b, wavelength_nm, /, *,
         mean_cosine_se=frozen(mu_se), eu_over_ed=frozen(ratio_u),
         eu_over_ed_se=frozen(ratio_u_se), e0_over_ed=frozen(ratio_0),
         e0_over_ed_se=frozen(ratio_0_se), rrs=float(rrs),
-        rrs_se=float(rrs_se), inputs=inputs, left_out=LEFT_OUT)
+        rrs_se=float(rrs_se), reflected_at_surface=float(reflected),
+        reflected_at_surface_se=float(reflected_se),
+        transmitted_at_surface=float(transmitted),
+        transmitted_at_surface_se=float(transmitted_se), inputs=inputs,
+        left_out=left_out)

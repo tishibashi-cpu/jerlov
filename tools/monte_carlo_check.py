@@ -18,6 +18,11 @@ does (DECISIONS.md section 138's result).
 
     python tools/monte_carlo_check.py OUT.csv
     python tools/monte_carlo_check.py --same-phase CSV
+    python tools/monte_carlo_check.py --waves OUT.csv
+
+``--waves`` runs DECISIONS.md section 139's question 5 cells: the 13 runs
+of the black-bottom group (section 114), flat and with wind 5 m/s, by
+the package's function.
 """
 
 from __future__ import annotations
@@ -36,7 +41,10 @@ SALINITY_PSU = 37.0
 CUT_DEG = 1.0
 
 
-def run(row: dict, phase) -> tuple[float, float]:
+WAVES_WIND = 5.0
+
+
+def run(row: dict, phase, wind="flat") -> tuple[float, float]:
     a, bp, bw = float(row["a"]), float(row["bp"]), float(row["bw"])
     out = jerlov.monte_carlo_light_field(
         a, bp + bw, phase.wavelength_nm, pure_water_b=bw,
@@ -45,7 +53,8 @@ def run(row: dict, phase) -> tuple[float, float]:
         refractive_index=1.34, sun_zenith_deg=float(row["sun_deg"]),
         depth_m=float(row["depth_m"]), bottom_albedo=float(row["albedo"]),
         depths_m=[0.25], slab_m=0.5, zenith_step_deg=10.0,
-        azimuth_step_deg=45.0, photons=PHOTONS, batches=BATCHES, seed=SEED)
+        azimuth_step_deg=45.0, photons=PHOTONS, batches=BATCHES, seed=SEED,
+        wind=wind)
     return out.rrs, out.rrs_se
 
 
@@ -90,6 +99,42 @@ def same_phase(path: str) -> None:
         writer.writerows(rows)
 
 
+def black_bottom_group(rows):
+    """Section 114's second group: a black bottom, bp/a not 0.3, the model
+    more than 10 percent from the tool's Monte Carlo."""
+    out = []
+    for r in rows:
+        if r["depth_m"] == "inf" or float(r["albedo"]) != 0.0:
+            continue
+        if abs(float(r["bp"]) / float(r["a"]) - 0.3) < 1e-9:
+            continue
+        if abs(float(r["model"]) / float(r["monte_carlo"]) - 1) > 0.1:
+            out.append(r)
+    return out
+
+
+def waves(path: str) -> None:
+    phase = jerlov.petzold_scattering("NUC 2240")
+    with open(RUNS) as handle:
+        group = black_bottom_group(list(csv.DictReader(handle)))
+    out = []
+    for r in group:
+        flat, flat_se = run(r, phase, "flat")
+        wavy, wavy_se = run(r, phase, WAVES_WIND)
+        out.append({
+            "a": r["a"], "bp": r["bp"], "bw": r["bw"], "bb": r["bb"],
+            "depth_m": r["depth_m"], "sun_deg": r["sun_deg"],
+            "model": r["model"], "flat": f"{flat:.6e}",
+            "flat_se": f"{flat_se:.2e}", "wind_m_s": WAVES_WIND,
+            "wind": f"{wavy:.6e}", "wind_se": f"{wavy_se:.2e}",
+        })
+        print(out[-1], flush=True)
+    with open(path, "w", newline="") as f:
+        writer = csv.DictWriter(f, fieldnames=list(out[0]))
+        writer.writeheader()
+        writer.writerows(out)
+
+
 def main(path: str) -> None:
     phase = jerlov.petzold_scattering("NUC 2240")
     with open(RUNS) as handle:
@@ -114,7 +159,9 @@ def main(path: str) -> None:
 
 
 if __name__ == "__main__":
-    if len(sys.argv) == 3 and sys.argv[1] == "--same-phase":
+    if len(sys.argv) == 3 and sys.argv[1] == "--waves":
+        waves(sys.argv[2])
+    elif len(sys.argv) == 3 and sys.argv[1] == "--same-phase":
         same_phase(sys.argv[2])
     elif len(sys.argv) == 2:
         main(sys.argv[1])

@@ -3236,6 +3236,10 @@ table is shipped; the constants are in `jerlov/ocean_colour.py`.
   scattering is 0.96 to 1.06 times NUC 2240's. With HydroLight's quads
   (the radiance over the 5-degree nadir cap, the sun over its quad;
   section 137, `quads.csv`), 4 of the 13.
+- **Waves (1.34.0, DECISIONS.md section 139).** With
+  `monte_carlo_light_field` and Cox and Munk's slopes at 5 m/s, 1 of the
+  13 (0 flat in the same function); waves move the rrs by 0.900 to 1.029
+  times (`examples/data/monte_carlo/waves_black_bottom.csv`).
 
 ## 51. The refractive index of sea water: Quan & Fry (1995) (note)
 
