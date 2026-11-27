@@ -321,6 +321,8 @@ QUOTED = [
      "OPEN_QUESTIONS.md"),
     ("At 675 nm no filter up to 60 nm does", "At 675 nm no filter up to 60 nm "
      "reaches", "OPEN_QUESTIONS.md"),
+    ("lowers the Kd of pure water there by at most 0.59 percent at 675 and "
+     "700 nm", "by at most 0.59 percent at 675 and 700 nm", "OPEN_QUESTIONS.md"),
     ('it seems that the last word is not said about the behaviour of the '
      'irradiance attenuation in the "slope" region of 600 nm',
      'it seems that the last word is not said about the behaviour of the > '

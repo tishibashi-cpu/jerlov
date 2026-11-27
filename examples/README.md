@@ -482,7 +482,8 @@ filter alone lowers the attenuation a detector sees: through 40 nm,
 pure water over 0-10 m appears at **0.853** of its absorption at 700 nm,
 which reaches the 1976 deficit there; at 675 nm no filter up to 60 nm
 does. Raman scattering, the other mechanism Marshall & Smith name, is
-quoted, not computed.
+computed by their own two-stream model: over 0-10 m it lowers Kd by at
+most **0.59** percent at 675 and 700 nm.
 
 ## What they do not show
 

@@ -8880,3 +8880,25 @@ a_r = 1.5 a, two streams, one exciting wavelength per emitted one, b_r at
 **Documents.** OPEN_QUESTIONS.md question 7's findings and what is not
 known; the site's line and the page "Where the sources disagree" (its
 prose); CHANGELOG. Every figure recomputed by a test. A patch, 1.31.3.
+
+**Result.** As planned. The paper's B at 589 nm comes out at 1.38e4
+(about 1.3e4 in the paper). Over 0-10 m the Raman light lowers the Kd of
+pure water by at most 0.59 percent at 675 and 700 nm, with b_r 35
+percent higher or a flat sun, against type I's deficits there of 4.5 to
+18.8 percent; by the criterion written above, in this model it cannot
+account for them. Over 0-20 m it reaches 17.7 percent at 700 nm and over
+0-30 m 40.7 percent (Smith & Baker's absorption).
+
+**Differences from the plan, noted after the code.**
+
+- The plan, and the first draft of CHANGELOG 1.31.3, gave the deficits
+  as "5 to 14 percent", taken from the figures at hand rather than
+  computed over both editions and both pure waters; they are 4.5 to 18.8
+  (type I, 675 and 700 nm). Found before the commit; the example now
+  prints the range and a test checks it.
+- Gregg & Carder's table is given at whole nanometres only, so the
+  surface ratio E0(l', 0)/Ed(l, 0) is interpolated from the table's own
+  rows, as the package asks.
+- Question 7's first update dropped the two quotations on near-surface
+  Raman effects; the test of the quotations found it, and they are back,
+  now beside the computed result they agree with.
