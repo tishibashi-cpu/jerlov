@@ -8902,3 +8902,87 @@ account for them. Over 0-20 m it reaches 17.7 percent at 700 nm and over
 - Question 7's first update dropped the two quotations on near-surface
   Raman effects; the test of the quotations found it, and they are back,
   now beside the computed result they agree with.
+
+## 132. A Fournier-Forand for a renderer's g and for OSOAA (1.32.0): the plan
+
+Section 127 left four functions taking Petzold's stations only; section
+128 opened `forward_scatter` and `attenuation_within` to a
+`FournierForand`. This opens the other two, `henyey_greenstein_fit` and
+`osoaa_phase_function`, as the user asked (2026-11-27). After it, every
+public function that takes a phase function takes either.
+
+**What differs from a station.** A Fournier-Forand is the particles'
+phase function alone, has no c, b or wavelength, and is known in closed
+form at every angle above 0 (section 127). The two functions handle each
+of these as follows.
+
+**`henyey_greenstein_fit(scattering, /, *, method)`.**
+
+- `"backscatter_ratio"`: g whose HG scatters the Fournier-Forand's own
+  backscatter ratio (Eq. 3) beyond 90 degrees, by the same bisection.
+- `"mean_cosine"`: g = `FournierForand.mean_cosine()`, which rests on no
+  extension and does not warn.
+- `log_ratio` is ln(p_HG / p_FF) at Petzold's 55 angles, 0.1 to 180
+  degrees (all eight stations share them), so that a Fournier-Forand's
+  fit reads like a station's.
+- The result: `station` names the Fournier-Forand (n and mu), as
+  `ForwardScatter` does; `wavelength_nm` is NaN; `measured_backscatter_
+  ratio` is the Fournier-Forand's own; a new field `particles_only`
+  (default False, added at the end) is True; `as_dict` gives the
+  Fournier-Forand's citation as its source and the new field. The g is
+  the particles' g: pure water's scattering, which a renderer may add
+  as its own medium, is not in it, and the docstring says so.
+
+**`osoaa_phase_function(scattering, /, *, minus_f12_over_f11,
+f22_over_f11, f33_over_f11)`.**
+
+- F11 = 4 pi times the Fournier-Forand's phase function at Petzold's 55
+  angles, from 180 degrees down, as for a station; the ratios as before
+  (a number, or 55 values).
+- Below 0.1 degree the spline is OSOAA's, as for a station; the share of
+  the Fournier-Forand there is known exactly, `cumulative(0.1)` (6.83
+  percent for Mobley et al.'s Petzold fit, seen while planning), and the
+  docstring says the file's F11 integrates to 4 pi times one less it.
+- OSOAA's hydrosols under `-HYD.Model 3` are the particles, with its own
+  pure water added (section 86): a particles-only phase function is what
+  that model describes, where a station's includes pure water.
+- The two cross-section lines: a Fournier-Forand has no c or b, and
+  `-HYD.Model 3` does not read them (section 86: two runs differing only
+  in them gave byte-identical results). They are written as 1 and 1, and
+  the comment line says they are placeholders, not read under that model.
+- No warning: nothing in it is extrapolated from data.
+
+**Checks, set now.**
+
+1. The HG g from `"backscatter_ratio"` returns the Fournier-Forand's B
+   within 1e-9; from `"mean_cosine"`, g equals its mean cosine.
+2. `log_ratio` equals ln(HG / FF) recomputed at the 55 angles.
+3. The OSOAA file has 55 rows from 180 down; F11 / 4 pi equals the
+   phase function there; the cross-section lines are 1 and 1 and the
+   comment says why.
+4. A station gives byte-identical files and identical fits to 1.31.3.
+5. OSOAA itself (the build of section 86, by hand, not in CI): a run of
+   Jerlov III at 440 nm with the Fournier-Forand of Mobley et al.'s
+   Petzold fit runs to the end; its truncation coefficient and Kd are
+   recorded beside the same run with NUC 2240's phase function, as a
+   record, not judged.
+
+**Documents.** The map, docs/topics/other_software.rst and
+seeing_through_water.rst where they name these functions, CHANGELOG, the
+Zenodo description. A release with new behaviour of public functions,
+1.32.0.
+
+**Result.** As planned. Checks 1 to 4 hold (a station's files and fits
+are byte-identical to 1.31.3's, `as_dict` aside, which gains
+`particles_only`). For the Fournier-Forand on Mobley et al.'s line at a
+backscatter ratio of 0.0183, the HG g is 0.91858; the paper (p. 1038)
+says "a value of g = 0.9185 gives Bp = 0.0183", and a test holds both.
+Check 5, OSOAA by hand (the build of section 86; one run each, Jerlov III
+at 440 nm, the base conditions of tools/osoaa_closure.py): the
+Fournier-Forand file was read and the run went to the end. Its
+truncation coefficient was 1.40009 against 1.30648 with NUC 2240, and Kd
+over 0-10 m 0.15594 against 0.15697 per metre, 0.66 percent lower
+(Jerlov's own, 0.145). The share of the Fournier-Forand below 0.1 degree,
+left to OSOAA's spline, is 6.83 percent. Recorded, not judged; the runs
+are not kept in the repository, so CHANGELOG does not quote their
+figures.

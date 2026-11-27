@@ -30,7 +30,10 @@ renderer that reads a table can have the transmittance itself, unfitted. A
 channel that turns negative, as the red of linear sRGB does after a few
 metres of clear water, is refused rather than clipped. The
 Henyey-Greenstein g is matched to Petzold's measured B/S or to his mean
-cosine, which you choose; neither matches sea water's forward peak. The
+cosine, which you choose; neither matches sea water's forward peak. It can
+be matched to a Fournier-Forand as well (since 1.32.0), for particles of a
+backscatter ratio you choose rather than a measured water; that g is the
+particles' alone, with no pure water in it. The
 spectra go to Mitsuba 3 or pbrt-v4 without an RGB step.
 ``examples/rendering_export.py`` writes all three for Mitsuba 3, pbrt-v4
 and Blender (DECISIONS.md section 82).
@@ -58,7 +61,9 @@ HydroLight do. Each function returns the text of an input file for one of
 them. Both codes add their own pure water back, so the pure water to take
 off is the one the run will add: there is no default, and a coefficient
 that turns negative without it is refused. Petzold measured no
-polarization, so OSOAA's ratios are yours too. The OSOAA files were run in
+polarization, so OSOAA's ratios are yours too. The phase function can be a
+Fournier-Forand instead of a station (since 1.32.0): the particles alone,
+which is what OSOAA's hydrosols are. The OSOAA files were run in
 OSOAA by hand and gave back Jerlov III's c and b/c; HydroLight was not
 available, and its file follows the documentation (DATA.md section 38).
 ``examples/radiative_transfer_inputs.py`` writes all three.
