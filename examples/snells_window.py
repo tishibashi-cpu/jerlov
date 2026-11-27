@@ -12,8 +12,8 @@ measured radiance distribution, Tyler's (1958), at seven depths in a lake.
     python examples/snells_window.py
 
 Parts 1 to 5 are geometry and Fresnel's equations at a flat surface,
-written out here: the package solves no radiative transfer and has no
-public Fresnel function (DECISIONS.md section 123). Part 6 uses
+written out here: the package has no public Fresnel function
+(DECISIONS.md section 123). Part 6 uses
 jerlov.tyler1958_radiance.
 """
 

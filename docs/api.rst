@@ -163,6 +163,14 @@ Scattering and backscattering
 .. autoclass:: FournierForand
    :members:
 
+Light field by Monte Carlo
+--------------------------
+
+.. autofunction:: monte_carlo_light_field
+
+.. autoclass:: MonteCarloLightField
+   :members:
+
 Measured reflectances
 ---------------------
 

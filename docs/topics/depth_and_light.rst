@@ -108,9 +108,31 @@ model against:
 
    jerlov.tyler1958_radiance(41.3)  # <RadianceDistribution Tyler 1958, 41.3 m, 19 tilts x 10 azimuths>
 
-The package solves no radiative transfer itself; the Monte Carlo model in
-``examples/radiance_distribution.py`` is compared with these tables, and does
-not match them. DATA.md section 23.
+Since 1.33.0 the package computes a light field by Monte Carlo,
+:func:`~jerlov.monte_carlo_light_field`, with every choice that sets it a
+required argument: the phase function, the sun or an overcast sky, the
+depth and the bottom, the photons and the seed among them. It gives Ed, Eu,
+Eo, Kd, the mean cosine, the radiance in cells and rrs, each with its
+standard error over batches, and says what it leaves out (an atmosphere,
+waves, polarisation, inelastic scattering, layers). For those, use OSOAA
+or HydroLight. ``examples/radiance_distribution.py`` compares it with
+Tyler's tables, and it does not match them. DATA.md section 23; DECISIONS.md
+section 138.
+
+.. code-block:: python
+
+   import math
+   iii = jerlov.water("III")
+   f = jerlov.monte_carlo_light_field(
+       float(iii.a(500.0)), float(iii.b(500.0)), wavelength_nm=500.0,
+       pure_water_b=float(jerlov.pure_water_scattering(500.0, salinity_psu=35.0)),
+       salinity_psu=35.0,
+       phase_function=jerlov.petzold_scattering("NUC 2240"),
+       station_salinity_psu=35.0, cut_deg=1.0, refractive_index=1.34,
+       sun_zenith_deg=30.0, depth_m=math.inf, bottom_albedo=None,
+       depths_m=[2.0, 5.0, 10.0], slab_m=1.0, zenith_step_deg=10.0,
+       azimuth_step_deg=45.0, photons=20_000, batches=4, seed=0)
+   f.kd, f.kd_se    # Kd from 2 to 5 m and from 5 to 10 m, and their errors
 
 Under a wavy surface the light flickers. Two field studies that give it only
 in figures are shipped as values read off those figures, each with its

@@ -226,9 +226,9 @@ the coast.
 
 **`radiance_distribution.py`** — the light arriving from each direction at
 depth in Jerlov II, by a Monte Carlo solution of the radiative transfer
-equation written in the example itself, from the package's a and b, a
-Petzold phase function and pure water's. The package does not solve it
-(DECISIONS.md section 38). Gershun's law recovers the a put in to within 2
+equation, `monte_carlo_light_field` (which carried this example's own
+engine until 1.33.0, DECISIONS.md section 138), from the package's a and
+b, a Petzold phase function and pure water's. Gershun's law recovers the a put in to within 2
 percent; Kd is within 6 percent of Jerlov's (1976) at 500 and 550 nm and 20
 to 24 percent above at 450. Scalar irradiance exceeds planar by 1.24 to
 1.37, and the next nearest of Petzold's stations changes Eu / Ed at 10 m by

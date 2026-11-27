@@ -146,7 +146,7 @@ python examples/seagrass_depth_limit.py        light at the bottom, by requireme
 python examples/isolumes.py                    light levels and vertical migration
 python examples/lure_colours.py                painted lures: colour and contrast
 python examples/ultraviolet.py                 UV-A at depth, against PAR
-python examples/radiance_distribution.py       radiance from every direction
+python examples/radiance_distribution.py       radiance from every direction, by Monte Carlo
 python examples/painted_sphere.py              a sphere seen from four directions
 python examples/wave_focusing.py               flicker under waves, against Darecki
 python examples/fish_colour_differences.py     colour differences for a fish's cones

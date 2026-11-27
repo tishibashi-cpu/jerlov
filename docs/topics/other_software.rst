@@ -56,8 +56,10 @@ Water for a radiative transfer code
        pure_water=(jerlov.pure_water_absorption(wl),     # the aw under III's a
                    jerlov.pure_water_scattering(wl, salinity_psu=35.0)))
 
-This package does not solve the radiative transfer equation; OSOAA and
-HydroLight do. Each function returns the text of an input file for one of
+This package solves the radiative transfer equation only by one Monte
+Carlo method, for one homogeneous layer under a flat surface
+(:func:`~jerlov.monte_carlo_light_field`, since 1.33.0); OSOAA and
+HydroLight do much more. Each function returns the text of an input file for one of
 them. Both codes add their own pure water back, so the pure water to take
 off is the one the run will add: there is no default, and a coefficient
 that turns negative without it is refused. Petzold measured no

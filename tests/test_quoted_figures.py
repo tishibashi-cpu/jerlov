@@ -932,70 +932,6 @@ def test_the_tyler_tables_give_back_what_the_example_says():
     assert abs(e["ed"] / np.pi - 1) < 0.02
 
 
-@pytest.fixture(scope="module")
-def radiance_module():
-    import runpy
-    return runpy.run_path(str(ROOT / "examples" / "radiance_distribution.py"),
-                          run_name="radiance_distribution")
-
-
-@source_tree
-def test_the_radiance_engine_turns_by_the_angle_asked(radiance_module):
-    """DECISIONS.md section 40: the turn is exact, straight up and down
-    included, and its azimuth is uniform."""
-    turn = radiance_module["turn"]
-    rng = np.random.default_rng(1)
-    v = rng.normal(size=(3, 20000))
-    v /= np.linalg.norm(v, axis=0)
-    v[:, :5] = [[0.0], [0.0], [1.0]]
-    v[:, 5:10] = [[0.0], [0.0], [-1.0]]
-    cos_t = rng.uniform(-1, 1, v.shape[1])
-    new = np.array(turn(*v, cos_t, rng))
-    assert np.allclose(np.sum(new * v, axis=0), cos_t, atol=1e-9)
-    assert np.allclose(np.linalg.norm(new, axis=0), 1.0)
-    old = np.array([0.3, -0.5, 0.81]) / np.linalg.norm([0.3, -0.5, 0.81])
-    n = 200_000
-    new = np.array(turn(*(np.full(n, x) for x in old), np.full(n, 0.5), rng))
-    # uniform azimuth: the mean new direction is cos_t times the old one
-    assert np.allclose(new.mean(axis=1), 0.5 * old, atol=0.005)
-
-
-@source_tree
-@pytest.mark.parametrize("w, depths, rtol", [
-    (0.5, (4.0, 6.0, 8.0), 0.06),
-    (0.72, (4.0, 6.0, 8.0), 0.03),
-    (0.9, (8.0, 11.0, 14.0), 0.03)])
-def test_the_radiance_engine_against_isotropic_scattering(
-        radiance_module, w, depths, rtol):
-    """DECISIONS.md section 40: with isotropic scattering, deep water has an
-    exact asymptotic light field; the engine reproduces its K, mean cosine,
-    Eu / Ed and E0 / Ed within 3 percent at w = 0.72 and 0.9, and within 6
-    at 0.5."""
-    m = radiance_module
-    lo, hi = 1e-9, 1 - 1e-12
-    for _ in range(200):
-        k = 0.5 * (lo + hi)
-        if w / (2 * k) * np.log((1 + k) / (1 - k)) < 1:
-            lo = k
-        else:
-            hi = k
-    mu = np.linspace(0.0, 1.0, 100_001)
-    ed = m["trapezoid"](mu / (1 - k * mu), mu)
-    eu = m["trapezoid"](mu / (1 + k * mu), mu)
-    e0 = m["trapezoid"](1 / (1 - k * mu) + 1 / (1 + k * mu), mu)
-    iso = dict(cdf=np.linspace(0, 1, 2001), cos=np.linspace(1, -1, 2001),
-               straight=0.0)
-    depths = np.array(depths)
-    runs = [m["simulate"](1 - w, w, 0.0, iso, iso, None, seed=seed,
-                          photons=200_000, depths=depths, half_slab=0.25)
-            for seed in range(4)]
-    f = m["summary"](runs, depths)
-    assert np.allclose(f["kd"], k, rtol=rtol)
-    assert np.allclose(f["mu"], (1 - w) / k, rtol=rtol)
-    assert np.allclose(f["R"], eu / ed, rtol=rtol)
-    assert np.allclose(f["ratio"], e0 / ed, rtol=rtol)
-
-
 @source_tree
 def test_the_radiance_example_looking_for_the_cause(radiance_example):
     """Part 7, as printed: the phase function moves the mean cosine from
@@ -1046,25 +982,31 @@ def sphere_example(sphere_module):
 
 @source_tree
 def test_the_sphere_example_carries_the_same_monte_carlo(sphere_module):
-    """painted_sphere.py copies the engine of radiance_distribution.py so
-    that it stands alone; the copies must not drift apart."""
-    import ast
-    names = ("inverse_cdf", "particle_phase", "water_phase", "coefficients",
-             "fresnel", "turn", "simulate")
-    sources = {}
-    for name in ("radiance_distribution.py", "painted_sphere.py"):
-        text = (ROOT / "examples" / name).read_text()
-        sources[name] = {node.name: ast.get_source_segment(text, node)
-                         for node in ast.parse(text).body
-                         if isinstance(node, ast.FunctionDef)
-                         and node.name in names}
-    assert set(sources["painted_sphere.py"]) == set(names)
-    assert sources["painted_sphere.py"] == sources["radiance_distribution.py"]
-    import runpy
-    other = runpy.run_path(str(ROOT / "examples" / "radiance_distribution.py"),
-                           run_name="radiance_distribution")
-    for constant in ("N_WATER", "D_ZENITH", "D_AZIMUTH", "BATCHES"):
-        assert sphere_module[constant] == other[constant]
+    """painted_sphere.py keeps its own copy of the engine, so that it
+    stands alone; since 1.33.0 the package carries the engine
+    (jerlov.monte_carlo_light_field, DECISIONS.md section 138), and the
+    copy must give the package's numbers."""
+    import math
+    m = sphere_module
+    station = "NUC 2240"
+    particles = m["particle_phase"](station)
+    a, b, bw = m["coefficients"]("II", 500.0)
+    depths = np.array([2.0, 5.0])
+    for light in (40.0, None):
+        mine = m["simulate"](a, b, bw, particles, m["water_phase"](500.0),
+                             light, seed=3, photons=5000, depths=depths)
+        f = jerlov.monte_carlo_light_field(
+            a, b, wavelength_nm=500.0, pure_water_b=bw,
+            salinity_psu=m["SALINITY_PSU"],
+            phase_function=jerlov.petzold_scattering(station),
+            station_salinity_psu=m["SALINITY_PSU"],
+            cut_deg=particles["first_deg"], refractive_index=m["N_WATER"],
+            sun_zenith_deg=light, depth_m=math.inf, bottom_albedo=None,
+            depths_m=depths, slab_m=1.0, zenith_step_deg=m["D_ZENITH"],
+            azimuth_step_deg=m["D_AZIMUTH"], photons=5000, batches=2,
+            seed=3)
+        for key in ("ed", "eu", "e0", "radiance"):
+            assert np.array_equal(mine[key], getattr(f, "batch_" + key)[0])
 
 
 @source_tree

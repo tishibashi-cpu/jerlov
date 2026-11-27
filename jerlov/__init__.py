@@ -145,6 +145,7 @@ from .fournier_forand import (
     mobley2002_fournier_forand,
 )
 from .fq_tables import Morel2002FQTables, morel2002_fq_tables
+from .monte_carlo import MonteCarloLightField, monte_carlo_light_field
 from .qaa import (QAAResult, RamanCorrection, lee2013_raman_correction,
                   qaa_ioccg2006, qaa_v6)
 from .sources import (
@@ -243,6 +244,8 @@ __all__ = [
     "fournier_forand",
     "mobley2002_fournier_forand",
     "FournierForand",
+    "monte_carlo_light_field",
+    "MonteCarloLightField",
     "PETZOLD_STATIONS",
     "ScatteringFunction",
     "shortwave_parameters",
@@ -332,4 +335,4 @@ __all__ = [
 # number is meant (DECISIONS.md section 126).
 _data.check_public(globals(), __all__)
 
-__version__ = "1.32.4"
+__version__ = "1.33.0"
