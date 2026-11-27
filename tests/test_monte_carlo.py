@@ -162,9 +162,29 @@ def test_against_the_shallow_water_tool():
     ratio = [float(r["package"]) / float(r["tool"]) for r in rows]
     decisions = " ".join((ROOT / "DECISIONS.md").read_text().split())
     section = decisions.split("## 138. ")[1]
-    for k in (1, 2, 3):
-        assert f"{100 * within[k]:.1f} percent within {k}" in section
-    assert f"{min(ratio):.3f} to {max(ratio):.3f}" in section
+    assert (f"{100 * within[1]:.1f} percent within 1 combined standard "
+            f"error, {100 * within[2]:.1f} percent within 2 and "
+            f"{100 * within[3]:.1f} percent within 3") in section
+    assert (f"{min(ratio):.3f} to {max(ratio):.3f} of the tool's, median "
+            f"{float(np.median(ratio)):.3f}") in section
+    same_z = np.abs([float(r["same_phase_z"]) for r in rows])
+    same = {k: float(np.mean(same_z <= k)) for k in (1, 2, 3)}
+    same_ratio = [float(r["same_phase"]) / float(r["tool"]) for r in rows]
+    assert (f"{100 * same[1]:.1f} percent within 1 combined standard "
+            f"error, {100 * same[2]:.1f} percent within 2 and "
+            f"{100 * same[3]:.1f} percent within 3") in section
+    assert (f"{min(same_ratio):.3f} to {max(same_ratio):.3f} of the "
+            f"tool's, median {float(np.median(same_ratio)):.3f}") in section
+    assert same[3] > 0.95 and abs(np.median(same_ratio) - 1) < 0.01
+    changelog = " ".join((ROOT / "CHANGELOG.md").read_text().split())
+    log = changelog.split("## 1.33.0")[1].split("## 1.32.4")[0]
+    assert f"{float(np.median(ratio)):.3f} of the tool's" in log
+    assert f"convention in the same engine, {float(np.median(same_ratio)):.3f}" in log
+    station = jerlov.petzold_scattering("NUC 2240")
+    bw = float(jerlov.pure_water_scattering(530.0, salinity_psu=37.0))
+    bp = (station.backscatter_ratio * station.b - bw / 2) / (station.b - bw)
+    assert (f"ratio is then {bp:.4f} against the whole station's "
+            f"{station.backscatter_ratio:.4f}") in section
 
 
 @source_tree
@@ -179,9 +199,13 @@ def test_a_stored_check_run_is_reproduced():
         "against_shallow_tool.csv"
     with path.open() as handle:
         row = next(csv.DictReader(handle))
-    value, error = check.run(row, jerlov.petzold_scattering("NUC 2240"))
+    station = jerlov.petzold_scattering("NUC 2240")
+    value, error = check.run(row, station)
     assert f"{value:.6e}" == row["package"]
     assert f"{error:.2e}" == row["package_se"]
+    value, error = check.run_same_phase(row, station)
+    assert f"{value:.6e}" == row["same_phase"]
+    assert f"{error:.2e}" == row["same_phase_se"]
 
 
 # -- the result --------------------------------------------------------------

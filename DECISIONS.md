@@ -9462,3 +9462,51 @@ it computes, what it leaves out, and that OSOAA or HydroLight are the
 codes for more); the map; `examples/radiance_distribution.py` rewritten;
 CHANGELOG; the Zenodo description. A new public function and an amended
 scope: 1.33.0.
+
+### Result
+
+**Differences from the plan.** The example's lake runs take pure sea
+water out of Petzold's station at salinity 37 and give the lake's own
+water salinity 0, so one salinity could not serve both: the function
+gained `station_salinity_psu`, required with a Petzold station and
+refused with a Fournier-Forand. The topic page that gained the section
+is the one on depth and light, where Tyler's tables are, not the one on
+seeing through water.
+
+**The rrs estimator, corrected before release.** Written first with
+exp(-c z) along the line of sight, it gave rrs up to 21 percent below the
+shallow-water tool's. Scattering below the cut goes straight on, so it
+does not turn light out of the line of sight; along it the attenuation
+is c less that share, as the tool has it. Corrected; the module's
+docstring says so.
+
+**Checks.**
+
+1. The example's figures are unchanged, and its tests pass as they were:
+   with no bottom the package gives the example's former engine's Ed,
+   Eu, Eo and radiance bit for bit, for the sun and for the overcast
+   (checked while moving it, and held for painted_sphere.py's copy by a
+   test).
+2. The exact isotropic solution: met, as before (tests/test_monte_carlo.py).
+3. Closed forms: met. Without scattering Ed follows Beer's law, and with
+   a bottom rrs is the bottom's geometric series between bottom and
+   surface, within three standard errors.
+4. Against the tool's 243 runs with a bottom (tools/monte_carlo_check.py,
+   examples/data/monte_carlo/against_shallow_tool.csv): **not met as set**.
+   The package's rrs is 0.836 to 1.021 of the tool's, median 0.977;
+   42.4 percent within 1 combined standard error, 71.2 percent within 2
+   and 88.1 percent within 3. The cause is not the transport but an input
+   the plan did not name: the tool turns particles by NUC 2240's whole
+   vsf, which holds pure water's scattering as well, and adds pure water
+   on its own, so it counts pure water twice; the package takes pure
+   water out first. Its particles' backscatter ratio is then 0.0171
+   against the whole station's 0.0180. With the tool's convention in the
+   package's engine (`--same-phase`), the rrs is 0.887 to 1.131 of the
+   tool's, median 0.999; 56.0 percent within 1 combined standard error,
+   89.7 percent within 2 and 98.4 percent within 3, somewhat wider than
+   two independent normal estimates would be (68, 95, 99.7), which ten
+   batches' standard errors and the samplers' differing tables below 1
+   degree may account for. The package's convention is kept: it is the
+   one the example used, and the one the particles are.
+5. Refusals: met (tests/test_monte_carlo.py).
+6. CI time: the topic page's call takes under two seconds.
