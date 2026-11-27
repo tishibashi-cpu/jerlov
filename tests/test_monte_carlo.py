@@ -355,7 +355,8 @@ def _reflectance_by_quadrature(sun, wind, n=1.34):
     cos_i = np.where(front, -dn, 1.0)
     w = cos_i / (np.abs(nz) * abs(d[2]))
     r, _ = mc._fresnel_cos(cos_i, 1.0, n)
-    return float(np.sum(p * front * w * r) / np.sum(p * front))
+    # the facets in sunlight, each by the share of the beam it intercepts
+    return float(np.sum(p * front * w * r) / np.sum(p * front * w))
 
 
 @pytest.mark.parametrize("sun", [30.0, 60.0])
@@ -387,24 +388,25 @@ def test_a_bad_wind_is_refused(bad):
 
 
 @source_tree
-def test_section_139_figures_are_quoted_as_computed():
+def test_the_surface_figures_after_the_correction_are_quoted_as_computed():
+    """1.34.0's figures (DECISIONS.md section 139) were made before the
+    correction of section 140; section 140 quotes them as they are now."""
     decisions = " ".join((ROOT / "DECISIONS.md").read_text().split())
-    section = decisions.split("## 139. ")[1]
+    section = decisions.split("## 140. ")[1]
     total = {(s, w): (lambda f: f.reflected_at_surface
                       + f.transmitted_at_surface - 1)(_transparent(s, w))
-             for s, w in ((30.0, 7.0), (60.0, 7.0), (60.0, 14.0))}
-    assert (f"exceeds 1 by {100 * total[30.0, 7.0]:.3f} percent at a sun of "
-            f"30 degrees and {100 * total[60.0, 7.0]:.3f} percent") in section
-    assert f"rises to {100 * total[60.0, 14.0]:.3f} percent" in section
+             for s, w in ((30.0, 7.0), (60.0, 7.0), (60.0, 14.0),
+                          (80.0, 7.0))}
+    assert (f"exceeds 1 by {100 * total[30.0, 7.0]:.3f} percent at 30 "
+            f"degrees, {100 * total[60.0, 7.0]:.3f} at 60 and "
+            f"{100 * total[60.0, 14.0]:.3f} at 60 degrees and 14 m/s") in section
+    assert (f"falls short of it by {-100 * total[80.0, 7.0]:.3f} percent at "
+            "80 degrees") in section
+    assert abs(total[80.0, 7.0]) < 0.005
     for sun in (30.0, 60.0):
         r = [_transparent(sun, w).reflected_at_surface
              for w in (2.0, 7.0, 14.0)]
-        flat = _transparent(sun, "flat", photons=20_000).reflected_at_surface
         assert f"{min(r):.4f} to {max(r):.4f} at {sun:.0f}" in section
-        assert f"{flat:.4f}" in section
-    changelog = " ".join((ROOT / "CHANGELOG.md").read_text().split())
-    log = changelog.split("## 1.34.0")[1].split("## 1.33.0")[0]
-    assert f"within {100 * total[60.0, 7.0]:.3f} percent at a sun of 60" in log
 
 
 @source_tree
@@ -419,8 +421,10 @@ def test_question_5_with_waves_is_quoted_as_computed():
     assert (w["group"], w["within_flat"], w["within_wind"]) == (13, 0, 1)
     flat = lambda name: " ".join((ROOT / name).read_text().split())  # noqa
     ratio = f"{w['ratio'][0]:.3f} to {w['ratio'][1]:.3f} times"
-    for name in ("OPEN_QUESTIONS.md", "DATA.md", "DECISIONS.md"):
+    for name in ("OPEN_QUESTIONS.md", "DATA.md"):
         assert ratio in flat(name), name
+    assert f"waves moving the rrs by {ratio}" in \
+        flat("DECISIONS.md").split("## 140. ")[1]
     assert "in 1 of the group's 13 runs with waves" in \
         flat("DECISIONS.md")
     assert "bring 1 of the black-bottom group's 13 runs" in \
@@ -448,3 +452,98 @@ def test_a_stored_waves_run_is_reproduced():
                              float(row["wind_m_s"]))
     assert f"{value:.6e}" == row["wind"]
     assert f"{error:.2e}" == row["wind_se"]
+
+
+# -- Mobley et al. (1993), DECISIONS.md section 140 --------------------------
+
+def _benchmark_tool():
+    import sys
+    sys.path.insert(0, str(ROOT / "tools"))
+    try:
+        import mobley1993_benchmark as tool
+    finally:
+        sys.path.pop(0)
+    return tool
+
+
+@source_tree
+def test_table_2_s_misprint_and_its_replacement():
+    tool = _benchmark_tool()
+    angles = np.array([a for a, _ in tool.TABLE2])
+    printed = np.array([v for _, v in tool.TABLE2])
+    assert len(angles) == 55
+    k = int(np.flatnonzero(angles == tool.TABLE2_MISPRINT)[0])
+    assert printed[k] == 2.18839e2
+    used = tool.table2()["values"][k]
+    assert used == pytest.approx(1.9973e2, rel=1e-4)
+    assert printed[k] / used == pytest.approx(1.0957, rel=1e-3)
+    data = " ".join((ROOT / "DATA.md").read_text().split())
+    section = data.split("## 53. ")[1]
+    assert "2.18839+2" in section and "1.9973+2" in section
+    # every other value stands in one ratio to the Web Book's (section 136's
+    # average particle, built from three of Petzold's stations, agrees with
+    # that table within 0.43 percent; here the shipped stations stand in)
+    mc_tool = _tool_module("shallow_rrs_mc")
+    built_angles, built = mc_tool.average_particle_table()
+    ratio = np.delete(printed, k) / np.delete(built, k)
+    assert ratio.max() / ratio.min() < 1.01
+    assert printed[k] / built[k] / np.median(ratio) > 1.08
+
+
+def _tool_module(name):
+    import sys
+    sys.path.insert(0, str(ROOT / "tools"))
+    try:
+        return __import__(name)
+    finally:
+        sys.path.pop(0)
+
+
+@source_tree
+def test_the_phase_functions_of_the_problems_are_normalised():
+    tool = _benchmark_tool()
+    for table in (tool.rayleigh(), tool.table2()):
+        theta = table["angles"]
+        y = table["per_sr"] * 2 * np.pi * np.sin(theta)
+        assert _trapezoid(y, theta) == pytest.approx(1.0, abs=2e-3)
+
+
+@source_tree
+def test_the_canonical_problems_are_quoted_as_run():
+    tool = _benchmark_tool()
+    path = ROOT / "examples" / "data" / "mobley1993" / "runs.csv"
+    with path.open() as handle:
+        rows = list(csv.DictReader(handle))
+    assert len(rows) == 51
+    good = []
+    for r in rows:
+        means, spreads = tool.TABLE5[(int(r["problem"]),
+                                      float(r["omega0"]))][int(r["tau"])]
+        q = ("Ed", "Eou", "Lu").index(r["quantity"])
+        assert float(r["table5"]) == pytest.approx(means[q], rel=1e-9)
+        x, se = float(r["jerlov"]), float(r["jerlov_se"])
+        m, s = means[q], spreads[q] * means[q]
+        good.append(abs(x - m) <= 2 * s + 3 * se + 0.005 * m)
+    assert sum(good) == 46 and sum(good) >= 0.9 * len(rows)
+    misses = {(r["problem"], r["omega0"], r["tau"], r["quantity"])
+              for r, g in zip(rows, good) if not g}
+    assert misses == {("1", "0.2", "10", "Lu"), ("2", "0.2", "10", "Lu"),
+                      ("5", "0.9", "1", "Ed"), ("5", "0.9", "5", "Ed"),
+                      ("5", "0.9", "10", "Ed")}
+    decisions = " ".join((ROOT / "DECISIONS.md").read_text().split())
+    section = decisions.split("## 140. ")[1]
+    assert "46 of the 51 entries posed agree** (90.2 percent" in section
+    ratio = {key: float(r["jerlov"]) / float(r["table5"])
+             for r in rows for key in [(r["problem"], r["tau"],
+                                        r["quantity"], r["omega0"])]}
+    assert (f"{ratio['1', '10', 'Lu', '0.2']:.3f} and "
+            f"{ratio['2', '10', 'Lu', '0.2']:.3f} of the mean") in section
+    assert (f"{ratio['5', '1', 'Ed', '0.9']:.3f}, "
+            f"{ratio['5', '5', 'Ed', '0.9']:.3f} and "
+            f"{ratio['5', '10', 'Ed', '0.9']:.3f} of the mean") in section
+    log = " ".join((ROOT / "CHANGELOG.md").read_text().split())
+    assert "46 of 51 values agree" in log
+    data = " ".join((ROOT / "DATA.md").read_text().split())
+    assert "agrees in 46 of 51 entries" in data
+    assert (f"{ratio['5', '1', 'Ed', '0.9']:.3f} to "
+            f"{ratio['5', '10', 'Ed', '0.9']:.3f} of the mean") in data

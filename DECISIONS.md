@@ -9704,3 +9704,45 @@ DATA.md (the misprint, and the result); OPEN_QUESTIONS.md is not
 involved; a test that every quoted figure is the run's; the topic page
 and `monte_carlo_light_field`'s docstring may say what it was checked
 against; CHANGELOG. No public behaviour changes: 1.34.1.
+
+### Result
+
+**The measure is met: 46 of the 51 entries posed agree** (90.2 percent,
+46 needed). Problems 1 and 2 with omega0 = 0.9 and problem 6 agree in
+every entry. The five that do not:
+
+- Lu at optical depth 10 in problems 1 and 2 with omega0 = 0.2: 0.044 and
+  0.126 of the mean, with standard errors above 90 percent. Too few
+  photons come back from there, even with 10 million per problem for
+  the absorbing cases (`PHOTONS_ABSORBING`, a choice made after the first
+  run gave none); three of the 1993 Monte Carlo codes had none either
+  (p. 7495). The engine has no variance reduction for depth.
+- Ed in problem 5 at optical depths 1, 5 and 10: 0.962, 0.970 and 0.976
+  of the mean (Eou and Lu agree). The engine meets one facet per
+  crossing, and light that a facet reflects the wrong way is dropped;
+  the 1993 Monte Carlo codes followed repeated interactions with the
+  surface (p. 7490). With the sun 80 degrees from the zenith that is the
+  likely cause; it is not tested here.
+
+**A fault in 1.34.0, found by problem 5 and corrected.** The first run
+put problem 5's Ed 13 to 14 percent above the mean. 1.34.0 drew facets
+from the slope distribution, redrew those facing away from the light,
+and weighted each by the share of the beam it intercepts; the mean of
+that weight over the facets facing the light exceeds 1 when the light
+is low (1.164 at 80 degrees and sigma^2 = 0.04, by quadrature), so light
+was created at the surface. Facets turned away are in shadow, and the
+light that reaches the surface must equal what crosses a horizontal
+plane; the weight is now divided by that mean, tabulated against the
+cosine of the light's direction for each slope variance
+(`_front_share_table`). Below 60 degrees the mean is within 0.002 of 1,
+so section 139's checks at 30 and 60 degrees hardly move: transmitted
+plus reflected now exceeds 1 by 0.008 percent at 30 degrees, 0.023 at 60
+and 0.028 at 60 degrees and 14 m/s, and falls short of it by 0.345
+percent at 80 degrees and 7 m/s; the sun's reflectance is 0.0224 to
+0.0238 at 30 degrees and 0.0633 to 0.0706 at 60 against the slopes'
+integral with each facet weighted by the share it intercepts, within
+three standard errors. Question 5's runs with waves were made again:
+still 1 of the 13 within 10 percent, the waves moving the rrs by 0.893
+to 1.028 times.
+
+Table 2's misprint at 0.50119 degree is DATA.md section 53.
