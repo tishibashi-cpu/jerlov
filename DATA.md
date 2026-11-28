@@ -3358,3 +3358,11 @@ depths 1, 5 and 10, all nine entries agreeing; with one facet per
 crossing, 0.962, 0.970 and 0.975. The engine agrees in 47 of 51 entries
 with one facet and 49 of 51 with every facet.
 
+**Lu by a collision estimator (1.36.0, DECISIONS.md section 144).** The
+radiance looking straight down is now taken from every scattering below
+the depth, not from the photons that climb back into a cell around
+straight up. In the two absorbing waters at optical depth 10, where the
+cell's standard error was above 90 percent, it is 3 to 11 percent, and
+both agree. The engine agrees in 49 of 51 entries with one facet and in
+all 51 with every facet; Ed and Eou are unchanged.
+

@@ -10100,3 +10100,41 @@ API reference (the new fields), the topic page, CHANGELOG, the Zenodo
 description, DATA.md section 53, NEXT_STEPS. `tools/mobley1993_benchmark.py`
 takes Lu from the new estimator; its stored runs are made again (Ed and
 Eou unchanged digit for digit).
+
+### Result
+
+Differences from the plan: check 2 named a radiance check that the
+isotropic test did not make (it checks K, the mean cosine and the
+ratios); the exact asymptotic radiance, L ~ 1 / (1 - k mu) with mu the
+cosine to straight down, so L straight up over E0 = 1 / ((1 + k) 2 pi
+integral of 1 / (1 - k mu) over mu from -1 to 1), was added to that test
+in its place, at its tolerances.
+
+1. Met. The estimator draws no random number: every stored check run is
+   reproduced, and in the canonical problems' runs made again every Ed
+   and Eou is the previous one digit for digit and the cap's Lu, kept as
+   `lu_cap`, is the previous Lu digit for digit.
+2. Met. The new estimate over the exact value, at the isotropic test's
+   depths: 0.970 to 0.979 at omega0 = 0.5 (tolerance 6 percent), 0.989
+   to 0.992 at 0.72 and 0.990 to 0.997 at 0.9 (3 percent); the cells of
+   10 degrees there give 0.969 to 1.340.
+3. Met. Problems 1 and 2, omega0 = 0.9, optical depth 1: the new estimate
+   over the cap's mean is 0.959 and 0.957, the difference 0.84 and 0.32
+   of three combined standard errors plus 1 percent.
+4. **Met: with `surface_facets="all"` all 51 entries agree.** The two
+   that did not, Lu at optical depth 10 in problems 1 and 2 with omega0 =
+   0.2, are 1.183 and 1.034 of the mean with standard errors of 10.6 and
+   3.0 percent, where the cap gave 0.044 and 0.126 with 92 percent. With
+   `"one"`, 49 agree; the two left are problem 5's Ed at optical depths 1
+   and 5. Every Lu, as a ratio to the mean with its standard error (the
+   cap's in brackets): problem 1, omega0 0.9, 1.006 (0.1 percent), 1.033
+   (0.2), 0.964 (0.6) at optical depths 1, 5, 10 [cap 1.049, 0.999,
+   1.074]; omega0 0.2, 0.991 (0.1), 0.946 (0.6), 1.183 (10.6) [0.968,
+   0.711, 0.044]; problem 2, omega0 0.9, 0.924 (1.9), 0.907 (2.4), 0.957
+   (5.7) [0.966, 1.018, 0.961]; omega0 0.2, 1.000 (1.5), 1.235 (2.8),
+   1.034 (3.0) [0.949, 1.214, 0.126]; problem 5 with `"all"`, 0.907
+   (3.5), 0.913 (3.5), 0.920 (2.8) [0.919, 0.954, 0.916]; problem 6 at
+   optical depth 1, 1.014 (1.4) [0.930]. The new estimate is not always
+   nearer the mean than the cap was (problem 2 with omega0 = 0.9 is
+   lower), but it is everywhere within the models' spread, and its
+   errors are smaller in 15 of the 16 Lu set against the cap.

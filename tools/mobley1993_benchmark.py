@@ -12,6 +12,10 @@ page images. Problems 1, 2, 5 and 6 are posed; 3 (stratified water), 4
 
     python tools/mobley1993_benchmark.py OUT.csv [--surface-facets all]
 
+Lu is the radiance looking straight down by the engine's collision
+estimator (DECISIONS.md section 144); ``lu_cap`` is the mean over the cap
+within CAP_DEG of straight up, as sections 140 to 143 took it.
+
 Problem 5's surface meets one facet per crossing, as in 1.34.1
 (examples/data/mobley1993/runs.csv), or, with ``--surface-facets all``,
 every facet the light meets (DECISIONS.md section 141,
@@ -153,21 +157,29 @@ def run(key, surface_facets="one"):
     rows = []
     for j, tau in enumerate(taus):
         if tau < depth:
-            per = np.array([[r["ed"][j], r["e0u"][j],
-                             r["radiance"][j, -1, :].mean()] for r in out])
+            # Lu by the collision estimator (DECISIONS.md section 144); the
+            # mean over the cap within CAP_DEG is kept beside it
+            per = np.array([[r["ed"][j], r["e0u"][j], r["lu"][j]]
+                            for r in out])
+            cap = np.array([r["radiance"][j, -1, :].mean() for r in out])
         else:       # at a Lambertian bottom: Eou = 2 rho Ed, Lu = rho Ed / pi
             rho = spec["albedo"]
             ed = np.array([r["ed_bottom"] for r in out])
             per = np.stack([ed, 2 * rho * ed, rho * ed / math.pi], axis=1)
+            cap = per[:, 2]
         mean = per.mean(axis=0) * scale
         se = per.std(axis=0, ddof=1) / math.sqrt(BATCHES) * scale
+        cap_mean = cap.mean() * scale
+        cap_se = cap.std(ddof=1) / math.sqrt(BATCHES) * scale
         table, spread = TABLE5[key][tau]
         for q, name in enumerate(("Ed", "Eou", "Lu")):
             rows.append({
                 "problem": key[0], "omega0": omega0, "tau": tau,
                 "quantity": name, "jerlov": f"{mean[q]:.6e}",
                 "jerlov_se": f"{se[q]:.2e}", "table5": f"{table[q]:.3e}",
-                "table5_s_over_x": f"{spread[q]:.3f}"})
+                "table5_s_over_x": f"{spread[q]:.3f}",
+                "lu_cap": f"{cap_mean:.6e}" if name == "Lu" else "",
+                "lu_cap_se": f"{cap_se:.2e}" if name == "Lu" else ""})
     return rows
 
 

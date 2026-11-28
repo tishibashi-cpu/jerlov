@@ -19,7 +19,9 @@ survives with probability 1/10 and ten times the weight.
 
 Radiance and scalar irradiance at a depth are the path length photons
 spend in a slab around it, per unit thickness; planar irradiance is the
-weight crossing the depth. rrs straight up just below the surface is a
+weight crossing the depth. The radiance looking straight down at a
+depth is also estimated the way rrs is, from every scattering below it
+(since 1.36.0, DECISIONS.md section 144). rrs straight up just below the surface is a
 collision estimator: each scattering adds its weight times the phase
 function towards straight up times exp(-c' z), each arrival at the bottom
 its weight times albedo / pi times exp(-c' H), over the planar irradiance
@@ -385,6 +387,9 @@ def _simulate(a, b, bw, particles, water, sun_zenith, seed, *, photons,
     e0, ed, eu, e0u = (np.zeros(depths.size) for _ in range(4))
     ed_bottom = 0.0
     lu = 0.0
+    # the radiance travelling straight up at each depth, by the same
+    # collision estimator as rrs, started at that depth (section 144)
+    lu_depth = np.zeros(depths.size)
     arrived_below = again_below = 0.0
     bottom = math.isfinite(depth)
     # Scattering by less than the cut goes straight on and so does not turn
@@ -458,6 +463,8 @@ def _simulate(a, b, bw, particles, water, sun_zenith, seed, *, photons,
             ed_bottom += float(np.sum(weight[down]))
             lu += float(np.sum(weight[down])) * albedo / math.pi \
                 * math.exp(-c_sight * depth)
+            lu_depth += float(np.sum(weight[down])) * albedo / math.pi \
+                * np.exp(-c_sight * (depth - depths))
             weight[down] *= albedo
             mu_b = np.sqrt(rng.random(down.size))
             phi_b = 2 * np.pi * rng.random(down.size)
@@ -473,6 +480,11 @@ def _simulate(a, b, bw, particles, water, sun_zenith, seed, *, photons,
         p_up = (bw * _per_sr(water, angle)
                 + (b - bw) * _per_sr(particles, angle)) / b
         lu += float(np.sum(weight[hit] * p_up * np.exp(-c_sight * z[hit])))
+        for k, zk in enumerate(depths):
+            below = z[hit] > zk
+            lu_depth[k] += float(np.sum(
+                (weight[hit] * p_up)[below]
+                * np.exp(-c_sight * (z[hit][below] - zk))))
         by_water = rng.random(hit.size) < bw / b
         cos_t = np.empty(hit.size)
         cos_t[by_water] = np.interp(rng.random(by_water.sum()),
@@ -498,6 +510,7 @@ def _simulate(a, b, bw, particles, water, sun_zenith, seed, *, photons,
     out = dict(radiance=radiance / photons / d_omega[None, :, None],
                e0=e0 / photons, ed=ed / photons, eu=eu / photons,
                e0u=e0u / photons, ed_bottom=ed_bottom / photons,
+               lu=lu_depth / photons,
                rrs=lu / ed_surface, transmitted=transmitted / photons,
                reflected=reflected_above / photons)
     if rough and surface_facets == "all":
@@ -518,6 +531,10 @@ class MonteCarloLightField:
     Everything is per unit planar irradiance just above the surface; the
     ``batch_*`` fields hold each batch, the others their means, and the
     ``*_se`` fields the standard error of the mean over the batches.
+    ``lu`` (since 1.36.0) is the radiance travelling straight up, seen
+    looking straight down, at each depth, by a collision estimator that
+    every scattering below the depth feeds (DECISIONS.md section 144);
+    ``radiance`` is the path length estimate in cells.
     """
 
     depths_m: np.ndarray
@@ -546,6 +563,9 @@ class MonteCarloLightField:
     reflected_at_surface_se: float
     transmitted_at_surface: float
     transmitted_at_surface_se: float
+    batch_lu: np.ndarray
+    lu: np.ndarray
+    lu_se: np.ndarray
     inputs: dict
     left_out: tuple
 
@@ -555,7 +575,8 @@ class MonteCarloLightField:
         out: dict[str, Any] = {}
         for name in ("depths_m", "ed", "eu", "e0", "kd", "kd_se",
                      "mean_cosine", "mean_cosine_se", "eu_over_ed",
-                     "eu_over_ed_se", "e0_over_ed", "e0_over_ed_se"):
+                     "eu_over_ed_se", "e0_over_ed", "e0_over_ed_se", "lu",
+                     "lu_se"):
             out[name] = np.asarray(getattr(self, name)).tolist()
         out.update(rrs=self.rrs, rrs_se=self.rrs_se,
                    reflected_at_surface=self.reflected_at_surface,
@@ -619,8 +640,10 @@ def monte_carlo_light_field(a, b, wavelength_nm, /, *,
     A flat surface, the sun's beam or an overcast sky above it, one layer
     of water with ``a`` and ``b``, infinitely deep or over a Lambertian
     bottom. It gives Ed, Eu and Eo and the radiance in cells of zenith and
-    azimuth at ``depths_m``, Kd between them, the mean cosine, Eu / Ed and
-    Eo / Ed, and rrs straight up just below the surface, each with its
+    azimuth at ``depths_m``, the radiance looking straight down there by a
+    collision estimator (``lu``, since 1.36.0), Kd between them, the mean
+    cosine, Eu / Ed and Eo / Ed, and rrs straight up just below the
+    surface, each with its
     standard error over the batches. The method is in the module's
     docstring; what it leaves out is in ``left_out`` of the result. For
     more (an atmosphere, waves, layers, Raman scattering), use a radiative
@@ -847,7 +870,7 @@ def monte_carlo_light_field(a, b, wavelength_nm, /, *,
                 v.std(axis=0, ddof=1) / math.sqrt(len(values)))
 
     batch = {k: np.array([r[k] for r in runs])
-             for k in ("ed", "eu", "e0", "radiance", "rrs")}
+             for k in ("ed", "eu", "e0", "radiance", "rrs", "lu")}
     with np.errstate(divide="ignore", invalid="ignore"):
         kd, kd_se = mean_se([np.log(r["ed"][:-1] / r["ed"][1:])
                              / np.diff(depths) for r in runs])
@@ -855,6 +878,7 @@ def monte_carlo_light_field(a, b, wavelength_nm, /, *,
         ratio_u, ratio_u_se = mean_se([r["eu"] / r["ed"] for r in runs])
         ratio_0, ratio_0_se = mean_se([r["e0"] / r["ed"] for r in runs])
     rrs, rrs_se = mean_se(batch["rrs"])
+    lu, lu_se = mean_se(batch["lu"])
     reflected, reflected_se = mean_se([r["reflected"] for r in runs])
     transmitted, transmitted_se = mean_se([r["transmitted"] for r in runs])
     name = (phase_function.station
@@ -898,4 +922,5 @@ def monte_carlo_light_field(a, b, wavelength_nm, /, *,
         reflected_at_surface_se=float(reflected_se),
         transmitted_at_surface=float(transmitted),
         transmitted_at_surface_se=float(transmitted_se), inputs=inputs,
+        batch_lu=frozen(batch["lu"]), lu=frozen(lu), lu_se=frozen(lu_se),
         left_out=left_out)

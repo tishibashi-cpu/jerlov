@@ -4,6 +4,27 @@ Every release is archived on Zenodo under the concept DOI
 [10.5281/zenodo.22321312](https://doi.org/10.5281/zenodo.22321312), which
 always resolves to the latest version.
 
+## 1.36.0 — 2026-11-28
+
+The radiance looking straight down at depth, by a collision estimator
+(DECISIONS.md section 144). No shipped value changed, and every field
+the result already had is the same bit for bit.
+
+**New.** `monte_carlo_light_field`'s result has `lu`, `lu_se` and
+`batch_lu`: the radiance travelling straight up (seen looking straight
+down) at each of `depths_m`. It is estimated as rrs is, from every
+scattering below the depth and from the bottom, so it stays precise
+where almost no photon comes back to be counted in a cell; it draws no
+random number.
+
+**Checked.** Against the exact asymptotic radiance for isotropic
+scattering, within the tolerances of the existing test (3 to 6 percent).
+With Lu so estimated, all 51 values of Mobley et al.'s (1993) canonical
+problems agree with `surface_facets="all"` (49 with `"one"`), where the
+cells left the radiance at optical depth 10 in absorbing water with
+errors above 90 percent; `tools/mobley1993_benchmark.py` keeps the cell's
+value beside it.
+
 ## 1.35.2 — 2026-11-28
 
 The wavy surface's shadowing by its closed form (DECISIONS.md section
