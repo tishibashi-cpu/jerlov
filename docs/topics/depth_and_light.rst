@@ -112,7 +112,9 @@ Since 1.33.0 the package computes a light field by Monte Carlo,
 :func:`~jerlov.monte_carlo_light_field`, with every choice that sets it a
 required argument: the phase function, the sun or an overcast sky, the
 depth and the bottom, the photons and the seed among them. It gives Ed, Eu,
-Eo, Kd, the mean cosine, the radiance in cells and rrs, each with its
+Eo, Kd, the mean cosine, the radiance in cells, the radiance looking
+straight down at each depth by a collision estimator (``lu``, since
+1.36.0, which stays precise where few photons come back) and rrs, each with its
 standard error over batches, and says what it leaves out (an atmosphere,
 polarisation, inelastic scattering, layers). For those, use OSOAA
 or HydroLight. Since 1.34.0 it takes a wind for a surface of Cox and

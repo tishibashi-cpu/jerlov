@@ -100,6 +100,13 @@ def test_the_engine_against_isotropic_scattering(w, depths, rtol):
                        rtol=rtol)
     assert np.allclose(mean["eu"] / mean["ed"], eu / ed, rtol=rtol)
     assert np.allclose(mean["e0"] / mean["ed"], e0 / ed, rtol=rtol)
+    # the radiance looking straight down, by the collision estimator
+    # (DECISIONS.md section 144): the asymptotic field is L ~ 1 / (1 - k mu),
+    # mu the cosine to straight down, so straight up L / E0 is
+    # 1 / ((1 + k) 2 pi e0) with e0 the integral above
+    lu = np.mean([r["lu"] for r in runs], axis=0)
+    assert np.allclose(lu / mean["e0"], 1 / ((1 + k) * 2 * np.pi * e0),
+                       rtol=rtol)
 
 
 # -- closed forms (DECISIONS.md section 138, check 3) ------------------------
@@ -503,15 +510,14 @@ def test_the_canonical_problems_are_quoted_as_run():
         x, se = float(r["jerlov"]), float(r["jerlov_se"])
         m, s = means[q], spreads[q] * means[q]
         good.append(abs(x - m) <= 2 * s + 3 * se + 0.005 * m)
-    # since 1.35.2 (DECISIONS.md section 143): section 140's run gave 46,
-    # with problem 5's Ed at optical depth 10 just outside
-    assert sum(good) == 47 and sum(good) >= 0.9 * len(rows)
+    # section 140's run gave 46, section 143's 47; since 1.36.0 Lu is the
+    # collision estimate (section 144) and the absorbing waters' agree
+    assert sum(good) == 49 and sum(good) >= 0.9 * len(rows)
     misses = {(r["problem"], r["omega0"], r["tau"], r["quantity"])
               for r, g in zip(rows, good) if not g}
-    assert misses == {("1", "0.2", "10", "Lu"), ("2", "0.2", "10", "Lu"),
-                      ("5", "0.9", "1", "Ed"), ("5", "0.9", "5", "Ed")}
+    assert misses == {("5", "0.9", "1", "Ed"), ("5", "0.9", "5", "Ed")}
+    assert "With `\"one\"`, 49 agree" in _section_144()
     section = _section_143()
-    assert "47 of the 51 entries agree with `\"one\"`" in section
     ratio = [float(r["jerlov"]) / float(r["table5"]) for r in rows
              if r["problem"] == "5" and r["quantity"] == "Ed"]
     assert (f"With `\"one\"`, Ed is {ratio[0]:.3f}, {ratio[1]:.3f} and "
@@ -519,7 +525,8 @@ def test_the_canonical_problems_are_quoted_as_run():
     data = " ".join((ROOT / "DATA.md").read_text().split())
     assert (f"with one facet per crossing, {ratio[0]:.3f}, {ratio[1]:.3f} "
             f"and {ratio[2]:.3f}") in data
-    assert "agrees in 47 of 51 entries with one facet" in data
+    assert "agrees in 49 of 51 entries with one facet and in all 51 with " \
+        "every facet" in data
 
 
 # -- light meeting the wavy surface more than once (DECISIONS.md section 141)
@@ -627,32 +634,23 @@ def test_problem_5_with_every_facet_is_quoted_as_run():
         x, se = float(r["jerlov"]), float(r["jerlov_se"])
         m, s = means[q], spreads[q] * means[q]
         return abs(x - m) <= 2 * s + 3 * se + 0.005 * m
-    assert sum(map(agree, every)) == 49
-    assert all(agree(r) for r in every if r["problem"] == "5")
-    assert {(r["problem"], r["omega0"], r["tau"], r["quantity"])
-            for r in every if not agree(r)} == {("1", "0.2", "10", "Lu"),
-                                               ("2", "0.2", "10", "Lu")}
+    # 49 until 1.35.2; all since 1.36.0's Lu (DECISIONS.md section 144)
+    assert sum(map(agree, every)) == 51
     section = _section_143()
 
     def ratios(rows, quantity):
         return [float(r["jerlov"]) / float(r["table5"]) for r in rows
                 if r["problem"] == "5" and r["quantity"] == quantity]
     a = {q: ratios(every, q) for q in ("Ed", "Eou", "Lu")}
+    # Ed and Eou as section 143 has them (Lu is section 144's since 1.36.0)
     assert (f"Ed {a['Ed'][0]:.3f}, {a['Ed'][1]:.3f} and {a['Ed'][2]:.3f} of "
             f"the models' mean at optical depths 1, 5 and 10, Eou "
-            f"{a['Eou'][0]:.3f}, {a['Eou'][1]:.3f} and {a['Eou'][2]:.3f}, Lu "
-            f"{a['Lu'][0]:.3f}, {a['Lu'][1]:.3f} and {a['Lu'][2]:.3f}") \
+            f"{a['Eou'][0]:.3f}, {a['Eou'][1]:.3f} and {a['Eou'][2]:.3f}") \
         in section
-    assert "49 with `\"all\"`" in section
     ed = a["Ed"]
-    log = " ".join((ROOT / "CHANGELOG.md").read_text().split())
-    log = log.split("## 1.35.2 ")[1].split("## 1.35.1 ")[0]
-    assert (f"Ed {min(ed):.3f} to {max(ed):.3f} of the codes' mean; with "
-            "`\"one\"` 47 of the 51 values agree, with `\"all\"` 49") in log
     data = " ".join((ROOT / "DATA.md").read_text().split())
     assert (f"Ed is {ed[0]:.3f}, {ed[1]:.3f} and {ed[2]:.3f} of the mean") \
         in data
-    assert "49 of 51 with every facet" in data
 
 
 @source_tree
@@ -790,3 +788,116 @@ def test_section_143_s_energy_figures_are_quoted_as_computed():
         values = [total[k] for k in total if k[2] == f]
         assert (f"`\"{f}\"` {min(values):+.3f} to {max(values):+.3f} "
                 "percent") in section
+
+
+# -- the radiance looking straight down at depth (DECISIONS.md section 144) --
+
+def test_the_radiance_looking_down_is_in_the_result():
+    f = _call()
+    assert f.lu.shape == f.depths_m.shape == f.lu_se.shape
+    assert f.batch_lu.shape == (2, 2)
+    assert np.all(f.lu > 0) and np.all(f.lu_se >= 0)
+    assert np.allclose(f.lu, f.batch_lu.mean(axis=0))
+    d = f.as_dict()
+    assert d["lu"] == f.lu.tolist() and d["lu_se"] == f.lu_se.tolist()
+    with pytest.raises(ValueError):
+        f.lu[0] = 1.0                       # read only, as the others
+
+
+def test_the_radiance_looking_down_draws_no_random_number():
+    """The estimator adds sums and nothing else: the batches of every other
+    quantity are those the engine gave before it (the stored check runs
+    test that too)."""
+    station = jerlov.petzold_scattering("NUC 2240")
+    a = _call(depths_m=[1.0, 3.0])
+    b = _call(depths_m=[1.0, 3.0], phase_function=station)
+    assert a == b
+    one = mc._simulate(0.1, 0.3, 0.003, mc._particle_phase(station, 1.0, 35.0),
+                       mc._water_phase(500.0, 35.0), 30.0, 0, photons=500,
+                       depths=np.array([1.0]), half_slab=0.5, n_water=1.34,
+                       d_zenith=10.0, d_azimuth=45.0)
+    two = mc._simulate(0.1, 0.3, 0.003, mc._particle_phase(station, 1.0, 35.0),
+                       mc._water_phase(500.0, 35.0), 30.0, 0, photons=500,
+                       depths=np.array([1.0, 2.0]), half_slab=0.5,
+                       n_water=1.34, d_zenith=10.0, d_azimuth=45.0)
+    # another depth asked for changes nothing at the first
+    assert one["lu"][0] == two["lu"][0] and one["rrs"] == two["rrs"]
+
+
+def _section_144():
+    decisions = " ".join((ROOT / "DECISIONS.md").read_text().split())
+    return decisions.split("## 144. ")[1]
+
+
+@source_tree
+def test_the_collision_estimate_against_the_cap_is_quoted_as_run():
+    """Check 3 of section 144: where many photons come back the new
+    estimate and the cap's mean agree."""
+    rows = _rows("runs.csv")
+    section = _section_144()
+    for problem in ("1", "2"):
+        r = next(r for r in rows if (r["problem"], r["omega0"], r["tau"],
+                                     r["quantity"]) == (problem, "0.9", "1",
+                                                        "Lu"))
+        x, se = float(r["jerlov"]), float(r["jerlov_se"])
+        c, cs = float(r["lu_cap"]), float(r["lu_cap_se"])
+        assert abs(x - c) <= 3 * math.hypot(se, cs) + 0.01 * c
+    ratio = []
+    share = []
+    for problem in ("1", "2"):
+        r = next(r for r in rows if (r["problem"], r["omega0"], r["tau"],
+                                     r["quantity"]) == (problem, "0.9", "1",
+                                                        "Lu"))
+        x, se = float(r["jerlov"]), float(r["jerlov_se"])
+        c, cs = float(r["lu_cap"]), float(r["lu_cap_se"])
+        ratio.append(x / c)
+        share.append(abs(x - c) / (3 * math.hypot(se, cs) + 0.01 * c))
+    assert (f"over the cap's mean is {ratio[0]:.3f} and {ratio[1]:.3f}, the "
+            f"difference {share[0]:.2f} and {share[1]:.2f} of three combined"
+            ) in section
+
+
+@source_tree
+def test_every_lu_of_section_144_is_quoted_as_run():
+    one, every = _rows("runs.csv"), _rows("runs_all_facets.csv")
+    for a, b in zip(one, every):
+        if a["problem"] != "5":
+            assert a == b
+    section = _section_144()
+
+    def lu(rows, problem, omega0, tau):
+        r = next(r for r in rows if (r["problem"], r["omega0"], r["tau"],
+                                     r["quantity"]) == (problem, omega0, tau,
+                                                        "Lu"))
+        x, m = float(r["jerlov"]), float(r["table5"])
+        text = f"{x / m:.3f} ({100 * float(r['jerlov_se']) / x:.1f}"
+        cap = f"{float(r['lu_cap']) / m:.3f}"
+        return text, cap
+    for problem, omega0 in (("1", "0.9"), ("1", "0.2"), ("2", "0.9"),
+                            ("2", "0.2"), ("5", "0.9")):
+        got = [lu(every, problem, omega0, t) for t in ("1", "5", "10")]
+        texts = [g[0] for g in got]
+        caps = [g[1] for g in got]
+        first = texts[0] + (" percent)" if problem == "1" and omega0 == "0.9"
+                            else ")")
+        assert f"{first}, {texts[1]}), {texts[2]})" in section, problem
+        assert f"[{'cap ' if problem == '1' and omega0 == '0.9' else ''}" \
+            f"{caps[0]}, {caps[1]}, {caps[2]}]" in section, problem
+    text, cap = lu(every, "6", "0.2", "1")
+    assert f"optical depth 1, {text}) [{cap}]" in section
+    deep = [lu(every, p, "0.2", "10")[0] for p in ("1", "2")]
+    r = [x.split(" (") for x in deep]
+    assert (f"are {r[0][0]} and {r[1][0]} of the mean with standard errors "
+            f"of {r[0][1]} and {r[1][1]} percent") in section
+    rows = [r for r in every if r["quantity"] == "Lu" and r["lu_cap"]
+            and not (r["problem"] == "6" and r["tau"] == "5")]
+    smaller = sum(float(r["jerlov_se"]) / float(r["jerlov"])
+                  < float(r["lu_cap_se"]) / float(r["lu_cap"]) for r in rows)
+    assert f"smaller in {smaller} of the {len(rows)} Lu" in section
+    log = " ".join((ROOT / "CHANGELOG.md").read_text().split())
+    log = log.split("## 1.36.0 ")[1].split("## 1.35.2 ")[0]
+    assert "all 51 values" in log and "(49 with `\"one\"`)" in log
+    data = " ".join((ROOT / "DATA.md").read_text().split())
+    assert (f"it is {math.floor(min(float(x[1]) for x in r))} to "
+            f"{math.ceil(max(float(x[1]) for x in r))} percent, and both "
+            "agree") in data

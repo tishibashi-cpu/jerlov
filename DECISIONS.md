@@ -10045,3 +10045,96 @@ CHANGELOG; DATA.md section 53 if problem 5's figures move; NEXT_STEPS.
    that met a second facet in problem 5's water (section 141's check 4):
    entering, none at 30 degrees, 0.0039 at 60 and 0.0310 at 80; from
    below, 0.0162, 0.0175 and 0.0197.
+
+## 144. The radiance looking straight down at depth by a collision estimator (1.36.0): the plan
+
+Two of Mobley et al.'s (1993) values still do not agree (sections 140,
+141 and 143): Lu at optical depth 10 in problems 1 and 2 with omega0 =
+0.2, where the engine's estimate, the path length photons spend in the
+cell within 5 degrees of straight up, has standard errors above 90
+percent because almost no photon comes back up from there. The user
+asked on 2026-11-28 for this next.
+
+### The estimator
+
+The engine already estimates the radiance travelling straight up just
+below the surface without waiting for photons to arrive there (section
+138): each scattering adds its weight times the phase function towards
+straight up times exp(-c' z), and each arrival at the bottom its weight
+times albedo / pi times exp(-c' H), c' being c less the particles'
+scattering that goes straight on. The same sum, started at a depth z_k
+instead of the surface (each scattering deeper than z_k adding its
+weight times the phase function towards straight up times
+exp(-c' (z - z_k)), and the bottom exp(-c' (H - z_k))), is the radiance
+travelling straight up at z_k, per unit planar irradiance just above the
+surface. Every scattering below z_k contributes to it, not only the rare
+photon that climbs back, so the error falls where the cell's estimate
+fails. It draws no random number.
+
+`monte_carlo_light_field`'s result gains `lu` and `lu_se` at `depths_m`,
+and `batch_lu`, the radiance travelling straight up (seen looking straight
+down) by this estimator. Nothing else in the result changes, bit for bit.
+A new field: 1.36.0. The cells' radiance stays as it is.
+
+### Checks, set now
+
+1. Every existing field of every stored run and example is unchanged
+   bit for bit (no random number is drawn).
+2. Against the exact solution the engine is already checked with
+   (isotropic scattering, `test_the_engine_against_isotropic_scattering`):
+   where that test checks the radiance, the new estimate agrees within the
+   same tolerance.
+3. Against the cells: where many photons come back (problems 1 and 2
+   with omega0 = 0.9 at optical depth 1), the new estimate and the mean
+   over the cap within 5 degrees agree within three combined standard
+   errors plus 1 percent (the cap's mean is not the value at its centre).
+4. Mobley et al. (1993) Table 5, all problems posed, Lu now by the new
+   estimator (Ed and Eou as before): the measure of section 140 met in
+   every one of the 51 entries with `surface_facets="all"` for problem
+   5. Recorded: each Lu's ratio to the mean and its standard error,
+   beside the cap's; and the count with `"one"`.
+
+### Documents
+
+API reference (the new fields), the topic page, CHANGELOG, the Zenodo
+description, DATA.md section 53, NEXT_STEPS. `tools/mobley1993_benchmark.py`
+takes Lu from the new estimator; its stored runs are made again (Ed and
+Eou unchanged digit for digit).
+
+### Result
+
+Differences from the plan: check 2 named a radiance check that the
+isotropic test did not make (it checks K, the mean cosine and the
+ratios); the exact asymptotic radiance, L ~ 1 / (1 - k mu) with mu the
+cosine to straight down, so L straight up over E0 = 1 / ((1 + k) 2 pi
+integral of 1 / (1 - k mu) over mu from -1 to 1), was added to that test
+in its place, at its tolerances.
+
+1. Met. The estimator draws no random number: every stored check run is
+   reproduced, and in the canonical problems' runs made again every Ed
+   and Eou is the previous one digit for digit and the cap's Lu, kept as
+   `lu_cap`, is the previous Lu digit for digit.
+2. Met. The new estimate over the exact value, at the isotropic test's
+   depths: 0.970 to 0.979 at omega0 = 0.5 (tolerance 6 percent), 0.989
+   to 0.992 at 0.72 and 0.990 to 0.997 at 0.9 (3 percent); the cells of
+   10 degrees there give 0.969 to 1.340.
+3. Met. Problems 1 and 2, omega0 = 0.9, optical depth 1: the new estimate
+   over the cap's mean is 0.959 and 0.957, the difference 0.84 and 0.32
+   of three combined standard errors plus 1 percent.
+4. **Met: with `surface_facets="all"` all 51 entries agree.** The two
+   that did not, Lu at optical depth 10 in problems 1 and 2 with omega0 =
+   0.2, are 1.183 and 1.034 of the mean with standard errors of 10.6 and
+   3.0 percent, where the cap gave 0.044 and 0.126 with 92 percent. With
+   `"one"`, 49 agree; the two left are problem 5's Ed at optical depths 1
+   and 5. Every Lu, as a ratio to the mean with its standard error (the
+   cap's in brackets): problem 1, omega0 0.9, 1.006 (0.1 percent), 1.033
+   (0.2), 0.964 (0.6) at optical depths 1, 5, 10 [cap 1.049, 0.999,
+   1.074]; omega0 0.2, 0.991 (0.1), 0.946 (0.6), 1.183 (10.6) [0.968,
+   0.711, 0.044]; problem 2, omega0 0.9, 0.924 (1.9), 0.907 (2.4), 0.957
+   (5.7) [0.966, 1.018, 0.961]; omega0 0.2, 1.000 (1.5), 1.235 (2.8),
+   1.034 (3.0) [0.949, 1.214, 0.126]; problem 5 with `"all"`, 0.907
+   (3.5), 0.913 (3.5), 0.920 (2.8) [0.919, 0.954, 0.916]; problem 6 at
+   optical depth 1, 1.014 (1.4) [0.930]. The new estimate is not always
+   nearer the mean than the cap was (problem 2 with omega0 = 0.9 is
+   lower), but it is everywhere within the models' spread, and its
+   errors are smaller in 15 of the 16 Lu set against the cap.
