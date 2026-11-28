@@ -10319,3 +10319,93 @@ planned 400 000 they agree.
    where the standard error is 0.00129.
 3. Recorded. The scalar I over the vector I: 0.936 to 1.083 at the top
    and 0.933 to 1.085 at the bottom.
+
+## 147. Polarisation, second step: the wavy surface's Fresnel matrices and a body of pure water, against Chowdhary et al.'s (2020) testbed (1.36.3): the plan
+
+Section 145's step 2 is the air-water interface's Fresnel matrices, pure
+water's depolarisation and the particles' scattering matrix as stated
+inputs. The user asked on 2026-11-28 for references to be found (the
+user has no copies at hand). This section is the interface and a body of
+pure water; the particles' matrix and depolarisation other than zero
+are a later section. The package does not change.
+
+### The reference
+
+Chowdhary, Zhai, Xu, Frouin and Ramon (2020), "Testbed results
+for scalar and vector radiative transfer computations of light in
+atmosphere-ocean systems", J. Quant. Spectrosc. Radiat. Transfer 242,
+106717, doi:10.1016/j.jqsrt.2019.106717. The accepted manuscript is open
+on NASA's NTRS (20190034124); the tables are in the supplementary
+material (Elsevier's mmc2.docx, the text of the tables, not images),
+from which they are read by script. Deterministic and Monte Carlo
+codes agree to 1e-6 (2e-6 marked in bold) on:
+
+- AOS-I: a molecular atmosphere (Rayleigh, depolarisation zero, single
+  scattering albedo 1, optical thickness 0.63031, 0.22111, 0.097069 and
+  0.049188 at 350, 450, 550 and 650 nm) over a wavy surface, the ocean
+  black (Tables S2a, S2b: just above the surface);
+- AOS-II: no atmosphere; a wavy surface over 100 m of pure seawater,
+  Rayleigh with depolarisation zero, single scattering albedos
+  0.39644970, 0.32846715, 0.03253425 and 0.002932551 and optical
+  thicknesses 3.38, 1.37, 5.84 and 34.1 (Table 2), over a black bottom
+  (Tables S3a, S3b: just above the surface).
+
+The surface for both (Table 4, section 3.2): Cox and Munk's isotropic
+Gaussian slopes, mean square slope 0.03884 (about 7 m/s), refractive
+index 1.34; no shadowing, no second facet, no foam, and no
+renormalisation of the reflection and transmission. The sun at 30 and
+60 degrees; viewing zenith angles 0 to 60 degrees in steps of 5; relative
+azimuths 0 (towards the glint), 180, 60 and 240. Each table gives
+R = pi L / (mu0 S0) for I computed without polarisation and for I, Q and
+U with it: 4 wavelengths x 2 suns x 52 directions x 3 = 1248 vector values
+for each model, and 416 scalar ones.
+
+### The method
+
+`tools/polarised_ocean.py`, on `tools/polarised_mc.py`'s photons
+(Stokes vectors carried with a reference axis, Rayleigh's matrix). The
+surface: a facet drawn for each photon as `jerlov.monte_carlo._facets`
+does, the slopes Gaussian and the facet facing the light, with its weight
+the share of the beam it intercepts (cos i / (mu_n mu)), not divided by
+the mean share (no renormalisation, as the testbed). On the facet the
+Stokes vector is turned into the plane of incidence (e1 = s x d, e2 = s,
+s normal to that plane) and multiplied by Fresnel's reflection or
+transmission matrix (the transmission's in power, so that I is the flux),
+and the weight takes the branch's share; light the testbed has no
+kernel for (reflected or refracted the wrong way for one facet) is
+dropped.
+
+The light just above the surface in each tabulated direction v is
+estimated at every scattering, by reciprocity: a facet is drawn for the
+light travelling against v, and the light the scattering sends along
+the reversed path (reflected for AOS-I, refracted, with 1 / m^2 on the
+radiance, for AOS-II) is estimated as in section 145 and carried
+through that facet's matrix into v's meridian plane. The direct glint,
+the sun reflected once, is added from its closed form,
+pi p(n) R(n) / (4 mu mu0 mu_n^4) with the Fresnel matrix R and the
+sun's attenuation through the atmosphere. The conventions (the
+normalisation, the signs of Q and U) are fixed by that glint and by the
+tables, and said.
+
+### Checks, set now
+
+1. Fresnel's matrices: reflection plus transmission conserve the flux
+   of any polarised beam (the transmission in power), on 10 000 random
+   facets and Stokes vectors, to 1e-12, from either side.
+2. The glint by itself: at 650 nm in AOS-II (single scattering albedo
+   0.003) the closed form alone is within 2 percent of the tables where
+   it is more than 90 percent of them.
+3. The tables, 2496 vector values (AOS-I and AOS-II): a value agrees if
+   |x - t| <= 3 SE + 1e-5. The tool is said to reproduce them if at
+   least 95 percent agree, for each model. Every value is recorded.
+4. The 832 scalar values of I the same way, against the tool run with
+   every matrix replaced by its (1,1) element.
+5. Recorded: the scalar over the vector I, as in sections 145 and 146.
+
+### Documents
+
+DECISIONS; the tables read from the supplement
+(`examples/data/polarisation/chowdhary2020_tables.csv`, with how they
+were read), the stored run (`examples/data/polarisation/chowdhary2020.csv`)
+and a test that every quoted figure is its; CHANGELOG; NEXT_STEPS. No
+package change: 1.36.3.
