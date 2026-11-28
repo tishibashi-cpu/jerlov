@@ -4,6 +4,28 @@ Every release is archived on Zenodo under the concept DOI
 [10.5281/zenodo.22321312](https://doi.org/10.5281/zenodo.22321312), which
 always resolves to the latest version.
 
+## 1.36.3 — 2026-11-28
+
+Polarisation, a second step: the wavy surface's Fresnel matrices and a
+body of pure water, against Chowdhary et al.'s (2020) testbed
+(DECISIONS.md section 147). The package does not change; no shipped
+value changed.
+
+**Checked.** `tools/polarised_ocean.py` carries Stokes vectors through a
+wavy surface (Cox and Munk's slopes, refractive index 1.34) with
+Fresnel's reflection and transmission matrices, and through a body of
+pure water (Rayleigh scattering). Against the testbed's tables just above
+the surface it agrees in 1198 of 1200 values of I, Q and U for a
+molecular atmosphere over the surface (AOS-I) and in all 1175 for the
+surface over pure water (AOS-II); the two left are 1e-4 off at the
+glint's peak. The tables, read from the article's supplement by
+`tools/read_chowdhary2020.py`, are in
+`examples/data/polarisation/chowdhary2020_tables.csv`.
+
+**Found.** In the supplement's Table S3b (AOS-II, the sun at 60 degrees,
+450 nm) R_U in the principal plane repeats R_I in 25 places, where it is
+zero by symmetry (DATA.md section 54).
+
 ## 1.36.2 — 2026-11-28
 
 Polarisation, a second reference: Kokhanovsky et al.'s (2010) Rayleigh

@@ -10410,3 +10410,45 @@ DECISIONS; the tables read from the supplement
 were read), the stored run (`examples/data/polarisation/chowdhary2020.csv`)
 and a test that every quoted figure is its; CHANGELOG; NEXT_STEPS. No
 package change: 1.36.3.
+
+### Result
+
+Differences from the plan, and a finding. **A misprint in the
+supplement: in Table S3b (AOS-II, the sun at 60 degrees) the 450 nm
+column's R_U in the principal plane (azimuths 0 and 180, 25 values)
+repeats R_I,Vector.** There U is zero by symmetry, as in every other
+column of that plane in Tables S2 and S3; those 25 are left out, so
+AOS-II has 1175 vector values. U's sign is the tables' as this tool
+gives it (the glint fixes it: at azimuth 60 its U, from the plane of
+incidence turned into the meridian plane, agrees with the tables' only
+so; the first draft of `TO_TESTBED` had it reversed, as for sections 145
+and 146, and missed all of U off the principal plane). The sign was
+checked against a coherency matrix built in three dimensions for the
+glint and for Rayleigh scattering, independent of the tool's frames.
+
+1. Met. Reflection plus transmission keeps the flux of 10 000 random
+   polarised beams on random facets, from either side (6658 of those
+   from the water totally reflected), to 6.7e-16.
+2. **Not met as set: 32 of 40.** At 650 nm in AOS-II the tables exceed
+   the closed-form glint by 1.6e-4 to 3.0e-4 wherever the glint is more
+   than 90 percent of them: the water's own light, of about that size
+   everywhere. Where the glint is small (0.002 to 0.015) that is more than
+   2 percent. The check should have bounded the remainder absolutely; the
+   glint's own size and polarisation are checked by check 3.
+3. **Met: AOS-I 1198 of 1200 values, AOS-II all 1175** (ten batches of
+   100 000 photons, `examples/data/polarisation/chowdhary2020.csv`). The
+   two AOS-I values that do not agree are I and Q of the glint's peak, at
+   650 nm with the sun at 60 degrees, azimuth 0 and 60 degrees viewing,
+   1.4322 and -1.3315, off by 1.4e-4 and 0.9e-4 (4.5 and 4.0 standard
+   errors). The largest difference is 0.00016 in I for AOS-I at 450 nm,
+   the sun at 60 degrees, azimuth 180 and 60 degrees viewing, where the
+   standard error is 0.00006; for AOS-II 0.00010 in I at 350 nm, the sun
+   at 30 degrees, azimuth 180 and 60 degrees viewing, where it is
+   0.00004.
+4. **Met: AOS-I 398 of 400, AOS-II all 400.** The two are at 450 nm with
+   the sun at 60 degrees: 0.72806 for 0.72815 at the glint (azimuth 0,
+   55 degrees) and 0.00519 for 0.00523 (azimuth 240, 45 degrees).
+5. Recorded. The scalar I over the vector I: 0.595 to 1.462 for AOS-I,
+   more than 5 percent off in 187 of its 400 directions, and 0.938 to 1.047 for AOS-II, off by more than
+   5 percent in 22 of 400. The tables' own ratios agree (0.595 and 0.938
+   at the same directions).

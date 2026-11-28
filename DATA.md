@@ -3366,3 +3366,27 @@ cell's standard error was above 90 percent, it is 3 to 11 percent, and
 both agree. The engine agrees in 49 of 51 entries with one facet and in
 all 51 with every facet; Ed and Eou are unchanged.
 
+
+## 54. A misprint in Chowdhary et al.'s (2020) testbed supplement (confirmed)
+
+J. Chowdhary, P.-W. Zhai, F. Xu, R. Frouin and D. Ramon (2020), "Testbed
+results for scalar and vector radiative transfer computations of light in
+atmosphere-ocean systems", J. Quant. Spectrosc. Radiat. Transfer 242,
+106717, doi:10.1016/j.jqsrt.2019.106717. The accepted manuscript is on
+NASA's NTRS (20190034124); the tables are in the supplementary material,
+Elsevier's `1-s2.0-S002240731930370X-mmc2.docx` (not shipped), as Word
+tables of text. `tools/read_chowdhary2020.py` reads Tables S2a, S2b, S3a
+and S3b (AOS-I and AOS-II just above the surface) into
+`examples/data/polarisation/chowdhary2020_tables.csv`, values as
+printed; straight up is one row for each pair of azimuths, kept with the
+first (0 or 60), whose plane Q and U are referred to.
+
+**The misprint.** In Table S3b (AOS-II, the sun at 60 degrees) the
+450 nm column's R_U in the principal plane (azimuths 0 and 180, all 25
+rows) is the same number as R_I,Vector beside it (0.035506 at 5 degrees
+viewing, 1.594927 at the glint). In that plane U is zero by symmetry, and
+it is printed so in every other column of Tables S2 and S3, the 350 nm
+column of the same table among them. It is a copying error of the
+column, not of the computation: off the principal plane the same column
+agrees with `tools/polarised_ocean.py` as every other does (DECISIONS.md
+section 147), which leaves the 25 out.
