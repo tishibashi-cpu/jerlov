@@ -389,28 +389,6 @@ def test_a_bad_wind_is_refused(bad):
 
 
 @source_tree
-def test_the_surface_figures_after_the_correction_are_quoted_as_computed():
-    """1.34.0's figures (DECISIONS.md section 139) were made before the
-    correction of section 140; section 140 quotes them as they are now."""
-    decisions = " ".join((ROOT / "DECISIONS.md").read_text().split())
-    section = decisions.split("## 140. ")[1]
-    total = {(s, w): (lambda f: f.reflected_at_surface
-                      + f.transmitted_at_surface - 1)(_transparent(s, w))
-             for s, w in ((30.0, 7.0), (60.0, 7.0), (60.0, 14.0),
-                          (80.0, 7.0))}
-    assert (f"exceeds 1 by {100 * total[30.0, 7.0]:.3f} percent at 30 "
-            f"degrees, {100 * total[60.0, 7.0]:.3f} at 60 and "
-            f"{100 * total[60.0, 14.0]:.3f} at 60 degrees and 14 m/s") in section
-    assert (f"falls short of it by {-100 * total[80.0, 7.0]:.3f} percent at "
-            "80 degrees") in section
-    assert abs(total[80.0, 7.0]) < 0.005
-    for sun in (30.0, 60.0):
-        r = [_transparent(sun, w).reflected_at_surface
-             for w in (2.0, 7.0, 14.0)]
-        assert f"{min(r):.4f} to {max(r):.4f} at {sun:.0f}" in section
-
-
-@source_tree
 def test_question_5_with_waves_is_quoted_as_computed():
     import contextlib
     import io
@@ -525,29 +503,23 @@ def test_the_canonical_problems_are_quoted_as_run():
         x, se = float(r["jerlov"]), float(r["jerlov_se"])
         m, s = means[q], spreads[q] * means[q]
         good.append(abs(x - m) <= 2 * s + 3 * se + 0.005 * m)
-    assert sum(good) == 46 and sum(good) >= 0.9 * len(rows)
+    # since 1.35.2 (DECISIONS.md section 143): section 140's run gave 46,
+    # with problem 5's Ed at optical depth 10 just outside
+    assert sum(good) == 47 and sum(good) >= 0.9 * len(rows)
     misses = {(r["problem"], r["omega0"], r["tau"], r["quantity"])
               for r, g in zip(rows, good) if not g}
     assert misses == {("1", "0.2", "10", "Lu"), ("2", "0.2", "10", "Lu"),
-                      ("5", "0.9", "1", "Ed"), ("5", "0.9", "5", "Ed"),
-                      ("5", "0.9", "10", "Ed")}
-    decisions = " ".join((ROOT / "DECISIONS.md").read_text().split())
-    section = decisions.split("## 140. ")[1]
-    assert "46 of the 51 entries posed agree** (90.2 percent" in section
-    ratio = {key: float(r["jerlov"]) / float(r["table5"])
-             for r in rows for key in [(r["problem"], r["tau"],
-                                        r["quantity"], r["omega0"])]}
-    assert (f"{ratio['1', '10', 'Lu', '0.2']:.3f} and "
-            f"{ratio['2', '10', 'Lu', '0.2']:.3f} of the mean") in section
-    assert (f"{ratio['5', '1', 'Ed', '0.9']:.3f}, "
-            f"{ratio['5', '5', 'Ed', '0.9']:.3f} and "
-            f"{ratio['5', '10', 'Ed', '0.9']:.3f} of the mean") in section
-    log = " ".join((ROOT / "CHANGELOG.md").read_text().split())
-    assert "46 of 51 values agree" in log
+                      ("5", "0.9", "1", "Ed"), ("5", "0.9", "5", "Ed")}
+    section = _section_143()
+    assert "47 of the 51 entries agree with `\"one\"`" in section
+    ratio = [float(r["jerlov"]) / float(r["table5"]) for r in rows
+             if r["problem"] == "5" and r["quantity"] == "Ed"]
+    assert (f"With `\"one\"`, Ed is {ratio[0]:.3f}, {ratio[1]:.3f} and "
+            f"{ratio[2]:.3f}") in section
     data = " ".join((ROOT / "DATA.md").read_text().split())
-    assert "agrees in 46 of 51 entries" in data
-    assert (f"{ratio['5', '1', 'Ed', '0.9']:.3f} to "
-            f"{ratio['5', '10', 'Ed', '0.9']:.3f} of the mean") in data
+    assert (f"with one facet per crossing, {ratio[0]:.3f}, {ratio[1]:.3f} "
+            f"and {ratio[2]:.3f}") in data
+    assert "agrees in 47 of 51 entries with one facet" in data
 
 
 # -- light meeting the wavy surface more than once (DECISIONS.md section 141)
@@ -619,44 +591,6 @@ def test_all_facets_and_one_differ_only_where_light_meets_another():
     assert 1.02 < ratio < 1.04      # "about 3 percent", the docstring
 
 
-def _section_141():
-    decisions = " ".join((ROOT / "DECISIONS.md").read_text().split())
-    return decisions.split("## 141. ")[1]
-
-
-@source_tree
-def test_section_141_s_energy_figures_are_quoted_as_computed():
-    section = _section_141()
-    total, entering = {}, {}
-    for w in (7.0, 14.0):
-        for s in (30.0, 60.0, 80.0):
-            for f in ("one", "all"):
-                r = _transparent(s, w, surface_facets=f)
-                total[w, s, f] = 100 * (r.transmitted_at_surface
-                                        + r.reflected_at_surface - 1)
-                entering[w, s, f] = r.transmitted_at_surface
-
-    def pair(w, s):
-        return total[w, s, "all"], total[w, s, "one"]
-    assert ("at 7 m/s {:+.3f} percent at 30 degrees ({:+.3f}), {:+.3f} at 60 "
-            "({:+.3f}), {:+.3f} at 80 ({:+.3f})").format(
-        *pair(7.0, 30.0), *pair(7.0, 60.0), *pair(7.0, 80.0)) in section
-    assert ("14 m/s {:+.3f} ({:+.3f}), {:+.3f} ({:+.3f}), and {:+.3f} at 80 "
-            "({:+.3f}), above the 0.5 set").format(
-        *pair(14.0, 30.0), *pair(14.0, 60.0), *pair(14.0, 80.0)) in section
-    met = [abs(total[w, s, "all"]) <= 0.5 for w in (7.0, 14.0)
-           for s in (30.0, 60.0, 80.0)]
-    assert met.count(False) == 1 and not met[-1]
-    ratio = {k: entering[k[0], k[1], "all"] / entering[k[0], k[1], "one"]
-             for k in [(7.0, 80.0), (14.0, 80.0), (7.0, 60.0), (14.0, 60.0),
-                       (7.0, 30.0), (14.0, 30.0)]}
-    assert (f"{ratio[7.0, 80.0]:.4f} and {ratio[14.0, 80.0]:.4f} times "
-            f"`\"one\"`'s at 80 degrees and 7 and 14 m/s, "
-            f"{ratio[7.0, 60.0]:.4f} and {ratio[14.0, 60.0]:.4f} at 60") \
-        in section
-    assert abs(ratio[7.0, 30.0] - 1) < 2e-4 and abs(ratio[14.0, 30.0] - 1) < 2e-4
-
-
 def _share_by_quadrature(mu, slope_variance, points):
     sd = math.sqrt(slope_variance / 2)
     g = np.linspace(-8 * sd, 8 * sd, points)
@@ -667,48 +601,6 @@ def _share_by_quadrature(mu, slope_variance, points):
     dn = math.sqrt(1 - mu * mu) * nx + mu * nz
     front = dn < 0
     return float(np.sum(p * front * (-dn) / (-nz * mu)) / np.sum(p * front))
-
-
-@source_tree
-def test_section_141_s_finding_on_the_shadowing_table():
-    section = _section_141()
-    mu = math.cos(math.radians(80.0))
-    d = np.tile([[math.sqrt(1 - mu * mu)], [0.0], [mu]], 500_000)
-    means, table, here, fine = [], [], [], []
-    for wind in (7.0, 14.0):
-        s2 = mc.COX_MUNK_MEAN_SQUARE_SLOPE[0] \
-            + mc.COX_MUNK_MEAN_SQUARE_SLOPE[1] * wind
-        m = np.array([float(np.mean(mc._facets(
-            d, s2, np.random.default_rng(100 + k))[2])) for k in range(8)])
-        means.append((100 * (m.mean() - 1),
-                      100 * m.std(ddof=1) / math.sqrt(8)))
-        mus, share = mc._front_share_table(s2)
-        table.append(float(np.interp(mu, mus, share)))
-        here.append(_share_by_quadrature(mu, s2, 401))
-        fine.append(_share_by_quadrature(mu, s2, 1601))
-    assert (f"1 - {-means[0][0]:.3f} percent at 7 m/s and 1 + "
-            f"{means[1][0]:.3f} percent at 14 m/s") in section
-    assert max(se for _, se in means) < 0.05
-    log = " ".join((ROOT / "CHANGELOG.md").read_text().split())
-    log = log.split("## 1.35.0 ")[1].split("## 1.34.1 ")[0]
-    assert (f"{-means[0][0]:.2f} percent short of what falls on it at 7 m/s "
-            f"and {means[1][0]:.2f} percent over at 14 m/s") in log
-    assert (f"gives {table[0]:.4f} and {table[1]:.4f} at cos(80 degrees); "
-            f"the same quadrature at that cosine itself gives {here[0]:.4f} "
-            f"and {here[1]:.4f}, and on a grid four times finer "
-            f"{fine[0]:.4f} and {fine[1]:.4f}") in section
-    # the sampled mean is the finer quadrature's over the table's
-    for (m, se), t, f in zip(means, table, fine):
-        assert abs(100 * (f / t - 1) - m) < 4 * se + 0.05
-    for wind in (2.0, 5.0, 7.0, 14.0):
-        s2 = mc.COX_MUNK_MEAN_SQUARE_SLOPE[0] \
-            + mc.COX_MUNK_MEAN_SQUARE_SLOPE[1] * wind
-        mus, share = mc._front_share_table(s2)
-        for deg in np.arange(0.0, 60.01, 2.5):
-            c = math.cos(math.radians(deg))
-            assert abs(float(np.interp(c, mus, share))
-                       / _share_by_quadrature(c, s2, 1601) - 1) < 1e-4
-    assert "within 0.01 percent of the finer grid" in section
 
 
 def _rows(name):
@@ -740,35 +632,34 @@ def test_problem_5_with_every_facet_is_quoted_as_run():
     assert {(r["problem"], r["omega0"], r["tau"], r["quantity"])
             for r in every if not agree(r)} == {("1", "0.2", "10", "Lu"),
                                                ("2", "0.2", "10", "Lu")}
-    section = _section_141()
+    section = _section_143()
 
     def ratios(rows, quantity):
         return [float(r["jerlov"]) / float(r["table5"]) for r in rows
                 if r["problem"] == "5" and r["quantity"] == quantity]
-    for q in ("Ed", "Eou", "Lu"):
-        a, b = ratios(every, q), ratios(one, q)
-        assert (f"{q} {a[0]:.3f}, {a[1]:.3f} and {a[2]:.3f}"
-                f"{' of the models' if q == 'Ed' else ''}") in section \
-            or (f"{q} is {a[0]:.3f}, {a[1]:.3f} and {a[2]:.3f}") in section
-        assert (f"{b[0]:.3f}, {b[1]:.3f}" in section)
-    assert "49 of the 51 entries agree" in section
-    ed, ed_one = ratios(every, "Ed"), ratios(one, "Ed")
+    a = {q: ratios(every, q) for q in ("Ed", "Eou", "Lu")}
+    assert (f"Ed {a['Ed'][0]:.3f}, {a['Ed'][1]:.3f} and {a['Ed'][2]:.3f} of "
+            f"the models' mean at optical depths 1, 5 and 10, Eou "
+            f"{a['Eou'][0]:.3f}, {a['Eou'][1]:.3f} and {a['Eou'][2]:.3f}, Lu "
+            f"{a['Lu'][0]:.3f}, {a['Lu'][1]:.3f} and {a['Lu'][2]:.3f}") \
+        in section
+    assert "49 with `\"all\"`" in section
+    ed = a["Ed"]
     log = " ".join((ROOT / "CHANGELOG.md").read_text().split())
-    log = log.split("## 1.35.0 ")[1].split("## 1.34.1 ")[0]
-    assert (f"Ed is {min(ed):.3f} to {max(ed):.3f} of the 1993 codes' mean, "
-            f"where one facet gave {min(ed_one):.3f} to {max(ed_one):.3f}") \
-        in log
-    assert "in 49 of 51 values" in log
+    log = log.split("## 1.35.2 ")[1].split("## 1.35.1 ")[0]
+    assert (f"Ed {min(ed):.3f} to {max(ed):.3f} of the codes' mean; with "
+            "`\"one\"` 47 of the 51 values agree, with `\"all\"` 49") in log
     data = " ".join((ROOT / "DATA.md").read_text().split())
-    assert (f"Ed {ed[0]:.3f}, {ed[1]:.3f} and {ed[2]:.3f} of the mean") in data
-    assert "agrees in 49 of 51 entries" in data
+    assert (f"Ed is {ed[0]:.3f}, {ed[1]:.3f} and {ed[2]:.3f} of the mean") \
+        in data
+    assert "49 of 51 with every facet" in data
 
 
 @source_tree
 def test_the_second_facet_shares_are_quoted_as_computed():
     tool = _benchmark_tool()
     ray, table = tool.rayleigh(), tool.table2()
-    section = _section_141()
+    section = _section_143()
     entering, below = [], []
     for sun in (30.0, 60.0, 80.0):
         runs = [mc._simulate(0.1, 0.9, 0.0, table, ray, sun, 141 + k,
@@ -798,7 +689,7 @@ def test_question_5_with_every_facet_is_quoted_as_computed():
          for r in rows]
     within = int(np.sum(np.abs(model / every - 1) <= 0.1))
     assert within == int(np.sum(np.abs(model / one - 1) <= 0.1)) == 1
-    section = _section_141()
+    section = _section_143()
     assert f"within 10 percent in {within} of the 13" in section
     log = " ".join((ROOT / "CHANGELOG.md").read_text().split())
     assert f"still {within} of the 13 within 10 percent" in log
@@ -825,3 +716,77 @@ def test_a_stored_every_facet_waves_run_is_reproduced():
                              float(row["wind_m_s"]), "all")
     assert f"{value:.6e}" == row["all_facets"]
     assert f"{error:.2e}" == row["all_facets_se"]
+
+
+# -- the facets' shadowing by its closed form (DECISIONS.md section 143) -----
+
+def _section_143():
+    decisions = " ".join((ROOT / "DECISIONS.md").read_text().split())
+    return decisions.split("## 143. ")[1]
+
+
+def _variance(wind):
+    return mc.COX_MUNK_MEAN_SQUARE_SLOPE[0] \
+        + mc.COX_MUNK_MEAN_SQUARE_SLOPE[1] * wind
+
+
+@source_tree
+def test_the_shadowing_is_its_closed_form():
+    section = _section_143()
+    test = np.cos(np.radians(np.linspace(0.0, 89.9, 3000)))
+    worst = 0.0
+    for s2 in (0.003, 0.0388, 0.0747, 0.2):
+        mus, share = mc._front_share_table(s2)
+        worst = max(worst, float(np.max(np.abs(
+            np.interp(test, mus, share) / mc._front_share(test, s2) - 1))))
+    assert worst < 1e-5
+    differences = []
+    for wind in (7.0, 14.0):
+        for deg in (30.0, 60.0, 80.0, 85.0):
+            mu = math.cos(math.radians(deg))
+            closed = float(mc._front_share(mu, _variance(wind))[0])
+            quadrature = _share_by_quadrature(mu, _variance(wind), 3201)
+            differences.append(100 * (quadrature / closed - 1))
+    assert max(map(abs, differences)) < 0.05
+    assert (f"within {max(map(abs, differences)):.3f} percent of a "
+            "quadrature on 3201 points") in section
+    assert (f"within {worst:.0e} of the closed form".replace("e-0", "e-")
+            in section)
+
+
+@source_tree
+def test_the_facets_drawn_have_a_mean_weight_of_one():
+    section = _section_143()
+    found = []
+    for wind in (7.0, 14.0):
+        for deg in (80.0, 85.0):
+            mu = math.cos(math.radians(deg))
+            d = np.tile([[math.sqrt(1 - mu * mu)], [0.0], [mu]], 500_000)
+            m = np.array([float(np.mean(mc._facets(
+                d, _variance(wind), np.random.default_rng(100 + k))[2]))
+                for k in range(8)])
+            mean, se = 100 * (m.mean() - 1), 100 * m.std(ddof=1) / math.sqrt(8)
+            assert abs(mean) <= 3 * se
+            found.append(mean)
+    assert (f"{min(found):+.3f} to {max(found):+.3f} percent") in section
+
+
+@source_tree
+def test_section_143_s_energy_figures_are_quoted_as_computed():
+    section = _section_143()
+    total = {}
+    for w in (7.0, 14.0):
+        for s in (30.0, 60.0, 80.0):
+            for f in ("one", "all"):
+                r = _transparent(s, w, surface_facets=f)
+                total[w, s, f] = 100 * (r.transmitted_at_surface
+                                        + r.reflected_at_surface - 1)
+    assert max(map(abs, total.values())) < 0.1
+    log = " ".join((ROOT / "CHANGELOG.md").read_text().split())
+    log = log.split("## 1.35.2 ")[1].split("## 1.35.1 ")[0]
+    assert max(map(abs, total.values())) < 0.04
+    assert "what falls on it within 0.04 percent at 30 to 80 degrees" in log
+    for f in ("one", "all"):
+        values = [total[k] for k in total if k[2] == f]
+        assert (f"`\"{f}\"` {min(values):+.3f} to {max(values):+.3f} "
+                "percent") in section

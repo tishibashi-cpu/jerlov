@@ -178,28 +178,39 @@ def _turn(ux, uy, uz, cos_t, rng):
     return nx / norm, ny / norm, nz / norm
 
 
+def _front_share(mu, slope_variance):
+    """For light meeting the surface at cosine ``mu`` (to the vertical),
+    the mean over the facets that face it, slopes Gaussian, of the share
+    of the beam each intercepts over a flat surface's, by its closed form
+    (DECISIONS.md section 143): with x along the light's horizontal
+    direction the share is 1 - tan(theta) z_x and the facet faces the
+    light when z_x < cot(theta), so the mean is that of a truncated
+    Gaussian, 1 + tan(theta) s phi(a) / Phi(a), a = cot(theta) / s, s^2
+    the slope variance in one direction."""
+    s = math.sqrt(slope_variance / 2)
+    out = []
+    for m in np.atleast_1d(np.asarray(mu, dtype=float)):
+        sin = math.sqrt(max(0.0, 1.0 - m * m))
+        if sin == 0.0:
+            out.append(1.0)
+            continue
+        a = m / sin / s
+        density = math.exp(-a * a / 2) / math.sqrt(2 * math.pi)
+        below = 0.5 * math.erfc(-a / math.sqrt(2))
+        out.append(1.0 + sin / m * s * density / below)
+    return np.array(out)
+
+
 @functools.lru_cache(maxsize=16)
 def _front_share_table(slope_variance):
-    """For light meeting the surface at cosine mu (to the vertical), the
-    mean over the facets that face it, slopes Gaussian, of the share of
-    the beam each intercepts over a flat surface's: by quadrature, on a
-    grid of mu. Facets turned away from the light are in shadow; dividing
-    by this mean keeps the light that reaches the surface equal to what
-    crosses a horizontal plane (DECISIONS.md section 140)."""
-    sd = math.sqrt(slope_variance / 2)
-    g = np.linspace(-8 * sd, 8 * sd, 401)
-    zx, zy = np.meshgrid(g, g)
-    p = np.exp(-(zx * zx + zy * zy) / (2 * sd * sd))
-    norm = np.sqrt(1 + zx * zx + zy * zy)
-    nx, nz = zx / norm, -1 / norm
-    mus = np.concatenate([np.geomspace(1e-3, 0.2, 80, endpoint=False),
-                          np.linspace(0.2, 1.0, 81)])
-    share = np.empty(mus.size)
-    for k, mu in enumerate(mus):
-        dn = math.sqrt(1 - mu * mu) * nx + mu * nz
-        front = dn < 0
-        share[k] = np.sum(p * front * (-dn) / (-nz * mu)) / np.sum(p * front)
-    return mus, share
+    """:func:`_front_share` on a grid of cosines, to interpolate in: within
+    1e-5 of it up to 89.9 degrees (DECISIONS.md section 143). Facets turned
+    away from the light are in shadow; dividing by this mean keeps the
+    light that reaches the surface equal to what crosses a horizontal
+    plane (DECISIONS.md section 140)."""
+    mus = np.concatenate([np.geomspace(1e-4, 0.3, 1500, endpoint=False),
+                          np.linspace(0.3, 1.0, 701)])
+    return mus, _front_share(mus, slope_variance)
 
 
 def _facets(d, slope_variance, rng):

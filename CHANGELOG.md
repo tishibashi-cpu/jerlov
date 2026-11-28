@@ -4,6 +4,27 @@ Every release is archived on Zenodo under the concept DOI
 [10.5281/zenodo.22321312](https://doi.org/10.5281/zenodo.22321312), which
 always resolves to the latest version.
 
+## 1.35.2 — 2026-11-28
+
+The wavy surface's shadowing by its closed form (DECISIONS.md section
+143). Runs with waves change slightly; flat surfaces do not.
+
+**Fixed.** `monte_carlo_light_field` with a wind divides each facet's
+weight by the facets' mean share of the beam, so that the light reaching
+the surface is what falls on it (1.34.1). That mean was interpolated from
+a coarse table, so that with the sun at 80 degrees the light reaching
+the surface was 0.36 percent short of what fell on it at 7 m/s and 0.47
+percent over at 14 m/s (as 1.35.0 found). It is now its closed
+form, the mean of a truncated Gaussian, and the light reaching the
+surface is what falls on it within 0.04 percent at 30 to 80 degrees. Up
+to 60 degrees the old table was within 0.01 percent.
+
+**Checked.** Problem 5 of Mobley et al. (1993) made again: with
+`surface_facets="all"` all nine values still agree, Ed 0.990 to 1.001 of
+the codes' mean; with `"one"` 47 of the 51 values agree, with `"all"` 49.
+Question 5's waves runs were made again and still bring 1 of the 13
+within 10 percent.
+
 ## 1.35.1 — 2026-11-28
 
 Publishing follows a merge by itself (DECISIONS.md section 142). No
