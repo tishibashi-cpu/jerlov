@@ -9945,3 +9945,68 @@ branch, so the claims are main's.
    by hand on main at 1.35.0 and on dev, and a tag v9.9.9, each fail;
    the tag v1.35.0 at 1.35.0 goes on.
 3. Not yet: after this release's merge.
+
+## 143. The facets' shadowing by its closed form (1.35.2): the plan
+
+Section 141 found that `_front_share_table` (section 140) is too coarse
+for a low sun: the mean weight of the facets drawn for the sun at 80
+degrees is 1 - 0.356 percent at 7 m/s and 1 + 0.475 percent at 14 m/s,
+where it should be 1, from the interpolation between its cosines and its
+grid of slopes, which the edge between light and shadow crosses. The user
+asked on 2026-11-28 for it to be corrected.
+
+### Seen before the plan
+
+The quantity has a closed form. With x along the light's horizontal
+direction, light at zenith angle theta meets a facet of slopes (z_x, z_y)
+with weight (-d . n) / (-n_z cos theta) = 1 - tan(theta) z_x, and the
+facet faces the light when z_x < cot(theta), whatever z_y. With z_x
+Gaussian of standard deviation s (s^2 = sigma^2 / 2), the mean over the
+facets in light is the mean of a truncated Gaussian:
+
+    share = 1 + tan(theta) s phi(a) / Phi(a),   a = cot(theta) / s,
+
+phi and Phi the standard normal density and distribution. A probe (not
+kept): the table's quadrature converges on it as its grid is refined; at
+80 degrees and 14 m/s 1.35738 on 401 points (the table's), 1.35084 on
+1601 and 1.35193 on 3201, the closed form 1.35193; at 85 degrees and 7
+m/s 1.71596, 1.71212, 1.71022 against 1.70998. Tabulated on 2201 cosines
+(geometric from 1e-4 to 0.3, linear to 1), interpolation is within 1e-5
+of it up to 89.9 degrees, for slope variances 0.003 to 0.2.
+
+### The change
+
+`_front_share_table` tabulates the closed form on that grid (computed
+with `math.erfc`; NumPy has no error function). The drawing of facets is
+unchanged and draws the same random numbers, so every run with waves
+changes only through the weights: a value change, a correction of a
+fault (section 61), 1.35.2. `"one"` no longer gives 1.34.1's or 1.35.0's
+numbers bit for bit; flat surfaces are untouched.
+
+### Checks, set now
+
+1. The table against the closed form within 1e-5 from 0 to 89.9 degrees
+   and slope variances 0.003 to 0.2; the closed form against a quadrature
+   on 3201 points within 0.05 percent at 30, 60, 80 and 85 degrees and 7
+   and 14 m/s.
+2. The mean weight of the facets drawn for the sun at 80 and 85 degrees,
+   7 and 14 m/s (eight batches of 500 000), within three standard errors
+   of 1.
+3. Energy, transparent water: transmitted plus reflected within 0.1
+   percent of 1 at 30, 60 and 80 degrees and 7 and 14 m/s, with `"one"`
+   and with `"all"` (section 141's check 2, which `"all"` missed at 80
+   degrees and 14 m/s by +0.689 percent, tightened from 0.5).
+4. Problem 5 of Mobley et al. (1993) again, with `"one"` and `"all"`;
+   recorded beside section 141's. Measure: with `"all"` all nine entries
+   still agree.
+5. Question 5's waves runs again (sun 0 to 60 degrees, where the table
+   was within 0.01 percent): recorded, with the largest change in rrs.
+
+### Documents
+
+The stored runs (`examples/data/mobley1993/runs.csv` and
+`runs_all_facets.csv`, `examples/data/monte_carlo/waves_black_bottom.csv`)
+are made again with the corrected engine, and the tests that recomputed
+sections 140's and 141's figures from the engine check this section's
+instead; those sections stay as the record of what the code gave then.
+CHANGELOG; DATA.md section 53 if problem 5's figures move; NEXT_STEPS.
