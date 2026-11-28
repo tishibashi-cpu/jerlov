@@ -25,6 +25,7 @@ phase matrix towards that direction, the attenuation to the boundary, over
 the direction's cosine, rotated into the direction's meridian plane.
 
     python tools/polarised_mc.py OUT.csv
+    python tools/polarised_mc.py --kokhanovsky OUT.csv
 
 The CSV holds I, Q and U in the tables' conventions (TO_TABLES).
 
@@ -162,6 +163,43 @@ TABLES = {
 }
 
 
+#: Kokhanovsky et al. (2010), J. Quant. Spectrosc. Radiat. Transfer 111,
+#: 1931-1946, doi:10.1016/j.jqsrt.2010.03.005: Rayleigh scattering without
+#: depolarisation, optical thickness 0.3262, the sun at 60 degrees, a black
+#: surface (DECISIONS.md section 146). Transcribed from the page images
+#: (the text layer drops the minus signs).
+K_TAU = 0.3262
+K_MU0 = 0.5
+K_VZA = (0.0, 20.0, 40.0, 60.0, 80.0, 89.0)
+K_PHIS = (0.0, 90.0, 180.0)
+#: Table A1 (p. 1943): VZA -> for phi 0, 90, 180: (IR, QR, IT, QT).
+K_TABLE_A1 = {
+    0.0: ((0.1433981, 0.07253129, 0.1396923, 0.07040628),
+          (0.1433981, -0.07253129, 0.1396923, -0.07040628),
+          (0.1433981, 0.07253129, 0.1396923, 0.07040628)),
+    20.0: ((0.1281929, 0.09953042, 0.1846301, 0.03655640),
+           (0.1501054, -0.07537969, 0.1460187, -0.07306526),
+           (0.1899151, 0.03780822, 0.1247472, 0.09643928)),
+    40.0: ((0.1560517, 0.1140612, 0.2590920, 0.001549839),
+           (0.1746397, -0.08605730, 0.1689676, -0.08295291),
+           (0.2682317, 0.001881170, 0.1509949, 0.1096469)),
+    60.0: ((0.2641460, 0.1125426, 0.3811575, -0.02444004),
+           (0.2379419, -0.1146228, 0.2265788, -0.1086739),
+           (0.4017650, -0.02507640, 0.2511095, 0.1056079)),
+    80.0: ((0.6078904, 0.08824163, 0.6138623, -0.01452666),
+           (0.4301002, -0.2043280, 0.3769405, -0.1773986),
+           (0.7084867, -0.01235467, 0.5277571, 0.07157849)),
+    89.0: ((0.8581319, 0.06684238, 0.5599639, 0.02324266),
+           (0.5458706, -0.2592859, 0.3617355, -0.1666421),
+           (0.8718045, 0.05316980, 0.5515021, 0.03170448)),
+}
+#: Tables A4 and A5 (pp. 1944-1945), Rayleigh: U at phi = 90, VZA ->
+#: (UR, UT).
+K_TABLE_U90 = {0.0: (0.0, 0.0), 20.0: (0.03284170, 0.03186302),
+               40.0: (0.07322031, 0.07055535), 60.0: (0.1376191, 0.1300480),
+               80.0: (0.2896555, 0.2479299), 89.0: (0.3917105, 0.2424255)}
+
+
 def _cross(a, b):
     return np.stack([a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2],
                      a[0] * b[1] - a[1] * b[0]])
@@ -208,14 +246,14 @@ def _draw_rayleigh_cos(rng, n):
     return np.cbrt(-q / 2 + r) + np.cbrt(-q / 2 - r)
 
 
-def detectors():
+def detectors(mus=MUS, phis=PHIS):
     """Unit directions (z down) of the tabulated light: upwelling at the
     top, downwelling at the bottom, azimuth phi measured from the sun's
     direction of travel (the sun's beam travels towards +x)."""
     out = []
     for level in ("top", "bottom"):
-        for mu in MUS:
-            for phi in PHIS:
+        for mu in mus:
+            for phi in phis:
                 s = math.sqrt(max(0.0, 1 - mu * mu))
                 p = math.radians(phi)
                 z = -mu if level == "top" else mu
@@ -271,17 +309,18 @@ def _estimate(pos_z, d, e1, S, U, U_e1, top, tau, polarised):
     return out
 
 
-def run(seed, photons, tau=TAU, polarised=True, orders=None):
+def run(seed, photons, tau=TAU, polarised=True, orders=None, mu0=MU0,
+        mus=MUS, phis=PHIS):
     """One batch: the (4, k) Stokes parameters of the light leaving in
     every tabulated direction, per unit planar irradiance on the top.
     ``orders``: if given, only light scattered that many times or fewer."""
     rng = np.random.default_rng(seed)
-    dets = detectors()
+    dets = detectors(mus, phis)
     U = np.array([d[3] for d in dets]).T
     U_e1 = _meridian_e1(U, [d[2] for d in dets])
     top = np.array([d[0] == "top" for d in dets])
-    s0 = math.sqrt(1 - MU0 * MU0)
-    d = np.tile([[s0], [0.0], [MU0]], photons)
+    s0 = math.sqrt(1 - mu0 * mu0)
+    d = np.tile([[s0], [0.0], [mu0]], photons)
     e1 = _meridian_e1(d)
     S = np.zeros((4, photons))
     S[0] = 1.0
@@ -320,27 +359,27 @@ def run(seed, photons, tau=TAU, polarised=True, orders=None):
     return total / photons
 
 
-def single_scattering(tau):
+def single_scattering(tau, mu0=MU0, mus=MUS, phis=PHIS):
     """The light singly scattered out of a layer of optical thickness tau
     (exactly, not only thin), per unit planar irradiance on the top, in
     this module's convention: (4, k)."""
-    dets = detectors()
+    dets = detectors(mus, phis)
     U = np.array([d[3] for d in dets]).T
     U_e1 = _meridian_e1(U, [d[2] for d in dets])
-    s0 = math.sqrt(1 - MU0 * MU0)
-    d = np.array([[s0], [0.0], [MU0]])
+    s0 = math.sqrt(1 - mu0 * mu0)
+    d = np.array([[s0], [0.0], [mu0]])
     e1 = _meridian_e1(d)
     out = np.zeros((4, U.shape[1]))
     for j, det in enumerate(dets):
         mu = abs(det[3][2])
         if det[0] == "top":        # integral over the depth of the beam
-            depth = (1 - math.exp(-tau * (1 / MU0 + 1 / mu))) \
-                / (1 / MU0 + 1 / mu)
-        elif abs(mu - MU0) < 1e-12:
-            depth = tau * math.exp(-tau / MU0)
+            depth = (1 - math.exp(-tau * (1 / mu0 + 1 / mu))) \
+                / (1 / mu0 + 1 / mu)
+        elif abs(mu - mu0) < 1e-12:
+            depth = tau * math.exp(-tau / mu0)
         else:
-            depth = (math.exp(-tau / mu) - math.exp(-tau / MU0)) \
-                / (1 / MU0 - 1 / mu)
+            depth = (math.exp(-tau / mu) - math.exp(-tau / mu0)) \
+                / (1 / mu0 - 1 / mu)
         S = np.array([[1.0], [0.0], [0.0], [0.0]])
         u = U[:, j:j + 1]
         e2 = _cross(d, e1)
@@ -354,7 +393,7 @@ def single_scattering(tau):
         m = U_e1[:, j:j + 1]
         S = _rotate(S, np.sum(m * e1_out, axis=0), np.sum(m * nrm, axis=0))
         # the beam's planar irradiance 1 is 1 / mu0 across the beam
-        out[:, j] = S[:, 0] / MU0 * depth / mu
+        out[:, j] = S[:, 0] / mu0 * depth / mu
     return out
 
 
@@ -366,6 +405,51 @@ def single_scattering(tau):
 #: is the tables' with the opposite sign (fixed by the tables themselves,
 #: DECISIONS.md section 145).
 TO_TABLES = (math.pi * MU0, -math.pi * MU0, -math.pi * MU0, math.pi * MU0)
+
+
+#: To Kokhanovsky et al.'s: Eq. (6), pi S / (mu0 F0), so pi times this
+#: module's values per unit planar irradiance. Their tables' Q is I-perp
+#: less I-parallel, as Coulson's, the opposite of their Eq. (2) as printed
+#: (single scattering decides it: DECISIONS.md section 146), so this
+#: module's Q with the opposite sign; U's sign fixed by the tables.
+TO_KOKHANOVSKY = (math.pi, -math.pi, -math.pi, math.pi)
+
+
+def kokhanovsky(path: str) -> None:
+    """Section 146's run: Kokhanovsky et al.'s Rayleigh case."""
+    mus = tuple(math.cos(math.radians(v)) for v in K_VZA)
+    dets = detectors(mus, K_PHIS)
+    scale = np.array(TO_KOKHANOVSKY)[:, None]
+    geometry = dict(tau=K_TAU, mu0=K_MU0, mus=mus, phis=K_PHIS)
+    batches = [run(SEED + k, PHOTONS, **geometry) * scale
+               for k in range(BATCHES)]
+    scalar = [run(SEED + 100 + k, PHOTONS, polarised=False, **geometry)
+              * scale for k in range(BATCHES)]
+    _write(path, dets, batches, scalar,
+           vza=[K_VZA[mus.index(d[1])] for d in dets])
+
+
+def _write(path, dets, batches, scalar, vza=None):
+    mean = np.mean(batches, axis=0)
+    se = np.std(batches, axis=0, ddof=1) / math.sqrt(len(batches))
+    smean = np.mean(scalar, axis=0)
+    sse = np.std(scalar, axis=0, ddof=1) / math.sqrt(len(scalar))
+    rows = []
+    for j, (level, mu, phi, _) in enumerate(dets):
+        row = dict(level=level, mu=mu, phi=phi)
+        if vza is not None:
+            row = dict(level=level, vza=vza[j], phi=phi)
+        row.update(I=f"{mean[0, j]:.8e}", I_se=f"{se[0, j]:.2e}",
+                   Q=f"{mean[1, j]:.8e}", Q_se=f"{se[1, j]:.2e}",
+                   U=f"{mean[2, j]:.8e}", U_se=f"{se[2, j]:.2e}",
+                   V=f"{mean[3, j]:.8e}", V_se=f"{se[3, j]:.2e}",
+                   I_scalar=f"{smean[0, j]:.8e}",
+                   I_scalar_se=f"{sse[0, j]:.2e}")
+        rows.append(row)
+    with open(path, "w", newline="") as f:
+        writer = csv.DictWriter(f, fieldnames=list(rows[0]))
+        writer.writeheader()
+        writer.writerows(rows)
 
 
 def main(path: str) -> None:
@@ -394,6 +478,9 @@ def main(path: str) -> None:
 
 
 if __name__ == "__main__":
-    if len(sys.argv) != 2:
+    if len(sys.argv) == 3 and sys.argv[1] == "--kokhanovsky":
+        kokhanovsky(sys.argv[2])
+    elif len(sys.argv) == 2:
+        main(sys.argv[1])
+    else:
         sys.exit(__doc__)
-    main(sys.argv[1])
