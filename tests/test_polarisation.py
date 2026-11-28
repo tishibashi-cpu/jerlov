@@ -128,3 +128,82 @@ def test_the_scalar_error_is_quoted_as_run():
         assert se < 0.005
     assert f"up to {round(100 * worst)} percent" in section
     assert f"up to {round(100 * worst)} percent off" in log
+
+
+# -- Kokhanovsky et al. (2010), DECISIONS.md section 146 --------------------
+
+def _section_146():
+    text = " ".join((ROOT / "DECISIONS.md").read_text().split())
+    return text.split("## 146. ")[1]
+
+
+def _kokhanovsky_rows():
+    path = ROOT / "examples" / "data" / "polarisation" / \
+        "kokhanovsky2010.csv"
+    with path.open() as handle:
+        return list(csv.DictReader(handle))
+
+
+@source_tree
+def test_kokhanovsky_s_tables_as_transcribed():
+    p = _tool()
+    assert sorted(p.K_TABLE_A1) == list(p.K_VZA)
+    assert len(p.K_TABLE_A1) * 3 * 4 + len(p.K_TABLE_U90) * 2 == 84
+    for v in p.K_VZA:
+        rows = p.K_TABLE_A1[v]
+        assert rows[0][0] > 0 and rows[0][2] > 0
+        if v == 0.0:      # straight up or down: I one value, Q cos 2 phi
+            assert rows[0][0] == rows[1][0] == rows[2][0]
+            assert rows[0][1] == -rows[1][1] == rows[2][1]
+            assert p.K_TABLE_U90[v] == (0.0, 0.0)
+
+
+@source_tree
+def test_the_tables_q_is_single_scattering_s_sign():
+    """Light from the sun scattered straight up by Rayleigh scattering is
+    polarised across the plane of the sun: in that reference plane I_perp
+    exceeds I_par, so I_perp - I_par > 0 straight up, as Table A1 has it,
+    where the paper's Eq. (2), I_par - I_perp, would be negative."""
+    p = _tool()
+    exact = p.single_scattering(p.K_TAU, mu0=p.K_MU0, mus=(1.0,),
+                                phis=(0.0,))
+    i_par_less_perp = exact[1, 0]          # this tool's Q, e1 meridional
+    assert i_par_less_perp < 0
+    assert p.K_TABLE_A1[0.0][0][1] > 0
+    assert p.TO_KOKHANOVSKY[1] < 0
+    assert "The tables' Q has the opposite sign of the paper's Eq. (2)" in \
+        _section_146().replace("**", "")
+
+
+@source_tree
+def test_kokhanovsky_s_values_are_reproduced_as_quoted():
+    p = _tool()
+    rows = _kokhanovsky_rows()
+    assert len(rows) == 36
+    good, worst = 0, (0.0,)
+    for r in rows:
+        v, phi = float(r["vza"]), float(r["phi"])
+        top = r["level"] == "top"
+        row = p.K_TABLE_A1[v][p.K_PHIS.index(phi)]
+        pairs = [("I", row[0] if top else row[2]),
+                 ("Q", row[1] if top else row[3])]
+        if phi == 90.0:
+            pairs.append(("U", p.K_TABLE_U90[v][0 if top else 1]))
+        for q, t in pairs:
+            x, se = float(r[q]), float(r[q + "_se"])
+            good += abs(x - t) <= 3 * se + 2e-4
+            if abs(x - t) > worst[0]:
+                worst = (abs(x - t), q, r["level"], v, phi, se)
+    assert good == 84
+    section = _section_146()
+    assert "all 84 values agree" in section
+    d, q, level, v, phi, se = worst
+    assert (f"The largest difference is {d:.5f} in {q} at the {level} at "
+            f"{v:.0f} degrees and azimuth {phi:.0f}, where the standard "
+            f"error is {se:.5f}") in section
+    for level, text in (("top", "at the top"), ("bottom", "at the bottom")):
+        sel = [x for x in rows if x["level"] == level]
+        ratio = np.array([float(x["I_scalar"]) / float(x["I"]) for x in sel])
+        assert f"{ratio.min():.3f} to {ratio.max():.3f} {text}" in section
+    log = " ".join((ROOT / "CHANGELOG.md").read_text().split())
+    assert "all 84 values" in log

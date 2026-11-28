@@ -10291,3 +10291,31 @@ every value is transcribed from the page images (pp. 1943-1945).
 DECISIONS; the stored run (`examples/data/polarisation/kokhanovsky2010.csv`)
 and a test that every quoted figure is its; CHANGELOG; NEXT_STEPS. No
 package change: 1.36.2.
+
+### Result
+
+Differences from the plan, and a finding. **The tables' Q has the
+opposite sign of the paper's Eq. (2).** Eq. (2) (p. 1932, read from the
+page image) defines Q = <E_par E_par* - E_perp E_perp*>, parallel to the
+meridional plane; with that, this tool's Q would be the tables' as it is.
+A first run (ten batches of 30 000, made to fix the signs) agreed in 35
+of the 84 so, and in 80 with Q reversed. Single scattering decides it
+without this tool: light from the sun at 60 degrees scattered straight up
+by Rayleigh scattering is polarised across the plane of the sun, so in
+the reference plane of azimuth 0, the plane of the sun, I_perp > I_par
+and Eq. (2) gives Q < 0, where Table A1 gives +0.07253129 at a viewing
+zenith angle of 0. The tables' Q is I_perp - I_par, Coulson's and Natraj
+et al.'s sign. U, as in section 145, has the sign opposite to this
+tool's. The four values that first run missed were I and Q at the top at
+89 degrees, about 2 percent low with 30 000 photons a batch; with the
+planned 400 000 they agree.
+
+1. Met. With the geometry as arguments, Natraj et al.'s problem gives
+   section 145's stored run bit for bit (made again in full; a batch of
+   20 000 and the single scattering were compared first).
+2. **Met: all 84 values agree** (ten batches of 400 000 photons,
+   `examples/data/polarisation/kokhanovsky2010.csv`). The largest
+   difference is 0.00275 in I at the top at 89 degrees and azimuth 180,
+   where the standard error is 0.00129.
+3. Recorded. The scalar I over the vector I: 0.936 to 1.083 at the top
+   and 0.933 to 1.085 at the bottom.

@@ -4,6 +4,24 @@ Every release is archived on Zenodo under the concept DOI
 [10.5281/zenodo.22321312](https://doi.org/10.5281/zenodo.22321312), which
 always resolves to the latest version.
 
+## 1.36.2 — 2026-11-28
+
+Polarisation, a second reference: Kokhanovsky et al.'s (2010) Rayleigh
+benchmark (DECISIONS.md section 146). The package does not change; no
+shipped value changed.
+
+**Checked.** `tools/polarised_mc.py` takes the sun, the optical thickness
+and the directions as arguments, and against Kokhanovsky et al.'s
+SCIATRAN benchmark for Rayleigh scattering (optical thickness 0.3262,
+the sun at 60 degrees, a black surface) all 84 values of I, Q and U of
+the reflected and transmitted light agree. The aerosol and cloud cases
+need scattering matrices the paper gives only on a web page that could
+not be reached.
+
+**Found.** The benchmark tables' Q is I-perpendicular less I-parallel,
+the opposite of the definition printed as the paper's Eq. (2); single
+scattering by itself shows which sign the tables use.
+
 ## 1.36.1 — 2026-11-28
 
 Polarisation, a first step: a vector Monte Carlo in `tools/`, checked
