@@ -19,10 +19,10 @@ survives with probability 1/10 and ten times the weight.
 
 Radiance and scalar irradiance at a depth are the path length photons
 spend in a slab around it, per unit thickness; planar irradiance is the
-weight crossing the depth. The radiance looking straight down at a
-depth is also estimated the way rrs is, from every scattering below it
-(since 1.36.0, DECISIONS.md section 144). rrs straight up just below the surface is a
-collision estimator: each scattering adds its weight times the phase
+weight crossing the depth. The radiance looking straight down at a depth
+is also estimated the way rrs is, from every scattering below it (since
+1.36.0, DECISIONS.md section 144). rrs straight up just below the surface
+is a collision estimator: each scattering adds its weight times the phase
 function towards straight up times exp(-c' z), each arrival at the bottom
 its weight times albedo / pi times exp(-c' H), over the planar irradiance
 just below the surface; c' is c less the particles' scattering that goes
