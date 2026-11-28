@@ -1,5 +1,7 @@
 """tools/polarised_mc.py, a vector Monte Carlo, against Natraj et al.'s
-(2009) tables: DECISIONS.md section 145."""
+(2009) tables, Kokhanovsky et al.'s (2010) benchmark, and
+tools/polarised_ocean.py against Chowdhary et al.'s (2020) testbed:
+DECISIONS.md sections 145 to 147."""
 
 from __future__ import annotations
 
@@ -207,3 +209,147 @@ def test_kokhanovsky_s_values_are_reproduced_as_quoted():
         assert f"{ratio.min():.3f} to {ratio.max():.3f} {text}" in section
     log = " ".join((ROOT / "CHANGELOG.md").read_text().split())
     assert "all 84 values" in log
+
+
+# -- Chowdhary et al. (2020), DECISIONS.md section 147 ----------------------
+
+def _ocean():
+    sys.path.insert(0, str(ROOT / "tools"))
+    try:
+        import polarised_ocean
+    finally:
+        sys.path.pop(0)
+    return polarised_ocean
+
+
+def _section_147():
+    text = " ".join((ROOT / "DECISIONS.md").read_text().split())
+    return text.split("## 147. ")[1]
+
+
+def _csv(name):
+    path = ROOT / "examples" / "data" / "polarisation" / name
+    with path.open() as handle:
+        return list(csv.DictReader(handle))
+
+
+def _testbed():
+    return {(r["model"], r["wavelength"], r["sun"], r["phi"], r["vza"]): r
+            for r in _csv("chowdhary2020_tables.csv")}
+
+
+def _misprint(t):
+    return t["U"] == t["I"] and float(t["U"]) != 0
+
+
+@source_tree
+def test_fresnel_s_matrices_keep_the_flux():
+    o = _ocean()
+    rng = np.random.default_rng(1)
+    worst, total = 0.0, 0
+    for n1, n2 in ((1.0, o.N_WATER), (o.N_WATER, 1.0)):
+        ci = rng.random(10_000)
+        S = rng.normal(size=(4, 10_000))
+        S[0] = np.linalg.norm(S[1:], axis=0) * (1 + rng.random(10_000))
+        rp, rs, tp, ts, ct = o.fresnel(ci, n1, n2)
+        flux = o.reflect_matrix(S, rp, rs).real[0] + \
+            o.transmit_matrix(S, tp, ts, ci, ct, n1, n2)[0]
+        worst = max(worst, float(np.max(np.abs(flux - S[0]) / S[0])))
+        total += int(np.sum(ct == 0))
+    assert worst < 1e-12
+    assert total == 6658
+    assert f"to {worst:.1e}" in _section_147()
+    assert "(6658 of those from the water totally reflected)" in \
+        _section_147()
+
+
+@source_tree
+def test_the_testbed_as_read():
+    rows = _csv("chowdhary2020_tables.csv")
+    assert len(rows) == 800
+    bad = [r for r in rows if _misprint(r)]
+    assert len(bad) == 25
+    assert {(r["model"], r["wavelength"], r["sun"]) for r in bad} == \
+        {("AOS-II", "450", "60")}
+    assert {r["phi"] for r in bad} == {"0", "180"}
+    for r in rows:                   # in the principal plane U is zero
+        if r["phi"] in ("0", "180") and not _misprint(r):
+            assert float(r["U"]) == 0
+    assert "(azimuths 0 and 180, 25 values) repeats R_I,Vector" in \
+        _section_147()
+
+
+@source_tree
+def test_the_glint_alone_as_quoted():
+    o = _ocean()
+    ref = _testbed()
+    dirs = o.directions()
+    n = ok = 0
+    rest = []
+    for sun in (30, 60):
+        g = o.glint(sun) * np.array(o.TO_TESTBED)[:, None]
+        for j, (phi, vza, _, _) in enumerate(dirs):
+            t = float(ref["AOS-II", "650", str(sun), str(int(phi)),
+                          str(int(vza))]["I"])
+            if g[0, j] > 0.9 * t:
+                n += 1
+                ok += abs(g[0, j] / t - 1) <= 0.02
+                rest.append(t - g[0, j])
+    assert (ok, n) == (32, 40)
+    section = _section_147()
+    assert "Not met as set: 32 of 40." in section
+    assert (f"exceed the closed-form glint by {min(rest) * 1e4:.1f}e-4 to "
+            f"{max(rest) * 1e4:.1f}e-4") in section
+
+
+@source_tree
+def test_the_testbed_is_reproduced_as_quoted():
+    ref = _testbed()
+    run = _csv("chowdhary2020.csv")
+    assert len(run) == 800
+    section = _section_147()
+    found = {}
+    for model in ("AOS-I", "AOS-II"):
+        good = total = sgood = 0
+        worst = (0.0,)
+        ratios = []
+        for r in (x for x in run if x["model"] == model):
+            t = ref[model, r["wavelength"], r["sun"], r["phi"], r["vza"]]
+            for q in "IQU":
+                if q == "U" and _misprint(t):
+                    continue
+                x, se, v = float(r[q]), float(r[q + "_se"]), float(t[q])
+                total += 1
+                good += abs(x - v) <= 3 * se + 1e-5
+                if abs(x - v) > worst[0]:
+                    worst = (abs(x - v), q, r, se)
+            x, se = float(r["I_scalar"]), float(r["I_scalar_se"])
+            sgood += abs(x - float(t["I_scalar"])) <= 3 * se + 1e-5
+            ratios.append(float(r["I_scalar"]) / float(r["I"]))
+        found[model] = (good, total, sgood, worst, np.array(ratios))
+    assert found["AOS-I"][:3] == (1198, 1200, 398)
+    assert found["AOS-II"][:3] == (1175, 1175, 400)
+    assert "Met: AOS-I 1198 of 1200 values, AOS-II all 1175" in section
+    assert "Met: AOS-I 398 of 400, AOS-II all 400." in section
+    for model, (text, spread) in {
+            "AOS-I": ("for AOS-I at 450 nm, the sun at 60 degrees, azimuth "
+                      "180 and 60 degrees viewing, where the standard error "
+                      "is", "0.595 to 1.462 for AOS-I"),
+            "AOS-II": ("at 350 nm, the sun at 30 degrees, azimuth 180 and "
+                       "60 degrees viewing", "0.938 to 1.047 for AOS-II")
+            }.items():
+        d, q, r, se = found[model][3]
+        assert q == "I"
+        if model == "AOS-I":
+            assert f"{d:.5f} in I {text}" in section
+        else:
+            assert f"for AOS-II {d:.5f} in I {text}" in section
+        assert f"{se:.5f}" in section
+        ratio = found[model][4]
+        assert f"{ratio.min():.3f} to {ratio.max():.3f} for {model}" \
+            == spread
+        assert spread in section
+    assert int(np.sum(np.abs(found["AOS-I"][4] - 1) > 0.05)) == 187
+    assert int(np.sum(np.abs(found["AOS-II"][4] - 1) > 0.05)) == 22
+    log = " ".join((ROOT / "CHANGELOG.md").read_text().split())
+    assert "1198 of 1200" in log and "all 1175" in log
