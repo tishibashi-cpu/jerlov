@@ -3367,7 +3367,7 @@ both agree. The engine agrees in 49 of 51 entries with one facet and in
 all 51 with every facet; Ed and Eou are unchanged.
 
 
-## 54. A misprint in Chowdhary et al.'s (2020) testbed supplement (confirmed)
+## 54. Copying errors in Chowdhary et al.'s (2020) testbed supplement (confirmed)
 
 J. Chowdhary, P.-W. Zhai, F. Xu, R. Frouin and D. Ramon (2020), "Testbed
 results for scalar and vector radiative transfer computations of light in
@@ -3390,3 +3390,23 @@ column of the same table among them. It is a copying error of the
 column, not of the computation: off the principal plane the same column
 agrees with `tools/polarised_ocean.py` as every other does (DECISIONS.md
 section 147), which leaves the 25 out.
+
+**Two more (1.36.4, DECISIONS.md section 148).** Reading every table
+(`tools/read_chowdhary2020.py` now reads Tables S2 to S5 at both levels,
+2800 rows, and the particles' matrix of Tables S1a and S1b into
+`examples/data/polarisation/chowdhary2020_particles.csv`) and comparing
+every column of 25 values with every other:
+
+- Table S2d (AOS-I at the top of the atmosphere, the sun at 60 degrees,
+  azimuths 60 and 240): the 650 nm column R_I,Scalar is Table S2b's
+  (just above the surface) row for row, 0.000692 straight up where
+  R_I,Vector beside it is 0.027554;
+- Table S4a (AOS-III just above the surface, the sun at 30 degrees,
+  azimuths 60 and 240): the 450 nm columns R_I, R_Q and R_U are the
+  350 nm columns, row for row (75 values); R_I,Scalar is not, and its
+  ratio to the copied R_I falls to 0.71.
+
+`tools/polarised_coupled.py` disagrees with all 25 and with 73 of the 75,
+and agrees with the columns they were copied from. Table S1a also prints
+one value with a decimal comma (F43 at 25 degrees, "-0,00197102"), read
+as a point.

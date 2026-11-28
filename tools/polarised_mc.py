@@ -200,6 +200,13 @@ K_TABLE_U90 = {0.0: (0.0, 0.0), 20.0: (0.03284170, 0.03186302),
                80.0: (0.2896555, 0.2479299), 89.0: (0.3917105, 0.2424255)}
 
 
+def _unpolarised(S):
+    """Unpolarised light of S's intensity."""
+    out = np.zeros_like(S)
+    out[0] = S[0]
+    return out
+
+
 def _cross(a, b):
     return np.stack([a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2],
                      a[0] * b[1] - a[1] * b[0]])
@@ -220,11 +227,15 @@ def _rotate(S, cos_chi, sin_chi):
     return out
 
 
-def _rayleigh(S, cos_t, per_sr):
-    """Rayleigh's matrix (no depolarisation) on Stokes vectors referred to
-    the scattering plane. ``per_sr``: the matrix per steradian, its (1,1)
-    element the phase function 3 (1 + cos^2) / (16 pi); otherwise the
-    matrix divided by its (1,1) element."""
+def _rayleigh(S, cos_t, per_sr, delta=0.0):
+    """Rayleigh's matrix on Stokes vectors referred to the scattering
+    plane. ``per_sr``: the matrix per steradian, its (1,1) element the
+    phase function 3 (1 + cos^2) / (16 pi) without depolarisation;
+    otherwise the matrix divided by its (1,1) element. ``delta``: the
+    depolarisation ratio, in Hansen and Travis's (1974) form
+    (DECISIONS.md section 148)."""
+    if delta:
+        return _rayleigh_depolarised(S, cos_t, per_sr, delta)
     c2 = cos_t * cos_t
     a = (1 + c2) / 2
     b = (c2 - 1) / 2
@@ -237,13 +248,39 @@ def _rayleigh(S, cos_t, per_sr):
     return out * scale
 
 
-def _draw_rayleigh_cos(rng, n):
-    """cos(angle) from 3 (1 + x^2) / 8 on [-1, 1], by its cubic CDF."""
+def _rayleigh_depolarised(S, cos_t, per_sr, delta):
+    """Hansen and Travis's matrix: P11 = 3/4 D (1 + c^2) + 1 - D,
+    P12 = -3/4 D s^2, P22 = 3/4 D (1 + c^2), P33 = 3/2 D c,
+    P44 = 3/2 D D' c, D = (1 - delta) / (1 + delta / 2),
+    D' = (1 - 2 delta) / (1 - delta), normalised to 4 pi."""
+    D = (1 - delta) / (1 + delta / 2)
+    D2 = (1 - 2 * delta) / (1 - delta)
+    c2 = cos_t * cos_t
+    p11 = 0.75 * D * (1 + c2) + 1 - D
+    p12 = -0.75 * D * (1 - c2)
+    p22 = 0.75 * D * (1 + c2)
+    out = np.empty_like(S)
+    out[0] = p11 * S[0] + p12 * S[1]
+    out[1] = p12 * S[0] + p22 * S[1]
+    out[2] = 1.5 * D * cos_t * S[2]
+    out[3] = 1.5 * D * D2 * cos_t * S[3]
+    return out / (4 * math.pi) if per_sr else out / p11
+
+
+def _draw_rayleigh_cos(rng, n, delta=0.0):
+    """cos(angle) from 3 (1 + x^2) / 8 on [-1, 1], by its cubic CDF; with
+    depolarisation, from D 3 (1 + x^2) / 8 + (1 - D) / 2, the uniform part
+    drawn with probability 1 - D."""
     u = rng.random(n)
     # (x^3 + 3x + 4) / 8 = u: Cardano
     q = 4 - 8 * u
     r = np.sqrt(q * q / 4 + 1)
-    return np.cbrt(-q / 2 + r) + np.cbrt(-q / 2 - r)
+    x = np.cbrt(-q / 2 + r) + np.cbrt(-q / 2 - r)
+    if delta:
+        D = (1 - delta) / (1 + delta / 2)
+        flat = rng.random(n) >= D
+        x = np.where(flat, 2 * rng.random(n) - 1, x)
+    return x
 
 
 def detectors(mus=MUS, phis=PHIS):
@@ -279,7 +316,7 @@ def _meridian_e1(u, phi_deg=None):
     return _unit(e)
 
 
-def _estimate(pos_z, d, e1, S, U, U_e1, top, tau, polarised):
+def _estimate(pos_z, d, e1, S, U, U_e1, top, tau, polarised, delta=0.0):
     """Next-event estimates from photons at depth pos_z with direction d,
     axis e1 and Stokes S (before scattering) into detector directions U
     (3 x k): a (4, k) sum."""
@@ -295,7 +332,10 @@ def _estimate(pos_z, d, e1, S, U, U_e1, top, tau, polarised):
         e1_sp = _cross(nrm, d)
         Sj = _rotate(S, np.sum(e1_sp * e1, axis=0), np.sum(e1_sp * e2, axis=0)) \
             if polarised else S
-        out_s = _rayleigh(Sj, cos_t, per_sr=True) if polarised else \
+        out_s = _rayleigh(Sj, cos_t, per_sr=True, delta=delta) \
+            if polarised else \
+            np.vstack([_rayleigh(_unpolarised(S), cos_t, True, delta)[0],
+                       np.zeros((3, n))]) if delta else \
             np.vstack([S[0] * 3 * (1 + cos_t ** 2) / (16 * math.pi),
                        np.zeros((3, n))])
         if polarised:
@@ -310,10 +350,11 @@ def _estimate(pos_z, d, e1, S, U, U_e1, top, tau, polarised):
 
 
 def run(seed, photons, tau=TAU, polarised=True, orders=None, mu0=MU0,
-        mus=MUS, phis=PHIS):
+        mus=MUS, phis=PHIS, delta=0.0):
     """One batch: the (4, k) Stokes parameters of the light leaving in
     every tabulated direction, per unit planar irradiance on the top.
-    ``orders``: if given, only light scattered that many times or fewer."""
+    ``orders``: if given, only light scattered that many times or fewer.
+    ``delta``: the depolarisation ratio (DECISIONS.md section 148)."""
     rng = np.random.default_rng(seed)
     dets = detectors(mus, phis)
     U = np.array([d[3] for d in dets]).T
@@ -337,9 +378,10 @@ def run(seed, photons, tau=TAU, polarised=True, orders=None, mu0=MU0,
         d, e1, S, z = d[:, inside], e1[:, inside], S[:, inside], z[inside]
         if not d.shape[1]:
             break
-        total += _estimate(z, d, e1, S, U, U_e1, top, tau, polarised)
+        total += _estimate(z, d, e1, S, U, U_e1, top, tau, polarised,
+                           delta)
         # scatter (single scattering albedo 1)
-        cos_t = _draw_rayleigh_cos(rng, d.shape[1])
+        cos_t = _draw_rayleigh_cos(rng, d.shape[1], delta)
         sin_t = np.sqrt(np.maximum(0.0, 1 - cos_t * cos_t))
         psi = 2 * math.pi * rng.random(d.shape[1])
         e2 = _cross(d, e1)
@@ -348,7 +390,7 @@ def run(seed, photons, tau=TAU, polarised=True, orders=None, mu0=MU0,
         if polarised:
             S = _rotate(S, np.sum(e1_sp * e1, axis=0),
                         np.sum(e1_sp * e2, axis=0))
-            S = _rayleigh(S, cos_t, per_sr=False)
+            S = _rayleigh(S, cos_t, per_sr=False, delta=delta)
         d = _unit(cos_t * d + sin_t * e1_sp)
         e1 = _cross(nrm, d)
         weak = S[0] < _WEIGHT_FLOOR
@@ -359,7 +401,7 @@ def run(seed, photons, tau=TAU, polarised=True, orders=None, mu0=MU0,
     return total / photons
 
 
-def single_scattering(tau, mu0=MU0, mus=MUS, phis=PHIS):
+def single_scattering(tau, mu0=MU0, mus=MUS, phis=PHIS, delta=0.0):
     """The light singly scattered out of a layer of optical thickness tau
     (exactly, not only thin), per unit planar irradiance on the top, in
     this module's convention: (4, k)."""
@@ -388,7 +430,7 @@ def single_scattering(tau, mu0=MU0, mus=MUS, phis=PHIS):
         nrm = nrm / size if size > 1e-12 else e2   # forward: any plane
         e1_sp = _cross(nrm, d)
         S = _rotate(S, np.sum(e1_sp * e1, axis=0), np.sum(e1_sp * e2, axis=0))
-        S = _rayleigh(S, np.sum(d * u, axis=0), per_sr=True)
+        S = _rayleigh(S, np.sum(d * u, axis=0), per_sr=True, delta=delta)
         e1_out = _cross(nrm, u)
         m = U_e1[:, j:j + 1]
         S = _rotate(S, np.sum(m * e1_out, axis=0), np.sum(m * nrm, axis=0))

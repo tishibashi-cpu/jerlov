@@ -4,6 +4,28 @@ Every release is archived on Zenodo under the concept DOI
 [10.5281/zenodo.22321312](https://doi.org/10.5281/zenodo.22321312), which
 always resolves to the latest version.
 
+## 1.36.4 — 2026-11-28
+
+Polarisation, the second step finished: the particles' scattering
+matrix, depolarisation, and the coupled atmosphere and ocean, against
+Chowdhary et al.'s (2020) testbed (DECISIONS.md section 148). The package
+does not change; no shipped value changed.
+
+**Checked.** `tools/polarised_coupled.py` follows the light through a
+molecular atmosphere, the wavy surface and the water in one path,
+crossing the surface as often as it happens to, with the marine
+particles' Mie matrix of the testbed's Table S1. Against the testbed,
+just above the surface and at the top of the atmosphere, it agrees in
+1197 to 1199 of 1200 values of I, Q and U for AOS-I, all 1175 for
+AOS-II, 1119 of 1125 and 1196 of 1200 for AOS-III, and 1179 and 1185 of
+1200 for AOS-IV, whose particles are strongly forward scattering.
+`tools/polarised_mc.py` takes a depolarisation ratio; with none it
+makes its stored run again byte for byte.
+
+**Found.** Two more copying errors in the testbed's supplement: a column
+of Table S2d repeats Table S2b's, and three columns of Table S4a at
+450 nm repeat those at 350 nm (DATA.md section 54).
+
 ## 1.36.3 — 2026-11-28
 
 Polarisation, a second step: the wavy surface's Fresnel matrices and a

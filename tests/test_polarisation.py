@@ -1,7 +1,7 @@
 """tools/polarised_mc.py, a vector Monte Carlo, against Natraj et al.'s
 (2009) tables, Kokhanovsky et al.'s (2010) benchmark, and
 tools/polarised_ocean.py against Chowdhary et al.'s (2020) testbed:
-DECISIONS.md sections 145 to 147."""
+DECISIONS.md sections 145 to 148, with tools/polarised_coupled.py."""
 
 from __future__ import annotations
 
@@ -12,6 +12,8 @@ import sys
 
 import numpy as np
 import pytest
+
+from jerlov._data import trapezoid
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 source_tree = pytest.mark.skipif(
@@ -234,8 +236,10 @@ def _csv(name):
 
 
 def _testbed():
+    """Section 147's tables: AOS-I and AOS-II just above the surface."""
     return {(r["model"], r["wavelength"], r["sun"], r["phi"], r["vza"]): r
-            for r in _csv("chowdhary2020_tables.csv")}
+            for r in _csv("chowdhary2020_tables.csv")
+            if r["model"] in ("AOS-I", "AOS-II") and r["level"] == "SRF"}
 
 
 def _misprint(t):
@@ -266,7 +270,8 @@ def test_fresnel_s_matrices_keep_the_flux():
 @source_tree
 def test_the_testbed_as_read():
     rows = _csv("chowdhary2020_tables.csv")
-    assert len(rows) == 800
+    assert len(rows) == 2800
+    assert len(_testbed()) == 800
     bad = [r for r in rows if _misprint(r)]
     assert len(bad) == 25
     assert {(r["model"], r["wavelength"], r["sun"]) for r in bad} == \
@@ -353,3 +358,172 @@ def test_the_testbed_is_reproduced_as_quoted():
     assert int(np.sum(np.abs(found["AOS-II"][4] - 1) > 0.05)) == 22
     log = " ".join((ROOT / "CHANGELOG.md").read_text().split())
     assert "1198 of 1200" in log and "all 1175" in log
+
+
+# -- the coupled atmosphere and ocean, DECISIONS.md section 148 -------------
+
+def _coupled():
+    sys.path.insert(0, str(ROOT / "tools"))
+    try:
+        import polarised_coupled
+    finally:
+        sys.path.pop(0)
+    return polarised_coupled
+
+
+def _section_148():
+    text = " ".join((ROOT / "DECISIONS.md").read_text().split())
+    return text.split("## 148. ")[1]
+
+
+def _copied(r, quantity):
+    """The supplement's copying errors (DATA.md section 54)."""
+    key = (r["model"], r["level"], r["wavelength"], r["sun"])
+    off_plane = r["phi"] in ("60", "240")
+    if quantity == "U" and r["U"] == r["I"] and float(r["U"]) != 0:
+        return True
+    if key == ("AOS-I", "TOA", "650", "60") and off_plane:
+        return quantity == "I_scalar"
+    if key == ("AOS-III", "SRF", "450", "30") and off_plane:
+        return quantity in ("I", "Q", "U")
+    return False
+
+
+@source_tree
+def test_the_copied_columns_are_copies():
+    rows = _csv("chowdhary2020_tables.csv")
+    index = {(r["model"], r["level"], r["wavelength"], r["sun"], r["phi"],
+              r["vza"]): r for r in rows}
+    n = {"I_scalar": 0, "I": 0, "Q": 0, "U": 0}
+    for r in rows:
+        for q in n:
+            if not _copied(r, q):
+                continue
+            n[q] += 1
+            if r["model"] == "AOS-I":
+                src = index["AOS-I", "SRF", "650", "60", r["phi"], r["vza"]]
+                assert r[q] == src[q]
+            elif r["model"] == "AOS-III":
+                src = index["AOS-III", "SRF", "350", "30", r["phi"], r["vza"]]
+                assert r[q] == src[q]
+    assert n == {"I_scalar": 25, "I": 25, "Q": 25, "U": 50}
+    assert "the 450 nm columns R_I, R_Q and R_U (75 values) are the 350 nm " \
+        "columns beside them" in _section_148()
+
+
+@source_tree
+def test_the_particles_matrix_as_quoted():
+    pc = _coupled()
+    section = _section_148()
+    found = []
+    for table in ("S1a", "S1b"):
+        p = pc.Particles(table)
+        assert p.angle.size == 271
+        g = p.grid
+        f = p.phase(np.cos(g))
+        asym = trapezoid(f * np.sin(g) * np.cos(g), g) * 2 * math.pi
+        back = g >= math.pi / 2
+        bb = trapezoid((f * np.sin(g))[back], g[back]) * 2 * math.pi
+        found.append((p.integral, asym, bb))
+    assert (f"integrates to {found[0][0]:.5f} (S1a) and {found[1][0]:.5f} "
+            "(S1b)") in section
+    assert (f"asymmetry parameters {found[0][1]:.3f} and {found[1][1]:.3f}"
+            in section)
+    assert f"is {found[1][2]:.5f} for S1b" in section
+    assert f"but {found[0][2]:.5f} for S1a" in section
+    assert round(found[0][2], 4) == 0.0109 and round(found[1][2], 4) == 0.0058
+
+
+@source_tree
+def test_depolarisation_as_quoted():
+    p = _tool()
+    worst = 0.0
+    for delta in (0.0, 0.039, 0.09):
+        S = np.array([[1.0], [0.0], [0.0], [0.0]])
+        out = p._rayleigh(S, np.array([0.0]), True, delta)
+        worst = max(worst, abs(abs(out[1, 0]) / out[0, 0]
+                               - (1 - delta) / (1 + delta)))
+    assert worst <= 2.3e-16
+    x = np.linspace(-1, 1, 200_001)
+    S = np.zeros((4, x.size))
+    S[0] = 1
+    norm = trapezoid(p._rayleigh(S, x, True, 0.09)[0], x) * 2 * math.pi
+    assert abs(norm - 1) < 1.2e-11
+    rng = np.random.default_rng(5)
+    ks = []
+    for delta in (0.0, 0.039, 0.09):
+        c = np.sort(p._draw_rayleigh_cos(rng, 1_000_000, delta))
+        D = (1 - delta) / (1 + delta / 2)
+        F = D * (c ** 3 + 3 * c + 4) / 8 + (1 - D) * (c + 1) / 2
+        n = c.size
+        stat = max(np.max(np.arange(1, n + 1) / n - F),
+                   np.max(F - np.arange(n) / n)) * math.sqrt(n)
+        assert stat < 1.36
+        ks.append(f"{stat:.2f}")
+    assert "sqrt(n) D = 1.01, 0.89 and 0.87" in _section_148()
+    assert ks == ["1.01", "0.89", "0.87"]
+
+
+@source_tree
+def test_the_coupled_testbed_is_reproduced_as_quoted():
+    ref = {(r["model"], r["level"], r["wavelength"], r["sun"], r["phi"],
+            r["vza"]): r for r in _csv("chowdhary2020_tables.csv")}
+    run = _csv("chowdhary2020_coupled.csv")
+    assert len(run) == 2800
+    counts, worst, ratios = {}, {}, {}
+    for r in run:
+        key = (r["model"], r["level"])
+        t = ref[key + (r["wavelength"], r["sun"], r["phi"], r["vza"])]
+        tol = 2e-5 if r["model"] == "AOS-IV" else 1e-5
+        c = counts.setdefault(key, [0, 0, 0, 0])
+        for q in "IQU":
+            if _copied(t, q):
+                continue
+            x, se, v = float(r[q]), float(r[q + "_se"]), float(t[q])
+            c[1] += 1
+            c[0] += abs(x - v) <= 3 * se + tol
+            if abs(x - v) > worst.get(key, (0.0,))[0]:
+                worst[key] = (abs(x - v), q, r, se)
+        if not _copied(t, "I_scalar"):
+            x, se = float(r["I_scalar"]), float(r["I_scalar_se"])
+            c[3] += 1
+            c[2] += abs(x - float(t["I_scalar"])) <= 3 * se + tol
+        ratios.setdefault(key, []).append(float(r["I_scalar"])
+                                          / float(r["I"]))
+    assert counts == {
+        ("AOS-I", "SRF"): [1197, 1200, 400, 400],
+        ("AOS-I", "TOA"): [1199, 1200, 375, 375],
+        ("AOS-II", "SRF"): [1175, 1175, 400, 400],
+        ("AOS-III", "SRF"): [1119, 1125, 399, 400],
+        ("AOS-III", "TOA"): [1196, 1200, 390, 400],
+        ("AOS-IV", "SRF"): [1179, 1200, 387, 400],
+        ("AOS-IV", "TOA"): [1185, 1200, 396, 400]}
+    for good, total, sgood, stotal in counts.values():
+        assert good >= 0.95 * total and sgood >= 0.95 * stotal
+    section = _section_148()
+    for phrase in ("1197 of 1200 vector values, all 400 scalar",
+                   "AOS-II: all 1175 and all 400",
+                   "1199 of 1200, and all 375 scalar values",
+                   "1119 of 1125 vector values (the copied 75 out), 399 of "
+                   "400 scalar; at the top: 1196 of 1200 and 390 of 400",
+                   "1179 of 1200 and 387 of 400; at the top: 1185 of 1200 "
+                   "and 396 of 400"):
+        assert phrase in section
+    for key, where in ((("AOS-IV", "SRF"), "just above the surface"),
+                       (("AOS-IV", "TOA"), "at the top")):
+        d, q, r, se = worst[key]
+        assert q == "I"
+        assert f"{d:.5f}" in section and f"{se:.5f}" in section
+    for key, text in ((("AOS-III", "SRF"), "AOS-III {} just above"),
+                      (("AOS-IV", "SRF"), "AOS-IV {} and"),
+                      (("AOS-I", "TOA"), "AOS-I at the top {}")):
+        ratio = np.array(ratios[key])
+        assert text.format(f"{ratio.min():.3f} to {ratio.max():.3f}") \
+            in section
+    for key, text in ((("AOS-III", "TOA"), "and {} at the top;"),
+                      (("AOS-IV", "TOA"), "and {};")):
+        ratio = np.array(ratios[key])
+        assert text.format(f"{ratio.min():.3f} to {ratio.max():.3f}") \
+            in section
+    log = " ".join((ROOT / "CHANGELOG.md").read_text().split())
+    assert "1119 of 1125" in log and "1179 and 1185 of 1200" in log
