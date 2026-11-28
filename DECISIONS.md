@@ -10138,3 +10138,74 @@ in its place, at its tolerances.
    nearer the mean than the cap was (problem 2 with omega0 = 0.9 is
    lower), but it is everywhere within the models' spread, and its
    errors are smaller in 15 of the 16 Lu set against the cap.
+
+## 145. Polarisation, first step: a vector Monte Carlo in tools, against Natraj et al.'s (2009) Rayleigh tables (1.36.1): the plan
+
+Section 2 of NEXT_STEPS and earlier choices left polarisation out, since
+nothing in the package could carry it without solving the radiative
+transfer equation; the package now has a Monte Carlo engine (sections
+138 to 144). The user asked on 2026-11-28 to go on to polarisation. It
+is done in steps, each checked before the next: (1) a vector Monte Carlo
+in `tools/`, checked against published tables of the Stokes parameters;
+(2) the air-water interface's Fresnel matrices, pure water's
+depolarisation and the particles' scattering matrix as stated inputs; (3)
+whether and how it enters the package, which revisits the scope (section
+12) and is planned separately, with the user. This section is step 1;
+the package does not change.
+
+### The reference
+
+Natraj, Li and Yung (2009), "Rayleigh scattering in planetary atmospheres:
+corrected tables through accurate computation of X and Y functions",
+Astrophys. J. 691, 1909-1920, doi:10.1088/0004-637X/691/2/1909, read from
+the author's copy in the Caltech repository (not shipped). Tables 1 to 6
+(pp. 1912-1913) give I, Q and U, eight decimals, of the diffuse light
+leaving the top (upwelling) and the bottom (downwelling) of a
+homogeneous Rayleigh layer of optical thickness 0.5 over a black surface
+(A = 0), the sun at mu0 = 0.2, for 16 values of mu and 7 relative
+azimuths: 672 values. Depolarisation is zero (p. 1910). Their
+conventions (p. 1909): Q = Ir - Il (Coulson et al. 1960; Hansen and
+Travis use the opposite sign), the incident flux pi F0 across a plane
+normal to the beam, the azimuth counterclockwise looking down from the
+sun's. The tables' normalisation (F0 = 1) and the sign of U in this
+engine's frame are to be fixed by single scattering before the
+comparison, and said.
+
+This problem the engine can pose exactly: refractive index 1 (no
+interface), a = 0, b = 1, the depth 0.5, a bottom of albedo 0.
+
+### The method
+
+`tools/polarised_mc.py`. Each photon carries a Stokes vector (I, Q, U, V)
+and a reference direction in the plane normal to its travel. It is
+scattered by Rayleigh's matrix: the angle drawn from the phase function
+for unpolarised light, the azimuth uniformly, and the Stokes vector
+rotated into the scattering plane and multiplied by the reduced matrix
+(the (1,1) element 1), so that its I carries the weight (Tynes et al.
+2001, Appl. Opt. 40, 400, section 2, the user's copy). The light leaving
+the layer is estimated at each scattering for every tabulated direction
+(a next-event estimate: the phase matrix towards that direction, the
+attenuation to the boundary, over the cosine), rotated into the
+direction's meridian plane; the engine's free paths and its scalar
+parts are those of `jerlov.monte_carlo`.
+
+### Checks, set now
+
+1. Single scattering: in an optically thin layer (0.001) the estimate
+   equals the analytic singly scattered Stokes vector within three
+   standard errors in every tabulated direction (this is where the
+   normalisation and the sign of U are fixed).
+2. The tables: 672 values; a value agrees if |x - t| <= 3 SE + 2e-4
+   (the tables' values run from about 0.03 to 0.44 for I). The engine is
+   said to reproduce them if at least 95 percent agree; every value is
+   recorded, agreeing or not.
+3. Recorded: the scalar estimate of I (the matrix replaced by its (1,1)
+   element) beside the vector one, the error of neglecting polarisation
+   in this problem.
+
+### Documents
+
+DECISIONS only, a test that the quoted figures are the stored run's
+(`examples/data/polarisation/natraj2009.csv`), and the tables
+transcribed into the tool (from the text layer, each checked against the
+page image). CHANGELOG. No package change: 1.36.1.
