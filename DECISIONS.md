@@ -10509,8 +10509,11 @@ over the angle and normalised on a fine grid, the other elements as
 ratios to F11 interpolated linearly; in the water the scatterer is drawn
 as a molecule with probability b_w / (b_w + b_p), and the estimates use
 the mixed matrix. Rayleigh's matrix takes a depolarisation ratio delta
-(Hansen and Travis 1974, Eq. 2.15, the ratio of the two intensities
-scattered at 90 degrees), zero for the testbed; `tools/polarised_mc.py`
+(the ratio of the two intensities scattered at 90 degrees), in Hansen
+and Travis's (1974, Space Sci. Rev. 16, 527) form: P11 = 3/4 D (1 +
+cos^2) + 1 - D, P12 = -3/4 D sin^2, P22 = 3/4 D (1 + cos^2), P33 = 3/2 D
+cos, P44 = 3/2 D D' cos, with D = (1 - delta) / (1 + delta / 2) and D' =
+(1 - 2 delta) / (1 - delta); zero for the testbed; `tools/polarised_mc.py`
 gains the same argument.
 
 ### Checks, set now
