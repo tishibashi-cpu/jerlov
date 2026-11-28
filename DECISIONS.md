@@ -10357,8 +10357,9 @@ renormalisation of the reflection and transmission. The sun at 30 and
 60 degrees; viewing zenith angles 0 to 60 degrees in steps of 5; relative
 azimuths 0 (towards the glint), 180, 60 and 240. Each table gives
 R = pi L / (mu0 S0) for I computed without polarisation and for I, Q and
-U with it: 4 wavelengths x 2 suns x 52 directions x 3 = 1248 vector values
-for each model, and 416 scalar ones.
+U with it: 4 wavelengths x 2 suns x 50 directions (straight up once for
+each pair of azimuths, Q and U in the plane of 0 or 60) x 3 = 1200
+vector values for each model, and 400 scalar ones.
 
 ### The method
 
@@ -10395,10 +10396,10 @@ tables, and said.
 2. The glint by itself: at 650 nm in AOS-II (single scattering albedo
    0.003) the closed form alone is within 2 percent of the tables where
    it is more than 90 percent of them.
-3. The tables, 2496 vector values (AOS-I and AOS-II): a value agrees if
+3. The tables, 2400 vector values (AOS-I and AOS-II): a value agrees if
    |x - t| <= 3 SE + 1e-5. The tool is said to reproduce them if at
    least 95 percent agree, for each model. Every value is recorded.
-4. The 832 scalar values of I the same way, against the tool run with
+4. The 800 scalar values of I the same way, against the tool run with
    every matrix replaced by its (1,1) element.
 5. Recorded: the scalar over the vector I, as in sections 145 and 146.
 
