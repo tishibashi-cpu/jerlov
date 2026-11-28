@@ -640,9 +640,49 @@ def test_the_release_comes_after_pypi_and_its_text_is_not_uploaded():
     notes stay out of dist/, which is what PyPI receives."""
     workflow = (ROOT / ".github" / "workflows" / "publish.yml").read_text()
     release = workflow.split("\n  release:\n", 1)[1]
-    assert re.search(r"needs: \[build, publish\]", release)
+    assert re.search(r"needs: \[decide, build, publish\]", release)
     assert "gh release create" in release
     assert "gh release create" not in workflow.split("\n  release:\n", 1)[0]
     assert "release-notes.md" not in re.sub(r"notes/release-notes\.md", "",
                                             workflow)
     assert "tools/release_notes.py" in workflow.split("\n  publish:\n")[0]
+
+
+
+@source_tree
+def test_publishing_follows_a_merge_by_itself():
+    """Since 1.35.1 publish.yml runs after the tests pass on main for a
+    push, and publishes only a version not yet tagged (DECISIONS.md section
+    142). Read as text: PyYAML is not a dependency."""
+    root = ROOT / ".github" / "workflows"
+    workflow = (root / "publish.yml").read_text()
+    name = re.search(r"^name: (\S+)$", (root / "test.yml").read_text(),
+                     re.M).group(1)
+    on = workflow.split("\non:\n", 1)[1].split("\nconcurrency:", 1)[0]
+    assert (f"  workflow_run:\n    workflows: [{name}]\n    types: "
+            "[completed]\n    branches: [main]\n") in on
+    assert "  push:\n    tags:" in on and "  workflow_dispatch:" in on
+    jobs = "\n" + workflow.split("\njobs:\n", 1)[1]
+    decide = jobs.split("\n  decide:\n", 1)[1].split("\n  build:\n", 1)[0]
+    build = jobs.split("\n  build:\n", 1)[1].split("\n  publish:\n", 1)[0]
+    release = jobs.split("\n  release:\n", 1)[1]
+    condition = " ".join(decide.split("runs-on:", 1)[0].split())
+    assert "github.event.workflow_run.conclusion == 'success'" in condition
+    assert "github.event.workflow_run.event == 'push'" in condition
+    assert "ref: ${{ github.event.workflow_run.head_sha || github.sha }}" \
+        in decide
+    merged = decide.split('"$GITHUB_EVENT_NAME" = workflow_run ]', 1)[1] \
+        .split("elif", 1)[0]
+    assert "already tagged; nothing to publish" in merged
+    assert "go=false" in merged and "exit 1" not in merged
+    by_hand = decide.split('"$GITHUB_EVENT_NAME" = workflow_dispatch ]', 1)[1] \
+        .split("else", 1)[0]
+    assert "already tagged; raise the version first" in by_hand
+    assert "    needs: decide\n    if: needs.decide.outputs.go == 'true'\n" \
+        in build
+    assert "ref: ${{ needs.decide.outputs.sha }}" in build
+    assert "needs: [decide, build, publish]" in release
+    assert "TARGET: ${{ needs.decide.outputs.sha }}" in release
+    assert '--target "$TARGET"' in release and "GITHUB_SHA\"" not in release
+    assert "concurrency:\n  group: publish\n  cancel-in-progress: false" \
+        in workflow

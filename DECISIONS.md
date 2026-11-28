@@ -9889,3 +9889,59 @@ Also fixed, found while writing the new warning: 1.34.0's
 which through `_data.checked` pointed into `_data.py`; both warnings now
 use `_data.caller_stacklevel()`, and a test checks that they name the
 caller's file.
+
+## 142. Publishing by itself after a merge (1.35.1): the plan
+
+Until now a person started `publish.yml` from the Actions tab after each
+merge (section 51). The user asked on 2026-11-28 that merges be done by
+Claude once CI is green, and that publishing follow by itself, by a
+change to the workflow rather than by a tag pushed from a session. Nothing
+in the package changes.
+
+### The trigger
+
+`publish.yml` gains `workflow_run` on the `tests` workflow, `completed`,
+on `main`. A first job, `decide`, runs only when that run's conclusion is
+`success` and its event `push` (a merge; not the weekly schedule, not a
+failure). It checks out the commit the tests passed on
+(`workflow_run.head_sha`, not main's head when the workflow starts) and
+reads the version from pyproject.toml; if that version is already tagged
+it says so and publishes nothing, so a merge that does not raise the
+version is harmless and a run by hand cannot be repeated by the merge.
+Otherwise `build`, `publish` and `release` follow as before, on that
+commit, and the Release's tag targets it. A run by hand and a pushed tag
+work as before. `concurrency` keeps one publication at a time.
+
+Trusted Publishing names the workflow file and the `pypi` environment,
+both unchanged; `workflow_run` runs the workflow file on the default
+branch, so the claims are main's.
+
+### Checks, set now
+
+1. Tests in `test_packaging.py`: the trigger names the `tests` workflow
+   as `test.yml` names itself, on `main`; `decide` requires success and a
+   push; an existing tag means no publication after a merge and an error
+   by hand; `build` checks out `decide`'s commit; the Release targets it.
+2. `decide`'s script, run here with each event's variables against this
+   repository's tags: after a merge at 1.35.0 (tagged) it publishes
+   nothing; at an untagged version it goes on; by hand on main at a
+   tagged version it fails, on another branch it fails; a tag that does
+   not match the version fails.
+3. The first real test is this release: after its merge the workflow must
+   publish 1.35.1 by itself (PyPI, Release, Zenodo). Recorded in the next
+   section that touches this, with the run's number. If it fails, 1.35.1
+   is published by hand and the cause recorded.
+
+### Result
+
+1. Met: `test_publishing_follows_a_merge_by_itself` checks each point by
+   the workflow's text (PyYAML is not a dependency); breaking any of five
+   of them by hand (the push condition, `go=false`, the Release's target,
+   the branch, `build`'s checkout) makes it fail. The test that the
+   Release needs PyPI first now names `decide` too.
+2. Met: `decide`'s script, taken from the workflow and run with each
+   event's variables against this repository's tags: after a merge at
+   1.35.0 (tagged) `go=false` and exit 0; at 1.35.1 (untagged) `go=true`;
+   by hand on main at 1.35.0 and on dev, and a tag v9.9.9, each fail;
+   the tag v1.35.0 at 1.35.0 goes on.
+3. Not yet: after this release's merge.

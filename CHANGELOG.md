@@ -4,6 +4,18 @@ Every release is archived on Zenodo under the concept DOI
 [10.5281/zenodo.22321312](https://doi.org/10.5281/zenodo.22321312), which
 always resolves to the latest version.
 
+## 1.35.1 — 2026-11-28
+
+Publishing follows a merge by itself (DECISIONS.md section 142). No
+shipped value or code changed.
+
+**Internal.** `publish.yml` now also runs when the tests finish on main
+after a push and pass, and publishes the version in pyproject.toml only
+if it has no tag yet, from the commit the tests passed on; the Release's
+tag targets that commit. A merge that does not raise the version, and the
+weekly run of the tests, publish nothing. Running it by hand and pushing
+a tag work as before. This release is the first published that way.
+
 ## 1.35.0 — 2026-11-28
 
 Light that meets the wavy surface more than once (DECISIONS.md section
