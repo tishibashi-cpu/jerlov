@@ -3348,3 +3348,13 @@ at optical depths 1, 5 and 10. The engine then agrees in 49 of 51
 entries (`examples/data/mobley1993/runs_all_facets.csv`); the two left
 are the radiance at optical depth 10 in absorbing water.
 
+**With the shadowing corrected (1.35.2, DECISIONS.md section 143).** The
+facets' mean share of the beam is now taken from its closed form, where
+1.34.1 to 1.35.1 interpolated a coarse table, which with the sun at 80
+degrees put the light reaching the surface 0.36 percent short at 7 m/s
+and 0.47 percent over at 14 m/s (DECISIONS.md section 141). Problem 5 made again: with every
+facet followed, Ed is 0.990, 0.996 and 1.001 of the mean at optical
+depths 1, 5 and 10, all nine entries agreeing; with one facet per
+crossing, 0.962, 0.970 and 0.975. The engine agrees in 47 of 51 entries
+with one facet and 49 of 51 with every facet.
+

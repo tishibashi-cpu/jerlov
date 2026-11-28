@@ -10010,3 +10010,38 @@ are made again with the corrected engine, and the tests that recomputed
 sections 140's and 141's figures from the engine check this section's
 instead; those sections stay as the record of what the code gave then.
 CHANGELOG; DATA.md section 53 if problem 5's figures move; NEXT_STEPS.
+
+### Result
+
+1. Met. The table is within 7e-6 of the closed form from 0 to 89.9
+   degrees for slope variances 0.003 to 0.2, and the closed form within
+   0.044 percent of a quadrature on 3201 points at 30, 60, 80 and 85
+   degrees and 7 and 14 m/s (the quadrature's own error: it moves by as
+   much between 1601 and 3201 points).
+2. Met. The mean weight of the facets drawn, less 1, at 80 and 85
+   degrees and 7 and 14 m/s: -0.023 to -0.003 percent, each within three
+   standard errors (0.04 percent) of 0; section 141 had -0.356 and +0.475
+   at 80 degrees.
+3. Met. Transmitted plus reflected less 1, transparent water, at 30, 60
+   and 80 degrees and 7 and 14 m/s: `"one"` -0.018 to +0.032 percent,
+   `"all"` -0.000 to +0.030 percent.
+4. **Met: with `"all"` all nine of problem 5's entries agree**, Ed 0.990,
+   0.996 and 1.001 of the models' mean at optical depths 1, 5 and 10,
+   Eou 0.981, 0.982 and 0.983, Lu 0.919, 0.954 and 0.916 (section 141:
+   Ed 0.992, 0.998, 1.003). With `"one"`, Ed is 0.962, 0.970 and 0.975,
+   and the last now agrees: 47 of the 51 entries agree with `"one"`, 49
+   with `"all"`, the two left the radiance at optical depth 10 in
+   absorbing water. Only problem 5's rows changed. The radiances move by
+   more than the table did (Lu with `"all"` at optical depth 5 from 0.896
+   to 0.954): a weight changed by the correction changes which photons
+   the roulette keeps, and the random numbers drawn after it, so the
+   runs are new samples with the same spread.
+5. Recorded. Question 5's waves runs again: with `"one"` the rrs moves by
+   0.999893 to 1.000038 times, with `"all"` by 0.999925 to 1.003953; the
+   flat runs are unchanged. The model is within 10 percent in 1 of the 13
+   with either; waves over flat 0.893 to 1.028, `"all"` over `"one"` is
+   0.958 to 1.165,
+   each within 2.7 combined standard errors of 1. The share of the light
+   that met a second facet in problem 5's water (section 141's check 4):
+   entering, none at 30 degrees, 0.0039 at 60 and 0.0310 at 80; from
+   below, 0.0162, 0.0175 and 0.0197.
