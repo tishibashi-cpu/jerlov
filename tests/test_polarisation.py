@@ -13,6 +13,8 @@ import sys
 import numpy as np
 import pytest
 
+from jerlov._data import trapezoid
+
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 source_tree = pytest.mark.skipif(
     not (ROOT / "pyproject.toml").exists(),
@@ -419,9 +421,9 @@ def test_the_particles_matrix_as_quoted():
         assert p.angle.size == 271
         g = p.grid
         f = p.phase(np.cos(g))
-        asym = np.trapezoid(f * np.sin(g) * np.cos(g), g) * 2 * math.pi
+        asym = trapezoid(f * np.sin(g) * np.cos(g), g) * 2 * math.pi
         back = g >= math.pi / 2
-        bb = np.trapezoid((f * np.sin(g))[back], g[back]) * 2 * math.pi
+        bb = trapezoid((f * np.sin(g))[back], g[back]) * 2 * math.pi
         found.append((p.integral, asym, bb))
     assert (f"integrates to {found[0][0]:.5f} (S1a) and {found[1][0]:.5f} "
             "(S1b)") in section
@@ -445,7 +447,7 @@ def test_depolarisation_as_quoted():
     x = np.linspace(-1, 1, 200_001)
     S = np.zeros((4, x.size))
     S[0] = 1
-    norm = np.trapezoid(p._rayleigh(S, x, True, 0.09)[0], x) * 2 * math.pi
+    norm = trapezoid(p._rayleigh(S, x, True, 0.09)[0], x) * 2 * math.pi
     assert abs(norm - 1) < 1.2e-11
     rng = np.random.default_rng(5)
     ks = []
