@@ -10240,3 +10240,54 @@ azimuth phi, the limit of the meridian plane, which the tool takes there
    percent off in 52 and 66 of the 112 directions, with standard errors
    below 0.5 percent. Neglecting polarisation in this problem moves the
    radiance by up to 13 percent.
+
+## 146. Polarisation, a second reference: Kokhanovsky et al.'s (2010) Rayleigh benchmark (1.36.2): the plan
+
+The user obtained Kokhanovsky et al. (2010), "Benchmark results in vector
+atmospheric radiative transfer", J. Quant. Spectrosc. Radiat. Transfer
+111, 1931-1946, doi:10.1016/j.jqsrt.2010.03.005 (the open copy in DLR's
+elib, not shipped), which this session could not download, and asked on
+2026-11-28 for it to be used as section 145 proposed: a second,
+independent check of `tools/polarised_mc.py` before step 2.
+
+### The reference
+
+Seven vector codes compared on a homogeneous non-absorbing layer over a
+black surface, the sun at 60 degrees, relative azimuths 0, 90 and 180
+degrees (180 the backscattering direction at the sun's zenith angle),
+viewing zenith angles 0, 20, 40, 60, 80 and 89 degrees from the outer
+normal of either boundary. The benchmark is SCIATRAN's, correct to at
+least six digits (Table A1's caption). For Rayleigh scattering without
+depolarisation, optical thickness 0.3262: Table A1 gives I and Q of the
+reflected and the transmitted light (72 values), Tables A4 and A5 U at
+90 degrees (12 values, two of them 0 straight up and down): 84 values.
+Their conventions: Eq. (6), the Stokes vector times pi over mu0 F0, F0
+the irradiance across the beam, so pi times this engine's values per
+unit planar irradiance; Eq. (2), Q from the components parallel and
+perpendicular to the meridional plane, this engine's Q. U's sign is a
+matter of the azimuth's handedness and is fixed by the table, as in
+section 145, and must be the same at both boundaries.
+
+The aerosol and cloud cases need the particles' scattering matrices,
+which the paper gives only in a figure and on a web page
+(www.iup.physik.uni-bremen.de/~alexk) that neither the user nor this
+session could reach on 2026-11-28; they are not posed.
+
+The tables' text layer drops the minus signs of values and exponents;
+every value is transcribed from the page images (pp. 1943-1945).
+
+### Checks, set now
+
+1. The tool's geometry becomes arguments (the sun, the optical
+   thickness, the directions); with Natraj et al.'s, it gives section
+   145's stored run bit for bit.
+2. The 84 values: a value agrees if |x - t| <= 3 SE + 2e-4; the engine is
+   said to reproduce them if at least 95 percent agree. Every value is
+   recorded.
+3. Recorded: the scalar I beside the vector one, as in section 145.
+
+### Documents
+
+DECISIONS; the stored run (`examples/data/polarisation/kokhanovsky2010.csv`)
+and a test that every quoted figure is its; CHANGELOG; NEXT_STEPS. No
+package change: 1.36.2.
