@@ -234,8 +234,10 @@ def _csv(name):
 
 
 def _testbed():
+    """Section 147's tables: AOS-I and AOS-II just above the surface."""
     return {(r["model"], r["wavelength"], r["sun"], r["phi"], r["vza"]): r
-            for r in _csv("chowdhary2020_tables.csv")}
+            for r in _csv("chowdhary2020_tables.csv")
+            if r["model"] in ("AOS-I", "AOS-II") and r["level"] == "SRF"}
 
 
 def _misprint(t):
@@ -266,7 +268,8 @@ def test_fresnel_s_matrices_keep_the_flux():
 @source_tree
 def test_the_testbed_as_read():
     rows = _csv("chowdhary2020_tables.csv")
-    assert len(rows) == 800
+    assert len(rows) == 2800
+    assert len(_testbed()) == 800
     bad = [r for r in rows if _misprint(r)]
     assert len(bad) == 25
     assert {(r["model"], r["wavelength"], r["sun"]) for r in bad} == \
