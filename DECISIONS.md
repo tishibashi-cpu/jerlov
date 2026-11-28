@@ -10452,3 +10452,96 @@ glint and for Rayleigh scattering, independent of the tool's frames.
    more than 5 percent off in 187 of its 400 directions, and 0.938 to 1.047 for AOS-II, off by more than
    5 percent in 22 of 400. The tables' own ratios agree (0.595 and 0.938
    at the same directions).
+
+## 148. Polarisation, second step continued: a particle scattering matrix, depolarisation, and the coupled atmosphere and ocean, against Chowdhary et al.'s (2020) AOS-III and AOS-IV (1.36.4): the plan
+
+Section 147 checked the wavy surface's Fresnel matrices and a body of
+pure water. This section finishes section 145's step 2: the particles'
+scattering matrix and pure water's depolarisation as stated inputs, and
+the atmosphere and the ocean coupled, so that light crosses the surface
+both ways as often as it happens to. The user asked on 2026-11-28 to go
+on. The package does not change.
+
+### The reference
+
+The same testbed (section 147), its two remaining models:
+
+- AOS-III: section 147's molecular atmosphere (Table 5a) over its wavy
+  surface over section 147's pure seawater (Table 2), a black bottom at
+  100 m;
+- AOS-IV: the same with marine particles in the water. Table 2 gives
+  b_w, b_p, a_blk, the single scattering albedo (0.72114137, 0.72519084,
+  0.88340267, 0.68034101) and the optical thickness (7.71, 5.24, 91.34,
+  118.47) at 350, 450, 550 and 650 nm; the bulk matrix is
+  (b_w F_w + b_p F_p) / (b_w + b_p) (Eq. 3), F_w Rayleigh's with
+  depolarisation zero. F_p, a mixture of detritus and phytoplankton
+  computed by Mie theory, is tabulated in Tables S1a ([Chl] 0.03 mg m^-3,
+  for 350 and 450 nm) and S1b (3 mg m^-3, for 550 and 650 nm): F11, F21,
+  F33 and F43 over 4 pi at 271 angles (every 0.1 degree, then every
+  degree), with F22 = F11, F44 = F33, F34 = -F43; asymmetry parameters
+  0.95 and 0.97 (section 3.1.1), backscattering ratios 0.0108 and 0.0058
+  (Table 3).
+
+Tables S4a to S4d (AOS-III) and S5a to S5d (AOS-IV) give R for I without
+polarisation and I, Q and U with it, just above the surface (SRF) and at
+the top of the atmosphere (TOA), in section 147's 50 directions for the
+two suns: 1200 vector values and 400 scalar ones for each model and
+level. Tables S2c and S2d give AOS-I at the top of the atmosphere, which
+section 147 did not pose. The stated accuracy is 1e-6 for AOS-I to
+AOS-III and 1e-5 for AOS-IV.
+
+### The method
+
+`tools/polarised_ocean.py` follows the light through the atmosphere, the
+surface and the water in one path: at the surface a facet as in section
+147, then reflection or transmission drawn with the probability of each
+branch's flux for that Stokes vector, so the light crosses as many times
+as it does. Just above the surface the light is estimated as in section
+147 (the sky's light reflected, at each scattering in the air; the
+water's light refracted, at each scattering in the water; the glint
+attenuated through the atmosphere). At the top: the light each
+scattering in the air sends straight out (section 145's estimate), and
+the light just above the surface attenuated along v through the
+atmosphere.
+
+The particles: the angle drawn from F11 interpolated linearly in the log
+over the angle and normalised on a fine grid, the other elements as
+ratios to F11 interpolated linearly; in the water the scatterer is drawn
+as a molecule with probability b_w / (b_w + b_p), and the estimates use
+the mixed matrix. Rayleigh's matrix takes a depolarisation ratio delta
+(Hansen and Travis 1974, Eq. 2.15, the ratio of the two intensities
+scattered at 90 degrees), zero for the testbed; `tools/polarised_mc.py`
+gains the same argument.
+
+### Checks, set now
+
+1. Table S1 as read: 271 angles in each; the phase function, so
+   interpolated, integrates to 1 within 0.1 percent; asymmetry parameters
+   0.95 and 0.97 and backscattering ratios 0.0108 and 0.0058 to the
+   digits printed; for every angle F21^2 + F33^2 + F43^2 <= F11^2 (to the
+   tables' rounding).
+2. Depolarisation: for unpolarised light scattered at 90 degrees the
+   degree of polarisation is (1 - delta) / (1 + delta), to 1e-12, for
+   delta 0, 0.039, 0.09; with delta zero `tools/polarised_mc.py` gives
+   section 145's stored run bit for bit on its first batch; with delta
+   0.09 its singly scattered light equals the exact singly scattered
+   Stokes vector within three standard errors in every direction of
+   section 145.
+3. The coupled tool posed as AOS-I and AOS-II (no water, no atmosphere)
+   meets section 147's checks 3 and 4 again (at least 95 percent), and
+   AOS-I at the top of the atmosphere (Tables S2c, S2d) likewise.
+4. AOS-III and AOS-IV, each level: a value agrees if |x - t| <= 3 SE +
+   1e-5 (AOS-III) or 3 SE + 2e-5 (AOS-IV, whose tables are good to
+   1e-5); the tool is said to reproduce a model at a level if at least 95
+   percent of its vector values agree, and the same for the scalar I.
+   Every value is recorded.
+5. Recorded: the scalar over the vector I, and anything in the tables
+   that cannot be right, as in section 147.
+
+### Documents
+
+DECISIONS; the tables read from the supplement (the reader extended,
+`examples/data/polarisation/chowdhary2020_tables.csv` and
+`chowdhary2020_particles.csv`), the stored runs and a test that every
+quoted figure is theirs; CHANGELOG; DATA section 54 if the tables need
+it; NEXT_STEPS. No package change: 1.36.4.
