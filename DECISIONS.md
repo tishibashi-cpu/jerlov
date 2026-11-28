@@ -10209,3 +10209,34 @@ DECISIONS only, a test that the quoted figures are the stored run's
 (`examples/data/polarisation/natraj2009.csv`), and the tables
 transcribed into the tool (from the text layer, each checked against the
 page image). CHANGELOG. No package change: 1.36.1.
+
+### Result
+
+Differences from the plan: check 1 compares only the first order of
+scattering (the tool gained `orders`), since even at optical thickness
+0.001 the second order moved Q by 2e-6 to 7e-6, 0.1 to 0.3 percent of I,
+which near the neutral points was several standard errors; and straight
+up and down (mu = 1) the tables refer Q and U to the plane of the
+azimuth phi, the limit of the meridian plane, which the tool takes there
+(its first version took +x and missed those 18 values).
+
+1. Met. Light scattered once, against the exact singly scattered Stokes
+   vector in every tabulated direction (twenty batches of 100 000): at
+   most 1.51 standard errors from it at optical thickness 0.001 and 1.11
+   at 0.5, in I, Q and U; V is zero throughout.
+2. **Met: all 672 values agree** (ten batches of 400 000 photons,
+   `examples/data/polarisation/natraj2009.csv`), with the tables'
+   normalisation (F0 = 1, an incident flux of pi across the beam, so the
+   engine's I times pi mu0), Q = Ir - Il, which is the engine's Q
+   (I1 - I2, e1 in the meridian plane) with the opposite sign as the
+   definitions say, and U with the opposite sign, a convention of the
+   azimuth's handedness that the tables fix: with the same signs for U,
+   33 of the 112 at each boundary agree. The largest difference is
+   0.00105 in I at the top for mu = 0.02, where the standard error is
+   0.00046.
+3. Recorded. I computed with the scalar equation (the matrix replaced by
+   its (1,1) element, other random numbers) over the vector I: 0.927 to
+   1.113 at the top and 0.868 to 1.120 at the bottom, more than 5
+   percent off in 52 and 66 of the 112 directions, with standard errors
+   below 0.5 percent. Neglecting polarisation in this problem moves the
+   radiance by up to 13 percent.

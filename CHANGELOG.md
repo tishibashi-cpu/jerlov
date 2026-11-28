@@ -4,6 +4,22 @@ Every release is archived on Zenodo under the concept DOI
 [10.5281/zenodo.22321312](https://doi.org/10.5281/zenodo.22321312), which
 always resolves to the latest version.
 
+## 1.36.1 — 2026-11-28
+
+Polarisation, a first step: a vector Monte Carlo in `tools/`, checked
+against Natraj et al.'s (2009) tables (DECISIONS.md section 145). The
+package does not change; no shipped value changed.
+
+**Checked.** `tools/polarised_mc.py` carries a Stokes vector through a
+homogeneous Rayleigh layer. Against Natraj, Li and Yung's (2009) corrected
+tables of Coulson et al.'s problem (optical thickness 0.5, the sun at mu0
+= 0.2, a black surface), all 672 values of I, Q and U leaving the top
+and the bottom agree within three standard errors plus 2e-4. The scalar
+equation in the same problem gives a radiance up to 13 percent off.
+Fresnel's matrices at the sea surface, pure water's depolarisation and
+the particles' scattering matrix come next, and whether polarisation
+enters the package is to be decided after them.
+
 ## 1.36.0 — 2026-11-28
 
 The radiance looking straight down at depth, by a collision estimator
