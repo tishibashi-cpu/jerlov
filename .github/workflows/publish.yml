@@ -4,36 +4,69 @@ name: publish
 # is the version's section of CHANGELOG.md (DECISIONS.md section 51). Zenodo
 # archives the Release, so it comes only after PyPI has the version.
 #
-# Run it from the Actions tab ("Run workflow" on main): it takes the version
-# from pyproject.toml and makes the tag with the Release. Pushing a v* tag
-# runs it too; a Release that already exists for the tag is left as it is.
-# Uses Trusted Publishing, so no API token is stored anywhere.
+# Since 1.35.1 it runs by itself after a merge (DECISIONS.md section 142):
+# when the tests workflow finishes on main for a push and passes, and the
+# version in pyproject.toml has no tag yet. A merge that does not raise the
+# version, and the weekly scheduled run of the tests, publish nothing.
+# It can still be run from the Actions tab ("Run workflow" on main), and
+# pushing a v* tag runs it too; a Release that already exists for the tag
+# is left as it is. Uses Trusted Publishing, so no API token is stored
+# anywhere.
 on:
+  workflow_run:
+    workflows: [tests]
+    types: [completed]
+    branches: [main]
   push:
     tags:
       - "v*"
   workflow_dispatch:
 
+# One publication at a time: a run by hand and one after a merge must not
+# both upload the same version.
+concurrency:
+  group: publish
+  cancel-in-progress: false
+
 jobs:
-  build:
+  decide:
+    # After a merge, only a push to main whose tests passed; never the
+    # weekly schedule, never a failed run.
+    if: >-
+      github.event_name != 'workflow_run' ||
+      (github.event.workflow_run.conclusion == 'success' &&
+       github.event.workflow_run.event == 'push')
     runs-on: ubuntu-latest
     outputs:
+      go: ${{ steps.version.outputs.go }}
       version: ${{ steps.version.outputs.version }}
+      sha: ${{ steps.version.outputs.sha }}
     steps:
       - uses: actions/checkout@v5
-      - uses: actions/setup-python@v6
         with:
-          python-version: "3.12"
+          # after a merge, the commit the tests passed on, not whatever
+          # main is by now
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
 
       - name: The tag must be the version being built
         # Three files carry the version and a test keeps them equal, but
         # nothing compared them with the tag that triggers this workflow.
         # Run by hand, there is no tag yet: it must be main, and the version
-        # must not have been tagged before.
+        # must not have been tagged before. After a merge, a version already
+        # tagged means there is nothing to publish.
         id: version
+        env:
+          RUN_SHA: ${{ github.event.workflow_run.head_sha || github.sha }}
         run: |
-          version=$(python -c "import re, pathlib; print(re.search(r'^version = \"(.+?)\"', pathlib.Path('pyproject.toml').read_text(), re.M).group(1))")
-          if [ "$GITHUB_EVENT_NAME" = workflow_dispatch ]; then
+          version=$(python3 -c "import re, pathlib; print(re.search(r'^version = \"(.+?)\"', pathlib.Path('pyproject.toml').read_text(), re.M).group(1))")
+          go=true
+          if [ "$GITHUB_EVENT_NAME" = workflow_run ]; then
+            echo "after the tests on main passed at $RUN_SHA, pyproject.toml $version"
+            if git ls-remote --exit-code --tags origin "refs/tags/v$version" > /dev/null; then
+              echo "::notice::v$version is already tagged; nothing to publish"
+              go=false
+            fi
+          elif [ "$GITHUB_EVENT_NAME" = workflow_dispatch ]; then
             echo "run by hand on $GITHUB_REF, pyproject.toml $version"
             if [ "$GITHUB_REF" != refs/heads/main ]; then
               echo "::error::run it on main, not $GITHUB_REF"
@@ -52,6 +85,22 @@ jobs:
             fi
           fi
           echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "sha=$RUN_SHA" >> "$GITHUB_OUTPUT"
+          echo "go=$go" >> "$GITHUB_OUTPUT"
+
+  build:
+    needs: decide
+    if: needs.decide.outputs.go == 'true'
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ needs.decide.outputs.version }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ needs.decide.outputs.sha }}
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
 
       - name: CHANGELOG.md must say what this version is
         # The Release's text, made now so that a missing section stops the
@@ -59,7 +108,7 @@ jobs:
         # what goes to PyPI.
         run: |
           mkdir notes
-          python tools/release_notes.py "${{ steps.version.outputs.version }}" > notes/release-notes.md
+          python tools/release_notes.py "${{ needs.decide.outputs.version }}" > notes/release-notes.md
           cat notes/release-notes.md >> "$GITHUB_STEP_SUMMARY"
 
       - name: Build sdist and wheel
@@ -161,7 +210,7 @@ jobs:
   release:
     # After PyPI has the version, never before: a Release is what Zenodo
     # archives, and 0.19.0 reached Zenodo without reaching PyPI.
-    needs: [build, publish]
+    needs: [decide, build, publish]
     runs-on: ubuntu-latest
     permissions:
       contents: write        # to make the tag and the Release
@@ -174,11 +223,14 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           TAG: v${{ needs.build.outputs.version }}
+          # the commit that was built; after a merge GITHUB_SHA is main's
+          # head when this workflow started, which may be later
+          TARGET: ${{ needs.decide.outputs.sha }}
         run: |
           if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" > /dev/null 2>&1; then
             echo "::notice::the Release $TAG already exists and is left as it is"
             exit 0
           fi
           gh release create "$TAG" --repo "$GITHUB_REPOSITORY" \
-            --target "$GITHUB_SHA" --title "$TAG" \
+            --target "$TARGET" --title "$TAG" \
             --notes-file notes/release-notes.md

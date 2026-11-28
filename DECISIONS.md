@@ -9931,3 +9931,17 @@ branch, so the claims are main's.
    publish 1.35.1 by itself (PyPI, Release, Zenodo). Recorded in the next
    section that touches this, with the run's number. If it fails, 1.35.1
    is published by hand and the cause recorded.
+
+### Result
+
+1. Met: `test_publishing_follows_a_merge_by_itself` checks each point by
+   the workflow's text (PyYAML is not a dependency); breaking any of five
+   of them by hand (the push condition, `go=false`, the Release's target,
+   the branch, `build`'s checkout) makes it fail. The test that the
+   Release needs PyPI first now names `decide` too.
+2. Met: `decide`'s script, taken from the workflow and run with each
+   event's variables against this repository's tags: after a merge at
+   1.35.0 (tagged) `go=false` and exit 0; at 1.35.1 (untagged) `go=true`;
+   by hand on main at 1.35.0 and on dev, and a tag v9.9.9, each fail;
+   the tag v1.35.0 at 1.35.0 goes on.
+3. Not yet: after this release's merge.
