@@ -9746,3 +9746,146 @@ still 1 of the 13 within 10 percent, the waves moving the rrs by 0.893
 to 1.028 times.
 
 Table 2's misprint at 0.50119 degree is DATA.md section 53.
+
+## 141. Light that meets the wavy surface more than once (1.35.0): the plan
+
+Section 140 left problem 5 of Mobley et al. (1993), the sun at 80
+degrees over a surface of slope variance 0.04, with Ed 0.962, 0.970 and
+0.976 of the models' mean at optical depths 1, 5 and 10, and named the
+likely cause without testing it: the engine meets one facet per crossing
+of the surface, and light that a facet sends the wrong way is dropped
+(section 139 chose this, as OSOAA does, Chami et al. 2015, section 3.2).
+The 1993 Monte Carlo codes followed repeated interactions (p. 7490). The
+user chose on 2026-11-28 to test it next and, asked, to make it a choice
+the caller states rather than a change of behaviour.
+
+### Seen before the plan
+
+A probe of the surface alone (`_facets` and `_fresnel_cos`, 400 000
+beams, not kept): of the sun's beam at 80 degrees and slope variance
+0.04, facets reflect 0.253, of which 0.031 travels downwards after the
+reflection, towards the sea, and is now counted as reflected to the sky;
+at 60 degrees 0.0039, at 30 degrees none. Light that a facet refracts
+into the water upwards was none in the probe. If most of the 0.031
+enters the water at a second facet, Ed below the surface rises by about
+0.031 / 0.746, 4 percent, the size of problem 5's shortfall. That is
+why this is expected to work; it is not yet a result.
+
+### The surface, followed
+
+At a crossing, a facet is drawn as now (section 139, with section 140's
+shadowing). Each branch, reflected and refracted, either leaves the
+surface (into the water travelling down, or into the air travelling up)
+or meets the surface again (reflected light from the air still
+travelling down; refracted light from the air travelling up; reflected
+light from below still travelling up; refracted light from below
+travelling down). When one branch leaves to the air and the other stays,
+the weight is multiplied by the staying branch's share, as now; when
+both stay (or both enter the water), one is chosen with its Fresnel
+share as the probability and the weight is kept. A branch that meets the
+surface again draws a new facet, independently of the last, for its own
+direction. This repeats until the light leaves; after 50 interactions
+what is left is dropped (it is not expected to happen).
+
+What is still left out: the surface's shape between one facet and the
+next (the facets are independent), so a ray's path along a real wave is
+not traced.
+
+### The argument
+
+`surface_facets`: `"one"` (section 139's surface, as OSOAA: light that
+would meet a second facet is dropped) or `"all"` (followed as above).
+With `wind="flat"` it must be None (a flat surface sends nothing the
+wrong way). With a wind, it will be required; as section 139 did for
+`wind`, leaving it out with a wind takes `"one"`, as 1.34 did, with a
+`FutureWarning` naming the argument, and a later release requires it.
+`inputs` gain `surface_facets`; `left_out` says, for `"one"`, that light
+meeting a second facet is dropped, and for `"all"`, that the facets are
+independent. A new argument: 1.35.0.
+
+### Checks, set now
+
+1. `"one"` gives 1.34.1's numbers bit for bit: the stored waves runs and
+   problem 5 in `examples/data/mobley1993/runs.csv` are reproduced, and
+   an omitted `surface_facets` with a wind gives the same as `"one"`,
+   with the warning. Flat is untouched.
+2. Energy, transparent water: with `"all"`, transmitted plus reflected
+   within 0.5 percent of 1 at the sun at 30, 60 and 80 degrees and winds
+   7 and 14 m/s.
+3. Problem 5 with `"all"`: the measure of section 140 met in all nine of
+   its entries (Ed, Eou, Lu at optical depths 1, 5 and 10). Recorded with
+   it: each ratio to the mean, beside `"one"`'s, and the count over the
+   51 entries.
+4. Recorded, not a measure: the share of the weight that met a second
+   facet, entering and from below, at 30, 60 and 80 degrees; and question
+   5's waves runs (section 139, wind 5 m/s, sun 0 to 60 degrees) again
+   with `"all"`, the count within 10 percent and the ratio to `"one"`.
+
+### Documents
+
+API reference; the topic page; CHANGELOG; the Zenodo description; DATA.md
+section 53 (problem 5's result); NEXT_STEPS. `tools/mobley1993_benchmark.py`
+gains the choice, and its `"all"` run is kept beside the 1.34.1 run.
+
+### Result
+
+Differences from the plan: the share of the light that met a second
+facet (check 4) is weighted by the light, not counted by photons; the
+first version of the code counted photons, which at 80 degrees gives
+0.139 (many facets that send the sun's light back down intercept little
+of it), and was changed before any figure was recorded.
+
+1. Met: with `"one"` problem 5's nine entries are those of 1.34.1's
+   `runs.csv` digit for digit, the stored waves runs of question 5 are
+   unchanged in every column they had, and an omitted `surface_facets`
+   with a wind gives `"one"`'s field, with the warning (a test). A flat
+   surface does not reach the new code.
+2. Not met at one of the six points. Transmitted plus reflected, less 1,
+   with `"all"` (with `"one"` beside it): at 7 m/s +0.008 percent at 30
+   degrees (+0.008), +0.028 at 60 (+0.023), -0.086 at 80 (-0.345); at
+   14 m/s +0.011 (+0.011), +0.043 (+0.028), and +0.689 at 80 (+0.469),
+   above the 0.5 set. The light that enters with `"all"` is 1.0293 and
+   1.0261 times `"one"`'s at 80 degrees and 7 and 14 m/s, 1.0027 and
+   1.0093 at 60, and the same at 30.
+
+   **Found: the cause is 1.34.1's shadowing table, not the following of
+   the facets.** `"one"` misses by as much at 80 degrees, and facets
+   alone show it: the mean weight of the facets drawn for the sun at 80
+   degrees is 1 - 0.356 percent at 7 m/s and 1 + 0.475 percent at 14
+   m/s (eight batches of 500 000, standard errors 0.04 percent), where
+   section 140 meant it to be 1. `_front_share_table` gives 1.1620 and
+   1.3454 at cos(80 degrees); the same quadrature at that cosine itself
+   gives 1.1591 and 1.3574, and on a grid four times finer 1.1579 and
+   1.3508. Both the interpolation between the table's cosines and the
+   grid of slopes, which the edge between facets in light and in shadow
+   crosses, are too coarse when the light is low. Up to 60 degrees the
+   table is within 0.01 percent of the finer grid (winds 2 to 14 m/s,
+   every 2.5 degrees). It is not corrected here: that changes
+   every run with waves, and this release keeps `"one"` as 1.34.1 had
+   it. It is the next item in NEXT_STEPS.
+3. **Met: with `"all"` all nine of problem 5's entries agree.** Ed is
+   0.992, 0.998 and 1.003 of the models' mean at optical depths 1, 5 and
+   10 (with `"one"` 0.962, 0.970 and 0.976), Eou 0.985, 0.991 and 0.989
+   (0.943, 0.963, 0.958), Lu 0.964, 0.896 and 0.941 (0.863, 0.955,
+   0.970). With problem 5 so posed, 49 of the 51 entries agree; the two
+   left are the radiance at optical depth 10 in absorbing water.
+   (`examples/data/mobley1993/runs_all_facets.csv`; the other problems
+   have a flat surface and their rows are 1.34.1's.) Section 140's
+   likely cause is so confirmed as the cause of Ed's shortfall, within
+   the models' spread.
+4. Recorded. The share of the light that met a second facet, in problem
+   5's water (omega0 = 0.9, Table 2, slope variance 0.04; four batches
+   of 100 000): entering, none at 30 degrees, 0.0039 at 60 and 0.0310 at
+   80; of the light reaching the surface from below, 0.0163, 0.0175 and
+   0.0191. Question 5's waves runs with `"all"`
+   (`examples/data/monte_carlo/waves_black_bottom.csv`, columns
+   `all_facets`): the model is within 10 percent in 1 of the 13, as with
+   `"one"`; `"all"` over `"one"` is 0.957 to 1.165, each within 2.7
+   combined standard errors of 1. The waves still do not close question
+   5.
+
+Also fixed, found while writing the new warning: 1.34.0's
+`FutureWarning` for a left-out `wind` was raised with `stacklevel=2`,
+which through `_data.checked` pointed into `_data.py`; both warnings now
+use `_data.caller_stacklevel()`, and a test checks that they name the
+caller's file.

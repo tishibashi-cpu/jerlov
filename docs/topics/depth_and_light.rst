@@ -114,8 +114,13 @@ required argument: the phase function, the sun or an overcast sky, the
 depth and the bottom, the photons and the seed among them. It gives Ed, Eu,
 Eo, Kd, the mean cosine, the radiance in cells and rrs, each with its
 standard error over batches, and says what it leaves out (an atmosphere,
-waves, polarisation, inelastic scattering, layers). For those, use OSOAA
-or HydroLight. ``examples/radiance_distribution.py`` compares it with
+polarisation, inelastic scattering, layers). For those, use OSOAA
+or HydroLight. Since 1.34.0 it takes a wind for a surface of Cox and
+Munk's slopes, and since 1.35.0 ``surface_facets`` says whether light
+that a facet sends back towards the surface is dropped, as OSOAA does
+(``"one"``), or followed over every facet it meets (``"all"``); with the
+sun 80 degrees from the zenith that is about 3 percent of the light that
+enters (DECISIONS.md sections 139 and 141). ``examples/radiance_distribution.py`` compares it with
 Tyler's tables, and it does not match them. DATA.md section 23; DECISIONS.md
 section 138.
 

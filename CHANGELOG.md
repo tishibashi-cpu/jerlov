@@ -4,6 +4,39 @@ Every release is archived on Zenodo under the concept DOI
 [10.5281/zenodo.22321312](https://doi.org/10.5281/zenodo.22321312), which
 always resolves to the latest version.
 
+## 1.35.0 — 2026-11-28
+
+Light that meets the wavy surface more than once (DECISIONS.md section
+141). No shipped value changed, and every call that names
+`surface_facets="one"` gives 1.34.1's numbers bit for bit.
+
+**New.** `monte_carlo_light_field` takes `surface_facets` with a wind:
+`"one"`, each crossing of the surface meets one facet and light that the
+facet sends back towards the surface is taken as gone, as OSOAA does and
+as 1.34 did; or `"all"`, such light meets another facet, drawn
+independently of the last, until it leaves the surface, as the Monte
+Carlo codes of Mobley et al. (1993) did. With `wind="flat"` it must be
+None. Left out with a wind, it is taken as `"one"` with a
+`FutureWarning`; a later release will require it.
+
+**Fixed.** The `FutureWarning` for a left-out `wind` (1.34.0) pointed
+into the package; it and the new one point at the caller's line.
+
+**Checked.** With `"all"`, problem 5 of Mobley et al. (1993), the sun at
+80 degrees over waves, agrees in all nine of its values: Ed is 0.992 to
+1.003 of the 1993 codes' mean, where one facet gave 0.962 to 0.976, so
+1.34.1's guess at the cause was right. The canonical problems now agree
+in 49 of 51 values (`examples/data/mobley1993/runs_all_facets.csv`).
+With the sun at 80 degrees about 3 percent more light enters the water.
+Question 5's waves runs were made with `"all"` too: still 1 of the 13
+within 10 percent.
+
+**Found.** 1.34.1's table of the facets' shadowing is too coarse for a
+low sun: at 80 degrees the light reaching the surface is 0.36 percent
+short of what falls on it at 7 m/s and 0.47 percent over at 14 m/s. Up
+to 60 degrees the table is within 0.01 percent. It is not corrected in
+this release.
+
 ## 1.34.1 — 2026-11-27
 
 The Monte Carlo against Mobley et al.'s (1993) canonical problems, and a

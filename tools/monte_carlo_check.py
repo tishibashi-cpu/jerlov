@@ -22,7 +22,9 @@ does (DECISIONS.md section 138's result).
 
 ``--waves`` runs DECISIONS.md section 139's question 5 cells: the 13 runs
 of the black-bottom group (section 114), flat and with wind 5 m/s, by
-the package's function.
+the package's function; since 1.35.0 also with every facet the light
+meets (``surface_facets="all"``, DECISIONS.md section 141), the columns
+``all_facets``.
 """
 
 from __future__ import annotations
@@ -44,7 +46,8 @@ CUT_DEG = 1.0
 WAVES_WIND = 5.0
 
 
-def run(row: dict, phase, wind="flat") -> tuple[float, float]:
+def run(row: dict, phase, wind="flat",
+        surface_facets="one") -> tuple[float, float]:
     a, bp, bw = float(row["a"]), float(row["bp"]), float(row["bw"])
     out = jerlov.monte_carlo_light_field(
         a, bp + bw, phase.wavelength_nm, pure_water_b=bw,
@@ -54,7 +57,7 @@ def run(row: dict, phase, wind="flat") -> tuple[float, float]:
         depth_m=float(row["depth_m"]), bottom_albedo=float(row["albedo"]),
         depths_m=[0.25], slab_m=0.5, zenith_step_deg=10.0,
         azimuth_step_deg=45.0, photons=PHOTONS, batches=BATCHES, seed=SEED,
-        wind=wind)
+        wind=wind, surface_facets=None if wind == "flat" else surface_facets)
     return out.rrs, out.rrs_se
 
 
@@ -121,12 +124,14 @@ def waves(path: str) -> None:
     for r in group:
         flat, flat_se = run(r, phase, "flat")
         wavy, wavy_se = run(r, phase, WAVES_WIND)
+        every, every_se = run(r, phase, WAVES_WIND, "all")
         out.append({
             "a": r["a"], "bp": r["bp"], "bw": r["bw"], "bb": r["bb"],
             "depth_m": r["depth_m"], "sun_deg": r["sun_deg"],
             "model": r["model"], "flat": f"{flat:.6e}",
             "flat_se": f"{flat_se:.2e}", "wind_m_s": WAVES_WIND,
             "wind": f"{wavy:.6e}", "wind_se": f"{wavy_se:.2e}",
+            "all_facets": f"{every:.6e}", "all_facets_se": f"{every_se:.2e}",
         })
         print(out[-1], flush=True)
     with open(path, "w", newline="") as f:

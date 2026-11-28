@@ -381,7 +381,7 @@ TEXT_PARAMETERS = frozenset({
     "source", "method", "colour_space", "text", "path", "types", "bound",
     "chromophore", "irradiance", "key", "material", "name", "panel",
     "quantity", "scattering", "sky", "station", "surface_water_type",
-    "unit", "variable", "water", "water_type", "wind"})
+    "surface_facets", "unit", "variable", "water", "water_type", "wind"})
 
 
 def _refuse(value: Any, name: str, text_ok: bool, bool_ok: bool) -> None:

@@ -10,7 +10,12 @@ Table 5 (p. 7496) and Table 2 (p. 7491) are transcribed below from the
 page images. Problems 1, 2, 5 and 6 are posed; 3 (stratified water), 4
 (an atmosphere) and 7 (Raman scattering) are not.
 
-    python tools/mobley1993_benchmark.py OUT.csv
+    python tools/mobley1993_benchmark.py OUT.csv [--surface-facets all]
+
+Problem 5's surface meets one facet per crossing, as in 1.34.1
+(examples/data/mobley1993/runs.csv), or, with ``--surface-facets all``,
+every facet the light meets (DECISIONS.md section 141,
+examples/data/mobley1993/runs_all_facets.csv).
 
 This is a tool for the comparison, not part of the package.
 """
@@ -122,7 +127,7 @@ def table2(corrected: bool = True):
                 values=values)
 
 
-def run(key):
+def run(key, surface_facets="one"):
     spec = PROBLEMS[key]
     omega0 = key[1]
     a, b = 1.0 - omega0, omega0
@@ -142,7 +147,8 @@ def run(key):
             depths=report, half_slab=HALF_SLAB,
             n_water=N_WATER, d_zenith=CAP_DEG, d_azimuth=45.0, depth=depth,
             albedo=spec.get("albedo"),
-            slope_variance=spec.get("slope_variance")))
+            slope_variance=spec.get("slope_variance"),
+            surface_facets=surface_facets))
     scale = math.cos(math.radians(spec["sun"]))
     rows = []
     for j, tau in enumerate(taus):
@@ -165,10 +171,10 @@ def run(key):
     return rows
 
 
-def main(path: str) -> None:
+def main(path: str, surface_facets: str = "one") -> None:
     rows = []
     for key in PROBLEMS:
-        rows += run(key)
+        rows += run(key, surface_facets)
         for r in rows[-3 * len(TABLE5[key]):]:
             print(r, flush=True)
     with open(path, "w", newline="") as f:
@@ -178,6 +184,11 @@ def main(path: str) -> None:
 
 
 if __name__ == "__main__":
-    if len(sys.argv) != 2:
+    args = sys.argv[1:]
+    if len(args) == 3 and args[1] == "--surface-facets" \
+            and args[2] in ("one", "all"):
+        main(args[0], args[2])
+    elif len(args) == 1:
+        main(args[0])
+    else:
         sys.exit(__doc__)
-    main(sys.argv[1])
